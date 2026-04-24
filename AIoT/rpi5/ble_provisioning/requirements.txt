@@ -1,0 +1,3 @@
+# pip으로 설치할 패키지만 관리
+# dbus-python, python3-gi 는 apt로 시스템 설치 (system-site-packages로 접근)
+cryptography>=41.0.0

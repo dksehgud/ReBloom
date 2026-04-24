@@ -1,0 +1,270 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  fragment_ble_provisioning.xml
+  ──────────────────────────────
+  BLE Provisioning 전체 흐름을 하나의 Fragment에서 처리.
+  각 Panel을 isVisible로 show/hide 하며 상태 전환.
+-->
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/bg_primary"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="24dp"
+        android:gravity="center_horizontal">
+
+        <!-- 헤더 아이콘 -->
+        <ImageView
+            android:id="@+id/ivHeader"
+            android:layout_width="80dp"
+            android:layout_height="80dp"
+            android:layout_marginTop="32dp"
+            android:src="@drawable/ic_speaker"
+            android:contentDescription="Re:Bloom Speaker" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Re:Bloom 스피커 연결"
+            android:textSize="22sp"
+            android:textStyle="bold"
+            android:textColor="@color/text_primary"
+            android:layout_marginTop="16dp" />
+
+        <!-- 상태 메시지 -->
+        <TextView
+            android:id="@+id/tvStatus"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="잠시만 기다려주세요"
+            android:textSize="15sp"
+            android:textColor="@color/text_secondary"
+            android:layout_marginTop="8dp" />
+
+        <!-- ───────────────────────────────────── -->
+        <!-- 스캔 중 Panel                          -->
+        <!-- ───────────────────────────────────── -->
+        <LinearLayout
+            android:id="@+id/scanningPanel"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:layout_marginTop="40dp"
+            android:visibility="gone">
+
+            <ProgressBar
+                android:id="@+id/progressScan"
+                android:layout_width="64dp"
+                android:layout_height="64dp"
+                android:indeterminate="true" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="주변 Re:Bloom 기기를 탐색 중입니다..."
+                android:textColor="@color/text_secondary"
+                android:layout_marginTop="16dp" />
+        </LinearLayout>
+
+        <!-- ───────────────────────────────────── -->
+        <!-- 기기 발견 Panel                        -->
+        <!-- ───────────────────────────────────── -->
+        <LinearLayout
+            android:id="@+id/deviceFoundPanel"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_marginTop="32dp"
+            android:background="@drawable/bg_card"
+            android:padding="20dp"
+            android:visibility="gone">
+
+            <TextView
+                android:id="@+id/tvDeviceName"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Re:Bloom Speaker"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:textColor="@color/text_primary" />
+
+            <TextView
+                android:id="@+id/tvDeviceAddress"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="13sp"
+                android:textColor="@color/text_secondary"
+                android:layout_marginTop="4dp" />
+
+            <TextView
+                android:id="@+id/tvRssi"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="13sp"
+                android:textColor="@color/text_secondary"
+                android:layout_marginTop="2dp" />
+        </LinearLayout>
+
+        <Button
+            android:id="@+id/btnConnect"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:text="이 기기에 연결하기"
+            android:layout_marginTop="16dp"
+            android:backgroundTint="@color/accent_primary"
+            android:visibility="gone" />
+
+        <!-- ───────────────────────────────────── -->
+        <!-- 진행 중 Panel (연결/전송/대기)         -->
+        <!-- ───────────────────────────────────── -->
+        <LinearLayout
+            android:id="@+id/progressPanel"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:layout_marginTop="40dp"
+            android:visibility="gone">
+
+            <ProgressBar
+                android:id="@+id/progressIndicator"
+                style="@style/Widget.AppCompat.ProgressBar"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:indeterminate="true" />
+        </LinearLayout>
+
+        <!-- ───────────────────────────────────── -->
+        <!-- Wi-Fi 입력 Panel                       -->
+        <!-- ───────────────────────────────────── -->
+        <LinearLayout
+            android:id="@+id/wifiInputPanel"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_marginTop="32dp"
+            android:visibility="gone">
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Wi-Fi 이름 (SSID)"
+                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/etSsid"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="text"
+                    android:imeOptions="actionNext" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <Button
+                android:id="@+id/btnAutoFillSsid"
+                style="@style/Widget.MaterialComponents.Button.TextButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="현재 연결된 Wi-Fi 가져오기"
+                android:textColor="@color/accent_primary"
+                android:layout_marginTop="4dp" />
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:hint="Wi-Fi 비밀번호"
+                android:layout_marginTop="12dp"
+                app:endIconMode="password_toggle"
+                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/etPassword"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="textPassword"
+                    android:imeOptions="actionDone" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <Button
+                android:id="@+id/btnProvision"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:text="스피커에 Wi-Fi 연결"
+                android:layout_marginTop="20dp"
+                android:backgroundTint="@color/accent_primary" />
+        </LinearLayout>
+
+        <!-- ───────────────────────────────────── -->
+        <!-- 성공 Panel                             -->
+        <!-- ───────────────────────────────────── -->
+        <LinearLayout
+            android:id="@+id/successPanel"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:layout_marginTop="40dp"
+            android:visibility="gone">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="🎉"
+                android:textSize="48sp" />
+
+            <TextView
+                android:id="@+id/tvSuccessMessage"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="17sp"
+                android:textColor="@color/text_primary"
+                android:textStyle="bold"
+                android:layout_marginTop="12dp"
+                android:gravity="center" />
+        </LinearLayout>
+
+        <!-- ───────────────────────────────────── -->
+        <!-- 실패 Panel                             -->
+        <!-- ───────────────────────────────────── -->
+        <LinearLayout
+            android:id="@+id/failPanel"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:layout_marginTop="40dp"
+            android:visibility="gone">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="⚠️"
+                android:textSize="40sp" />
+
+            <TextView
+                android:id="@+id/tvFailReason"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="14sp"
+                android:textColor="@color/text_secondary"
+                android:layout_marginTop="8dp"
+                android:gravity="center" />
+        </LinearLayout>
+
+        <Button
+            android:id="@+id/btnRetry"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:text="다시 시도하기"
+            android:layout_marginTop="16dp"
+            android:backgroundTint="@color/accent_secondary"
+            android:visibility="gone" />
+
+    </LinearLayout>
+</ScrollView>

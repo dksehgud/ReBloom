@@ -1,0 +1,20 @@
+[Unit]
+Description=Re:Bloom BLE Provisioning Service
+Documentation=https://github.com/your-repo/rebloom
+After=bluetooth.target network-online.target
+Wants=bluetooth.target
+
+[Service]
+Type=simple
+User=pi
+WorkingDirectory=/home/pi/rebloom/ble_provisioning
+ExecStart=/home/pi/rebloom/venv/bin/python /home/pi/rebloom/ble_provisioning/main.py
+Restart=on-failure
+RestartSec=5
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=rebloom-ble
+
+[Install]
+WantedBy=multi-user.target
