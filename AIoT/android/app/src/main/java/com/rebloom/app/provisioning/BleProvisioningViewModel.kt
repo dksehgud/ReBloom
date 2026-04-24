@@ -8,7 +8,12 @@ import android.bluetooth.le.ScanCallback
 import android.bluetooth.le.ScanFilter
 import android.bluetooth.le.ScanResult
 import android.bluetooth.le.ScanSettings
+import android.content.BroadcastReceiver
 import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
+import android.net.wifi.ScanResult as WifiScanResult
+import android.net.wifi.WifiManager
 import android.os.ParcelUuid
 import android.util.Log
 import androidx.lifecycle.ViewModel
@@ -37,6 +42,18 @@ class BleProvisioningViewModel(
     private val _state = MutableStateFlow<ProvisioningState>(ProvisioningState.Idle)
     val state: StateFlow<ProvisioningState> = _state.asStateFlow()
 
+    // Wi-Fi 스캔 중 여부
+    private val _wifiScanning = MutableStateFlow(false)
+    val wifiScanning: StateFlow<Boolean> = _wifiScanning.asStateFlow()
+
+    // 스캔된 Wi-Fi 목록
+    private val _wifiNetworks = MutableStateFlow<List<WifiNetwork>>(emptyList())
+    val wifiNetworks: StateFlow<List<WifiNetwork>> = _wifiNetworks.asStateFlow()
+
+    // Wi-Fi 관련 에러 메시지
+    private val _wifiError = MutableStateFlow<String?>(null)
+    val wifiError: StateFlow<String?> = _wifiError.asStateFlow()
+
     private var scanTimeoutJob: Job? = null
     private var foundDevice: BluetoothDevice? = null
     private var pendingSsid: String = ""
@@ -45,13 +62,90 @@ class BleProvisioningViewModel(
         (context.getSystemService(Context.BLUETOOTH_SERVICE) as? BluetoothManager)?.adapter
     }
 
+    private val wifiManager: WifiManager by lazy {
+        context.applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
+    }
+
+    private val locationManager: android.location.LocationManager by lazy {
+        context.getSystemService(Context.LOCATION_SERVICE) as android.location.LocationManager
+    }
+
+    // ─── Wi-Fi 스캔 ────────────────────────────────
+
+    private val wifiScanReceiver = object : BroadcastReceiver() {
+        override fun onReceive(ctx: Context, intent: Intent) {
+            _wifiScanning.value = false
+            loadScanResults()
+        }
+    }
+
+    fun registerWifiReceiver() {
+        context.registerReceiver(wifiScanReceiver, IntentFilter(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION))
+    }
+
+    fun unregisterWifiReceiver() {
+        try { context.unregisterReceiver(wifiScanReceiver) } catch (_: Exception) {}
+    }
+
+    fun scanWifiNetworks() {
+        // 위치 서비스(GPS)가 켜져있는지 확인 (Wi-Fi 스캔에 필수)
+        val isLocationEnabled = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
+            locationManager.isLocationEnabled
+        } else {
+            @Suppress("DEPRECATION")
+            val mode = android.provider.Settings.Secure.getInt(
+                context.contentResolver, android.provider.Settings.Secure.LOCATION_MODE, android.provider.Settings.Secure.LOCATION_MODE_OFF
+            )
+            mode != android.provider.Settings.Secure.LOCATION_MODE_OFF
+        }
+
+        if (!isLocationEnabled) {
+            _wifiError.value = "Wi-Fi 검색을 위해 기기의 위치(GPS) 기능을 켜주세요."
+            _wifiScanning.value = false
+            return
+        }
+        _wifiError.value = null
+
+        _wifiScanning.value = true
+        loadScanResults()                         // 캐시 즉시 표시
+        
+        val success = try { wifiManager.startScan() } catch (e: Exception) {
+            Log.w(TAG, "Wi-Fi startScan 실패: ${e.message}")
+            false
+        }
+        
+        // startScan이 실패하면 (throttle 등) 즉시 스피너 종료
+        if (!success) {
+            Log.w(TAG, "Wi-Fi startScan returned false (throttled)")
+            _wifiScanning.value = false
+        }
+    }
+
+    @SuppressLint("MissingPermission")
+    private fun loadScanResults() {
+        val results: List<WifiScanResult> = wifiManager.scanResults ?: return
+        val networks = results
+            .filter { it.SSID.isNotBlank() }
+            .groupBy { it.SSID }                  // 같은 SSID는 신호 강한 것만
+            .map { (_, list) -> list.maxByOrNull { it.level }!! }
+            .map { r ->
+                WifiNetwork(
+                    ssid = r.SSID,
+                    rssi = r.level,
+                    isSecured = r.capabilities.contains("WPA") || r.capabilities.contains("WEP"),
+                )
+            }
+            .sortedByDescending { it.rssi }
+        _wifiNetworks.value = networks
+    }
+
+    // ─── BLE 스캔 ──────────────────────────────────
+
     init {
         viewModelScope.launch {
             repository.events.collect { handleBleEvent(it) }
         }
     }
-
-    // ─── BLE 스캔 ──────────────────────────────────
 
     fun startScan() {
         val adapter = bluetoothAdapter
@@ -93,7 +187,7 @@ class BleProvisioningViewModel(
 
     fun connectAndProvision(ssid: String, password: String) {
         val device = foundDevice ?: return run { _state.value = ProvisioningState.Fail("기기를 먼저 스캔해주세요.") }
-        if (ssid.isBlank()) { _state.value = ProvisioningState.Fail("Wi-Fi SSID를 입력해주세요."); return }
+        if (ssid.isBlank()) { _state.value = ProvisioningState.Fail("Wi-Fi를 선택해주세요."); return }
         pendingSsid = ssid
         _state.value = ProvisioningState.Connecting
         repository.connect(device, ssid, password)
@@ -112,7 +206,7 @@ class BleProvisioningViewModel(
             is BleEvent.StatusNotify -> when (event.status) {
                 "CONNECTING" -> _state.value = ProvisioningState.WaitingResult
                 "SUCCESS"    -> _state.value = ProvisioningState.Success(pendingSsid)
-                "FAIL"       -> _state.value = ProvisioningState.Fail("Wi-Fi 연결 실패. SSID와 비밀번호를 확인해주세요.")
+                "FAIL"       -> _state.value = ProvisioningState.Fail("Wi-Fi 연결 실패. 비밀번호를 확인해주세요.")
             }
             is BleEvent.Error        -> _state.value = ProvisioningState.Fail(event.message)
         }
@@ -121,6 +215,7 @@ class BleProvisioningViewModel(
     override fun onCleared() {
         super.onCleared()
         stopScan()
+        unregisterWifiReceiver()
         repository.disconnect()
     }
 }
