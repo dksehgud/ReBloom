@@ -5,7 +5,7 @@ include 'auth-service'
 include 'biometric-service'
 include 'ai-service'
 include 'notification-service'
-include 'journal-service'
+include 'report-service'
 
 include 'common-module'
 include 'security-module'
