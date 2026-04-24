@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="#F8F9FA"
@@ -121,61 +122,151 @@
                 android:indeterminate="true" />
         </LinearLayout>
 
-        <!-- Wi-Fi 입력 Panel -->
+        <!-- Wi-Fi 선택 Panel -->
         <LinearLayout
             android:id="@+id/wifiInputPanel"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:layout_marginTop="28dp"
+            android:layout_marginTop="20dp"
             android:visibility="gone">
 
-            <com.google.android.material.textfield.TextInputLayout
+            <!-- 헤더 행: 제목 + 새로고침 버튼 -->
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="Wi-Fi 이름 (SSID)"
-                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:layout_marginBottom="8dp">
 
-                <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/etSsid"
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="📶  Wi-Fi 선택"
+                    android:textSize="15sp"
+                    android:textStyle="bold"
+                    android:textColor="#1A1A2E" />
+
+                <Button
+                    android:id="@+id/btnScanWifi"
+                    style="@style/Widget.MaterialComponents.Button.TextButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="새로고침"
+                    android:textColor="#4361EE" />
+            </LinearLayout>
+
+            <!-- Wi-Fi 목록 -->
+            <androidx.cardview.widget.CardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="2dp"
+                app:cardBackgroundColor="#FFFFFF">
+
+                <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:inputType="text"
-                    android:imeOptions="actionNext" />
-            </com.google.android.material.textfield.TextInputLayout>
+                    android:orientation="vertical">
 
-            <Button
-                android:id="@+id/btnAutoFill"
-                style="@style/Widget.MaterialComponents.Button.TextButton"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="현재 연결된 Wi-Fi 가져오기"
-                android:textColor="#4361EE" />
+                    <!-- 스캔 중 인디케이터 -->
+                    <LinearLayout
+                        android:id="@+id/wifiScanningRow"
+                        android:layout_width="match_parent"
+                        android:layout_height="48dp"
+                        android:orientation="horizontal"
+                        android:gravity="center"
+                        android:visibility="gone">
 
-            <com.google.android.material.textfield.TextInputLayout
+                        <ProgressBar
+                            android:layout_width="20dp"
+                            android:layout_height="20dp"
+                            android:indeterminate="true" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="  Wi-Fi 검색 중..."
+                            android:textSize="13sp"
+                            android:textColor="#6C757D" />
+                    </LinearLayout>
+
+                    <!-- 결과 없음 안내 -->
+                    <TextView
+                        android:id="@+id/tvWifiEmpty"
+                        android:layout_width="match_parent"
+                        android:layout_height="48dp"
+                        android:gravity="center"
+                        android:text="주변 Wi-Fi를 찾지 못했습니다"
+                        android:textSize="13sp"
+                        android:textColor="#6C757D"
+                        android:visibility="gone" />
+
+                    <!-- RecyclerView: Wi-Fi 목록 -->
+                    <androidx.recyclerview.widget.RecyclerView
+                        android:id="@+id/rvWifiList"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:nestedScrollingEnabled="false"
+                        android:maxHeight="240dp" />
+
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
+
+            <!-- 선택된 네트워크 + 비밀번호 입력 -->
+            <LinearLayout
+                android:id="@+id/passwordPanel"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="Wi-Fi 비밀번호"
-                android:layout_marginTop="8dp"
-                app:endIconMode="password_toggle"
-                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
-                xmlns:app="http://schemas.android.com/apk/res-auto">
+                android:orientation="vertical"
+                android:layout_marginTop="16dp"
+                android:visibility="gone">
 
-                <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/etPassword"
+                <TextView
+                    android:id="@+id/tvSelectedSsid"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:inputType="textPassword"
-                    android:imeOptions="actionDone" />
-            </com.google.android.material.textfield.TextInputLayout>
+                    android:textSize="13sp"
+                    android:textColor="#6C757D"
+                    android:text="선택한 Wi-Fi: -" />
 
-            <Button
-                android:id="@+id/btnProvision"
-                android:layout_width="match_parent"
-                android:layout_height="52dp"
-                android:text="스피커에 Wi-Fi 연결"
-                android:layout_marginTop="20dp"
-                android:backgroundTint="#4361EE" />
+                <com.google.android.material.textfield.TextInputLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:hint="Wi-Fi 비밀번호"
+                    android:layout_marginTop="8dp"
+                    app:endIconMode="password_toggle"
+                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/etPassword"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:inputType="textPassword"
+                        android:imeOptions="actionDone" />
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <!-- 오픈 네트워크 안내 -->
+                <TextView
+                    android:id="@+id/tvOpenNetwork"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="🔓  보안 없는 네트워크입니다 (비밀번호 불필요)"
+                    android:textSize="12sp"
+                    android:textColor="#6C757D"
+                    android:layout_marginTop="4dp"
+                    android:visibility="gone" />
+
+                <Button
+                    android:id="@+id/btnProvision"
+                    android:layout_width="match_parent"
+                    android:layout_height="52dp"
+                    android:text="스피커에 Wi-Fi 연결"
+                    android:layout_marginTop="16dp"
+                    android:backgroundTint="#4361EE" />
+            </LinearLayout>
+
         </LinearLayout>
 
         <!-- 성공 Panel -->

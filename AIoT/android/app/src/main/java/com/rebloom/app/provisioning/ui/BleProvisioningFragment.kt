@@ -1,9 +1,7 @@
 package com.rebloom.app.provisioning.ui
 
 import android.Manifest
-import android.content.Context
 import android.content.pm.PackageManager
-import android.net.wifi.WifiManager
 import android.os.Build
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -16,9 +14,12 @@ import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import androidx.recyclerview.widget.DividerItemDecoration
+import androidx.recyclerview.widget.LinearLayoutManager
 import com.rebloom.app.databinding.FragmentBleProvisioningBinding
 import com.rebloom.app.provisioning.BleProvisioningViewModel
 import com.rebloom.app.provisioning.ProvisioningState
+import com.rebloom.app.provisioning.WifiNetwork
 import kotlinx.coroutines.launch
 
 class BleProvisioningFragment : Fragment() {
@@ -36,21 +37,55 @@ class BleProvisioningFragment : Fragment() {
         arrayOf(Manifest.permission.ACCESS_FINE_LOCATION)
     }
 
-    private val permissionLauncher = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { results ->
+    // Wi-Fi 스캔에는 위치 권한 필요
+    private val wifiPermissions = arrayOf(Manifest.permission.ACCESS_FINE_LOCATION)
+
+    private val permissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { results ->
         if (results.values.all { it }) viewModel.startScan()
         else showError("BLE 권한이 필요합니다.")
     }
 
-    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
+    private val wifiPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { results ->
+        if (results.values.all { it }) {
+            viewModel.registerWifiReceiver()
+            viewModel.scanWifiNetworks()
+        }
+    }
+
+    private lateinit var wifiAdapter: WifiListAdapter
+    private var selectedNetwork: WifiNetwork? = null
+
+    override fun onCreateView(
+        inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
+    ): View {
         _binding = FragmentBleProvisioningBinding.inflate(inflater, container, false)
         return binding.root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        setupWifiList()
         setupButtons()
         observeState()
+        observeWifi()
         checkPermissionsAndScan()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        if (hasWifiPermission()) {
+            viewModel.registerWifiReceiver()
+            viewModel.scanWifiNetworks()
+        }
+    }
+
+    override fun onPause() {
+        super.onPause()
+        viewModel.unregisterWifiReceiver()
     }
 
     override fun onDestroyView() {
@@ -58,25 +93,127 @@ class BleProvisioningFragment : Fragment() {
         _binding = null
     }
 
+    // ─── Wi-Fi 리스트 셋업 ────────────────────────
+
+    private fun setupWifiList() {
+        wifiAdapter = WifiListAdapter { network ->
+            selectedNetwork = network
+            showPasswordPanel(network)
+        }
+        binding.rvWifiList.apply {
+            adapter = wifiAdapter
+            layoutManager = LinearLayoutManager(requireContext())
+            addItemDecoration(DividerItemDecoration(requireContext(), DividerItemDecoration.VERTICAL))
+            isNestedScrollingEnabled = false
+        }
+    }
+
+    private fun showPasswordPanel(network: WifiNetwork) {
+        binding.passwordPanel.isVisible = true
+        binding.tvSelectedSsid.text = "선택한 Wi-Fi: ${network.ssid}"
+
+        val isOpen = !network.isSecured
+        binding.etPassword.isEnabled = !isOpen
+        binding.tvOpenNetwork.isVisible = isOpen
+        if (isOpen) binding.etPassword.text?.clear()
+    }
+
+    private fun observeWifi() {
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                launch {
+                    viewModel.wifiScanning.collect { scanning ->
+                        binding.wifiScanningRow.isVisible = scanning
+                        updateEmptyState()
+                    }
+                }
+                launch {
+                    viewModel.wifiNetworks.collect { networks ->
+                        wifiAdapter.submitList(networks)
+                        binding.rvWifiList.isVisible = networks.isNotEmpty()
+                        updateEmptyState()
+                    }
+                }
+                launch {
+                    viewModel.wifiError.collect { error ->
+                        if (error != null) {
+                            binding.tvWifiEmpty.text = error
+                            binding.tvWifiEmpty.setTextColor(0xFFE63946.toInt()) // 빨간색
+                        } else {
+                            binding.tvWifiEmpty.text = "주변 Wi-Fi를 찾지 못했습니다"
+                            binding.tvWifiEmpty.setTextColor(0xFF6C757D.toInt()) // 기본 회색
+                        }
+                        updateEmptyState()
+                    }
+                }
+            }
+        }
+    }
+
+    private fun updateEmptyState() {
+        val scanning = viewModel.wifiScanning.value
+        val empty = viewModel.wifiNetworks.value.isEmpty()
+        val hasError = viewModel.wifiError.value != null
+        
+        // 에러가 있거나(위치 꺼짐 등), 스캔이 끝났는데 목록이 비어있으면 노출
+        binding.tvWifiEmpty.isVisible = hasError || (!scanning && empty)
+    }
+
+    private fun hasWifiPermission() =
+        wifiPermissions.all { requireContext().checkSelfPermission(it) == PackageManager.PERMISSION_GRANTED }
+
+    private fun requestWifiScan() {
+        if (hasWifiPermission()) {
+            viewModel.registerWifiReceiver()
+            viewModel.scanWifiNetworks()
+        } else {
+            wifiPermissionLauncher.launch(wifiPermissions)
+        }
+    }
+
+    // ─── 버튼 셋업 ───────────────────────────────
+
     private fun setupButtons() {
         binding.btnConnect.setOnClickListener {
             binding.deviceFoundPanel.isVisible = false
             binding.wifiInputPanel.isVisible = true
-            binding.tvStatus.text = "Wi-Fi 정보를 입력해주세요"
-            autoFillSsid()
+            binding.tvStatus.text = "연결할 Wi-Fi를 선택해주세요"
+            requestWifiScan()
         }
+
+        binding.btnScanWifi.setOnClickListener {
+            selectedNetwork = null
+            binding.passwordPanel.isVisible = false
+            requestWifiScan()
+        }
+
         binding.btnProvision.setOnClickListener {
-            val ssid = binding.etSsid.text.toString().trim()
-            val pw = binding.etPassword.text.toString()
-            viewModel.connectAndProvision(ssid, pw)
+            val network = selectedNetwork ?: run {
+                binding.tvSelectedSsid.text = "Wi-Fi를 선택해주세요"
+                return@setOnClickListener
+            }
+            val pw = if (network.isSecured) {
+                val entered = binding.etPassword.text.toString()
+                if (entered.isBlank()) {
+                    binding.etPassword.error = "비밀번호를 입력해주세요"
+                    return@setOnClickListener
+                }
+                entered
+            } else {
+                ""  // 오픈 네트워크
+            }
+            viewModel.connectAndProvision(network.ssid, pw)
         }
+
         binding.btnRetry.setOnClickListener {
             viewModel.retry()
+            selectedNetwork = null
             hideAll()
             checkPermissionsAndScan()
         }
-        binding.btnAutoFill.setOnClickListener { autoFillSsid() }
     }
+
+    // ─── State 관찰 ──────────────────────────────
 
     private fun observeState() {
         viewLifecycleOwner.lifecycleScope.launch {
@@ -148,13 +285,6 @@ class BleProvisioningFragment : Fragment() {
         binding.wifiInputPanel.isVisible = false
         binding.successPanel.isVisible = false
         binding.failPanel.isVisible = false
-    }
-
-    private fun autoFillSsid() {
-        @Suppress("DEPRECATION")
-        val wm = requireContext().applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
-        val ssid = wm.connectionInfo.ssid?.removePrefix("\"")?.removeSuffix("\"")
-        if (!ssid.isNullOrBlank() && ssid != "<unknown ssid>") binding.etSsid.setText(ssid)
     }
 
     private fun showError(msg: String) {
