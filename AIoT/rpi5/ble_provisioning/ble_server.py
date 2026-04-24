@@ -1,29 +1,6 @@
-"""
-ble_server.py
-─────────────
-Re:Bloom BLE GATT Server (Raspberry Pi 5)
-
-[역할]
-  - BLE Peripheral(GATT Server)로 동작
-  - 앱(GATT Client)으로부터 암호화된 Wi-Fi 자격증명 수신
-  - nmcli를 통해 Wi-Fi 연결 수행
-  - 연결 결과를 Notify Characteristic으로 앱에 전달
-
-[GATT 서비스 구조]
-  Service  : 0000FE10-0000-1000-8000-00805F9B34FB  (Re:Bloom Provisioning)
-  ├─ PUBKEY    (FE11) Read   : RPi5 ECDH 공개키 32바이트
-  ├─ WIFI      (FE12) Write  : 암호화된 Wi-Fi 자격증명
-  ├─ STATUS    (FE13) Notify : 연결 상태 문자열
-  └─ DEVINFO   (FE14) Read   : 기기 정보 JSON
-
-[페이로드 구조 - WIFI Characteristic]
-  app_pubkey(32B) | nonce(12B) | AES-GCM ciphertext+tag
-"""
-
 import json
 import logging
 import threading
-import time
 
 import dbus
 import dbus.exceptions
@@ -34,18 +11,12 @@ from gi.repository import GLib
 from crypto_utils import ECDHProvider, decrypt_wifi_payload
 from wifi_manager import connect_wifi
 
-# ─────────────────────────────────────────────
-# 로깅 설정
-# ─────────────────────────────────────────────
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(message)s",
 )
 logger = logging.getLogger(__name__)
 
-# ─────────────────────────────────────────────
-# UUID 상수
-# ─────────────────────────────────────────────
 REBLOOM_SERVICE_UUID = "0000fe10-0000-1000-8000-00805f9b34fb"
 PUBKEY_CHAR_UUID     = "0000fe11-0000-1000-8000-00805f9b34fb"
 WIFI_CHAR_UUID       = "0000fe12-0000-1000-8000-00805f9b34fb"
@@ -61,19 +32,20 @@ GATT_CHRC_IFACE      = "org.bluez.GattCharacteristic1"
 LE_ADVERTISING_MGR   = "org.bluez.LEAdvertisingManager1"
 LE_ADVERTISEMENT     = "org.bluez.LEAdvertisement1"
 
-# ─────────────────────────────────────────────
-# 전역 상태
-# ─────────────────────────────────────────────
 ecdh_provider = ECDHProvider()
-_status_characteristic = None  # Notify 전송용 참조
+_status_characteristic = None
 _mainloop = None
 
 
 def notify_status(status: str) -> None:
-    """STATUS Characteristic으로 Notify 전송."""
     global _status_characteristic
     if _status_characteristic is not None:
         try:
+            logger.info(
+                "[BLE] STATUS notify 시도: status=%s, subscribed=%s",
+                status,
+                _status_characteristic.notifying,
+            )
             _status_characteristic.PropertiesChanged(
                 GATT_CHRC_IFACE,
                 {"Value": dbus.Array(list(status.encode()), signature="y")},
@@ -86,9 +58,6 @@ def notify_status(status: str) -> None:
         logger.warning("[BLE] STATUS characteristic 미등록 상태")
 
 
-# ─────────────────────────────────────────────
-# D-Bus GATT 오브젝트 베이스
-# ─────────────────────────────────────────────
 class InvalidArgsException(dbus.exceptions.DBusException):
     _dbus_error_name = "org.freedesktop.DBus.Error.InvalidArgs"
 
@@ -98,8 +67,6 @@ class NotSupportedException(dbus.exceptions.DBusException):
 
 
 class Application(dbus.service.Object):
-    """GATT Application — GattManager1에 등록할 최상위 오브젝트."""
-
     def __init__(self, bus):
         self.path = "/"
         self.services = []
@@ -108,6 +75,9 @@ class Application(dbus.service.Object):
 
     def add_service(self, service):
         self.services.append(service)
+
+    def get_path(self):
+        return dbus.ObjectPath(self.path)
 
     @dbus.service.method(DBUS_OM_IFACE, out_signature="a{oa{sa{sv}}}")
     def GetManagedObjects(self):
@@ -207,9 +177,6 @@ class Characteristic(dbus.service.Object):
         self.notifying = False
 
 
-# ─────────────────────────────────────────────
-# Re:Bloom Provisioning 서비스 구현
-# ─────────────────────────────────────────────
 class ReBlooomProvisioningService(Service):
     def __init__(self, bus, index):
         super().__init__(bus, index, REBLOOM_SERVICE_UUID, primary=True)
@@ -226,8 +193,6 @@ class ReBlooomProvisioningService(Service):
 
 
 class PublicKeyCharacteristic(Characteristic):
-    """Read: RPi5의 ECDH X25519 공개키(32바이트)를 앱에 제공."""
-
     def __init__(self, bus, index, service):
         super().__init__(bus, index, PUBKEY_CHAR_UUID, ["read"], service)
 
@@ -239,18 +204,21 @@ class PublicKeyCharacteristic(Characteristic):
 
 
 class WiFiCredentialCharacteristic(Characteristic):
-    """Write: 앱으로부터 암호화된 Wi-Fi 자격증명 수신 후 연결 시도."""
-
     def __init__(self, bus, index, service):
         super().__init__(bus, index, WIFI_CHAR_UUID, ["write"], service)
+        logger.info(
+            "[BLE] WIFI characteristic 준비 완료: uuid=%s, flags=%s",
+            WIFI_CHAR_UUID,
+            self.flags,
+        )
 
     @dbus.service.method(GATT_CHRC_IFACE, in_signature="aya{sv}")
     def WriteValue(self, value, options):
-        logger.info(f"[BLE] WiFiCredential Write: {len(value)} bytes")
+        logger.info("[BLE] WiFiCredential Write 호출: %d bytes, options=%s", len(value), dict(options))
 
         raw = bytes(value)
+        logger.info("[BLE] WiFiCredential payload preview(first16)=%s", raw[:16].hex())
 
-        # 백그라운드 스레드에서 Wi-Fi 연결 처리 (BLE 이벤트 루프 블로킹 방지)
         thread = threading.Thread(
             target=self._handle_wifi_connection,
             args=(raw,),
@@ -260,32 +228,34 @@ class WiFiCredentialCharacteristic(Characteristic):
 
     def _handle_wifi_connection(self, raw: bytes) -> None:
         try:
-            # 1. 앱 공개키 추출 및 ECDH 공유키 도출
+            logger.info("[BLE] Wi-Fi payload 처리 시작: total_len=%d", len(raw))
+
             if len(raw) < 44:
                 raise ValueError(f"페이로드 길이 부족: {len(raw)}")
 
             app_pubkey_bytes = raw[:32]
+            logger.info("[BLE] 앱 공개키 추출 완료: %d bytes", len(app_pubkey_bytes))
             shared_key = ecdh_provider.derive_shared_key(app_pubkey_bytes)
+            logger.info("[BLE] 공유키 도출 완료: %d bytes", len(shared_key))
 
-            # 2. Wi-Fi 자격증명 복호화
             credentials = decrypt_wifi_payload(raw, shared_key)
             ssid = credentials.get("ssid", "")
             password = credentials.get("password", "")
+            logger.info(
+                "[BLE] payload 복호화 완료: ssid=%s, password_len=%d",
+                ssid,
+                len(password),
+            )
 
             if not ssid:
                 raise ValueError("SSID가 비어 있음")
 
-            # 3. Notify: 연결 중
             notify_status("CONNECTING")
-
-            # 4. Wi-Fi 연결 시도
             success = connect_wifi(ssid, password, timeout=30)
 
-            # 5. 결과 Notify
             if success:
                 notify_status("SUCCESS")
                 logger.info("[BLE] Wi-Fi 연결 성공 → BLE 서버 종료 예약")
-                # 3초 후 BLE Advertising 종료 (앱이 Notify를 수신할 시간 확보)
                 threading.Timer(3.0, self._stop_ble).start()
             else:
                 notify_status("FAIL")
@@ -296,7 +266,6 @@ class WiFiCredentialCharacteristic(Characteristic):
 
     @staticmethod
     def _stop_ble():
-        """Wi-Fi 연결 성공 후 BLE Advertising 및 메인루프 종료."""
         global _mainloop
         logger.info("[BLE] 메인루프 종료")
         if _mainloop is not None:
@@ -304,26 +273,22 @@ class WiFiCredentialCharacteristic(Characteristic):
 
 
 class StatusCharacteristic(Characteristic):
-    """Notify: Wi-Fi 연결 상태(CONNECTING / SUCCESS / FAIL)를 앱에 전송."""
-
     def __init__(self, bus, index, service):
         super().__init__(bus, index, STATUS_CHAR_UUID, ["notify"], service)
 
     @dbus.service.method(GATT_CHRC_IFACE)
     def StartNotify(self):
         self.notifying = True
-        logger.info("[BLE] STATUS Notify 구독 시작")
+        logger.info("[BLE] STATUS Notify 구독 시작: notifying=%s", self.notifying)
 
     @dbus.service.method(GATT_CHRC_IFACE)
     def StopNotify(self):
         self.notifying = False
-        logger.info("[BLE] STATUS Notify 구독 해제")
+        logger.info("[BLE] STATUS Notify 구독 해제: notifying=%s", self.notifying)
 
 
 class DeviceInfoCharacteristic(Characteristic):
-    """Read: 기기 정보 JSON (device_id, name, firmware)."""
-
-    DEVICE_ID = "SPK-UUID-xxxx"  # 실제 배포 시 uuid.uuid4()로 고정값 생성
+    DEVICE_ID = "SPK-UUID-xxxx"
 
     def __init__(self, bus, index, service):
         super().__init__(bus, index, DEVINFO_CHAR_UUID, ["read"], service)
@@ -339,9 +304,6 @@ class DeviceInfoCharacteristic(Characteristic):
         return dbus.Array(data, signature="y")
 
 
-# ─────────────────────────────────────────────
-# BLE Advertisement
-# ─────────────────────────────────────────────
 class ReBlooomAdvertisement(dbus.service.Object):
     PATH_BASE = "/org/bluez/example/advertisement"
 
@@ -380,6 +342,7 @@ def register_advertisement(bus, adapter_path):
         LE_ADVERTISING_MGR,
     )
     advertisement = ReBlooomAdvertisement(bus, 0)
+    logger.info("[BLE] Advertisement 등록 시도: path=%s", advertisement.get_path())
 
     def register_ok():
         logger.info("[BLE] Advertisement 등록 완료")
@@ -401,6 +364,7 @@ def register_application(bus, adapter_path, app):
         GATT_MANAGER_IFACE,
     )
 
+    logger.info("[BLE] GATT Application 등록 시도: path=%s", app.get_path())
     def register_ok():
         logger.info("[BLE] GATT Application 등록 완료")
 
@@ -416,7 +380,6 @@ def register_application(bus, adapter_path, app):
 
 
 def find_adapter(bus):
-    """BlueZ에서 첫 번째 BLE 어댑터 경로 반환."""
     remote_om = dbus.Interface(
         bus.get_object(BLUEZ_SERVICE_NAME, "/"),
         DBUS_OM_IFACE,

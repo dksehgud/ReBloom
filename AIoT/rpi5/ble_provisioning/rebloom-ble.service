@@ -12,7 +12,6 @@ ExecStart=/home/pi/rebloom/venv/bin/python /home/pi/rebloom/ble_provisioning/mai
 Restart=on-failure
 RestartSec=5
 
-# 로그 출력
 StandardOutput=journal
 StandardError=journal
 SyslogIdentifier=rebloom-ble
