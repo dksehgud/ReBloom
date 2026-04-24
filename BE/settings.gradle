@@ -1,0 +1,12 @@
+rootProject.name = 'rebloom'
+
+include 'gateway-service'
+include 'auth-service'
+include 'biometric-service'
+include 'ai-service'
+include 'notification-service'
+include 'journal-service'
+
+include 'common-module'
+include 'security-module'
+include 'event-module'

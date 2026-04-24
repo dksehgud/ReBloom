@@ -1,0 +1,41 @@
+# Gradle
+.gradle/
+build/
+**/build/
+
+# Logs
+logs/
+*.log
+hs_err_pid*
+
+# Local environment files
+.env
+.env.*
+*.local
+
+# IntelliJ IDEA
+.idea/
+*.iml
+*.iws
+*.ipr
+out/
+
+# VS Code
+.vscode/
+
+# Eclipse / STS
+.classpath
+.project
+.settings/
+.apt_generated/
+.factorypath
+.springBeans
+.sts4-cache/
+bin/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Keep Gradle wrapper
+!gradle/wrapper/gradle-wrapper.jar
