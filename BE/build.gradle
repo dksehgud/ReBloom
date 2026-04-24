@@ -13,6 +13,9 @@ allprojects {
     repositories {
         mavenCentral()
     }
+
+    def safeProjectPath = project.path == ':' ? 'root' : project.path.replace(':', '/')
+    layout.buildDirectory.set(file("${System.properties['java.io.tmpdir']}/rebloom-gradle/${safeProjectPath}"))
 }
 
 subprojects {
