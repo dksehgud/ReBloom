@@ -1,0 +1,25 @@
+#Fri Apr 24 13:42:04 KST 2026
+base.0=C\:\\rebloom\\S14P31B109\\AIoT\\android\\app\\build\\intermediates\\dex\\debug\\mergeExtDexDebug\\classes.dex
+base.1=C\:\\rebloom\\S14P31B109\\AIoT\\android\\app\\build\\intermediates\\dex\\debug\\mergeProjectDexDebug\\0\\classes.dex
+base.2=C\:\\rebloom\\S14P31B109\\AIoT\\android\\app\\build\\intermediates\\dex\\debug\\mergeProjectDexDebug\\10\\classes.dex
+base.3=C\:\\rebloom\\S14P31B109\\AIoT\\android\\app\\build\\intermediates\\dex\\debug\\mergeProjectDexDebug\\11\\classes.dex
+base.4=C\:\\rebloom\\S14P31B109\\AIoT\\android\\app\\build\\intermediates\\dex\\debug\\mergeProjectDexDebug\\1\\classes.dex
+base.5=C\:\\rebloom\\S14P31B109\\AIoT\\android\\app\\build\\intermediates\\dex\\debug\\mergeProjectDexDebug\\3\\classes.dex
+base.6=C\:\\rebloom\\S14P31B109\\AIoT\\android\\app\\build\\intermediates\\dex\\debug\\mergeProjectDexDebug\\7\\classes.dex
+base.7=C\:\\rebloom\\S14P31B109\\AIoT\\android\\app\\build\\intermediates\\dex\\debug\\mergeExtDexDebug\\classes2.dex
+path.0=classes.dex
+path.1=0/classes.dex
+path.2=10/classes.dex
+path.3=11/classes.dex
+path.4=1/classes.dex
+path.5=3/classes.dex
+path.6=7/classes.dex
+path.7=classes2.dex
+renamed.0=classes.dex
+renamed.1=classes2.dex
+renamed.2=classes3.dex
+renamed.3=classes4.dex
+renamed.4=classes5.dex
+renamed.5=classes6.dex
+renamed.6=classes7.dex
+renamed.7=classes8.dex

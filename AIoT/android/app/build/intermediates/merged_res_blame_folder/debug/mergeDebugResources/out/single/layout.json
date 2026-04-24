@@ -1,0 +1,18 @@
+[
+    {
+        "merged": "com.rebloom.app-mergeDebugResources-46:/layout/item_wifi_network.xml",
+        "source": "com.rebloom.app-main-49:/layout/item_wifi_network.xml"
+    },
+    {
+        "merged": "C:\\Users\\SSAFY\\.gradle\\daemon\\8.6\\com.rebloom.app-mergeDebugResources-46:\\layout\\activity_main.xml",
+        "source": "C:\\Users\\SSAFY\\.gradle\\daemon\\8.6\\com.rebloom.app-main-49:\\layout\\activity_main.xml"
+    },
+    {
+        "merged": "com.rebloom.app-mergeDebugResources-46:/layout/fragment_ble_provisioning.xml",
+        "source": "com.rebloom.app-main-49:/layout/fragment_ble_provisioning.xml"
+    },
+    {
+        "merged": "C:\\Users\\SSAFY\\.gradle\\daemon\\8.6\\com.rebloom.app-mergeDebugResources-46:\\layout\\fragment_ble_provisioning.xml",
+        "source": "C:\\Users\\SSAFY\\.gradle\\daemon\\8.6\\com.rebloom.app-main-49:\\layout\\fragment_ble_provisioning.xml"
+    }
+]
