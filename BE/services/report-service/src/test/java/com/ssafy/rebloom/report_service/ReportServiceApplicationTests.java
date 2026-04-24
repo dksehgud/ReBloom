@@ -1,4 +1,4 @@
-package com.ssafy.rebloom.journal_service;
+package com.ssafy.rebloom.report_service;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -10,7 +10,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 			"org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration"
 	}
 )
-class JournalServiceApplicationTests {
+class ReportServiceApplicationTests {
 
 	@Test
 	void contextLoads() {
