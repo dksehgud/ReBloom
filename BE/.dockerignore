@@ -1,0 +1,17 @@
+.git
+.gitignore
+.gitlab
+.idea
+.vscode
+.gradle
+**/build
+services/*/gradle
+services/*/gradlew
+services/*/gradlew.bat
+services/*/settings.gradle
+**/.env.local
+**/.env.prod
+**/.env.*
+!**/.env.example
+!**/.env.prod.example
+README.md
