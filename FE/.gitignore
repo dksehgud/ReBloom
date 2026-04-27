@@ -1,0 +1,38 @@
+# Frontend dependencies
+node_modules/
+**/node_modules/
+
+# Frontend build outputs
+dist/
+**/dist/
+coverage/
+**/coverage/
+.next/
+**/.next/
+.nuxt/
+**/.nuxt/
+out/
+**/out/
+
+# Environment files
+.env
+.env.*
+!.env.example
+!**/.env.example
+
+# Local-only config
+*.local
+
+# Android/Gradle
+.gradle/
+**/.gradle/
+build/
+**/build/
+local.properties
+.cxx/
+captures/
+
+# IDE / OS
+.idea/
+.DS_Store
+Thumbs.db
