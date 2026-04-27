@@ -13,6 +13,8 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-web'
     // Test
     testImplementation 'org.junit.jupiter:junit-jupiter'
+    // Spring Data JPA
+    api 'org.springframework.boot:spring-boot-starter-data-jpa'
 }
 
 tasks.test {
