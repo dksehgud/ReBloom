@@ -1,4 +1,4 @@
-package com.ssafy.ssarvis.common.dto;
+package com.rebloom.common.dto;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
