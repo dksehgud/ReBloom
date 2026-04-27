@@ -1,4 +1,4 @@
-package com.rebloom.common.dto;
+package com.ssafy.rebloom.common.dto;
 
 public record CursorRequestDto (
     Long cursorId,

@@ -1,4 +1,4 @@
-package com.rebloom.common.entity;
+package com.ssafy.rebloom.common.entity;
 
 import jakarta.persistence.EntityListeners;
 import jakarta.persistence.MappedSuperclass;

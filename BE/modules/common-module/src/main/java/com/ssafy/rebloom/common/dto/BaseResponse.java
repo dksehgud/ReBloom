@@ -1,4 +1,4 @@
-package com.rebloom.common.dto;
+package com.ssafy.rebloom.common.dto;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
