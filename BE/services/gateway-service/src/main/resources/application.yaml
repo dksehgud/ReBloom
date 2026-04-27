@@ -1,6 +1,8 @@
 spring:
   application:
     name: gateway-service
+  jackson:
+    time-zone: Asia/Seoul
 
 server:
   port: ${SERVER_PORT:8080}
