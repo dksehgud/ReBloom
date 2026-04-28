@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Noto+Sans+KR:wght@400;500;700&family=Poppins:wght@500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Arimo:wght@400;500&family=Inter:wght@400;500;600&family=Noto+Sans+KR:wght@400;500;700&family=Poppins:wght@500;700&display=swap');
 
 :root {
   font-family: 'Inter', 'Noto Sans KR', sans-serif;
@@ -9,8 +9,8 @@
     radial-gradient(circle at top, rgba(214, 227, 255, 0.8), rgba(238, 243, 252, 0.7) 35%, #f4f6fb 100%);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  -webkit-font-smoothing: antialiased;
 }
 
 * {

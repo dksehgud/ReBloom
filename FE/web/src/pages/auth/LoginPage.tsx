@@ -6,6 +6,7 @@ type LoginPageProps = {
   password: string
   onEmailChange: (value: string) => void
   onPasswordChange: (value: string) => void
+  onSignUpClick: () => void
 }
 
 function LoginPage({
@@ -13,6 +14,7 @@ function LoginPage({
   password,
   onEmailChange,
   onPasswordChange,
+  onSignUpClick,
 }: LoginPageProps) {
   const isLoginEnabled = email.trim().length > 0 && password.trim().length > 0
 
@@ -76,7 +78,11 @@ function LoginPage({
 
       <p className="signup-copy">
         계정이 없으신가요?{' '}
-        <button type="button" className="text-link signup-link">
+        <button
+          type="button"
+          className="text-link signup-link"
+          onClick={onSignUpClick}
+        >
           회원가입
         </button>
       </p>
