@@ -34,6 +34,63 @@
   box-sizing: border-box;
 }
 
+.find-password-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding-top: 0;
+  margin-top: -50px;
+}
+
+.find-password-notice {
+  align-items: center;
+  background: #f9fafb;
+  border-radius: 16px;
+  color: #787878;
+  display: flex;
+  font-family: 'Andada Pro', 'Noto Sans KR', serif;
+  font-size: 14px;
+  justify-content: center;
+  line-height: 1.6;
+  min-height: 76px;
+  padding: 16px;
+  text-align: center;
+}
+
+.find-password-notice-lines {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  width: 100%;
+}
+
+.find-password-notice-lines span {
+  display: block;
+  white-space: nowrap;
+}
+
+.find-password-resend {
+  color: #a5a5a5;
+  display: flex;
+  font-size: 13px;
+  gap: 4px;
+  line-height: 1.38;
+}
+
+.find-password-resend button {
+  background: transparent;
+  border: 0;
+  color: #1a6dff;
+  cursor: pointer;
+  font: inherit;
+  padding: 0;
+}
+
+.find-password-reset {
+  color: #eb4335 !important;
+}
+
 .landing-screen {
   display: flex;
   flex-direction: column;
@@ -288,6 +345,10 @@
   flex-direction: column;
   min-height: 844px;
   position: relative;
+}
+
+.auth-screen--find-password .auth-content {
+  padding-top: 94px;
 }
 
 .phone-shell--signup .auth-screen {

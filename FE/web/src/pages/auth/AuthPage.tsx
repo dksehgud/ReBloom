@@ -1,10 +1,11 @@
 import { useState } from 'react'
 
+import FindPasswordPage from './FindPasswordPage'
 import LandingPage from './LandingPage'
 import LoginPage from './LoginPage'
 import SignUpPage from './SignUpPage'
 
-type AuthView = 'landing' | 'login' | 'signup'
+type AuthView = 'landing' | 'login' | 'signup' | 'find-password'
 
 function AuthPage() {
   const [view, setView] = useState<AuthView>('landing')
@@ -22,7 +23,17 @@ function AuthPage() {
             password={password}
             onEmailChange={setEmail}
             onPasswordChange={setPassword}
+            onForgotPasswordClick={() => setView('find-password')}
             onSignUpClick={() => setView('signup')}
+          />
+        ) : view === 'find-password' ? (
+          <FindPasswordPage
+            onBackToLogin={() => setView('login')}
+            onMoveToLogin={(nextEmail) => {
+              setEmail(nextEmail)
+              setPassword('')
+              setView('login')
+            }}
           />
         ) : (
           <SignUpPage onBackToLogin={() => setView('login')} />

@@ -8,6 +8,7 @@ type AuthShellProps = {
   footerStacked?: boolean
   bodyCentered?: boolean
   bodyScrollable?: boolean
+  screenClassName?: string
 }
 
 function AuthShell({
@@ -18,9 +19,10 @@ function AuthShell({
   footerStacked = false,
   bodyCentered = false,
   bodyScrollable = false,
+  screenClassName,
 }: AuthShellProps) {
   return (
-    <section className="auth-screen">
+    <section className={`auth-screen${screenClassName ? ` ${screenClassName}` : ''}`}>
       <div className="auth-content">
         <header className="auth-title-group">
           <h1 className="auth-title">{title}</h1>
