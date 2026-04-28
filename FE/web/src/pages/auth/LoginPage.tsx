@@ -1,4 +1,5 @@
 import type { FormEvent } from 'react'
+
 import googleLogo from '../../assets/google-logo.svg'
 import kakaoLogo from '../../assets/kakao-logo.svg'
 
@@ -7,6 +8,7 @@ type LoginPageProps = {
   password: string
   onEmailChange: (value: string) => void
   onPasswordChange: (value: string) => void
+  onForgotPasswordClick: () => void
   onSignUpClick: () => void
 }
 
@@ -15,6 +17,7 @@ function LoginPage({
   password,
   onEmailChange,
   onPasswordChange,
+  onForgotPasswordClick,
   onSignUpClick,
 }: LoginPageProps) {
   const isLoginEnabled = email.trim().length > 0 && password.trim().length > 0
@@ -52,7 +55,11 @@ function LoginPage({
           />
         </label>
 
-        <button type="button" className="text-link password-link">
+        <button
+          type="button"
+          className="text-link password-link"
+          onClick={onForgotPasswordClick}
+        >
           비밀번호 찾기
         </button>
 
