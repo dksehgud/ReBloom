@@ -4,7 +4,7 @@ import AuthInput from '../AuthInput'
 import AuthShell from '../AuthShell'
 
 type EmailStatus = 'idle' | 'available' | 'duplicate' | 'invalid'
-type CodeStatus = 'idle' | 'error'
+type CodeStatus = 'idle' | 'error' | 'expired'
 type EmailStepMode = 'email' | 'code'
 
 type SignUpStepEmailProps = {
@@ -16,6 +16,7 @@ type SignUpStepEmailProps = {
   codeDigits: string[]
   codeStatus: CodeStatus
   formattedRemainingTime: string
+  isCodeExpired: boolean
   onPrevious: () => void
   onEmailChange: (event: ChangeEvent<HTMLInputElement>) => void
   onCheckEmail: () => void
@@ -38,6 +39,7 @@ function SignUpStepEmail({
   codeDigits,
   codeStatus,
   formattedRemainingTime,
+  isCodeExpired,
   onPrevious,
   onEmailChange,
   onCheckEmail,
@@ -111,14 +113,25 @@ function SignUpStepEmail({
   return (
     <AuthShell
       bodyCentered
-      description={`${email}으로 인증코드를 전송했습니다.`}
+      description={
+        <>
+          {email}으로
+          <br />
+          인증코드를 전송했습니다.
+        </>
+      }
       footer={
         <>
           <button className="auth-button is-secondary" onClick={onPrevious} type="button">
             이전
           </button>
-          <button className="auth-button is-primary" onClick={onVerifyCode} type="button">
-            다음 →
+          <button
+            className="auth-button is-primary"
+            disabled={isCodeExpired}
+            onClick={onVerifyCode}
+            type="button"
+          >
+            다음
           </button>
         </>
       }
@@ -133,7 +146,7 @@ function SignUpStepEmail({
       <div className="code-input-row">
         {codeDigits.map((digit, index) => (
           <input
-            className={`code-input${codeStatus === 'error' ? ' is-error' : ''}`}
+            className={`code-input${codeStatus === 'error' || isCodeExpired ? ' is-error' : ''}`}
             inputMode="numeric"
             key={`code-${index}`}
             maxLength={1}
@@ -151,7 +164,11 @@ function SignUpStepEmail({
         </button>
       </div>
 
-      {codeStatus === 'error' ? (
+      {isCodeExpired ? (
+        <p className="field-error code-error-message">
+          인증코드 유효시간이 끝났습니다. 재전송해주세요.
+        </p>
+      ) : codeStatus === 'error' ? (
         <p className="field-error code-error-message">
           인증코드가 올바르지 않습니다.
         </p>

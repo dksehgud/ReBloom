@@ -9,7 +9,7 @@ type UserRole = 'child' | 'parent'
 type SignUpStep = 'role' | 'email' | 'code' | 'details'
 type ModalType = 'complete' | 'parent-confirm' | 'parent-missing' | null
 type EmailStatus = 'idle' | 'available' | 'duplicate' | 'invalid'
-type CodeStatus = 'idle' | 'error'
+type CodeStatus = 'idle' | 'error' | 'expired'
 type Gender = 'male' | 'female' | null
 
 const CODE_LENGTH = 6
@@ -42,6 +42,7 @@ function SignUpPage({ onBackToLogin }: SignUpPageProps) {
   const [modal, setModal] = useState<ModalType>(null)
 
   const codeValue = codeDigits.join('')
+  const isCodeExpired = step === 'code' && remainingSeconds === 0
   const formattedRemainingTime = `${Math.floor(remainingSeconds / 60)}:${String(
     remainingSeconds % 60,
   ).padStart(2, '0')}`
@@ -136,6 +137,11 @@ function SignUpPage({ onBackToLogin }: SignUpPageProps) {
   }
 
   const handleVerifyCode = () => {
+    if (remainingSeconds === 0) {
+      setCodeStatus('expired')
+      return
+    }
+
     if (codeValue === '123456') {
       setCodeStatus('idle')
       setStep('details')
@@ -235,6 +241,7 @@ function SignUpPage({ onBackToLogin }: SignUpPageProps) {
           emailStatus={emailStatus}
           formattedRemainingTime={formattedRemainingTime}
           hasEmailValue={hasEmailValue}
+          isCodeExpired={isCodeExpired}
           isEmailAvailable={isEmailAvailable}
           mode="email"
           onCheckEmail={handleCheckEmail}
@@ -259,6 +266,7 @@ function SignUpPage({ onBackToLogin }: SignUpPageProps) {
           emailStatus={emailStatus}
           formattedRemainingTime={formattedRemainingTime}
           hasEmailValue={hasEmailValue}
+          isCodeExpired={isCodeExpired}
           isEmailAvailable={isEmailAvailable}
           mode="code"
           onCheckEmail={handleCheckEmail}
