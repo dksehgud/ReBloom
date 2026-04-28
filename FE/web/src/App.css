@@ -192,6 +192,13 @@
   margin-top: 104px;
 }
 
+.social-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+}
+
 .social-divider {
   width: 100%;
   display: flex;
@@ -244,6 +251,16 @@
 .social-button img {
   width: 20px;
   height: 20px;
+}
+
+.social-button--kakao {
+  background: #fee500;
+  border-color: #fee500;
+  color: #191919;
+}
+
+.social-button--kakao:hover {
+  box-shadow: 0 10px 22px rgba(25, 25, 25, 0.12);
 }
 
 .signup-copy {
