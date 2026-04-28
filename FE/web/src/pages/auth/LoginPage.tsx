@@ -1,5 +1,6 @@
 import type { FormEvent } from 'react'
 import googleLogo from '../../assets/google-logo.svg'
+import kakaoLogo from '../../assets/kakao-logo.svg'
 
 type LoginPageProps = {
   email: string
@@ -70,10 +71,22 @@ function LoginPage({
           <p>Or with</p>
           <span />
         </div>
-        <button type="button" className="social-button">
-          <img src={googleLogo} alt="" aria-hidden="true" />
-          <span>Google</span>
-        </button>
+        <div className="social-buttons">
+          <button
+            type="button"
+            className="social-icon-button social-icon-button--kakao"
+            aria-label="카카오 로그인"
+          >
+            <img src={kakaoLogo} alt="" aria-hidden="true" />
+          </button>
+          <button
+            type="button"
+            className="social-icon-button social-icon-button--google"
+            aria-label="구글 로그인"
+          >
+            <img src={googleLogo} alt="" aria-hidden="true" />
+          </button>
+        </div>
       </div>
 
       <p className="signup-copy">
