@@ -1,8 +1,8 @@
 import './App.css'
-import AuthPage from './pages/auth/AuthPage'
+import PasswordResetModalPreviewPage from './pages/child/PasswordResetModalPreviewPage'
 
 function App() {
-  return <AuthPage />
+  return <PasswordResetModalPreviewPage />
 }
 
 export default App
