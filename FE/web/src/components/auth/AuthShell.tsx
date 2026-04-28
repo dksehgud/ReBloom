@@ -7,6 +7,7 @@ type AuthShellProps = {
   footer?: ReactNode
   footerStacked?: boolean
   bodyCentered?: boolean
+  bodyScrollable?: boolean
 }
 
 function AuthShell({
@@ -16,6 +17,7 @@ function AuthShell({
   footer,
   footerStacked = false,
   bodyCentered = false,
+  bodyScrollable = false,
 }: AuthShellProps) {
   return (
     <section className="auth-screen">
@@ -26,7 +28,11 @@ function AuthShell({
             <div className="auth-description">{description}</div>
           ) : null}
         </header>
-        <div className={`auth-body${bodyCentered ? ' is-centered' : ''}`}>
+        <div
+          className={`auth-body${bodyCentered ? ' is-centered' : ''}${
+            bodyScrollable ? ' is-scrollable' : ''
+          }`}
+        >
           {children}
         </div>
       </div>

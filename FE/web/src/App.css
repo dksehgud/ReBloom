@@ -23,6 +23,10 @@
   display: flex;
 }
 
+.phone-shell--signup {
+  height: min(844px, 100svh - 48px);
+}
+
 .landing-screen,
 .login-screen {
   width: 100%;
@@ -275,11 +279,17 @@
   position: relative;
 }
 
+.phone-shell--signup .auth-screen {
+  height: 100%;
+  min-height: 0;
+}
+
 .auth-content {
   display: flex;
   flex: 1;
   flex-direction: column;
   gap: 28px;
+  min-height: 0;
   padding: 60px 26px 132px;
 }
 
@@ -312,6 +322,39 @@
   flex: 1;
   flex-direction: column;
   gap: 20px;
+}
+
+.phone-shell--signup .auth-body.is-scrollable {
+  min-height: 0;
+  margin-left: -4px;
+  margin-right: -18px;
+  overflow-y: auto;
+  padding-left: 4px;
+  padding-right: 18px;
+  scrollbar-gutter: stable;
+  scrollbar-color: rgba(52, 73, 102, 0.38) transparent;
+  scrollbar-width: thin;
+}
+
+.phone-shell--signup .auth-body.is-scrollable::-webkit-scrollbar {
+  width: 6px;
+}
+
+.phone-shell--signup .auth-body.is-scrollable::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.phone-shell--signup .auth-body.is-scrollable::-webkit-scrollbar-thumb {
+  background: rgba(52, 73, 102, 0.32);
+  border-radius: 999px;
+}
+
+.phone-shell--signup .auth-body.is-scrollable::-webkit-scrollbar-thumb:hover {
+  background: rgba(52, 73, 102, 0.48);
+}
+
+.phone-shell--signup .auth-body.is-scrollable .field-input:focus-visible {
+  outline-offset: 2px;
 }
 
 .auth-body.is-centered {
@@ -572,14 +615,20 @@
 }
 
 .code-input-row {
+  box-sizing: border-box;
   display: grid;
   gap: 10px;
   grid-template-columns: repeat(6, minmax(0, 1fr));
+  margin: 0 auto;
+  max-width: 334px;
+  padding: 1px;
+  width: 100%;
 }
 
 .code-input {
   aspect-ratio: 1 / 1;
   border: 1px solid #344966;
+  box-sizing: border-box;
   color: #111111;
   font-size: 28px;
   line-height: 1;
@@ -715,6 +764,12 @@
   gap: 16px;
 }
 
+.auth-modal-fields .field-input.is-readonly:focus,
+.auth-modal-fields .field-input.is-readonly:focus-visible {
+  border-color: #cbcbcb;
+  outline: none;
+}
+
 .auth-modal-actions {
   display: grid;
   gap: 12px;
@@ -735,6 +790,10 @@
     min-height: 100svh;
     border-radius: 0;
     box-shadow: none;
+  }
+
+  .phone-shell--signup {
+    height: 100svh;
   }
 
   .auth-screen {

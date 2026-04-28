@@ -101,6 +101,7 @@ function SignUpStepDetails({
 }: SignUpStepDetailsProps) {
   return (
     <AuthShell
+      bodyScrollable
       footer={
         <>
           <button className="auth-button is-secondary" onClick={onPrevious} type="button">
