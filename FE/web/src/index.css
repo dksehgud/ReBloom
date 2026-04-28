@@ -1,11 +1,13 @@
 @import url('https://fonts.googleapis.com/css2?family=Arimo:wght@400;500&family=Inter:wght@400;500;600&family=Noto+Sans+KR:wght@400;500;700&family=Poppins:wght@500;700&display=swap');
 
 :root {
-  color: #111111;
   font-family: 'Inter', 'Noto Sans KR', sans-serif;
-  font-synthesis: none;
-  font-weight: 400;
   line-height: 1.5;
+  font-weight: 400;
+  color: #1b1d22;
+  background:
+    radial-gradient(circle at top, rgba(214, 227, 255, 0.8), rgba(238, 243, 252, 0.7) 35%, #f4f6fb 100%);
+  font-synthesis: none;
   text-rendering: optimizeLegibility;
   -moz-osx-font-smoothing: grayscale;
   -webkit-font-smoothing: antialiased;
@@ -18,7 +20,7 @@
 html,
 body,
 #root {
-  min-height: 100%;
+  min-height: 100svh;
 }
 
 body {
@@ -28,4 +30,8 @@ body {
 button,
 input {
   font: inherit;
+}
+
+button {
+  -webkit-tap-highlight-color: transparent;
 }
