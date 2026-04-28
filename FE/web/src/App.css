@@ -1010,26 +1010,39 @@
   gap: 12px;
 }
 
-.password-reset-placeholder-input {
+.password-reset-step-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+
+.password-reset-step-title {
+  margin: 0;
+  color: #272727;
+  font-family: 'Poppins', 'Noto Sans KR', sans-serif;
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.4;
+  text-align: center;
+}
+
+.password-reset-step-description {
+  margin: 0;
+  color: #707070;
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 14px;
+  line-height: 1.43;
+  text-align: center;
+}
+
+.password-reset-step-content .field-group {
   width: 100%;
-  height: 46px;
-  border-radius: 15px;
-  background: #f9fafb;
-  border: 1px solid #d7dde6;
+  margin-top: 10px;
 }
 
-.password-reset-placeholder-heading {
-  width: 148px;
-  height: 28px;
-  border-radius: 999px;
-  background: #eef2f7;
-}
-
-.password-reset-placeholder-description {
-  width: 220px;
-  height: 18px;
-  border-radius: 999px;
-  background: #eef2f7;
+.password-reset-step-content .field-group .field-label-row {
+  display: none;
 }
 
 @media (max-width: 480px) {
