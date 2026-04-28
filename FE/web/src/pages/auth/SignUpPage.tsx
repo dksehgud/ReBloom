@@ -51,6 +51,13 @@ function SignUpPage({ onBackToLogin }: SignUpPageProps) {
   const hasPasswordLengthRule = password.length >= 8 && password.length <= 20
   const hasPasswordNumberRule = /\d/.test(password)
   const hasPasswordSpecialRule = /[^A-Za-z0-9]/.test(password)
+  const parentEmailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+  const hasParentEmailValue = parentEmail.trim().length > 0
+  const isParentEmailValid = parentEmailPattern.test(parentEmail.trim())
+  const parentEmailError =
+    hasParentEmailValue && !isParentEmailValid
+      ? '올바른 이메일 형식을 입력해주세요.'
+      : undefined
   const hasPasswordRuleMatch =
     hasPasswordLengthRule &&
     hasPasswordNumberRule &&
@@ -68,7 +75,8 @@ function SignUpPage({ onBackToLogin }: SignUpPageProps) {
     birthDate.trim().length > 0 &&
     hasPasswordRuleMatch &&
     passwordsMatch &&
-    parentEmail.trim().length > 0
+    hasParentEmailValue &&
+    isParentEmailValid
 
   const handleCheckEmail = () => {
     const normalizedEmail = email.trim().toLowerCase()
@@ -296,6 +304,7 @@ function SignUpPage({ onBackToLogin }: SignUpPageProps) {
           onBirthDateChange={handleBirthDateChange}
           onNameChange={(event) => setName(event.target.value)}
           onParentEmailChange={(event) => setParentEmail(event.target.value)}
+          parentEmailError={parentEmailError}
           onPasswordChange={(event) => setPassword(event.target.value)}
           onPasswordConfirmChange={(event) => setPasswordConfirm(event.target.value)}
           onPrevious={openCodeStep}

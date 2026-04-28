@@ -15,6 +15,7 @@ type SignUpStepDetailsProps = {
   password: string
   passwordConfirm: string
   parentEmail: string
+  parentEmailError?: string
   showPassword: boolean
   showPasswordConfirm: boolean
   childFormValid: boolean
@@ -35,7 +36,11 @@ type SignUpStepDetailsProps = {
   onTogglePasswordConfirm: () => void
 }
 
-function EyeIcon() {
+type EyeIconProps = {
+  closed?: boolean
+}
+
+function EyeIcon({ closed = false }: EyeIconProps) {
   return (
     <svg
       aria-hidden="true"
@@ -53,6 +58,14 @@ function EyeIcon() {
         strokeWidth="1.3"
       />
       <circle cx="9" cy="8" r="2.3" stroke="currentColor" strokeWidth="1.3" />
+      {closed ? (
+        <path
+          d="M3 13L15 3"
+          stroke="currentColor"
+          strokeLinecap="round"
+          strokeWidth="1.5"
+        />
+      ) : null}
     </svg>
   )
 }
@@ -66,6 +79,7 @@ function SignUpStepDetails({
   password,
   passwordConfirm,
   parentEmail,
+  parentEmailError,
   showPassword,
   showPasswordConfirm,
   childFormValid,
@@ -152,7 +166,7 @@ function SignUpStepDetails({
             onClick={onTogglePassword}
             type="button"
           >
-            <EyeIcon />
+            <EyeIcon closed={!showPassword} />
           </button>
         }
         label="비밀번호"
@@ -179,7 +193,7 @@ function SignUpStepDetails({
             onClick={onTogglePasswordConfirm}
             type="button"
           >
-            <EyeIcon />
+            <EyeIcon closed={!showPasswordConfirm} />
           </button>
         }
         error={
@@ -196,6 +210,7 @@ function SignUpStepDetails({
 
       {role === 'child' ? (
         <AuthInput
+          error={parentEmailError}
           label="부모 연결"
           onChange={onParentEmailChange}
           placeholder="부모 이메일"
