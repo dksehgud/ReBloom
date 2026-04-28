@@ -72,16 +72,19 @@ function LoginPage({
           <span />
         </div>
         <div className="social-buttons">
-          <button type="button" className="social-button">
-            <img src={googleLogo} alt="" aria-hidden="true" />
-            <span>Google</span>
+          <button
+            type="button"
+            className="social-icon-button social-icon-button--kakao"
+            aria-label="카카오 로그인"
+          >
+            <img src={kakaoLogo} alt="" aria-hidden="true" />
           </button>
           <button
             type="button"
-            className="social-button social-button--kakao"
+            className="social-icon-button social-icon-button--google"
+            aria-label="구글 로그인"
           >
-            <img src={kakaoLogo} alt="" aria-hidden="true" />
-            <span>Kakao</span>
+            <img src={googleLogo} alt="" aria-hidden="true" />
           </button>
         </div>
       </div>
