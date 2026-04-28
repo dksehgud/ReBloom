@@ -6,12 +6,14 @@ type SignUpStepRoleProps = {
   role: UserRole | null
   onSelectRole: (role: UserRole) => void
   onNext: () => void
+  onBackToLogin: () => void
 }
 
 function SignUpStepRole({
   role,
   onSelectRole,
   onNext,
+  onBackToLogin,
 }: SignUpStepRoleProps) {
   return (
     <AuthShell
@@ -19,7 +21,7 @@ function SignUpStepRole({
       description="사용자 유형을 선택해주세요"
       footer={
         <>
-          <button className="auth-button is-secondary" disabled type="button">
+          <button className="auth-button is-secondary" onClick={onBackToLogin} type="button">
             이전
           </button>
           <button
@@ -58,7 +60,7 @@ function SignUpStepRole({
       </div>
       <p className="auth-inline-row">
         이미 계정이 있으신가요?{' '}
-        <button className="auth-inline-link" type="button">
+        <button className="auth-inline-link" onClick={onBackToLogin} type="button">
           로그인
         </button>
       </p>

@@ -15,7 +15,11 @@ type Gender = 'male' | 'female' | null
 const CODE_LENGTH = 6
 const CODE_DURATION_SECONDS = 180
 
-function SignUpPage() {
+type SignUpPageProps = {
+  onBackToLogin: () => void
+}
+
+function SignUpPage({ onBackToLogin }: SignUpPageProps) {
   const [step, setStep] = useState<SignUpStep>('role')
   const [role, setRole] = useState<UserRole | null>(null)
 
@@ -216,6 +220,7 @@ function SignUpPage() {
     <>
       {step === 'role' ? (
         <SignUpStepRole
+          onBackToLogin={onBackToLogin}
           onNext={() => setStep('email')}
           onSelectRole={setRole}
           role={role}

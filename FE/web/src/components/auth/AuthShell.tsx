@@ -18,28 +18,24 @@ function AuthShell({
   bodyCentered = false,
 }: AuthShellProps) {
   return (
-    <div className="app-shell">
-      <div className="phone-shell">
-        <section className="auth-screen">
-          <div className="auth-content">
-            <header className="auth-title-group">
-              <h1 className="auth-title">{title}</h1>
-              {description ? (
-                <div className="auth-description">{description}</div>
-              ) : null}
-            </header>
-            <div className={`auth-body${bodyCentered ? ' is-centered' : ''}`}>
-              {children}
-            </div>
-          </div>
-          {footer ? (
-            <div className={`auth-footer${footerStacked ? ' is-stacked' : ''}`}>
-              {footer}
-            </div>
+    <section className="auth-screen">
+      <div className="auth-content">
+        <header className="auth-title-group">
+          <h1 className="auth-title">{title}</h1>
+          {description ? (
+            <div className="auth-description">{description}</div>
           ) : null}
-        </section>
+        </header>
+        <div className={`auth-body${bodyCentered ? ' is-centered' : ''}`}>
+          {children}
+        </div>
       </div>
-    </div>
+      {footer ? (
+        <div className={`auth-footer${footerStacked ? ' is-stacked' : ''}`}>
+          {footer}
+        </div>
+      ) : null}
+    </section>
   )
 }
 
