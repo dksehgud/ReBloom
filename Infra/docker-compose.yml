@@ -1,0 +1,28 @@
+services:
+  postgres:  # PostgreSQL 컨테이너
+    image: postgres:16  # PostgreSQL 16 버전 사용
+    container_name: rebloom-postgres  # 컨테이너 이름 고정
+    restart: unless-stopped  # 서버 재시작 시 자동 복구
+    ports:
+      - "5432:5432"  # 서버 5432 포트를 컨테이너 5432에 연결
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-postgres}  # 최초 기본 DB 이름
+      POSTGRES_USER: ${POSTGRES_USER:-rebloom}  # 공용 접속 계정
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}  # 실제 비밀번호는 .env에서 주입
+      TZ: ${TZ:-Asia/Seoul}  # DB 컨테이너 시간대
+    volumes:
+      - postgres-data:/var/lib/postgresql/data  # DB 데이터 영구 저장
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]  # DB 준비 상태 확인
+      interval: 10s  # 10초마다 점검
+      timeout: 5s  # 5초 안에 응답 없으면 실패
+      retries: 5  # 5번 연속 실패 시 비정상 처리
+    networks:
+      - rebloom-network  # 내부 Docker 네트워크 연결
+
+networks:
+  rebloom-network:
+    driver: bridge  # 기본 브리지 네트워크 사용
+
+volumes:
+  postgres-data:  # PostgreSQL 데이터 볼륨

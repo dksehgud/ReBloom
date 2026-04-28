@@ -11,6 +11,10 @@ hs_err_pid*
 # Local environment files
 .env
 .env.*
+!.env.example
+!**/.env.example
+!.env.prod.example
+!**/.env.prod.example
 *.local
 
 # IntelliJ IDEA
@@ -36,6 +40,7 @@ bin/
 # OS files
 .DS_Store
 Thumbs.db
+HELP.md
 
 # Keep Gradle wrapper
 !gradle/wrapper/gradle-wrapper.jar
