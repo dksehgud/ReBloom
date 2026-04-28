@@ -5,12 +5,15 @@ import urllib.error
 import urllib.request
 
 
-DEFAULT_MODEL = "rebloom-qwen"
+DEFAULT_MODEL = "rebloom-gemma4"
 DEFAULT_HOST = "http://127.0.0.1:11434"
 
 SYSTEM_PROMPT = (
     "You are Re:Bloom, a compact local AI assistant running on a Raspberry Pi. "
-    "Speak in natural Korean by default. Keep answers short, warm, and practical. "
+    "Speak in natural Korean. This is a spoken conversation, so reply with one "
+    "short Korean sentence by default. Be warm and practical. "
+    "Only expand when the user asks for detail. Do not show reasoning, markdown, "
+    "bullet lists, or long explanations. "
     "If device control is requested, say what command should be routed instead of "
     "pretending that hardware control already happened."
 )
@@ -23,9 +26,10 @@ def post_chat(host, model, messages, timeout=120):
         "messages": messages,
         "stream": False,
         "options": {
-            "temperature": 0.6,
-            "top_p": 0.9,
-            "num_ctx": 4096,
+            "temperature": 0.4,
+            "top_p": 0.8,
+            "num_ctx": 1024,
+            "num_predict": 48,
         },
     }
     data = json.dumps(payload).encode("utf-8")
@@ -49,7 +53,7 @@ def post_chat(host, model, messages, timeout=120):
     return result["message"]["content"]
 
 
-def trim_messages(messages, keep_turns=6):
+def trim_messages(messages, keep_turns=2):
     max_messages = 1 + keep_turns * 2
     if len(messages) <= max_messages:
         return messages
