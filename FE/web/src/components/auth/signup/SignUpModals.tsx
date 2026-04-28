@@ -9,6 +9,7 @@ type SignUpModalsProps = {
   role: UserRole | null
   parentEmail: string
   onClose: () => void
+  onComplete: () => void
   onConfirmParent: () => void
   onResetMissingParent: () => void
 }
@@ -18,6 +19,7 @@ function SignUpModals({
   role,
   parentEmail,
   onClose,
+  onComplete,
   onConfirmParent,
   onResetMissingParent,
 }: SignUpModalsProps) {
@@ -83,7 +85,7 @@ function SignUpModals({
     return (
       <AuthModal
         actions={
-          <button className="auth-button is-primary" onClick={onClose} type="button">
+          <button className="auth-button is-primary" onClick={onComplete} type="button">
             확인
           </button>
         }

@@ -202,6 +202,26 @@ function SignUpPage({ onBackToLogin }: SignUpPageProps) {
     setModal(null)
   }
 
+  const handleComplete = () => {
+    setModal(null)
+    setStep('role')
+    setRole(null)
+    setEmail('')
+    setEmailStatus('idle')
+    setCodeDigits(Array(CODE_LENGTH).fill(''))
+    setCodeStatus('idle')
+    setRemainingSeconds(CODE_DURATION_SECONDS)
+    setName('')
+    setGender(null)
+    setBirthDate('')
+    setPassword('')
+    setPasswordConfirm('')
+    setParentEmail('')
+    setShowPassword(false)
+    setShowPasswordConfirm(false)
+    onBackToLogin()
+  }
+
   const handleConfirmParent = () => {
     setModal('complete')
   }
@@ -326,6 +346,7 @@ function SignUpPage({ onBackToLogin }: SignUpPageProps) {
       <SignUpModals
         modal={modal}
         onClose={handleCloseModal}
+        onComplete={handleComplete}
         onConfirmParent={handleConfirmParent}
         onResetMissingParent={handleResetMissingParent}
         parentEmail={parentEmail}
