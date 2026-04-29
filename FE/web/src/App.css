@@ -1320,8 +1320,18 @@
   padding-bottom: 120px;
 }
 
-.child-diary-list-page__content {
+.child-diary-list-page__content--calendar,
+.child-diary-list-page__content--list {
   overflow: hidden;
+}
+
+.child-diary-list-page__body--calendar {
+  overflow: hidden;
+}
+
+.child-diary-list-page__body--list {
+  overflow: hidden;
+  padding-bottom: 104px;
 }
 
 .child-diary-list-page .child-floating-action-button {
@@ -1446,6 +1456,107 @@
 
 .diary-calendar__mood--lavender {
   background: #d8c6ff;
+}
+
+.diary-list-view {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+  gap: 24px;
+  padding-top: 8px;
+}
+
+.diary-list-view__list {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  flex-direction: column;
+  gap: 16px;
+  overflow-y: auto;
+  padding-top: 14px;
+  padding-bottom: 8px;
+}
+
+.diary-list-view__header {
+  flex-shrink: 0;
+}
+
+.diary-list-card {
+  position: relative;
+  display: flex;
+  min-height: 80px;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+  padding: 16px 68px 16px 16px;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  background: #ffffff;
+  text-align: left;
+  flex-shrink: 0;
+}
+
+.diary-list-card__date {
+  color: #6a7282;
+  font-family: 'Inter', 'Noto Sans KR', sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.333;
+}
+
+.diary-list-card__summary {
+  color: #364153;
+  font-family: 'Inter', 'Noto Sans KR', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.625;
+}
+
+.diary-list-card__mood {
+  position: absolute;
+  top: -12px;
+  right: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 999px;
+  background: #ffffff;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.12);
+  color: #0a0a0a;
+  font-size: 24px;
+}
+
+.diary-list-view--empty {
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0;
+}
+
+.diary-list-view--empty .diary-list-view__header {
+  align-self: stretch;
+}
+
+.diary-list-view__empty-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #303030;
+  margin-top: 36px;
+}
+
+.diary-list-view__empty-text {
+  margin: 20px 0 0;
+  color: #6a7282;
+  font-family: 'Inter', 'Noto Sans KR', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.428;
+  text-align: center;
 }
 
 @media (max-width: 480px) {
