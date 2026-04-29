@@ -1,8 +1,9 @@
 ## 🧭 Part
-- [ ] Frontend
-- [ ] Backend
-- [ ] Infra
+- [ ] FE
+- [ ] BE
+- [ ] INFRA
 - [ ] AI
+- [ ] DATA
 
 ## 🔎 작업 내용
 
