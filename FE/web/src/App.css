@@ -798,21 +798,25 @@
 
 .field-help,
 .field-error,
-.field-success {
+.field-success,
+.status-message {
   font-size: 12px;
   line-height: 1.5;
   margin: 0;
 }
 
-.field-help {
+.field-help,
+.status-message--help {
   color: #a5a5a5;
 }
 
-.field-error {
+.field-error,
+.status-message--error {
   color: #eb4335;
 }
 
-.field-success {
+.field-success,
+.status-message--success {
   color: #1a6dff;
 }
 
