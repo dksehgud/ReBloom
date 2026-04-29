@@ -72,29 +72,21 @@ function EyeIcon({ visible }: { visible: boolean }) {
 }
 
 function PasswordResetModalPreviewPage() {
-  const currentPassword = 'Rebloom!123'
-  const [nextPassword, setNextPassword] = useState('')
-  const [showPassword, setShowPassword] = useState(false)
+  const nextPassword = 'Rebloom!456'
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
 
-  const hasLengthRule = nextPassword.length >= 8 && nextPassword.length <= 20
-  const hasNumberRule = /\d/.test(nextPassword)
-  const hasSpecialRule = /[^A-Za-z0-9]/.test(nextPassword)
-  const isSameAsCurrentPassword =
-    nextPassword.trim().length > 0 && nextPassword === currentPassword
-
-  const isNextEnabled =
-    nextPassword.trim().length > 0 &&
-    hasLengthRule &&
-    hasNumberRule &&
-    hasSpecialRule &&
-    !isSameAsCurrentPassword
+  const isPasswordMatched =
+    confirmPassword.trim().length > 0 && confirmPassword === nextPassword
+  const isPasswordMismatched =
+    confirmPassword.trim().length > 0 && confirmPassword !== nextPassword
 
   return (
     <main className="password-reset-preview-page">
       <div className="password-reset-preview-phone">
         <PasswordResetModalLayout
           title="계정 비밀번호 변경"
-          currentStep={2}
+          currentStep={3}
           totalSteps={3}
           onClose={() => {}}
           actions={
@@ -104,47 +96,44 @@ function PasswordResetModalPreviewPage() {
               </button>
               <button
                 type="button"
-                className={`auth-button ${isNextEnabled ? 'is-primary' : 'is-neutral'}`}
-                disabled={!isNextEnabled}
+                className={`auth-button ${isPasswordMatched ? 'is-primary' : 'is-neutral'}`}
+                disabled={!isPasswordMatched}
               >
-                다음
+                완료
               </button>
             </>
           }
         >
           <div className="password-reset-step-content">
-            <h2 className="password-reset-step-title">새 비밀번호 입력</h2>
+            <h2 className="password-reset-step-title">비밀번호 확인</h2>
             <p className="password-reset-step-description">
-              안전한 비밀번호로 설정해주세요
+              새 비밀번호를 다시 한번 입력해주세요
             </p>
             <AuthInput
               label=""
-              type={showPassword ? 'text' : 'password'}
-              placeholder="새 비밀번호"
+              type={showConfirmPassword ? 'text' : 'password'}
+              placeholder="비밀번호 확인"
               autoComplete="new-password"
-              value={nextPassword}
-              onChange={(event) => setNextPassword(event.target.value)}
+              value={confirmPassword}
+              onChange={(event) => setConfirmPassword(event.target.value)}
               error={
-                isSameAsCurrentPassword
-                  ? '새 비밀번호는 현재 비밀번호와 달라야 합니다.'
+                isPasswordMismatched
+                  ? '새 비밀번호와 일치하지 않습니다.'
                   : undefined
               }
               action={
                 <button
                   type="button"
                   className="field-input-icon"
-                  aria-label={showPassword ? '비밀번호 숨기기' : '비밀번호 보기'}
-                  onClick={() => setShowPassword((prev) => !prev)}
+                  aria-label={
+                    showConfirmPassword ? '비밀번호 숨기기' : '비밀번호 보기'
+                  }
+                  onClick={() => setShowConfirmPassword((prev) => !prev)}
                 >
-                  <EyeIcon visible={showPassword} />
+                  <EyeIcon visible={showConfirmPassword} />
                 </button>
               }
             />
-            <div className="password-reset-rules">
-              <span className={hasLengthRule ? 'is-valid' : ''}>8-20자 사용</span>
-              <span className={hasNumberRule ? 'is-valid' : ''}>숫자 사용</span>
-              <span className={hasSpecialRule ? 'is-valid' : ''}>특수문자 사용</span>
-            </div>
           </div>
         </PasswordResetModalLayout>
       </div>
