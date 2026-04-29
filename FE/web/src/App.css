@@ -40,6 +40,141 @@
   position: relative;
 }
 
+.mobile-page-layout {
+  width: 100%;
+  min-height: 100%;
+}
+
+.mobile-page-surface {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  min-height: min(844px, 100svh - 48px);
+  background: #ffffff;
+  border-radius: 40px;
+  overflow: hidden;
+  position: relative;
+}
+
+.mobile-page-header-slot {
+  flex-shrink: 0;
+}
+
+.mobile-page-content {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 0 24px;
+  box-sizing: border-box;
+}
+
+.mobile-page-bottom-slot {
+  flex-shrink: 0;
+}
+
+.child-header {
+  width: 100%;
+}
+
+.child-header.has-divider {
+  border-bottom: 1px solid #eef2f7;
+}
+
+.child-header-inner {
+  display: grid;
+  grid-template-columns: 72px 1fr 72px;
+  align-items: center;
+  min-height: 72px;
+  padding: 18px 20px 12px;
+  box-sizing: border-box;
+}
+
+.child-header-side {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.child-header-side.is-left {
+  justify-content: flex-start;
+}
+
+.child-header-side.is-right {
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.child-header-center {
+  display: flex;
+  justify-content: center;
+  min-width: 0;
+}
+
+.child-header-brand {
+  color: #111111;
+  font-family: 'Poppins', 'Noto Sans KR', sans-serif;
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+
+.child-header-title {
+  margin: 0;
+  color: #111111;
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.child-header-icon-button {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  color: #4f5d75;
+  cursor: pointer;
+  display: inline-flex;
+  justify-content: center;
+  padding: 0;
+  width: 24px;
+  height: 24px;
+}
+
+.child-floating-action-button {
+  align-items: center;
+  background: #344966;
+  border: 0;
+  border-radius: 999px;
+  bottom: 52px;
+  box-shadow: 0 16px 24px rgba(52, 73, 102, 0.28);
+  color: #ffffff;
+  cursor: pointer;
+  display: inline-flex;
+  height: 56px;
+  justify-content: center;
+  position: absolute;
+  right: 16px;
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.18s ease,
+    background-color 0.18s ease;
+  width: 56px;
+}
+
+.child-floating-action-button:hover {
+  background: #2d415f;
+  box-shadow: 0 18px 28px rgba(52, 73, 102, 0.34);
+  transform: translateY(-1px);
+}
+
+.child-floating-action-button:focus-visible {
+  outline: 2px solid #6c8ec4;
+  outline-offset: 2px;
+}
+
 .phone-shell--landing {
   display: flex;
 }
