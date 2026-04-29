@@ -1,8 +1,14 @@
 import './App.css'
-import AuthPage from './pages/auth/AuthPage'
+import ChildDiaryListPage from './pages/child/ChildDiaryListPage'
 
 function App() {
-  return <AuthPage />
+  return (
+    <main className="app-shell">
+      <section className="phone-shell">
+        <ChildDiaryListPage />
+      </section>
+    </main>
+  )
 }
 
 export default App
