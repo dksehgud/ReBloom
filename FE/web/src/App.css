@@ -1229,6 +1229,83 @@
   color: #1a6dff;
 }
 
+.settings-item {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  color: #1f2937;
+  display: flex;
+  justify-content: space-between;
+  padding: 16px 0;
+  text-align: left;
+  width: 100%;
+}
+
+.settings-item.has-divider {
+  border-bottom: 1px solid #eef2f7;
+}
+
+.settings-item.is-button {
+  cursor: pointer;
+}
+
+.settings-item.is-button:hover {
+  opacity: 0.96;
+}
+
+.settings-item.is-button:focus-visible {
+  border-radius: 12px;
+  outline: 2px solid rgba(52, 73, 102, 0.2);
+  outline-offset: 2px;
+}
+
+.settings-item.is-danger .settings-item-label {
+  color: #dc2626;
+}
+
+.settings-item.is-disabled {
+  cursor: default;
+  opacity: 0.56;
+}
+
+.settings-item-copy {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.settings-item-label {
+  color: #1f2937;
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.settings-item-description {
+  color: #8a94a6;
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.settings-item-trailing {
+  align-items: center;
+  color: #8a94a6;
+  display: inline-flex;
+  flex-shrink: 0;
+  gap: 8px;
+  margin-left: 16px;
+}
+
+.settings-item-chevron {
+  align-items: center;
+  color: #b2bbc9;
+  display: inline-flex;
+}
+
 @media (max-width: 480px) {
   .app-shell {
     padding: 0;
