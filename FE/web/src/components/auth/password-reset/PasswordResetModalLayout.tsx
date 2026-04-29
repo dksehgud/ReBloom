@@ -53,13 +53,13 @@ function PasswordResetModalLayout({
                   key={`password-reset-step-${index + 1}`}
                   className="password-reset-stepper-item"
                 >
-                  <span
-                    className={`password-reset-stepper-dot${
-                      index + 1 <= currentStep ? ' is-active' : ''
-                    }`}
-                  >
-                    {index + 1}
-                  </span>
+                <span
+                  className={`password-reset-stepper-dot${
+                    index + 1 <= currentStep ? ' is-active' : ''
+                  }`}
+                >
+                  {index + 1 < currentStep ? '✓' : index + 1}
+                </span>
                   {index < totalSteps - 1 ? (
                     <span
                       className={`password-reset-stepper-line${

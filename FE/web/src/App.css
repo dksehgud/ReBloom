@@ -1045,6 +1045,31 @@
   display: none;
 }
 
+.password-reset-rules {
+  color: #a4a4a4;
+  display: flex;
+  flex-wrap: wrap;
+  font-size: 10px;
+  gap: 16px;
+  line-height: 1.5;
+  justify-content: center;
+  margin-top: -2px;
+}
+
+.password-reset-rules span::before {
+  color: #a4a4a4;
+  content: '•';
+  margin-right: 4px;
+}
+
+.password-reset-rules span.is-valid {
+  color: #1a6dff;
+}
+
+.password-reset-rules span.is-valid::before {
+  color: #1a6dff;
+}
+
 @media (max-width: 480px) {
   .app-shell {
     padding: 0;

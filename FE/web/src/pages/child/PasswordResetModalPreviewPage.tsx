@@ -72,17 +72,29 @@ function EyeIcon({ visible }: { visible: boolean }) {
 }
 
 function PasswordResetModalPreviewPage() {
-  const [currentPassword, setCurrentPassword] = useState('')
+  const currentPassword = 'Rebloom!123'
+  const [nextPassword, setNextPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
 
-  const isNextEnabled = currentPassword.trim().length > 0
+  const hasLengthRule = nextPassword.length >= 8 && nextPassword.length <= 20
+  const hasNumberRule = /\d/.test(nextPassword)
+  const hasSpecialRule = /[^A-Za-z0-9]/.test(nextPassword)
+  const isSameAsCurrentPassword =
+    nextPassword.trim().length > 0 && nextPassword === currentPassword
+
+  const isNextEnabled =
+    nextPassword.trim().length > 0 &&
+    hasLengthRule &&
+    hasNumberRule &&
+    hasSpecialRule &&
+    !isSameAsCurrentPassword
 
   return (
     <main className="password-reset-preview-page">
       <div className="password-reset-preview-phone">
         <PasswordResetModalLayout
           title="계정 비밀번호 변경"
-          currentStep={1}
+          currentStep={2}
           totalSteps={3}
           onClose={() => {}}
           actions={
@@ -101,17 +113,22 @@ function PasswordResetModalPreviewPage() {
           }
         >
           <div className="password-reset-step-content">
-            <h2 className="password-reset-step-title">현재 비밀번호 입력</h2>
+            <h2 className="password-reset-step-title">새 비밀번호 입력</h2>
             <p className="password-reset-step-description">
-              본인 확인을 위해 현재 비밀번호를 입력해주세요
+              안전한 비밀번호로 설정해주세요
             </p>
             <AuthInput
               label=""
               type={showPassword ? 'text' : 'password'}
-              placeholder="현재 비밀번호"
-              autoComplete="current-password"
-              value={currentPassword}
-              onChange={(event) => setCurrentPassword(event.target.value)}
+              placeholder="새 비밀번호"
+              autoComplete="new-password"
+              value={nextPassword}
+              onChange={(event) => setNextPassword(event.target.value)}
+              error={
+                isSameAsCurrentPassword
+                  ? '새 비밀번호는 현재 비밀번호와 달라야 합니다.'
+                  : undefined
+              }
               action={
                 <button
                   type="button"
@@ -123,6 +140,11 @@ function PasswordResetModalPreviewPage() {
                 </button>
               }
             />
+            <div className="password-reset-rules">
+              <span className={hasLengthRule ? 'is-valid' : ''}>8-20자 사용</span>
+              <span className={hasNumberRule ? 'is-valid' : ''}>숫자 사용</span>
+              <span className={hasSpecialRule ? 'is-valid' : ''}>특수문자 사용</span>
+            </div>
           </div>
         </PasswordResetModalLayout>
       </div>
