@@ -2,10 +2,12 @@
 
 set -e
 
-MODEL_NAME="${MODEL_NAME:-qwen2.5:1.5b}"
-APP_MODEL_NAME="${APP_MODEL_NAME:-rebloom-qwen}"
+MODEL_NAME="${MODEL_NAME:-gemma4:e2b}"
+APP_MODEL_NAME="${APP_MODEL_NAME:-rebloom-gemma4}"
 OLLAMA_HOST="${OLLAMA_HOST:-127.0.0.1:11434}"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+GENERATED_MODELFILE="$(mktemp)"
+trap 'rm -f "$GENERATED_MODELFILE"' EXIT
 
 echo "========================================="
 echo " Re:Bloom Local LLM 설치"
@@ -29,11 +31,12 @@ else
     echo "  systemctl 없음: ollama serve를 별도 터미널에서 실행하세요."
 fi
 
-echo "[3/4] Qwen 모델 다운로드..."
+echo "[3/4] base 모델 다운로드..."
 ollama pull "$MODEL_NAME"
 
 echo "[4/4] Re:Bloom 모델 생성..."
-ollama create "$APP_MODEL_NAME" -f "$SCRIPT_DIR/Modelfile"
+sed "s|^FROM .*|FROM $MODEL_NAME|" "$SCRIPT_DIR/Modelfile" > "$GENERATED_MODELFILE"
+ollama create "$APP_MODEL_NAME" -f "$GENERATED_MODELFILE"
 
 echo ""
 echo "설치 완료"
