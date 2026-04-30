@@ -9,6 +9,7 @@ import type { DiaryCalendarEntry } from '../../features/diary/components/DiaryCa
 import DiaryDetailView from '../../features/diary/components/DiaryDetailView'
 import DiaryListView from '../../features/diary/components/DiaryListView'
 import type { DiaryListItem } from '../../features/diary/components/DiaryListView'
+import DiaryWriteView from '../../features/diary/components/DiaryWriteView'
 
 type DiaryTone = 'mint' | 'amber' | 'lavender'
 
@@ -21,7 +22,7 @@ type DiaryRecord = {
   tone: DiaryTone
 }
 
-type ViewMode = 'calendar' | 'list' | 'detail'
+type ViewMode = 'calendar' | 'list' | 'detail' | 'write'
 type MainViewMode = 'calendar' | 'list'
 
 function MenuIcon() {
@@ -67,24 +68,27 @@ const SAMPLE_RECORDS_BY_MONTH: Record<string, DiaryRecord[]> = {
     {
       id: '2026-03-04',
       day: 4,
-      summary: '오늘은 새로운 블록 놀이를 해봤어요.',
-      content: '오늘은 새로운 블록 놀이를 해봤어요. 높은 탑을 만들었는데 무너지지 않아서 정말 뿌듯했어요.',
+      summary: '블록 탑이 무너지지 않아 기뻤어요.',
+      content:
+        '오늘은 블록 탑이 무너지지 않아 기뻤어요. 맨 위 블록을 올릴 때까지 무너지지 않아서 정말 뿌듯했어요.',
       mood: '😊',
       tone: 'mint',
     },
     {
       id: '2026-03-08',
       day: 8,
-      summary: '바깥놀이를 오래 해서 기분이 좋았어요.',
-      content: '친구들과 오래 뛰어놀았어요. 숨이 차도 웃음이 계속 나서 오늘은 정말 신나는 하루였어요.',
+      summary: '밖에서 오래 놀아서 기분이 좋았어요.',
+      content:
+        '친구와 오래 놀아서 땀이 차도 웃음이 계속 났어요. 오늘은 정말 하루가 금방 지나갔어요.',
       mood: '🙂',
       tone: 'amber',
     },
     {
       id: '2026-03-17',
       day: 17,
-      summary: '친구와 다퉈서 조금 속상했어요.',
-      content: '장난감을 두고 친구와 다퉜어요. 조금 속상했지만 나중에 다시 이야기하고 화해했어요.',
+      summary: '친구와 장난감 때문에 조금 속상했어요.',
+      content:
+        '갖고 싶었던 장난감을 친구가 먼저 집어서 속상했어요. 조금 속상했지만 내일 다시 이야기하고 싶어요.',
       mood: '🥺',
       tone: 'lavender',
     },
@@ -92,7 +96,8 @@ const SAMPLE_RECORDS_BY_MONTH: Record<string, DiaryRecord[]> = {
       id: '2026-03-25',
       day: 25,
       summary: '엄마와 같이 그림책을 읽었어요.',
-      content: '엄마와 소파에 앉아서 그림책을 읽었어요. 재미있는 장면이 많아서 계속 웃었어요.',
+      content:
+        '엄마와 소파에 앉아 그림책을 읽었어요. 예쁜 그림이 많아서 계속 보고 싶었어요.',
       mood: '😊',
       tone: 'mint',
     },
@@ -101,8 +106,9 @@ const SAMPLE_RECORDS_BY_MONTH: Record<string, DiaryRecord[]> = {
     {
       id: '2026-04-03',
       day: 3,
-      summary: '오늘은 수업 시간에 발표를 잘했어요.',
-      content: '선생님이 질문했을 때 손을 들고 크게 말했어요. 친구들이 잘 들었다고 해서 뿌듯했어요.',
+      summary: '오늘은 수업 시간에 발표를 했어요.',
+      content:
+        '선생님이 질문했을 때 손을 들고 크게 말했어요. 친구들이 잘했다고 해줘서 뿌듯했어요.',
       mood: '😊',
       tone: 'mint',
     },
@@ -110,15 +116,17 @@ const SAMPLE_RECORDS_BY_MONTH: Record<string, DiaryRecord[]> = {
       id: '2026-04-07',
       day: 7,
       summary: '간식으로 좋아하는 과일을 먹었어요.',
-      content: '간식 시간에 달콤한 과일을 먹었어요. 친구랑 나눠 먹으니까 더 맛있게 느껴졌어요.',
+      content:
+        '간식 시간에 달콤한 과일을 먹었어요. 친구와 반씩 나눠 먹으니까 더 맛있게 느껴졌어요.',
       mood: '🙂',
       tone: 'amber',
     },
     {
       id: '2026-04-14',
       day: 14,
-      summary: '비가 와서 밖에서 못 놀아 아쉬웠어요.',
-      content: '비가 많이 와서 운동장에 나가지 못했어요. 창문으로 비를 보며 다음엔 꼭 밖에서 놀고 싶다고 생각했어요.',
+      summary: '비가 와서 밖에서 못 놀아서 아쉬웠어요.',
+      content:
+        '비가 많이 와서 놀이터에 가지 못했어요. 창문으로 비를 보고 있으니 밖에 가고 싶다고 생각했어요.',
       mood: '🥺',
       tone: 'lavender',
     },
@@ -126,23 +134,26 @@ const SAMPLE_RECORDS_BY_MONTH: Record<string, DiaryRecord[]> = {
       id: '2026-04-15',
       day: 15,
       summary: '선생님께 칭찬을 받아 기뻤어요.',
-      content: '정리 정돈을 열심히 했더니 선생님이 칭찬해 주셨어요. 오늘 하루가 아주 기분 좋았어요.',
+      content:
+        '정리 정돈을 잘했더니 선생님이 칭찬해 줬어요. 오늘 하루가 아주 기분 좋았어요.',
       mood: '😊',
       tone: 'mint',
     },
     {
       id: '2026-04-16',
       day: 16,
-      summary: '친구와 역할놀이를 하며 많이 웃었어요.',
-      content: '친구와 병원 놀이를 했어요. 서로 역할을 바꿔 가면서 놀았더니 시간이 금방 갔어요.',
+      summary: '친구와 역할놀이를 하고 많이 웃었어요.',
+      content:
+        '친구랑 병원 놀이를 하면서 서로 역할을 바꿔 가며 놀았어요. 시간이 길게 가는 줄 몰랐어요.',
       mood: '🙂',
       tone: 'amber',
     },
     {
       id: '2026-04-21',
       day: 21,
-      summary: '오늘은 가족과 함께 저녁 산책을 했어요.',
-      content: '저녁을 먹고 가족과 천천히 산책했어요. 바람이 시원해서 기분이 편안했고, 같이 걷는 시간이 즐거웠어요.',
+      summary: '오늘은 가족과 함께 공원을 산책했어요.',
+      content:
+        '저녁을 먹고 가족과 천천히 산책했어요. 바람이 시원해서 기분이 편안했고, 같이 걷는 시간이 즐거웠어요.',
       mood: '😊',
       tone: 'amber',
     },
@@ -151,8 +162,9 @@ const SAMPLE_RECORDS_BY_MONTH: Record<string, DiaryRecord[]> = {
     {
       id: '2026-05-02',
       day: 2,
-      summary: '주말이라 늦잠을 자서 편안했어요.',
-      content: '평소보다 늦게 일어나서 몸이 가벼웠어요. 느긋하게 아침을 먹고 여유롭게 준비했어요.',
+      summary: '주말이라 늦잠 자서 편안했어요.',
+      content:
+        '평소보다 늦게 일어나서 몸이 가벼웠어요. 여유롭게 아침을 먹고 자유롭게 준비했어요.',
       mood: '🙂',
       tone: 'amber',
     },
@@ -160,7 +172,8 @@ const SAMPLE_RECORDS_BY_MONTH: Record<string, DiaryRecord[]> = {
       id: '2026-05-05',
       day: 5,
       summary: '어린이날 선물을 받아 정말 신났어요.',
-      content: '기다리던 선물을 받고 너무 기뻤어요. 하루 종일 들고 다니며 자랑하고 싶었어요.',
+      content:
+        '기다리던 선물을 받고 너무 기뻤어요. 하루 종일 안고 다니며 자랑하고 싶었어요.',
       mood: '😊',
       tone: 'mint',
     },
@@ -168,23 +181,26 @@ const SAMPLE_RECORDS_BY_MONTH: Record<string, DiaryRecord[]> = {
       id: '2026-05-11',
       day: 11,
       summary: '넘어져서 무릎이 조금 아팠어요.',
-      content: '달리다가 넘어져서 무릎이 조금 아팠어요. 속상했지만 금방 괜찮아졌어요.',
+      content:
+        '놀이하다가 넘어져서 무릎이 조금 아팠어요. 속상했지만 금방 괜찮아졌어요.',
       mood: '🥺',
       tone: 'lavender',
     },
     {
       id: '2026-05-22',
       day: 22,
-      summary: '체육 시간에 달리기를 열심히 했어요.',
-      content: '친구들과 같이 달리기를 했어요. 끝까지 포기하지 않고 뛰어서 스스로 뿌듯했어요.',
+      summary: '체육 시간에 달리기를 끝까지 했어요.',
+      content:
+        '친구들과 같이 달리기를 했는데 끝까지 포기하지 않고 뛰어서 스스로 뿌듯했어요.',
       mood: '😊',
       tone: 'mint',
     },
     {
       id: '2026-05-27',
       day: 27,
-      summary: '친구와 레고를 함께 만들어 즐거웠어요.',
-      content: '친구와 힘을 합쳐 큰 집을 만들었어요. 완성하고 나니 정말 멋져 보여서 기분이 좋았어요.',
+      summary: '친구와 종이접기를 만들어 즐거웠어요.',
+      content:
+        '친구랑 예쁜 색종이로 종이접기를 만들었어요. 완성하고 나니 정말 멋져 보여서 기분이 좋았어요.',
       mood: '🙂',
       tone: 'amber',
     },
@@ -206,11 +222,22 @@ function formatDetailDateLabel(year: number, month: number, day: number) {
   return `${year}. ${String(month).padStart(2, '0')}. ${String(day).padStart(2, '0')}. (${weekDay})`
 }
 
+function formatWriteDateLabel(date: Date) {
+  const dayLabels = ['일', '월', '화', '수', '목', '금', '토']
+  const weekDay = dayLabels[date.getDay()]
+  return `${date.getFullYear()}. ${String(date.getMonth() + 1).padStart(2, '0')}. ${String(
+    date.getDate(),
+  ).padStart(2, '0')}. (${weekDay})`
+}
+
 function ChildDiaryListPage() {
   const [currentDate, setCurrentDate] = useState(() => new Date(2026, 3, 1))
   const [viewMode, setViewMode] = useState<ViewMode>('calendar')
   const [previousViewMode, setPreviousViewMode] = useState<MainViewMode>('calendar')
   const [selectedDiaryId, setSelectedDiaryId] = useState<string | null>(null)
+  const [draftContent, setDraftContent] = useState('')
+
+  const today = useMemo(() => new Date(), [])
 
   const currentYear = currentDate.getFullYear()
   const currentMonth = currentDate.getMonth() + 1
@@ -281,8 +308,18 @@ function ChildDiaryListPage() {
     setViewMode(previousViewMode)
   }
 
+  const handleOpenWrite = () => {
+    setPreviousViewMode(viewMode === 'list' ? 'list' : 'calendar')
+    setDraftContent('')
+    setViewMode('write')
+  }
+
+  const handleBackFromWrite = () => {
+    setViewMode(previousViewMode)
+  }
+
   const header =
-    viewMode === 'detail' ? undefined : (
+    viewMode === 'detail' || viewMode === 'write' ? undefined : (
       <ChildHeader
         mode="brand"
         rightSlot={
@@ -324,7 +361,7 @@ function ChildDiaryListPage() {
               onNextMonth={handleNextMonth}
               onEntryClick={handleCalendarEntryClick}
             />
-            <ChildFloatingActionButton ariaLabel="일기 작성" />
+            <ChildFloatingActionButton ariaLabel="일기 작성" onClick={handleOpenWrite} />
           </>
         ) : null}
 
@@ -338,7 +375,7 @@ function ChildDiaryListPage() {
               onNextMonth={handleNextMonth}
               onItemClick={handleListItemClick}
             />
-            <ChildFloatingActionButton ariaLabel="일기 작성" />
+            <ChildFloatingActionButton ariaLabel="일기 작성" onClick={handleOpenWrite} />
           </>
         ) : null}
 
@@ -349,6 +386,17 @@ function ChildDiaryListPage() {
             tone={selectedRecord.tone}
             content={selectedRecord.content}
             onBack={handleBackFromDetail}
+          />
+        ) : null}
+
+        {viewMode === 'write' ? (
+          <DiaryWriteView
+            dateLabel={formatWriteDateLabel(today)}
+            content={draftContent}
+            isSubmitDisabled={draftContent.trim().length === 0}
+            onBack={handleBackFromWrite}
+            onMoodClick={() => {}}
+            onContentChange={(event) => setDraftContent(event.target.value)}
           />
         ) : null}
       </div>

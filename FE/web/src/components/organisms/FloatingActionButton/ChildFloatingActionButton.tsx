@@ -1,15 +1,18 @@
 type ChildFloatingActionButtonProps = {
   ariaLabel?: string
+  onClick?: () => void
 }
 
 function ChildFloatingActionButton({
   ariaLabel = '일기 작성',
+  onClick,
 }: ChildFloatingActionButtonProps) {
   return (
     <button
       type="button"
       className="child-floating-action-button"
       aria-label={ariaLabel}
+      onClick={onClick}
     >
       <svg
         aria-hidden="true"
