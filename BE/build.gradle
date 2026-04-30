@@ -9,6 +9,7 @@ version = '0.0.1-SNAPSHOT'
 
 ext {
     set('springCloudVersion', '2025.0.2')
+    set('springdocVersion', '2.8.17')
 }
 
 allprojects {
