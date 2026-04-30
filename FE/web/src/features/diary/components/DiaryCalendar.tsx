@@ -12,6 +12,7 @@ type DiaryCalendarProps = {
   entries?: DiaryCalendarEntry[]
   onPreviousMonth?: () => void
   onNextMonth?: () => void
+  onEntryClick?: (entry: DiaryCalendarEntry) => void
 }
 
 const DAY_LABELS = ['일', '월', '화', '수', '목', '금', '토']
@@ -30,6 +31,7 @@ function DiaryCalendar({
   entries = [],
   onPreviousMonth,
   onNextMonth,
+  onEntryClick,
 }: DiaryCalendarProps) {
   const firstDayOffset = getFirstDayOffset(year, month)
   const daysInMonth = getDaysInMonth(year, month)
@@ -111,21 +113,23 @@ function DiaryCalendar({
           return (
             <div
               key={`calendar-cell-${index + 1}`}
-              className={`diary-calendar__cell${
-                entry ? ' has-entry' : ''
-              }`}
+              className={`diary-calendar__cell${entry ? ' has-entry' : ''}`}
             >
               {isInMonth ? (
                 <>
                   <span className="diary-calendar__day">{day}</span>
-                  <span
-                    className={`diary-calendar__mood${
-                      entry ? ` diary-calendar__mood--${entry.tone}` : ' is-empty'
-                    }`}
-                    aria-hidden={entry ? undefined : 'true'}
-                  >
-                    {entry?.mood}
-                  </span>
+                  {entry ? (
+                    <button
+                      type="button"
+                      className={`diary-calendar__mood diary-calendar__mood--${entry.tone}`}
+                      aria-label={`${month}월 ${day}일 일기 보기`}
+                      onClick={() => onEntryClick?.(entry)}
+                    >
+                      {entry.mood}
+                    </button>
+                  ) : (
+                    <span className="diary-calendar__mood is-empty" aria-hidden="true" />
+                  )}
                 </>
               ) : null}
             </div>
