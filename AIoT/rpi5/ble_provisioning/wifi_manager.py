@@ -1,7 +1,45 @@
 import logging
 import subprocess
+import time
 
 logger = logging.getLogger(__name__)
+
+
+def is_wifi_radio_enabled() -> bool:
+    try:
+        result = subprocess.run(
+            ["nmcli", "radio", "wifi"],
+            capture_output=True,
+            text=True,
+            timeout=5,
+        )
+        return result.stdout.strip().lower() == "enabled"
+    except Exception as e:
+        logger.error(f"[WiFiManager] Wi-Fi radio 상태 확인 실패: {e}")
+        return False
+
+
+def ensure_wifi_enabled() -> bool:
+    if is_wifi_radio_enabled():
+        return True
+
+    logger.info("[WiFiManager] Wi-Fi radio 비활성 상태 → 활성화 시도")
+    try:
+        result = subprocess.run(
+            ["nmcli", "radio", "wifi", "on"],
+            capture_output=True,
+            text=True,
+            timeout=5,
+        )
+        if result.returncode != 0:
+            logger.error(f"[WiFiManager] Wi-Fi radio 활성화 실패: {result.stderr.strip()}")
+            return False
+
+        time.sleep(2)
+        return is_wifi_radio_enabled()
+    except Exception as e:
+        logger.error(f"[WiFiManager] Wi-Fi radio 활성화 중 예외 발생: {e}")
+        return False
 
 
 def is_wifi_connected() -> bool:

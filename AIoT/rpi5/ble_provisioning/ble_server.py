@@ -1,6 +1,7 @@
 import json
 import logging
 import threading
+import time
 
 import dbus
 import dbus.exceptions
@@ -35,6 +36,7 @@ LE_ADVERTISEMENT     = "org.bluez.LEAdvertisement1"
 ecdh_provider = ECDHProvider()
 _status_characteristic = None
 _mainloop = None
+_server_generation = 0
 
 
 def notify_status(status: str) -> None:
@@ -67,11 +69,11 @@ class NotSupportedException(dbus.exceptions.DBusException):
 
 
 class Application(dbus.service.Object):
-    def __init__(self, bus):
-        self.path = "/"
+    def __init__(self, bus, path, service_path_base):
+        self.path = path
         self.services = []
         dbus.service.Object.__init__(self, bus, self.path)
-        self.add_service(ReBlooomProvisioningService(bus, 0))
+        self.add_service(ReBlooomProvisioningService(bus, 0, service_path_base))
 
     def add_service(self, service):
         self.services.append(service)
@@ -90,10 +92,8 @@ class Application(dbus.service.Object):
 
 
 class Service(dbus.service.Object):
-    PATH_BASE = "/org/bluez/example/service"
-
-    def __init__(self, bus, index, uuid, primary):
-        self.path = self.PATH_BASE + str(index)
+    def __init__(self, bus, index, uuid, primary, path_base):
+        self.path = path_base + str(index)
         self.bus = bus
         self.uuid = uuid
         self.primary = primary
@@ -178,8 +178,8 @@ class Characteristic(dbus.service.Object):
 
 
 class ReBlooomProvisioningService(Service):
-    def __init__(self, bus, index):
-        super().__init__(bus, index, REBLOOM_SERVICE_UUID, primary=True)
+    def __init__(self, bus, index, path_base):
+        super().__init__(bus, index, REBLOOM_SERVICE_UUID, primary=True, path_base=path_base)
         self.add_characteristic(PublicKeyCharacteristic(bus, 0, self))
         self.add_characteristic(WiFiCredentialCharacteristic(bus, 1, self))
 
@@ -305,10 +305,8 @@ class DeviceInfoCharacteristic(Characteristic):
 
 
 class ReBlooomAdvertisement(dbus.service.Object):
-    PATH_BASE = "/org/bluez/example/advertisement"
-
-    def __init__(self, bus, index):
-        self.path = self.PATH_BASE + str(index)
+    def __init__(self, bus, path):
+        self.path = path
         self.bus = bus
         self.ad_type = "peripheral"
         self.service_uuids = [REBLOOM_SERVICE_UUID]
@@ -336,12 +334,12 @@ class ReBlooomAdvertisement(dbus.service.Object):
         logger.info("[BLE] Advertisement Released")
 
 
-def register_advertisement(bus, adapter_path):
+def register_advertisement(bus, adapter_path, advertisement_path):
     ad_manager = dbus.Interface(
         bus.get_object(BLUEZ_SERVICE_NAME, adapter_path),
         LE_ADVERTISING_MGR,
     )
-    advertisement = ReBlooomAdvertisement(bus, 0)
+    advertisement = ReBlooomAdvertisement(bus, advertisement_path)
     logger.info("[BLE] Advertisement 등록 시도: path=%s", advertisement.get_path())
 
     def register_ok():
@@ -392,7 +390,7 @@ def find_adapter(bus):
 
 
 def run_ble_server():
-    global _mainloop
+    global _mainloop, _server_generation, _status_characteristic
 
     dbus.mainloop.glib.DBusGMainLoop(set_as_default=True)
     bus = dbus.SystemBus()
@@ -403,9 +401,16 @@ def run_ble_server():
 
     logger.info(f"[BLE] 어댑터 발견: {adapter_path}")
 
-    app = Application(bus)
+    _server_generation += 1
+    session_id = f"{int(time.time())}_{_server_generation}"
+    app_path = f"/org/rebloom/provisioning/app{session_id}"
+    service_path_base = f"/org/rebloom/provisioning/service{session_id}_"
+    advertisement_path = f"/org/rebloom/provisioning/advertisement{session_id}"
+    _status_characteristic = None
+
+    app = Application(bus, app_path, service_path_base)
     register_application(bus, adapter_path, app)
-    register_advertisement(bus, adapter_path)
+    register_advertisement(bus, adapter_path, advertisement_path)
 
     _mainloop = GLib.MainLoop()
     logger.info("[BLE] GATT Server 시작. 앱의 스캔을 기다리는 중...")
