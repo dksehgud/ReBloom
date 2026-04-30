@@ -49,5 +49,20 @@ function getDiaryEmotionByKey(emotionKey: DiaryEmotionKey) {
   return DIARY_EMOTION_OPTIONS.find((option) => option.key === emotionKey) ?? null
 }
 
-export { DIARY_EMOTION_OPTIONS, getDiaryEmotionByKey }
+let isDiaryEmotionPreloaded = false
+
+function preloadDiaryEmotionAssets() {
+  if (isDiaryEmotionPreloaded || typeof window === 'undefined') {
+    return
+  }
+
+  DIARY_EMOTION_OPTIONS.forEach((option) => {
+    const image = new Image()
+    image.src = option.imageSrc
+  })
+
+  isDiaryEmotionPreloaded = true
+}
+
+export { DIARY_EMOTION_OPTIONS, getDiaryEmotionByKey, preloadDiaryEmotionAssets }
 export type { DiaryEmotionKey, DiaryEmotionOption }

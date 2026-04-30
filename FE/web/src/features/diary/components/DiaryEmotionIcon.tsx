@@ -24,6 +24,9 @@ function DiaryEmotionIcon({
       width={size}
       height={size}
       className={className}
+      loading="eager"
+      decoding="async"
+      draggable={false}
     />
   )
 }

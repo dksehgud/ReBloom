@@ -1443,6 +1443,10 @@
   padding-bottom: 120px;
 }
 
+.child-diary-list-page .mobile-page-surface {
+  height: min(844px, 100svh - 48px);
+}
+
 .child-diary-list-page__content--calendar,
 .child-diary-list-page__content--list,
 .child-diary-list-page__content--write {
@@ -1629,8 +1633,14 @@
   flex-direction: column;
   gap: 16px;
   overflow-y: auto;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
   padding-top: 14px;
   padding-bottom: 8px;
+}
+
+.diary-list-view__list::-webkit-scrollbar {
+  display: none;
 }
 
 .diary-list-view__header {
