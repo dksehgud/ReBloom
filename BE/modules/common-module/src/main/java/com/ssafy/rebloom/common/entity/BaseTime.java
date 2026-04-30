@@ -1,5 +1,6 @@
 package com.ssafy.rebloom.common.entity;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.EntityListeners;
 import jakarta.persistence.MappedSuperclass;
 import java.time.LocalDateTime;
@@ -17,8 +18,10 @@ public abstract class BaseTime {
 
     // -> LocalDateTime vs Timestamp
     @CreatedDate
+    @Column(name = "created_at", nullable = false, updatable = false)
     protected LocalDateTime createdAt;
 
     @LastModifiedDate
+    @Column(name = "modified_at", nullable = false)
     protected LocalDateTime modifiedAt;
 }
