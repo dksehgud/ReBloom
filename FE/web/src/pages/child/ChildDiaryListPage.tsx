@@ -6,6 +6,7 @@ import MobilePageLayout from '../../components/templates/MobilePageLayout/Mobile
 import DiaryCalendar from '../../features/diary/components/DiaryCalendar'
 import type { DiaryCalendarEntry } from '../../features/diary/components/DiaryCalendar'
 import DiaryDetailView from '../../features/diary/components/DiaryDetailView'
+import DiaryDeleteConfirmModal from '../../features/diary/components/DiaryDeleteConfirmModal'
 import DiaryEmotionSelectModal, {
   type DiaryEmotionKey,
 } from '../../features/diary/components/DiaryEmotionSelectModal'
@@ -246,6 +247,7 @@ function ChildDiaryListPage() {
   const [draftEmotionKey, setDraftEmotionKey] = useState<DiaryEmotionKey | null>(null)
   const [draftContent, setDraftContent] = useState('')
   const [isEmotionModalOpen, setIsEmotionModalOpen] = useState(false)
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
 
   const today = useMemo(() => new Date(), [])
 
@@ -373,6 +375,40 @@ function ChildDiaryListPage() {
     setIsEmotionModalOpen(false)
   }
 
+  const handleOpenDeleteModal = () => {
+    if (!selectedRecord) {
+      return
+    }
+
+    setIsDeleteModalOpen(true)
+  }
+
+  const handleCloseDeleteModal = () => {
+    setIsDeleteModalOpen(false)
+  }
+
+  const handleConfirmDelete = () => {
+    if (!selectedRecord) {
+      return
+    }
+
+    const monthKey = getMonthKey(currentYear, currentMonth)
+
+    setRecordsByMonth((prev) => {
+      const existingRecords = prev[monthKey] ?? []
+      const nextRecords = existingRecords.filter((record) => record.id !== selectedRecord.id)
+
+      return {
+        ...prev,
+        [monthKey]: nextRecords,
+      }
+    })
+
+    setIsDeleteModalOpen(false)
+    setSelectedDiaryId(null)
+    setViewMode(previousViewMode)
+  }
+
   const handleSubmitWrite = () => {
     if (!draftEmotionKey || draftContent.trim().length === 0) {
       return
@@ -474,13 +510,22 @@ function ChildDiaryListPage() {
         ) : null}
 
         {viewMode === 'detail' && selectedRecord ? (
-          <DiaryDetailView
-            dateLabel={formatDetailDateLabel(currentYear, currentMonth, selectedRecord.day)}
-            emotionKey={selectedRecord.emotionKey}
-            content={selectedRecord.content}
-            onBack={handleBackFromDetail}
-            onEdit={handleOpenEdit}
-          />
+          <>
+            <DiaryDetailView
+              dateLabel={formatDetailDateLabel(currentYear, currentMonth, selectedRecord.day)}
+              emotionKey={selectedRecord.emotionKey}
+              content={selectedRecord.content}
+              onBack={handleBackFromDetail}
+              onEdit={handleOpenEdit}
+              onDelete={handleOpenDeleteModal}
+            />
+            {isDeleteModalOpen ? (
+              <DiaryDeleteConfirmModal
+                onCancel={handleCloseDeleteModal}
+                onConfirm={handleConfirmDelete}
+              />
+            ) : null}
+          </>
         ) : null}
 
         {viewMode === 'write' ? (

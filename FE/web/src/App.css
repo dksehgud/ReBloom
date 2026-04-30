@@ -1145,6 +1145,85 @@
   color: #4b5563;
 }
 
+.diary-delete-modal {
+  max-width: 300px;
+  border-radius: 24px;
+  padding: 0 0 24px;
+}
+
+.diary-delete-modal-overlay {
+  padding: 24px;
+}
+
+.diary-delete-modal .common-modal-topbar {
+  justify-content: center;
+  padding: 28px 24px 0;
+  position: relative;
+}
+
+.diary-delete-modal .common-modal-title {
+  color: #111827;
+  font-family: 'Inter', 'Noto Sans KR', sans-serif;
+  font-size: 19px;
+  font-weight: 700;
+  line-height: 1.45;
+}
+
+.diary-delete-modal .common-modal-close-button {
+  color: #4b5563;
+  height: 24px;
+  padding: 0;
+  position: absolute;
+  right: 18px;
+  top: 26px;
+  width: 24px;
+}
+
+.diary-delete-modal__body {
+  gap: 14px;
+  padding: 12px 24px 0;
+}
+
+.diary-delete-modal__message {
+  color: #6b7280;
+  font-family: 'Inter', 'Noto Sans KR', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.6;
+  margin: 0;
+  text-align: center;
+}
+
+.diary-delete-modal__actions {
+  gap: 12px;
+  padding: 24px 24px 0;
+}
+
+.diary-delete-modal__button {
+  align-items: center;
+  border: 0;
+  border-radius: 14px;
+  cursor: pointer;
+  display: inline-flex;
+  font-family: 'Inter', 'Noto Sans KR', sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  height: 48px;
+  justify-content: center;
+  padding: 0 16px;
+  width: 100%;
+}
+
+.diary-delete-modal__button.is-secondary {
+  background: #f3f4f6;
+  color: #4b5563;
+}
+
+.diary-delete-modal__button.is-danger {
+  background: #ef4444;
+  color: #ffffff;
+}
+
 .common-modal-actions {
   display: grid;
   gap: 12px;
