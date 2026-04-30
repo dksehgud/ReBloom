@@ -1,11 +1,11 @@
-import type { ReactNode } from 'react'
+import DiaryEmotionIcon from './DiaryEmotionIcon'
+import type { DiaryEmotionKey } from '../constants/diaryEmotions'
 
 type DiaryDetailViewProps = {
   dateLabel: string
-  mood: ReactNode
+  emotionKey: DiaryEmotionKey
   content: string
   title?: string
-  tone?: 'mint' | 'amber' | 'lavender'
   onBack?: () => void
   onEdit?: () => void
   onDelete?: () => void
@@ -83,10 +83,9 @@ function EditIcon() {
 
 function DiaryDetailView({
   dateLabel,
-  mood,
+  emotionKey,
   content,
   title = '오늘의 일기',
-  tone = 'amber',
   onBack,
   onEdit,
   onDelete,
@@ -123,8 +122,12 @@ function DiaryDetailView({
       </header>
 
       <div className="diary-detail-view__content">
-        <div className={`diary-detail-view__mood diary-detail-view__mood--${tone}`}>
-          <span aria-hidden="true">{mood}</span>
+        <div className={`diary-detail-view__mood diary-detail-view__mood--${emotionKey}`}>
+          <DiaryEmotionIcon
+            emotionKey={emotionKey}
+            size={26}
+            className="diary-detail-view__mood-icon"
+          />
         </div>
 
         <p className="diary-detail-view__date">{dateLabel}</p>

@@ -1,10 +1,12 @@
-import type { ChangeEventHandler, ReactNode } from 'react'
+import type { ChangeEventHandler } from 'react'
+
+import DiaryEmotionIcon from './DiaryEmotionIcon'
+import type { DiaryEmotionKey } from '../constants/diaryEmotions'
 
 type DiaryWriteViewProps = {
   dateLabel: string
   content: string
-  mood?: ReactNode | null
-  tone?: 'mint' | 'amber' | 'lavender'
+  emotionKey?: DiaryEmotionKey | null
   placeholder?: string
   maxLength?: number
   isSubmitDisabled?: boolean
@@ -38,8 +40,7 @@ function BackIcon() {
 function DiaryWriteView({
   dateLabel,
   content,
-  mood = null,
-  tone = 'lavender',
+  emotionKey = null,
   placeholder = '오늘 하루를 기록해보세요.',
   maxLength = 2000,
   isSubmitDisabled = false,
@@ -73,13 +74,21 @@ function DiaryWriteView({
       <div className="diary-write-view__content">
         <button
           type="button"
-          className={`diary-write-view__mood-button diary-write-view__mood-button--${tone}${
-            mood ? '' : ' is-empty'
+          className={`diary-write-view__mood-button${
+            emotionKey ? ` diary-write-view__mood-button--${emotionKey}` : ' is-empty'
           }`}
           aria-label="감정 선택"
           onClick={onMoodClick}
         >
-          <span aria-hidden="true">{mood ?? '+'}</span>
+          {emotionKey ? (
+            <DiaryEmotionIcon
+              emotionKey={emotionKey}
+              size={26}
+              className="diary-write-view__mood-image"
+            />
+          ) : (
+            <span aria-hidden="true">+</span>
+          )}
         </button>
 
         <p className="diary-write-view__date">{dateLabel}</p>

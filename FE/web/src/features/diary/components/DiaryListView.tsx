@@ -1,10 +1,11 @@
-import type { ReactNode } from 'react'
+import DiaryEmotionIcon from './DiaryEmotionIcon'
+import type { DiaryEmotionKey } from '../constants/diaryEmotions'
 
 type DiaryListItem = {
   id: string
   dateLabel: string
   summary: string
-  mood: ReactNode
+  emotionKey: DiaryEmotionKey
 }
 
 type DiaryListViewProps = {
@@ -128,8 +129,15 @@ function DiaryListView({
           >
             <span className="diary-list-card__date">{item.dateLabel}</span>
             <span className="diary-list-card__summary">{item.summary}</span>
-            <span className="diary-list-card__mood" aria-hidden="true">
-              {item.mood}
+            <span
+              className={`diary-list-card__mood diary-list-card__mood--${item.emotionKey}`}
+              aria-hidden="true"
+            >
+              <DiaryEmotionIcon
+                emotionKey={item.emotionKey}
+                size={24}
+                className="diary-list-card__mood-icon"
+              />
             </span>
           </button>
         ))}

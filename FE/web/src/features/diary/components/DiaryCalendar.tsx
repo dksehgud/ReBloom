@@ -1,9 +1,9 @@
-import type { ReactNode } from 'react'
+import DiaryEmotionIcon from './DiaryEmotionIcon'
+import type { DiaryEmotionKey } from '../constants/diaryEmotions'
 
 type DiaryCalendarEntry = {
   day: number
-  mood: ReactNode
-  tone: 'mint' | 'amber' | 'lavender'
+  emotionKey: DiaryEmotionKey
 }
 
 type DiaryCalendarProps = {
@@ -121,11 +121,15 @@ function DiaryCalendar({
                   {entry ? (
                     <button
                       type="button"
-                      className={`diary-calendar__mood diary-calendar__mood--${entry.tone}`}
+                      className={`diary-calendar__mood diary-calendar__mood--${entry.emotionKey}`}
                       aria-label={`${month}월 ${day}일 일기 보기`}
                       onClick={() => onEntryClick?.(entry)}
                     >
-                      {entry.mood}
+                      <DiaryEmotionIcon
+                        emotionKey={entry.emotionKey}
+                        size={18}
+                        className="diary-calendar__mood-icon"
+                      />
                     </button>
                   ) : (
                     <span className="diary-calendar__mood is-empty" aria-hidden="true" />
