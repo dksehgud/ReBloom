@@ -25,4 +25,7 @@ dependencies {
 	implementation 'org.springframework.kafka:spring-kafka'
 	runtimeOnly 'org.postgresql:postgresql'
 	testImplementation 'org.springframework.kafka:spring-kafka-test'
+
+	// Swagger(OpenAPI) UI 및 문서 자동 생성
+	implementation "org.springdoc:springdoc-openapi-starter-webmvc-ui:${springdocVersion}"
 }
