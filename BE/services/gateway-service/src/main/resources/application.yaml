@@ -12,12 +12,6 @@ spring:
             - Path=/auth/**
           filters:
             - StripPrefix=1
-        - id: ai-service
-          uri: ${AI_SERVICE_URI:http://localhost:8082}
-          predicates:
-            - Path=/ai/**
-          filters:
-            - StripPrefix=1
         - id: biometric-service
           uri: ${BIOMETRIC_SERVICE_URI:http://localhost:8083}
           predicates:
@@ -34,6 +28,24 @@ spring:
           uri: ${NOTIFICATION_SERVICE_URI:http://localhost:8085}
           predicates:
             - Path=/notification/**
+          filters:
+            - StripPrefix=1
+        - id: emotion-inference-service
+          uri: ${EMOTION_INFERENCE_SERVICE_URI:http://localhost:8003}
+          predicates:
+            - Path=/emotion-inference/**
+          filters:
+            - StripPrefix=1
+        - id: aiot-ai-service
+          uri: ${AIOT_AI_SERVICE_URI:http://localhost:8001}
+          predicates:
+            - Path=/aiot-ai/**
+          filters:
+            - StripPrefix=1
+        - id: bio-ml-service
+          uri: ${BIO_ML_SERVICE_URI:http://localhost:8002}
+          predicates:
+            - Path=/bio-ml/**
           filters:
             - StripPrefix=1
 
