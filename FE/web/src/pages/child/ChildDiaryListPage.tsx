@@ -23,7 +23,7 @@ type DiaryRecord = {
 }
 
 type ViewMode = 'calendar' | 'list' | 'detail' | 'write'
-type MainViewMode = 'calendar' | 'list'
+type MainViewMode = 'calendar' | 'list' | 'detail'
 
 function MenuIcon() {
   return (
@@ -240,7 +240,9 @@ function ChildDiaryListPage() {
   )
   const [viewMode, setViewMode] = useState<ViewMode>('calendar')
   const [previousViewMode, setPreviousViewMode] = useState<MainViewMode>('calendar')
+  const [writePreviousViewMode, setWritePreviousViewMode] = useState<MainViewMode>('calendar')
   const [selectedDiaryId, setSelectedDiaryId] = useState<string | null>(null)
+  const [editingDiaryId, setEditingDiaryId] = useState<string | null>(null)
   const [draftEmotionKey, setDraftEmotionKey] = useState<DiaryEmotionKey | null>(null)
   const [draftContent, setDraftContent] = useState('')
   const [isEmotionModalOpen, setIsEmotionModalOpen] = useState(false)
@@ -284,6 +286,19 @@ function ChildDiaryListPage() {
     [currentMonth, currentYear, records],
   )
 
+  const editingRecord = useMemo(
+    () => records.find((record) => record.id === editingDiaryId) ?? null,
+    [editingDiaryId, records],
+  )
+
+  const writeDateLabel = useMemo(() => {
+    if (editingRecord) {
+      return formatDetailDateLabel(currentYear, currentMonth, editingRecord.day)
+    }
+
+    return formatWriteDateLabel(today)
+  }, [currentMonth, currentYear, editingRecord, today])
+
   const handlePreviousMonth = () => {
     setCurrentDate((prev) => new Date(prev.getFullYear(), prev.getMonth() - 1, 1))
   }
@@ -320,15 +335,29 @@ function ChildDiaryListPage() {
   }
 
   const handleOpenWrite = () => {
-    setPreviousViewMode(viewMode === 'list' ? 'list' : 'calendar')
+    setWritePreviousViewMode(viewMode === 'list' ? 'list' : 'calendar')
+    setEditingDiaryId(null)
     setDraftEmotionKey(null)
     setDraftContent('')
     setViewMode('write')
   }
 
+  const handleOpenEdit = () => {
+    if (!selectedRecord) {
+      return
+    }
+
+    setWritePreviousViewMode('detail')
+    setEditingDiaryId(selectedRecord.id)
+    setDraftEmotionKey(selectedRecord.emotionKey)
+    setDraftContent(selectedRecord.content)
+    setViewMode('write')
+  }
+
   const handleBackFromWrite = () => {
     setIsEmotionModalOpen(false)
-    setViewMode(previousViewMode)
+    setEditingDiaryId(null)
+    setViewMode(writePreviousViewMode)
   }
 
   const handleOpenEmotionModal = () => {
@@ -349,11 +378,12 @@ function ChildDiaryListPage() {
       return
     }
 
-    const year = today.getFullYear()
-    const month = today.getMonth() + 1
-    const day = today.getDate()
+    const isEditing = Boolean(editingDiaryId && editingRecord)
+    const year = isEditing ? currentYear : today.getFullYear()
+    const month = isEditing ? currentMonth : today.getMonth() + 1
+    const day = isEditing && editingRecord ? editingRecord.day : today.getDate()
     const monthKey = getMonthKey(year, month)
-    const recordId = getRecordId(year, month, day)
+    const recordId = editingDiaryId ?? getRecordId(year, month, day)
     const nextRecord: DiaryRecord = {
       id: recordId,
       day,
@@ -375,6 +405,7 @@ function ChildDiaryListPage() {
 
     setCurrentDate(new Date(year, month - 1, 1))
     setSelectedDiaryId(recordId)
+    setEditingDiaryId(null)
     setDraftEmotionKey(null)
     setDraftContent('')
     setIsEmotionModalOpen(false)
@@ -448,13 +479,14 @@ function ChildDiaryListPage() {
             emotionKey={selectedRecord.emotionKey}
             content={selectedRecord.content}
             onBack={handleBackFromDetail}
+            onEdit={handleOpenEdit}
           />
         ) : null}
 
         {viewMode === 'write' ? (
           <>
             <DiaryWriteView
-              dateLabel={formatWriteDateLabel(today)}
+              dateLabel={writeDateLabel}
               content={draftContent}
               emotionKey={draftEmotionKey}
               isSubmitDisabled={!draftEmotionKey || draftContent.trim().length === 0}
