@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 
 import ChildFloatingActionButton from '../../components/organisms/FloatingActionButton/ChildFloatingActionButton'
 import ChildHeader from '../../components/organisms/Header/ChildHeader'
@@ -12,6 +12,7 @@ import DiaryEmotionSelectModal, {
 import DiaryListView from '../../features/diary/components/DiaryListView'
 import type { DiaryListItem } from '../../features/diary/components/DiaryListView'
 import DiaryWriteView from '../../features/diary/components/DiaryWriteView'
+import { preloadDiaryEmotionAssets } from '../../features/diary/constants/diaryEmotions'
 
 type DiaryRecord = {
   id: string
@@ -196,6 +197,19 @@ function getMonthKey(year: number, month: number) {
   return `${year}-${String(month).padStart(2, '0')}`
 }
 
+function getRecordId(year: number, month: number, day: number) {
+  return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+}
+
+function createSummary(content: string) {
+  const normalized = content.replace(/\s+/g, ' ').trim()
+  if (normalized.length <= 28) {
+    return normalized
+  }
+
+  return `${normalized.slice(0, 28)}...`
+}
+
 function formatDateLabel(year: number, month: number, day: number) {
   return `${year}. ${month}. ${day}.`
 }
@@ -216,6 +230,14 @@ function formatWriteDateLabel(date: Date) {
 
 function ChildDiaryListPage() {
   const [currentDate, setCurrentDate] = useState(() => new Date(2026, 3, 1))
+  const [recordsByMonth, setRecordsByMonth] = useState<Record<string, DiaryRecord[]>>(() =>
+    Object.fromEntries(
+      Object.entries(SAMPLE_RECORDS_BY_MONTH).map(([monthKey, records]) => [
+        monthKey,
+        records.map((record) => ({ ...record })),
+      ]),
+    ),
+  )
   const [viewMode, setViewMode] = useState<ViewMode>('calendar')
   const [previousViewMode, setPreviousViewMode] = useState<MainViewMode>('calendar')
   const [selectedDiaryId, setSelectedDiaryId] = useState<string | null>(null)
@@ -225,12 +247,16 @@ function ChildDiaryListPage() {
 
   const today = useMemo(() => new Date(), [])
 
+  useEffect(() => {
+    preloadDiaryEmotionAssets()
+  }, [])
+
   const currentYear = currentDate.getFullYear()
   const currentMonth = currentDate.getMonth() + 1
 
   const records = useMemo(
-    () => SAMPLE_RECORDS_BY_MONTH[getMonthKey(currentYear, currentMonth)] ?? [],
-    [currentMonth, currentYear],
+    () => recordsByMonth[getMonthKey(currentYear, currentMonth)] ?? [],
+    [currentMonth, currentYear, recordsByMonth],
   )
 
   const selectedRecord = useMemo(
@@ -318,6 +344,43 @@ function ChildDiaryListPage() {
     setIsEmotionModalOpen(false)
   }
 
+  const handleSubmitWrite = () => {
+    if (!draftEmotionKey || draftContent.trim().length === 0) {
+      return
+    }
+
+    const year = today.getFullYear()
+    const month = today.getMonth() + 1
+    const day = today.getDate()
+    const monthKey = getMonthKey(year, month)
+    const recordId = getRecordId(year, month, day)
+    const nextRecord: DiaryRecord = {
+      id: recordId,
+      day,
+      summary: createSummary(draftContent),
+      content: draftContent.trim(),
+      emotionKey: draftEmotionKey,
+    }
+
+    setRecordsByMonth((prev) => {
+      const existingRecords = prev[monthKey] ?? []
+      const filteredRecords = existingRecords.filter((record) => record.id !== recordId)
+      const nextRecords = [...filteredRecords, nextRecord].sort((a, b) => a.day - b.day)
+
+      return {
+        ...prev,
+        [monthKey]: nextRecords,
+      }
+    })
+
+    setCurrentDate(new Date(year, month - 1, 1))
+    setSelectedDiaryId(recordId)
+    setDraftEmotionKey(null)
+    setDraftContent('')
+    setIsEmotionModalOpen(false)
+    setViewMode('detail')
+  }
+
   const header =
     viewMode === 'detail' || viewMode === 'write' ? undefined : (
       <ChildHeader
@@ -398,6 +461,7 @@ function ChildDiaryListPage() {
               onBack={handleBackFromWrite}
               onMoodClick={handleOpenEmotionModal}
               onContentChange={(event) => setDraftContent(event.target.value)}
+              onSubmit={handleSubmitWrite}
             />
             {isEmotionModalOpen ? (
               <DiaryEmotionSelectModal
