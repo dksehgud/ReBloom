@@ -1513,6 +1513,160 @@
   display: inline-flex;
 }
 
+.child-settings-page__content {
+  padding: 0;
+  overflow: hidden;
+}
+
+.child-settings-page__body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+  padding: 24px 37px 0 20px;
+  box-sizing: border-box;
+  gap: 24px;
+}
+
+.child-settings-page__section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.child-settings-page__section-title {
+  margin: 0 0 0 8px;
+  color: #6a7282;
+  font-family: 'Inter', 'Noto Sans KR', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 16px;
+}
+
+.child-settings-page__box {
+  background: #ffffff;
+  border: 1px solid #f3f4f6;
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.child-settings-page__row {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid #f9fafb;
+  color: #0a0a0a;
+  display: flex;
+  gap: 12px;
+  min-height: 72px;
+  padding: 16px;
+  text-align: left;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.child-settings-page__row.has-divider:last-child,
+.child-settings-page__row:not(.has-divider) {
+  border-bottom: 0;
+}
+
+.child-settings-page__row.is-button {
+  cursor: pointer;
+}
+
+.child-settings-page__row.is-button:hover {
+  background: rgba(248, 250, 252, 0.8);
+}
+
+.child-settings-page__row.is-button:focus-visible,
+.child-settings-page__logout:focus-visible {
+  outline: 2px solid #6c8ec4;
+  outline-offset: 2px;
+}
+
+.child-settings-page__icon-circle {
+  align-items: center;
+  background: #f3f4f6;
+  border-radius: 999px;
+  color: #4a5565;
+  display: inline-flex;
+  flex-shrink: 0;
+  height: 40px;
+  justify-content: center;
+  width: 40px;
+}
+
+.child-settings-page__copy {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.child-settings-page__row-title {
+  color: #0a0a0a;
+  font-family: 'Inter', 'Noto Sans KR', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 20px;
+}
+
+.child-settings-page__row-description {
+  color: #6a7282;
+  font-family: 'Inter', 'Noto Sans KR', sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 16px;
+}
+
+.child-settings-page__row-end {
+  align-items: center;
+  display: inline-flex;
+  flex-shrink: 0;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.child-settings-page__chevron {
+  align-items: center;
+  color: #99a1af;
+  display: inline-flex;
+  justify-content: center;
+}
+
+.child-settings-page__connect-badge {
+  align-items: center;
+  background: #344966;
+  border-radius: 999px;
+  color: #ffffff;
+  display: inline-flex;
+  font-family: 'Inter', 'Noto Sans KR', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  height: 30px;
+  justify-content: center;
+  min-width: 72px;
+  padding: 0 16px;
+}
+
+.child-settings-page__logout {
+  align-self: stretch;
+  background: transparent;
+  border: 0;
+  border-radius: 14px;
+  color: #fb2c36;
+  cursor: pointer;
+  font-family: 'Inter', 'Noto Sans KR', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 20px;
+  margin-top: 8px;
+  min-height: 44px;
+  padding: 11px 0;
+  text-align: center;
+}
+
 .child-diary-list-page__body {
   display: flex;
   flex: 1;

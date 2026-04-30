@@ -25,6 +25,9 @@ type DiaryRecord = {
 
 type ViewMode = 'calendar' | 'list' | 'detail' | 'write'
 type MainViewMode = 'calendar' | 'list' | 'detail'
+type ChildDiaryListPageProps = {
+  onOpenSettings?: () => void
+}
 
 function MenuIcon() {
   return (
@@ -229,7 +232,7 @@ function formatWriteDateLabel(date: Date) {
   ).padStart(2, '0')}. (${weekDay})`
 }
 
-function ChildDiaryListPage() {
+function ChildDiaryListPage({ onOpenSettings }: ChildDiaryListPageProps) {
   const [currentDate, setCurrentDate] = useState(() => new Date(2026, 3, 1))
   const [recordsByMonth, setRecordsByMonth] = useState<Record<string, DiaryRecord[]>>(() =>
     Object.fromEntries(
@@ -466,6 +469,7 @@ function ChildDiaryListPage() {
               type="button"
               className="child-header-icon-button"
               aria-label="설정"
+              onClick={onOpenSettings}
             >
               <SettingsIcon />
             </button>
