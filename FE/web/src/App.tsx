@@ -6,6 +6,7 @@ import ChildSettingsPage from './pages/child/ChildSettingsPage'
 
 function App() {
   const [currentPage, setCurrentPage] = useState<'diary' | 'settings'>('diary')
+  const [profileAddress, setProfileAddress] = useState('서울특별시 강남구 테헤란로 212')
 
   return (
     <main className="app-shell">
@@ -13,7 +14,11 @@ function App() {
         {currentPage === 'diary' ? (
           <ChildDiaryListPage onOpenSettings={() => setCurrentPage('settings')} />
         ) : (
-          <ChildSettingsPage onBack={() => setCurrentPage('diary')} />
+          <ChildSettingsPage
+            profileAddress={profileAddress}
+            onBack={() => setCurrentPage('diary')}
+            onSaveProfileAddress={setProfileAddress}
+          />
         )}
       </section>
     </main>

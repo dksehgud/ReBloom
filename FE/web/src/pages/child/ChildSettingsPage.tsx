@@ -1,17 +1,19 @@
-import type { ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 
 import ChildHeader from '../../components/organisms/Header/ChildHeader'
 import MobilePageLayout from '../../components/templates/MobilePageLayout/MobilePageLayout'
+import ChildPasswordChangeModal from '../../features/user/components/ChildPasswordChangeModal'
+import ChildProfileAddressModal from '../../features/user/components/ChildProfileAddressModal'
 
 type ChildSettingsPageProps = {
   profileName?: string
   profileEmail?: string
+  profileAddress?: string
   counselorName?: string | null
   counselorSubtitle?: string | null
   onBack?: () => void
   onNotificationClick?: () => void
-  onOpenProfileInfo?: () => void
-  onChangePassword?: () => void
+  onSaveProfileAddress?: (address: string) => void
   onOpenLockSettings?: () => void
   onOpenCounselStatus?: () => void
   onLogout?: () => void
@@ -185,16 +187,19 @@ function SettingsCardRow({
 function ChildSettingsPage({
   profileName = '이승형',
   profileEmail = 'test@naver.com',
+  profileAddress = '',
   counselorName = null,
   counselorSubtitle = null,
   onBack,
   onNotificationClick,
-  onOpenProfileInfo,
-  onChangePassword,
+  onSaveProfileAddress,
   onOpenLockSettings,
   onOpenCounselStatus,
   onLogout,
 }: ChildSettingsPageProps) {
+  const [isAddressModalOpen, setIsAddressModalOpen] = useState(false)
+  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false)
+
   const isCounselConnected = Boolean(counselorName && counselorSubtitle)
 
   return (
@@ -240,7 +245,7 @@ function ChildSettingsPage({
               title={profileName}
               description={profileEmail}
               icon={<UserIcon />}
-              onClick={onOpenProfileInfo}
+              onClick={() => setIsAddressModalOpen(true)}
               showChevron
               showDivider
             />
@@ -248,7 +253,7 @@ function ChildSettingsPage({
               title="계정 비밀번호 변경"
               description="로그인 비밀번호"
               icon={<KeyIcon />}
-              onClick={onChangePassword}
+              onClick={() => setIsPasswordModalOpen(true)}
               showChevron
               showDivider
             />
@@ -277,7 +282,7 @@ function ChildSettingsPage({
               onClick={onOpenCounselStatus}
               trailing={
                 isCounselConnected ? (
-                  <span className="child-settings-page__connect-badge">연결됨</span>
+                  <span className="child-settings-page__connect-badge">연결</span>
                 ) : undefined
               }
               showDivider={false}
@@ -289,6 +294,22 @@ function ChildSettingsPage({
           로그아웃
         </button>
       </div>
+
+      {isAddressModalOpen ? (
+        <ChildProfileAddressModal
+          address={profileAddress}
+          profileName={profileName}
+          onClose={() => setIsAddressModalOpen(false)}
+          onSave={(nextAddress) => {
+            onSaveProfileAddress?.(nextAddress)
+            setIsAddressModalOpen(false)
+          }}
+        />
+      ) : null}
+
+      {isPasswordModalOpen ? (
+        <ChildPasswordChangeModal onClose={() => setIsPasswordModalOpen(false)} />
+      ) : null}
     </MobilePageLayout>
   )
 }

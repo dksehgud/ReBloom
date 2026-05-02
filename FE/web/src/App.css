@@ -1292,8 +1292,8 @@
 }
 
 .password-reset-overlay {
-  background: rgba(15, 23, 42, 0.08);
-  position: absolute;
+  background: rgba(15, 23, 42, 0.18);
+  position: fixed;
 }
 
 .password-reset-modal {
@@ -1367,6 +1367,126 @@
 .password-reset-modal-actions {
   gap: 12px;
   padding: 0 24px;
+}
+
+.child-profile-address-modal {
+  gap: 18px;
+  max-width: 320px;
+  padding: 0 0 24px;
+}
+
+.child-profile-address-modal__body {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 6px 24px 0;
+}
+
+.child-profile-address-modal__actions {
+  gap: 12px;
+  padding: 0 24px;
+}
+
+.child-profile-address-modal__content {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.child-profile-address-modal__summary-card {
+  background: #ffffff;
+  border: 1px solid #eef2f7;
+  border-radius: 18px;
+  padding: 16px;
+}
+
+.child-profile-address-modal__profile {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.child-profile-address-modal__label {
+  color: #6a7282;
+  font-family: 'Inter', 'Noto Sans KR', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 16px;
+}
+
+.child-profile-address-modal__value {
+  color: #0a0a0a;
+  font-family: 'Inter', 'Noto Sans KR', sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 24px;
+}
+
+.child-profile-address-modal__field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.child-profile-address-modal__address-box {
+  min-height: 76px;
+  padding: 14px 16px;
+  border: 1px solid #d9e1ec;
+  border-radius: 15px;
+  background: #ffffff;
+  box-sizing: border-box;
+}
+
+.child-profile-address-modal__address-text {
+  margin: 0;
+  color: #111111;
+  font-family: 'Arimo', 'Noto Sans KR', sans-serif;
+  font-size: 14px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: keep-all;
+}
+
+.child-profile-address-modal__field-footer {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.child-profile-address-modal__field-help {
+  margin: 0;
+  flex: 1;
+  color: #a5a5a5;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.child-profile-address-modal__change-button {
+  position: static;
+  transform: none;
+  flex-shrink: 0;
+  min-width: 84px;
+  align-self: flex-start;
+}
+
+.child-profile-address-modal .common-modal-topbar {
+  padding: 22px 24px 0;
+}
+
+.child-profile-address-modal .common-modal-title {
+  color: #4d3e3e;
+  font-family: 'Poppins', 'Noto Sans KR', sans-serif;
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.5;
+}
+
+.child-profile-address-modal .common-modal-close-button:focus-visible,
+.child-profile-address-modal .field-input-action:focus-visible {
+  outline: 2px solid #6c8ec4;
+  outline-offset: 2px;
 }
 
 .password-reset-placeholder-group {
