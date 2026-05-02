@@ -2458,6 +2458,47 @@
   white-space: nowrap;
 }
 
+.child-logout-confirm-modal {
+  max-width: 320px;
+  padding: 32px 24px 24px;
+  gap: 24px;
+}
+
+.child-logout-confirm-modal .common-modal-header {
+  gap: 18px;
+}
+
+.child-logout-confirm-modal .common-modal-topbar {
+  justify-content: center;
+  padding: 0;
+}
+
+.child-logout-confirm-modal .common-modal-title {
+  color: #272727;
+  font-family: 'Poppins', 'Noto Sans KR', sans-serif;
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.child-logout-confirm-modal__body {
+  padding: 0;
+}
+
+.child-logout-confirm-modal__actions {
+  margin-top: 0;
+}
+
+.child-logout-confirm-modal__message {
+  margin: 0;
+  color: #6a7282;
+  font-family: 'Inter', 'Noto Sans KR', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.6;
+  text-align: center;
+}
+
 
 @media (max-width: 480px) {
   .app-shell {

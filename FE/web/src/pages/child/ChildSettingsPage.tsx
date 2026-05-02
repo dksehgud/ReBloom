@@ -2,6 +2,7 @@ import { useState, type ReactNode } from 'react'
 
 import ChildHeader from '../../components/organisms/Header/ChildHeader'
 import MobilePageLayout from '../../components/templates/MobilePageLayout/MobilePageLayout'
+import ChildLogoutConfirmModal from '../../features/user/components/ChildLogoutConfirmModal'
 import ChildPasswordChangeModal from '../../features/user/components/ChildPasswordChangeModal'
 import ChildProfileAddressModal from '../../features/user/components/ChildProfileAddressModal'
 
@@ -199,6 +200,7 @@ function ChildSettingsPage({
 }: ChildSettingsPageProps) {
   const [isAddressModalOpen, setIsAddressModalOpen] = useState(false)
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false)
+  const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false)
 
   const isCounselConnected = Boolean(counselorName && counselorSubtitle)
 
@@ -290,7 +292,11 @@ function ChildSettingsPage({
           </div>
         </section>
 
-        <button type="button" className="child-settings-page__logout" onClick={onLogout}>
+        <button
+          type="button"
+          className="child-settings-page__logout"
+          onClick={() => setIsLogoutModalOpen(true)}
+        >
           로그아웃
         </button>
       </div>
@@ -309,6 +315,16 @@ function ChildSettingsPage({
 
       {isPasswordModalOpen ? (
         <ChildPasswordChangeModal onClose={() => setIsPasswordModalOpen(false)} />
+      ) : null}
+
+      {isLogoutModalOpen ? (
+        <ChildLogoutConfirmModal
+          onCancel={() => setIsLogoutModalOpen(false)}
+          onConfirm={() => {
+            setIsLogoutModalOpen(false)
+            onLogout?.()
+          }}
+        />
       ) : null}
     </MobilePageLayout>
   )
