@@ -17,7 +17,6 @@ type ChildSettingsPageProps = {
   counselorSubtitle?: string | null
   onBack?: () => void
   onSaveProfileAddress?: (address: string) => void
-  onOpenLockSettings?: () => void
   onOpenCounselStatus?: () => void
   onLogout?: () => void
 }
@@ -189,20 +188,6 @@ function KeyIcon() {
   )
 }
 
-function ShieldIcon() {
-  return (
-    <svg aria-hidden="true" fill="none" height="20" viewBox="0 0 24 24" width="20">
-      <path
-        d="M12 4.75L17.25 6.89V11.16C17.25 14.32 15.18 17.16 12 18.25C8.82 17.16 6.75 14.32 6.75 11.16V6.89L12 4.75Z"
-        stroke="currentColor"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth="1.65"
-      />
-    </svg>
-  )
-}
-
 function SettingsCardRow({
   title,
   description,
@@ -253,7 +238,6 @@ function ChildSettingsPage({
   counselorSubtitle = null,
   onBack,
   onSaveProfileAddress,
-  onOpenLockSettings,
   onOpenCounselStatus,
   onLogout,
 }: ChildSettingsPageProps) {
@@ -325,14 +309,6 @@ function ChildSettingsPage({
               description="로그인 비밀번호"
               icon={<KeyIcon />}
               onClick={() => setIsPasswordModalOpen(true)}
-              showChevron
-              showDivider
-            />
-            <SettingsCardRow
-              title="일기 잠금 설정"
-              description="잠금 해제됨"
-              icon={<ShieldIcon />}
-              onClick={onOpenLockSettings}
               showChevron
               showDivider={false}
             />
