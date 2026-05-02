@@ -1448,27 +1448,15 @@
   word-break: keep-all;
 }
 
-.child-profile-address-modal__field-footer {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 12px;
-}
-
 .child-profile-address-modal__field-help {
   margin: 0;
-  flex: 1;
   color: #a5a5a5;
   font-size: 12px;
   line-height: 1.5;
 }
 
 .child-profile-address-modal__change-button {
-  position: static;
-  transform: none;
-  flex-shrink: 0;
   min-width: 84px;
-  align-self: flex-start;
 }
 
 .child-profile-address-modal .common-modal-topbar {

@@ -91,7 +91,7 @@ function ChildProfileAddressModal({
 
       postcode.open({ popupTitle: '주소 검색' })
     } catch {
-      setScriptError('주소 검색 창을 여는 데 실패했어요. 다시 시도해주세요.')
+      setScriptError('주소 검색창을 여는 데 실패했어요. 다시 시도해주세요.')
     } finally {
       setIsLoadingScript(false)
     }
@@ -146,28 +146,26 @@ function ChildProfileAddressModal({
             </div>
             <AuthInput
               label=""
-              readOnly
               id="child-profile-next-address"
-              placeholder="주소 검색 버튼으로 새 주소를 찾아주세요."
+              readOnly
+              placeholder="주소 검색"
               value={draftAddress}
               action={
                 <button
                   type="button"
                   className={`field-input-action ${
                     isLoadingScript ? 'is-disabled' : 'is-active'
-                  }`}
+                  } child-profile-address-modal__change-button`}
                   disabled={isLoadingScript}
                   onClick={handleOpenPostcode}
                 >
-                  {isLoadingScript ? '불러오는 중' : '주소 검색'}
+                  {isLoadingScript ? '불러오는 중' : '검색'}
                 </button>
               }
               error={scriptError ?? undefined}
             />
             <p className="child-profile-address-modal__field-help">
-              {scriptError
-                ? scriptError
-                : '검색한 새 주소가 이곳에 표시돼요.'}
+              {scriptError ? scriptError : '검색한 새 주소가 입력창에 표시돼요.'}
             </p>
           </div>
         </div>
