@@ -1,0 +1,179 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    profiles: ["infra"]
+    environment:
+      POSTGRES_USER: rebloom
+      POSTGRES_PASSWORD: change-this-password
+      POSTGRES_DB: rebloom_auth
+      TZ: Asia/Seoul
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ../infra/postgres/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U rebloom -d rebloom_auth"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    networks:
+      - rebloom-net
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    profiles: ["infra"]
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - rebloom-net
+    restart: unless-stopped
+
+  auth-service:
+    build:
+      context: .
+      dockerfile: services/auth-service/Dockerfile
+    profiles: ["app"]
+    env_file:
+      - services/auth-service/.env.local
+    environment:
+      DB_HOST: postgres
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      TZ: Asia/Seoul
+      JAVA_TOOL_OPTIONS: -Duser.timezone=Asia/Seoul
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports:
+      - "8081:8081"
+    networks:
+      - rebloom-net
+    restart: unless-stopped
+
+  ai-service:
+    build:
+      context: .
+      dockerfile: services/ai-service/Dockerfile
+    profiles: ["app"]
+    env_file:
+      - services/ai-service/.env.local
+    environment:
+      DB_HOST: postgres
+      TZ: Asia/Seoul
+      JAVA_TOOL_OPTIONS: -Duser.timezone=Asia/Seoul
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "8082:8082"
+    networks:
+      - rebloom-net
+    restart: unless-stopped
+
+  biometric-service:
+    build:
+      context: .
+      dockerfile: services/biometric-service/Dockerfile
+    profiles: ["app"]
+    env_file:
+      - services/biometric-service/.env.local
+    environment:
+      DB_HOST: postgres
+      TZ: Asia/Seoul
+      JAVA_TOOL_OPTIONS: -Duser.timezone=Asia/Seoul
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "8083:8083"
+    networks:
+      - rebloom-net
+    restart: unless-stopped
+
+  report-service:
+    build:
+      context: .
+      dockerfile: services/report-service/Dockerfile
+    profiles: ["app"]
+    env_file:
+      - services/report-service/.env.local
+    environment:
+      DB_HOST: postgres
+      TZ: Asia/Seoul
+      JAVA_TOOL_OPTIONS: -Duser.timezone=Asia/Seoul
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "8084:8084"
+    networks:
+      - rebloom-net
+    restart: unless-stopped
+
+  notification-service:
+    build:
+      context: .
+      dockerfile: services/notification-service/Dockerfile
+    profiles: ["app"]
+    env_file:
+      - services/notification-service/.env.local
+    environment:
+      DB_HOST: postgres
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      TZ: Asia/Seoul
+      JAVA_TOOL_OPTIONS: -Duser.timezone=Asia/Seoul
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports:
+      - "8085:8085"
+    networks:
+      - rebloom-net
+    restart: unless-stopped
+
+  gateway-service:
+    build:
+      context: .
+      dockerfile: services/gateway-service/Dockerfile
+    profiles: ["app"]
+    env_file:
+      - services/gateway-service/.env.local
+    environment:
+      AUTH_SERVICE_URI: http://auth-service:8081
+      BIOMETRIC_SERVICE_URI: http://biometric-service:8083
+      REPORT_SERVICE_URI: http://report-service:8084
+      NOTIFICATION_SERVICE_URI: http://notification-service:8085
+      AIOT_AI_SERVICE_URI: http://host.docker.internal:8001
+      BIO_ML_SERVICE_URI: http://host.docker.internal:8002
+      EMOTION_INFERENCE_SERVICE_URI: http://host.docker.internal:8003
+      TZ: Asia/Seoul
+      JAVA_TOOL_OPTIONS: -Duser.timezone=Asia/Seoul
+    ports:
+      - "8080:8080"
+    networks:
+      - rebloom-net
+    restart: unless-stopped
+
+networks:
+  rebloom-net:
+    driver: bridge
+
+volumes:
+  postgres-data:
+  redis-data:
