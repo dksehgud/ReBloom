@@ -16,6 +16,9 @@ type SignUpStepDetailsProps = {
   passwordConfirm: string
   parentEmail: string
   parentEmailError?: string
+  address: string
+  addressError?: string
+  isLoadingAddressSearch: boolean
   showPassword: boolean
   showPasswordConfirm: boolean
   childFormValid: boolean
@@ -32,6 +35,7 @@ type SignUpStepDetailsProps = {
   onPasswordChange: (event: ChangeEvent<HTMLInputElement>) => void
   onPasswordConfirmChange: (event: ChangeEvent<HTMLInputElement>) => void
   onParentEmailChange: (event: ChangeEvent<HTMLInputElement>) => void
+  onSearchAddress: () => void
   onTogglePassword: () => void
   onTogglePasswordConfirm: () => void
 }
@@ -80,6 +84,9 @@ function SignUpStepDetails({
   passwordConfirm,
   parentEmail,
   parentEmailError,
+  address,
+  addressError,
+  isLoadingAddressSearch,
   showPassword,
   showPasswordConfirm,
   childFormValid,
@@ -96,6 +103,7 @@ function SignUpStepDetails({
   onPasswordChange,
   onPasswordConfirmChange,
   onParentEmailChange,
+  onSearchAddress,
   onTogglePassword,
   onTogglePasswordConfirm,
 }: SignUpStepDetailsProps) {
@@ -120,12 +128,7 @@ function SignUpStepDetails({
       title="정보 입력"
     >
       <AuthInput label="이메일" readOnly value={email} />
-      <AuthInput
-        label="이름"
-        onChange={onNameChange}
-        placeholder="이름"
-        value={name}
-      />
+      <AuthInput label="이름" onChange={onNameChange} placeholder="이름" value={name} />
 
       {role === 'child' ? (
         <>
@@ -150,11 +153,33 @@ function SignUpStepDetails({
               </button>
             </div>
           </div>
+
           <AuthInput
             label="생년월일"
             onChange={onBirthDateChange}
             placeholder="YYYY.MM.DD"
             value={birthDate}
+          />
+
+          <AuthInput
+            label="주소"
+            readOnly
+            placeholder="주소 검색"
+            value={address}
+            action={
+              <button
+                className={`field-input-action ${
+                  isLoadingAddressSearch ? 'is-disabled' : 'is-active'
+                }`}
+                disabled={isLoadingAddressSearch}
+                onClick={onSearchAddress}
+                type="button"
+              >
+                {isLoadingAddressSearch ? '불러오는 중' : '주소 검색'}
+              </button>
+            }
+            error={addressError}
+            help={!address && !addressError ? '주소는 필수 입력 값이에요.' : undefined}
           />
         </>
       ) : null}
@@ -179,9 +204,7 @@ function SignUpStepDetails({
       <div className="password-rules">
         <span className={hasPasswordLengthRule ? 'is-valid' : ''}>8-20자 사용</span>
         <span className={hasPasswordNumberRule ? 'is-valid' : ''}>숫자 사용</span>
-        <span className={hasPasswordSpecialRule ? 'is-valid' : ''}>
-          특수문자 사용
-        </span>
+        <span className={hasPasswordSpecialRule ? 'is-valid' : ''}>특수문자 사용</span>
       </div>
 
       <AuthInput

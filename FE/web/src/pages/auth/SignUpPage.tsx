@@ -4,6 +4,7 @@ import SignUpModals from '../../components/auth/signup/SignUpModals'
 import SignUpStepDetails from '../../components/auth/signup/SignUpStepDetails'
 import SignUpStepEmail from '../../components/auth/signup/SignUpStepEmail'
 import SignUpStepRole from '../../components/auth/signup/SignUpStepRole'
+import { openDaumPostcodePopup } from '../../shared/utils/daumPostcode'
 
 type UserRole = 'child' | 'parent'
 type SignUpStep = 'role' | 'email' | 'code' | 'details'
@@ -33,6 +34,9 @@ function SignUpPage({ onBackToLogin }: SignUpPageProps) {
   const [name, setName] = useState('')
   const [gender, setGender] = useState<Gender>(null)
   const [birthDate, setBirthDate] = useState('')
+  const [address, setAddress] = useState('')
+  const [addressError, setAddressError] = useState<string | undefined>()
+  const [isLoadingAddressSearch, setIsLoadingAddressSearch] = useState(false)
   const [password, setPassword] = useState('')
   const [passwordConfirm, setPasswordConfirm] = useState('')
   const [parentEmail, setParentEmail] = useState('')
@@ -56,7 +60,7 @@ function SignUpPage({ onBackToLogin }: SignUpPageProps) {
   const isParentEmailValid = parentEmailPattern.test(parentEmail.trim())
   const parentEmailError =
     hasParentEmailValue && !isParentEmailValid
-      ? '올바른 이메일 형식을 입력해주세요.'
+      ? '올바른 이메일 형식으로 입력해주세요.'
       : undefined
   const hasPasswordRuleMatch =
     hasPasswordLengthRule &&
@@ -73,6 +77,7 @@ function SignUpPage({ onBackToLogin }: SignUpPageProps) {
     name.trim().length > 0 &&
     gender !== null &&
     birthDate.trim().length > 0 &&
+    address.trim().length > 0 &&
     hasPasswordRuleMatch &&
     passwordsMatch &&
     hasParentEmailValue &&
@@ -176,6 +181,23 @@ function SignUpPage({ onBackToLogin }: SignUpPageProps) {
     setBirthDate(parts.join('.'))
   }
 
+  const handleSearchAddress = async () => {
+    try {
+      setIsLoadingAddressSearch(true)
+      setAddressError(undefined)
+
+      await openDaumPostcodePopup((data) => {
+        const nextAddress = data.roadAddress || data.address || data.jibunAddress
+        setAddress(nextAddress)
+        setAddressError(undefined)
+      }, '회원가입 주소 검색')
+    } catch {
+      setAddressError('주소 검색창을 여는 데 실패했어요. 다시 시도해주세요.')
+    } finally {
+      setIsLoadingAddressSearch(false)
+    }
+  }
+
   const handleDetailsSubmit = () => {
     if (role === 'parent') {
       if (!parentFormValid) {
@@ -183,6 +205,11 @@ function SignUpPage({ onBackToLogin }: SignUpPageProps) {
       }
 
       setModal('complete')
+      return
+    }
+
+    if (!address.trim()) {
+      setAddressError('주소는 필수 입력 값이에요.')
       return
     }
 
@@ -214,6 +241,9 @@ function SignUpPage({ onBackToLogin }: SignUpPageProps) {
     setName('')
     setGender(null)
     setBirthDate('')
+    setAddress('')
+    setAddressError(undefined)
+    setIsLoadingAddressSearch(false)
     setPassword('')
     setPasswordConfirm('')
     setParentEmail('')
@@ -313,6 +343,8 @@ function SignUpPage({ onBackToLogin }: SignUpPageProps) {
 
       {step === 'details' ? (
         <SignUpStepDetails
+          address={address}
+          addressError={addressError}
           birthDate={birthDate}
           childFormValid={childFormValid}
           email={email}
@@ -320,19 +352,21 @@ function SignUpPage({ onBackToLogin }: SignUpPageProps) {
           hasPasswordLengthRule={hasPasswordLengthRule}
           hasPasswordNumberRule={hasPasswordNumberRule}
           hasPasswordSpecialRule={hasPasswordSpecialRule}
+          isLoadingAddressSearch={isLoadingAddressSearch}
           name={name}
           onBirthDateChange={handleBirthDateChange}
           onNameChange={(event) => setName(event.target.value)}
           onParentEmailChange={(event) => setParentEmail(event.target.value)}
-          parentEmailError={parentEmailError}
           onPasswordChange={(event) => setPassword(event.target.value)}
           onPasswordConfirmChange={(event) => setPasswordConfirm(event.target.value)}
           onPrevious={openCodeStep}
+          onSearchAddress={handleSearchAddress}
           onSelectGender={setGender}
           onSubmit={handleDetailsSubmit}
           onTogglePassword={() => setShowPassword((prev) => !prev)}
           onTogglePasswordConfirm={() => setShowPasswordConfirm((prev) => !prev)}
           parentEmail={parentEmail}
+          parentEmailError={parentEmailError}
           parentFormValid={parentFormValid}
           password={password}
           passwordConfirm={passwordConfirm}
