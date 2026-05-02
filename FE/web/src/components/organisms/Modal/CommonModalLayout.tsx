@@ -2,6 +2,7 @@ import type { ReactNode } from 'react'
 
 type CommonModalLayoutProps = {
   title: string
+  titleAddon?: ReactNode
   children: ReactNode
   actions?: ReactNode
   onClose?: () => void
@@ -20,6 +21,7 @@ function joinClassNames(...values: Array<string | undefined | false>) {
 
 function CommonModalLayout({
   title,
+  titleAddon,
   children,
   actions,
   onClose,
@@ -48,15 +50,18 @@ function CommonModalLayout({
       >
         <header className="common-modal-header">
           <div className="common-modal-topbar">
-            <h2
-              className={joinClassNames(
-                'common-modal-title',
-                titleAlign === 'center' && 'is-center',
-              )}
-              id={titleId}
-            >
-              {title}
-            </h2>
+            <div className="common-modal-title-group">
+              <h2
+                className={joinClassNames(
+                  'common-modal-title',
+                  titleAlign === 'center' && 'is-center',
+                )}
+                id={titleId}
+              >
+                {title}
+              </h2>
+              {titleAddon}
+            </div>
             {onClose ? (
               <button
                 type="button"

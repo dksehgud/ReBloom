@@ -2,6 +2,9 @@ import { useState, type ReactNode } from 'react'
 
 import ChildHeader from '../../components/organisms/Header/ChildHeader'
 import MobilePageLayout from '../../components/templates/MobilePageLayout/MobilePageLayout'
+import ChildDiaryNotificationDetailModal, {
+  type DiaryNotificationSettings,
+} from '../../features/user/components/ChildDiaryNotificationDetailModal'
 import ChildLogoutConfirmModal from '../../features/user/components/ChildLogoutConfirmModal'
 import ChildPasswordChangeModal from '../../features/user/components/ChildPasswordChangeModal'
 import ChildProfileAddressModal from '../../features/user/components/ChildProfileAddressModal'
@@ -13,7 +16,6 @@ type ChildSettingsPageProps = {
   counselorName?: string | null
   counselorSubtitle?: string | null
   onBack?: () => void
-  onNotificationClick?: () => void
   onSaveProfileAddress?: (address: string) => void
   onOpenLockSettings?: () => void
   onOpenCounselStatus?: () => void
@@ -28,6 +30,64 @@ type SettingsCardRowProps = {
   showChevron?: boolean
   trailing?: ReactNode
   showDivider?: boolean
+}
+
+const WEEKDAY_ORDER = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'] as const
+
+const WEEKDAY_LABEL: Record<(typeof WEEKDAY_ORDER)[number], string> = {
+  MON: '월',
+  TUE: '화',
+  WED: '수',
+  THU: '목',
+  FRI: '금',
+  SAT: '토',
+  SUN: '일',
+}
+
+function formatHourMinute(time: string) {
+  const [rawHour, rawMinute] = time.split(':')
+  const hour = Number(rawHour)
+  const minute = Number(rawMinute)
+  const isAfternoon = hour >= 12
+  const period = isAfternoon ? '오후' : '오전'
+  const displayHour = hour % 12 === 0 ? 12 : hour % 12
+
+  return `${period} ${displayHour}:${String(minute).padStart(2, '0')}`
+}
+
+function formatNotificationSummary(settings: DiaryNotificationSettings) {
+  if (!settings.enabled) {
+    return '알림이 꺼져 있어요'
+  }
+
+  const orderedDays = WEEKDAY_ORDER.filter((day) =>
+    settings.daysOfWeek.includes(day),
+  )
+  const isEveryday = orderedDays.length === 7
+  const isWeekdays =
+    orderedDays.length === 5 &&
+    ['MON', 'TUE', 'WED', 'THU', 'FRI'].every((day) =>
+      settings.daysOfWeek.includes(day as (typeof WEEKDAY_ORDER)[number]),
+    )
+  const isWeekend =
+    orderedDays.length === 2 &&
+    ['SAT', 'SUN'].every((day) =>
+      settings.daysOfWeek.includes(day as (typeof WEEKDAY_ORDER)[number]),
+    )
+
+  const scheduleLabel = isEveryday
+    ? '매일'
+    : isWeekdays
+      ? '평일만'
+      : isWeekend
+        ? '주말만'
+        : orderedDays.map((day) => WEEKDAY_LABEL[day]).join(', ')
+
+  if (settings.times.length <= 1) {
+    return `${scheduleLabel} ${formatHourMinute(settings.times[0] ?? '20:00')}`
+  }
+
+  return `${scheduleLabel} · 하루 ${settings.frequencyPerDay}번`
 }
 
 function BackIcon() {
@@ -192,7 +252,6 @@ function ChildSettingsPage({
   counselorName = null,
   counselorSubtitle = null,
   onBack,
-  onNotificationClick,
   onSaveProfileAddress,
   onOpenLockSettings,
   onOpenCounselStatus,
@@ -201,6 +260,16 @@ function ChildSettingsPage({
   const [isAddressModalOpen, setIsAddressModalOpen] = useState(false)
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false)
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false)
+  const [isNotificationDetailModalOpen, setIsNotificationDetailModalOpen] =
+    useState(false)
+  const [notificationSettings, setNotificationSettings] =
+    useState<DiaryNotificationSettings>({
+      enabled: false,
+      daysOfWeek: ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'],
+      frequencyPerDay: 1,
+      times: [],
+      quickPreset: 'EVERYDAY',
+    })
 
   const isCounselConnected = Boolean(counselorName && counselorSubtitle)
 
@@ -231,9 +300,9 @@ function ChildSettingsPage({
           <div className="child-settings-page__box">
             <SettingsCardRow
               title="일기 작성 알림"
-              description="매일 20:00"
+              description={formatNotificationSummary(notificationSettings)}
               icon={<BellIcon />}
-              onClick={onNotificationClick}
+              onClick={() => setIsNotificationDetailModalOpen(true)}
               showChevron
               showDivider={false}
             />
@@ -323,6 +392,17 @@ function ChildSettingsPage({
           onConfirm={() => {
             setIsLogoutModalOpen(false)
             onLogout?.()
+          }}
+        />
+      ) : null}
+
+      {isNotificationDetailModalOpen ? (
+        <ChildDiaryNotificationDetailModal
+          initialSettings={notificationSettings}
+          onClose={() => setIsNotificationDetailModalOpen(false)}
+          onSave={(nextSettings) => {
+            setNotificationSettings(nextSettings)
+            setIsNotificationDetailModalOpen(false)
           }}
         />
       ) : null}
