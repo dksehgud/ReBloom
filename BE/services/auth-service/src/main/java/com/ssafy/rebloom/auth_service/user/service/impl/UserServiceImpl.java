@@ -15,6 +15,7 @@ import com.ssafy.rebloom.auth_service.user.service.RedisService;
 import com.ssafy.rebloom.auth_service.user.service.UserService;
 import com.ssafy.rebloom.common.exception.CustomException;
 import com.ssafy.rebloom.common.exception.ErrorCode;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -114,6 +115,14 @@ public class UserServiceImpl implements UserService {
         if (!isSocialSignup) {
             deleteVerificationData(userCreateRequestDto.email());
         }
+    }
+
+    @Override
+    public void withDrawUser(UUID userId) {
+        User user = userRepository.findById(userId).orElseThrow(
+            () -> new CustomException("사용자를 찾을 수 없습니다.", ErrorCode.USER_NOT_FOUND)
+        );
+
     }
 
 

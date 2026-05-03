@@ -95,6 +95,11 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
+    public void revokeTokens(UUID userId) {
+        refreshTokenService.delete(userId);
+    }
+
+    @Override
     public TokenDto reissue(String refreshToken) {
         if (!StringUtils.hasText(refreshToken)) {
             throw new CustomException("리프레시 토큰이 없습니다.", ErrorCode.REFRESH_TOKEN_NOT_FOUND);

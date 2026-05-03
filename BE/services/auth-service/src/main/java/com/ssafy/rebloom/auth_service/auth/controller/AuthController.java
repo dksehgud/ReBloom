@@ -18,9 +18,11 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -44,8 +46,11 @@ public class AuthController {
 
     @PostMapping("/logout")
     public ResponseEntity<BaseResponse<Void>> logout(
-        @CookieValue(name = "refreshToken", required = false) String refreshToken
+        @RequestHeader(value = "refresh-token", required = false) String headerToken,
+        @CookieValue(name = "refreshToken", required = false) String cookieToken
     ) {
+        String refreshToken = StringUtils.hasText(headerToken) ? headerToken : cookieToken;
+
         authService.logout(refreshToken);
 
         ResponseCookie deleteCookie = cookieUtil.deleteRefreshTokenCookie();
@@ -57,8 +62,11 @@ public class AuthController {
 
     @PostMapping("/reissue")
     public ResponseEntity<BaseResponse<LoginResponseDto>> reissue(
-        @CookieValue(name = "refreshToken", required = false) String refreshToken
+        @RequestHeader(value = "refresh-token", required = false) String headerToken,
+        @CookieValue(name = "refreshToken", required = false) String cookieToken
     ) {
+        String refreshToken = StringUtils.hasText(headerToken) ? headerToken : cookieToken;
+
         TokenDto tokenDto = authService.reissue(refreshToken);
 
         return sendTokenResponse("토큰 재발급 성공", tokenDto);
