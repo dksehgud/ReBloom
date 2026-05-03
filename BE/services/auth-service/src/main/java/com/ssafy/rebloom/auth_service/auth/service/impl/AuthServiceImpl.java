@@ -1,5 +1,6 @@
 package com.ssafy.rebloom.auth_service.auth.service.impl;
 
+import com.ssafy.rebloom.auth_service.auth.constants.Constants;
 import com.ssafy.rebloom.auth_service.auth.dto.TokenDto;
 import com.ssafy.rebloom.auth_service.auth.dto.request.LoginRequestDto;
 import com.ssafy.rebloom.auth_service.auth.security.CustomUserDetails;
@@ -8,12 +9,19 @@ import com.ssafy.rebloom.auth_service.auth.service.RefreshTokenService;
 import com.ssafy.rebloom.auth_service.auth.util.JwtUtil;
 import com.ssafy.rebloom.auth_service.user.domain.entity.User;
 import com.ssafy.rebloom.auth_service.user.domain.enums.UserRole;
+import com.ssafy.rebloom.auth_service.user.domain.enums.UserStatus;
 import com.ssafy.rebloom.auth_service.user.repository.UserRepository;
+import com.ssafy.rebloom.auth_service.user.service.RedisService;
 import com.ssafy.rebloom.common.exception.CustomException;
 import com.ssafy.rebloom.common.exception.ErrorCode;
+import jakarta.mail.internet.MimeMessage;
+import java.security.SecureRandom;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.DisabledException;
@@ -30,10 +38,14 @@ import org.springframework.util.StringUtils;
 @RequiredArgsConstructor
 public class AuthServiceImpl implements AuthService {
 
-    private final AuthenticationManager authenticationManager;
     private final RefreshTokenService refreshTokenService;
+    private final RedisService redisService;
     private final UserRepository userRepository;
     private final JwtUtil jwtUtil;
+
+    private final AuthenticationManager authenticationManager;
+    private final JavaMailSender mailSender;
+    private static final SecureRandom secureRandom = new SecureRandom();
 
     @Override
     public TokenDto login(LoginRequestDto loginRequestDto) {
@@ -119,6 +131,59 @@ public class AuthServiceImpl implements AuthService {
         return jwtUtil.getRefreshTokenExpireTimeMillis() / 1000;
     }
 
+    @Override
+    public void sendVerificationEmail(String email) {
+        userRepository.findByEmail(email).ifPresent(user -> {
+            if (user.getStatus() == UserStatus.WITHDRAW) {
+                throw new CustomException("탈퇴한 사용자입니다. 관리자에게 문의해주세요.", ErrorCode.USER_WITHDRAW);
+            }
+            throw new CustomException("이미 존재하는 이메일입니다.", ErrorCode.EMAIL_ALREADY_EXISTS);
+        });
+
+        // 난수 생성
+        String code = String.format("%06d", secureRandom.nextInt(1000000));
+
+        // Redis 저장(5분)
+        redisService.setDataWithExpire(
+            Constants.VERIFY_CODE_PREFIX + email,
+            code,
+            5,
+            TimeUnit.MINUTES
+        );
+
+        // 이메일 발송
+        try {
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+            helper.setTo(email);
+            helper.setSubject("[Re:Bloom] 회원가입 인증 번호입니다.");
+            helper.setText("인증 번호: <b>" + code + "</b>", true);
+            mailSender.send(message);
+        } catch (Exception e) {
+            redisService.deleteData(Constants.VERIFY_CODE_PREFIX + email);
+            throw new CustomException("메일 발송 실패", ErrorCode.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @Override
+    public boolean verifyEmailCode(String email, String code) {
+        String savedCode = redisService.getData(Constants.VERIFY_CODE_PREFIX + email);
+
+        if (savedCode != null && savedCode.equals(code)) {
+            redisService.setDataWithExpire(
+                Constants.VERIFIED_EMAIL_PREFIX + email,
+                "true",
+                10,
+                TimeUnit.MINUTES
+            );
+            redisService.deleteData(Constants.VERIFY_CODE_PREFIX + email);
+            return true;
+        }
+
+        return false;
+    }
+
+
     private UUID extractUserId(Authentication authentication) {
         Object principal = authentication.getPrincipal();
 
@@ -132,7 +197,7 @@ public class AuthServiceImpl implements AuthService {
         Object principal = authentication.getPrincipal();
 
         if (principal instanceof CustomUserDetails userDetails) {
-            return userDetails.getUserRole();
+            return userDetails.getRole();
         }
         throw new CustomException("인증 정보 추출 실패", ErrorCode.INTERNAL_SERVER_ERROR);
     }

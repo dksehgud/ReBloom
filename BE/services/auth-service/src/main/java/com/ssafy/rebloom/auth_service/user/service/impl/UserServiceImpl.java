@@ -15,10 +15,8 @@ import com.ssafy.rebloom.auth_service.user.service.RedisService;
 import com.ssafy.rebloom.auth_service.user.service.UserService;
 import com.ssafy.rebloom.common.exception.CustomException;
 import com.ssafy.rebloom.common.exception.ErrorCode;
-import java.security.SecureRandom;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -37,8 +35,6 @@ public class UserServiceImpl implements UserService {
     private final RedisService redisService;
 
     private final PasswordEncoder passwordEncoder;
-    private final JavaMailSender mailSender;
-    private static final SecureRandom secureRandom = new SecureRandom();
 
     @Override
     public boolean isAlreadyExistsEmail(String email) {
@@ -119,7 +115,6 @@ public class UserServiceImpl implements UserService {
             deleteVerificationData(userCreateRequestDto.email());
         }
     }
-
 
 
     private void validateEmailVerification(String email) {

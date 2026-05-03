@@ -13,4 +13,7 @@ public interface AuthService {
 
     long getRefreshTokenMaxAgeSeconds();
 
+    void sendVerificationEmail(String email);
+
+    boolean verifyEmailCode(String email, String code);
 }

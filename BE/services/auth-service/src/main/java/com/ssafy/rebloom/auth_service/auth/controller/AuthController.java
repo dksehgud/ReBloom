@@ -3,8 +3,11 @@ package com.ssafy.rebloom.auth_service.auth.controller;
 import com.ssafy.rebloom.auth_service.auth.constants.Constants;
 import com.ssafy.rebloom.auth_service.auth.dto.TokenDto;
 import com.ssafy.rebloom.auth_service.auth.dto.request.EmailDuplicateRequestDto;
+import com.ssafy.rebloom.auth_service.auth.dto.request.EmailVerificationCodeRequestDto;
+import com.ssafy.rebloom.auth_service.auth.dto.request.EmailVerificationRequestDto;
 import com.ssafy.rebloom.auth_service.auth.dto.request.LoginRequestDto;
 import com.ssafy.rebloom.auth_service.auth.dto.response.EmailDuplicateResponseDto;
+import com.ssafy.rebloom.auth_service.auth.dto.response.EmailVerificationResponseDto;
 import com.ssafy.rebloom.auth_service.auth.dto.response.LoginResponseDto;
 import com.ssafy.rebloom.auth_service.auth.service.AuthService;
 import com.ssafy.rebloom.auth_service.auth.util.CookieUtil;
@@ -69,6 +72,27 @@ public class AuthController {
             emailDuplicateRequestDto.email());
         return ResponseEntity.ok(
             BaseResponse.success("이메일 중복 확인 조회 성공", EmailDuplicateResponseDto.from(isDuplicate)));
+    }
+
+    @PostMapping("/emails/verification-codes")
+    public ResponseEntity<BaseResponse<Void>> sendEmailCodes(
+        @RequestBody @Valid EmailVerificationCodeRequestDto emailVerificationCodeRequestDto
+    ) {
+        authService.sendVerificationEmail(emailVerificationCodeRequestDto.email());
+
+        return ResponseEntity.ok(BaseResponse.success("이메일 검증 코드 전송 성공"));
+    }
+
+    @PostMapping("/emails/verifications")
+    public ResponseEntity<BaseResponse<EmailVerificationResponseDto>> verifyEmailCodes(
+        @RequestBody @Valid EmailVerificationRequestDto emailVerificationRequestDto
+    ) {
+        boolean isVerified = authService.verifyEmailCode(emailVerificationRequestDto.email(), emailVerificationRequestDto.code());
+        EmailVerificationResponseDto emailVerificationResponseDto = EmailVerificationResponseDto.of(isVerified);
+
+        return isVerified ?
+            ResponseEntity.ok(BaseResponse.success("이메일 검증 코드 인증 성공", emailVerificationResponseDto))
+            : ResponseEntity.ok(BaseResponse.success("이메일 인증 코드 불일치 실패", emailVerificationResponseDto));
     }
 
     private ResponseEntity<BaseResponse<LoginResponseDto>> sendTokenResponse(
