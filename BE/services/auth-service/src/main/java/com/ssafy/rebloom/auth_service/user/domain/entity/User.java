@@ -1,6 +1,6 @@
 package com.ssafy.rebloom.auth_service.user.domain.entity;
 
-import com.ssafy.rebloom.auth_service.domain.enums.UserRole;
+import com.ssafy.rebloom.auth_service.user.domain.enums.UserRole;
 import com.ssafy.rebloom.common.entity.BaseTime;
 import jakarta.persistence.Column;
 import jakarta.persistence.DiscriminatorColumn;

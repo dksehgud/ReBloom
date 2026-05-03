@@ -1,6 +1,6 @@
 package com.ssafy.rebloom.auth_service.auth.util;
 
-import com.ssafy.ssarvis.common.constant.Constants;
+import com.ssafy.rebloom.auth_service.auth.constants.Constants;
 import org.springframework.http.ResponseCookie;
 import org.springframework.stereotype.Component;
 

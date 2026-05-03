@@ -82,8 +82,7 @@ public class AuthController {
             .header(HttpHeaders.SET_COOKIE, refreshTokenCookie.toString())
             .header(HttpHeaders.AUTHORIZATION, Constants.BEARER_PREFIX + tokenDto.accessToken())
             .body(BaseResponse.success(responseMessage,
-                LoginResponseDto.createExistingUserResponse(tokenDto.accessToken(),
-                    tokenDto.timeout()))
+                LoginResponseDto.of(tokenDto.accessToken(), tokenDto.refreshToken()))
             );
     }
 }

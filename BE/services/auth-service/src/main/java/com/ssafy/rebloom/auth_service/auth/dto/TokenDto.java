@@ -2,11 +2,10 @@ package com.ssafy.rebloom.auth_service.auth.dto;
 
 public record TokenDto(
     String accessToken,
-    String refreshToken,
-    Long timeout
+    String refreshToken
 ) {
 
-    public static TokenDto from(String accessToken, String refreshToken, Long timeout) {
-        return new TokenDto(accessToken, refreshToken, timeout);
+    public static TokenDto from(String accessToken, String refreshToken) {
+        return new TokenDto(accessToken, refreshToken);
     }
 }

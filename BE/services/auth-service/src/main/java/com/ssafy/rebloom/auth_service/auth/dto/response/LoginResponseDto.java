@@ -7,19 +7,18 @@ import lombok.Builder;
 @Builder
 @JsonInclude(Include.NON_NULL)
 public record LoginResponseDto(
-    boolean isNewUser,
-
-    String registerUUID,
-
     String accessToken,
-    Long timeout
+    String refreshToken
 ) {
 
-    public static LoginResponseDto createExistingUserResponse(String accessToken, Long timeout) {
+    public static LoginResponseDto of(
+        String accessToken,
+        String refreshToken
+    ) {
         return LoginResponseDto.builder()
-            .isNewUser(false)
             .accessToken(accessToken)
-            .timeout(timeout)
+            .refreshToken(refreshToken)
             .build();
     }
+
 }

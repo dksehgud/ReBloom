@@ -1,5 +1,7 @@
 package com.ssafy.rebloom.auth_service.auth.util;
 
+import com.ssafy.rebloom.auth_service.auth.constants.Constants;
+import com.ssafy.rebloom.auth_service.user.domain.enums.UserRole;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jwts;
@@ -7,6 +9,7 @@ import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import jakarta.annotation.PostConstruct;
 import java.util.Date;
+import java.util.UUID;
 import javax.crypto.SecretKey;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -39,12 +42,12 @@ public class JwtUtil {
      * @param userId userId
      * @return String형태의 Token
      */
-    public String createAccessToken(Long userId) {
+    public String createAccessToken(UUID userId, UserRole userRole) {
         Date now = new Date();
 
         return Jwts.builder()
             .subject(String.valueOf(userId))
-            .claims(createAccessClaims())
+            .claim("role", Constants.ROLE_PREFIX + userRole.name())
             .issuedAt(now)
             .expiration(new Date(now.getTime() + accessTokenExpireTime))
             .signWith(key)
@@ -56,7 +59,7 @@ public class JwtUtil {
      * @param userId userId
      * @return String형태의 Token
      */
-    public String createRefreshToken(Long userId) {
+    public String createRefreshToken(UUID userId) {
         Date now = new Date();
 
         return Jwts.builder()
@@ -66,14 +69,6 @@ public class JwtUtil {
             .expiration(new Date(now.getTime() + refreshTokenExpireTimeMillis))
             .signWith(key)
             .compact();
-    }
-
-    /**
-     * 추가적으로 토큰에 담을 데이터가 필요하다면 claim에 저장
-     * @return 생성된 claims
-     */
-    private Claims createAccessClaims() {
-        return Jwts.claims().build();
     }
 
     /**
@@ -124,7 +119,7 @@ public class JwtUtil {
      * @param token 전달받은 toekn
      * @return userId
      */
-    public Long getUserId(String token) {
+    public UUID getUserId(String token) {
         String subject = getClaims(token).getSubject();
 
         if (subject == null || subject.isBlank()) {
@@ -132,9 +127,18 @@ public class JwtUtil {
         }
 
         try {
-            return Long.valueOf(subject);
+            return UUID.fromString(subject);
         } catch (NumberFormatException e) {
             throw new IllegalArgumentException("토큰 subject가 숫자 형식이 아닙니다.");
         }
+    }
+
+    /**
+     * token의 claim에 있는 role 추출 메서드
+     * @param token 전닯낟은 token
+     * @return UserRole
+     */
+    public String getUserRole(String token) {
+        return getClaims(token).get("role", String.class);
     }
 }
