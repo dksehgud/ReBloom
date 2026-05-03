@@ -2,6 +2,7 @@ package com.ssafy.rebloom.auth_service.auth.security;
 
 import com.ssafy.rebloom.auth_service.user.domain.entity.User;
 import com.ssafy.rebloom.auth_service.user.domain.enums.UserRole;
+import com.ssafy.rebloom.auth_service.user.domain.enums.UserStatus;
 import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
@@ -18,7 +19,8 @@ public class CustomUserDetails implements UserDetails {
     private final UUID userId;
     private final String email;
     private final String password;
-    private final UserRole userRole;
+    private final UserRole role;
+    private final UserStatus status;
     private final Collection<? extends GrantedAuthority> authorities;
 
     public static CustomUserDetails of(User user) {
@@ -27,6 +29,7 @@ public class CustomUserDetails implements UserDetails {
             user.getEmail(),
             user.getPassword(),
             user.getRole(),
+            user.getStatus(),
             List.of(new SimpleGrantedAuthority("ROLE_" + user.getRole().name()))
         );
     }
@@ -34,6 +37,11 @@ public class CustomUserDetails implements UserDetails {
     @Override
     public String getUsername() {
         return email;
+    }
+
+    @Override
+    public boolean isEnabled() {
+        return this.status == UserStatus.ACTIVE;
     }
 
     @Override

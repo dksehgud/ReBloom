@@ -1,6 +1,5 @@
 package com.ssafy.rebloom.auth_service.user.domain.entity;
 
-import com.ssafy.rebloom.auth_service.domain.entity.Parent;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;

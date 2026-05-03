@@ -1,6 +1,7 @@
 package com.ssafy.rebloom.auth_service.user.domain.entity;
 
 import com.ssafy.rebloom.auth_service.user.domain.enums.UserRole;
+import com.ssafy.rebloom.auth_service.user.domain.enums.UserStatus;
 import com.ssafy.rebloom.common.entity.BaseTime;
 import jakarta.persistence.Column;
 import jakarta.persistence.DiscriminatorColumn;
@@ -14,20 +15,16 @@ import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotNull;
 import java.util.UUID;
 import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.UuidGenerator;
 
 @Entity
 @Getter
-@Builder
 @Table(name = "users")
 @Inheritance(strategy = InheritanceType.JOINED)
 @DiscriminatorColumn(name = "role")
-@AllArgsConstructor(access = AccessLevel.PROTECTED)
-@NoArgsConstructor(access = AccessLevel.PRIVATE)
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class User extends BaseTime {
 
     @Id
@@ -55,4 +52,22 @@ public class User extends BaseTime {
     @Column(name = "role", nullable = false)
     private UserRole role;
 
+    @NotNull
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false)
+    private UserStatus status;
+
+
+    protected User(String email, String password, String name, String phone, UserRole role) {
+        this.email = email;
+        this.password = password;
+        this.name = name;
+        this.phone = phone;
+        this.role = role;
+        this.status = UserStatus.ACTIVE;
+    }
+
+    public void withDrawUser() {
+        this.status = UserStatus.WITHDRAW;
+    }
 }
