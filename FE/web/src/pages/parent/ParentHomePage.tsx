@@ -35,45 +35,48 @@ function InsightTipIcon() {
   )
 }
 
+function ParentHomeHeader() {
+  return (
+    <div className="parent-home-page__header">
+      <div className="parent-home-page__header-copy">
+        <h1 className="parent-home-page__title">내 아이 감정 모니터</h1>
+        <p className="parent-home-page__subtitle">지민 부모님</p>
+      </div>
+    </div>
+  )
+}
+
 function ParentHomePage() {
   return (
     <MobilePageLayout
+      header={<ParentHomeHeader />}
       className="parent-home-page"
       contentClassName="parent-home-page__content"
       bottomNavigation={<div className="parent-home-page__bottom-placeholder" aria-hidden="true" />}
     >
-      <div className="parent-home-page__viewport">
-        <header className="parent-home-page__header">
-          <div className="parent-home-page__header-copy">
-            <h1 className="parent-home-page__title">내 아이 감정 모니터</h1>
-            <p className="parent-home-page__subtitle">지민 부모님</p>
+      <div className="parent-home-page__body">
+        <section className="parent-home-page__summary-card" aria-label="보호자 홈 요약 영역">
+          <div className="parent-home-page__summary-copy">
+            <h2 className="parent-home-page__section-title">
+              지민이가 조금 지쳐 있는 것 같아요
+            </h2>
+            <p className="parent-home-page__section-description">
+              수면 질이 평소보다 좋지 않고, 활동량이 저번주에 비해 줄어들었어요.
+            </p>
           </div>
-        </header>
 
-        <div className="parent-home-page__body">
-          <section className="parent-home-page__summary-card" aria-label="보호자 홈 요약 영역">
-            <div className="parent-home-page__summary-copy">
-              <h2 className="parent-home-page__section-title">
-                지민이가 조금 지쳐 있는 것 같아요
-              </h2>
-              <p className="parent-home-page__section-description">
-                수면 질이 평소보다 좋지 않고, 활동량이 저번주에 비해 줄어들었어요.
+          <div className="parent-home-page__insight-box">
+            <div className="parent-home-page__tip-row">
+              <InsightTipIcon />
+              <p className="parent-home-page__tip-copy">
+                직접적인 상태 질문보다 가벼운 제안이 좋습니다.
               </p>
             </div>
+            <p className="parent-home-page__quote">"오늘 저녁에 같이 맛있는 거 먹을까?"</p>
+          </div>
+        </section>
 
-            <div className="parent-home-page__insight-box">
-              <div className="parent-home-page__tip-row">
-                <InsightTipIcon />
-                <p className="parent-home-page__tip-copy">
-                  직접적인 상태 질문보다 가벼운 제안이 좋습니다.
-                </p>
-              </div>
-              <p className="parent-home-page__quote">"오늘 저녁에 같이 맛있는 거 먹을까?"</p>
-            </div>
-          </section>
-
-          <ParentObservationSection />
-        </div>
+        <ParentObservationSection />
       </div>
     </MobilePageLayout>
   )
