@@ -7,8 +7,12 @@ import SignUpPage from './SignUpPage'
 
 type AuthView = 'landing' | 'login' | 'signup' | 'find-password'
 
-function AuthPage() {
-  const [view, setView] = useState<AuthView>('landing')
+type AuthPageProps = {
+  initialView?: AuthView
+}
+
+function AuthPage({ initialView = 'landing' }: AuthPageProps) {
+  const [view, setView] = useState<AuthView>(initialView)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
 
