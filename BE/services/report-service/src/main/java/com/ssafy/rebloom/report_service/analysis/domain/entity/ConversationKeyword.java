@@ -35,3 +35,4 @@ public class ConversationKeyword {
     @JoinColumn(name = "keyword_id", referencedColumnName = "keyword_id", insertable = false, updatable = false)
     private AnalysisKeyword analysisKeyword;
 }
+

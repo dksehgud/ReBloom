@@ -29,3 +29,4 @@ public class RecentTrend {
     @Column(nullable = false)
     private String summary;
 }
+

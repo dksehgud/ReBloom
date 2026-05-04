@@ -28,3 +28,4 @@ public class AnalysisKeyword {
     @Column(nullable = false)
     private String keyword;
 }
+

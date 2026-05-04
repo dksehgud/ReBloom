@@ -43,4 +43,16 @@ public class Counselor extends User {
             .hospitalAddress(hospitalAddress)
             .build();
     }
+
+    public void updateCounselorProfile(
+        String email,
+        String name,
+        String phone,
+        String hospitalName,
+        String hospitalAddress
+    ) {
+        updateProfile(email, name, phone);
+        this.hospitalName = hospitalName;
+        this.hospitalAddress = hospitalAddress;
+    }
 }

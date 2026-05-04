@@ -41,3 +41,4 @@ public class CounselorComment extends BaseTime {
     @JoinColumn(name = "parent_report_id", referencedColumnName = "id", insertable = false, updatable = false)
     private ChildrenReport childrenReport;
 }
+

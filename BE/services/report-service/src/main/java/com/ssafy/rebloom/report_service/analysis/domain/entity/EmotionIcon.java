@@ -27,3 +27,4 @@ public class EmotionIcon {
     @Column(nullable = false)
     private String name;
 }
+
