@@ -1,5 +1,6 @@
 @import './shared/styles/global.css';
 @import './features/auth/styles/auth.css';
+@import './features/guardian/styles/home.css';
 @import './features/user/styles/settings.css';
 @import './features/diary/styles/diary.css';
 

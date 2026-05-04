@@ -15,6 +15,7 @@ import LoginPage from '../../pages/auth/LoginPage'
 import SignUpPage from '../../pages/auth/SignUpPage'
 import ChildDiaryListPage from '../../pages/child/ChildDiaryListPage'
 import ChildSettingsPage from '../../pages/child/ChildSettingsPage'
+import ParentHomePage from '../../pages/parent/ParentHomePage'
 import { useAppSessionStore } from '../../features/auth/store/useAppSessionStore'
 import { useSelectedChildStore } from '../../features/student/store/useSelectedChildStore'
 import type { AppRole } from '../../shared/types/appRole'
@@ -91,6 +92,18 @@ function ChildRouteLayout() {
   }, [clearSelectedChild, setActiveRole])
 
   return <Outlet context={{ profileAddress, setProfileAddress }} />
+}
+
+function ParentRouteLayout() {
+  const setActiveRole = useAppSessionStore((state) => state.setActiveRole)
+  const clearSelectedChild = useSelectedChildStore((state) => state.clearSelectedChild)
+
+  useEffect(() => {
+    setActiveRole('parent')
+    clearSelectedChild()
+  }, [clearSelectedChild, setActiveRole])
+
+  return <Outlet />
 }
 
 function useAuthRouteContext() {
@@ -226,15 +239,22 @@ function AppRouter() {
       </Route>
 
       <Route
-        path="/parent/*"
-        element={
-          <PlaceholderRoutePage
-            title="보호자 화면"
-            description="보호자 화면 구현 전에 라우트 구조를 먼저 열어 둔 상태입니다."
-            role="parent"
-          />
-        }
-      />
+        path="/parent"
+        element={<ParentRouteLayout />}
+      >
+        <Route index element={<Navigate replace to="/parent/home" />} />
+        <Route path="home" element={<ParentHomePage />} />
+        <Route
+          path="*"
+          element={
+            <PlaceholderRoutePage
+              title="보호자 화면"
+              description="보호자 홈 이후 화면은 다음 하위 태스크에서 순서대로 연결할 예정입니다."
+              role="parent"
+            />
+          }
+        />
+      </Route>
       <Route
         path="/counselor/*"
         element={

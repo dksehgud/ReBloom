@@ -1,0 +1,193 @@
+.parent-page-layout {
+  width: 100%;
+  min-height: 100%;
+}
+
+.parent-page-layout__surface {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  min-height: min(844px, 100svh - 48px);
+  background: #ffffff;
+  border-radius: 40px;
+  overflow: hidden;
+  position: relative;
+}
+
+.parent-page-layout__content {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.parent-page-layout__bottom-slot {
+  flex-shrink: 0;
+}
+
+.parent-page-layout__bottom-placeholder {
+  min-height: 98px;
+}
+
+.parent-home-page {
+  background: linear-gradient(180deg, #ffffff 0%, #fbfcfd 100%);
+}
+
+.parent-home-page__content {
+  padding: 0;
+}
+
+.parent-home-page__viewport {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.parent-home-page__header {
+  background: rgba(255, 255, 255, 0.9);
+  border-bottom: 1px solid rgba(243, 244, 246, 0.55);
+  padding: 48px 20px 17px;
+}
+
+.parent-home-page__header-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.parent-home-page__title {
+  margin: 0;
+  color: #2d3748;
+  font-family: 'Inter', 'Noto Sans KR', sans-serif;
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.parent-home-page__subtitle {
+  margin: 0;
+  color: #718096;
+  font-family: 'Inter', 'Noto Sans KR', sans-serif;
+  font-size: 12px;
+  line-height: 16px;
+}
+
+.parent-home-page__body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 24px;
+  padding: 24px;
+}
+
+.parent-home-page__summary-card,
+.parent-home-page__records-card {
+  background: linear-gradient(180deg, #ffffff 0%, #f9fafb 100%);
+  border: 1px solid rgba(168, 178, 188, 0.12);
+  border-radius: 28px;
+  box-shadow: 0 10px 32px rgba(31, 52, 83, 0.12);
+  padding: 24px;
+}
+
+.parent-home-page__records-card {
+  border-radius: 24px;
+  box-shadow: none;
+  padding: 24px 20px 20px;
+}
+
+.parent-home-page__section-tag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 28px;
+  padding: 0 12px;
+  border-radius: 999px;
+  background: rgba(107, 154, 196, 0.12);
+  color: #6b9ac4;
+  font-family: 'Inter', 'Noto Sans KR', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.parent-home-page__section-title {
+  margin: 16px 0 8px;
+  color: #2d3748;
+  font-family: 'Inter', 'Noto Sans KR', sans-serif;
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.45;
+}
+
+.parent-home-page__section-description {
+  margin: 0;
+  color: #718096;
+  font-family: 'Inter', 'Noto Sans KR', sans-serif;
+  font-size: 14px;
+  line-height: 1.55;
+  word-break: keep-all;
+}
+
+.parent-home-page__records-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.parent-home-page__records-heading {
+  margin: 0;
+  color: #2d3748;
+  font-family: 'Inter', 'Noto Sans KR', sans-serif;
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.45;
+}
+
+.parent-home-page__add-button {
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #6b9ac4 0%, #88b5c4 100%);
+  box-shadow: 0 6px 16px rgba(107, 154, 196, 0.32);
+  color: #ffffff;
+  cursor: default;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  line-height: 1;
+}
+
+.parent-home-page__empty-banner {
+  margin-top: 16px;
+  border: 1px dashed rgba(107, 154, 196, 0.32);
+  border-radius: 20px;
+  background: linear-gradient(180deg, #f5f8fa 0%, #fafbfc 100%);
+  padding: 18px 18px 17px;
+}
+
+.parent-home-page__empty-copy {
+  margin: 0;
+  color: rgba(74, 85, 104, 0.58);
+  font-family: 'Inter', 'Noto Sans KR', sans-serif;
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.parent-home-page__preview-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.parent-home-page__preview-item {
+  min-height: 92px;
+  border-radius: 16px;
+  background: rgba(155, 196, 168, 0.04);
+  border: 1px solid rgba(168, 178, 188, 0.08);
+}
