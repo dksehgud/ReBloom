@@ -9,4 +9,7 @@ apply from: file('../../common-service.gradle')
 dependencies {
 	implementation 'org.springframework.kafka:spring-kafka'
 	testImplementation 'org.springframework.kafka:spring-kafka-test'
+
+	// security module
+	implementation project(':modules:security-module')
 }

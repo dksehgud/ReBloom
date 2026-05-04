@@ -47,6 +47,11 @@ public class JwtAuthenticationFilter extends AbstractGatewayFilterFactory<JwtAut
                 String userId = claims.getSubject();
                 String role = claims.get("role", String.class);
 
+                if (userId == null || role == null) {
+                    log.warn("비정상적인 JWT 토큰 접근 감지 (필수 클레임 누락) - userId: {}, role: {}", userId, role);
+                    return onError(exchange, HttpStatus.UNAUTHORIZED);
+                }
+
                 ServerHttpRequest modifiedRequest = request.mutate()
                     .headers(headers -> {
                         headers.remove("X-User-Id");
