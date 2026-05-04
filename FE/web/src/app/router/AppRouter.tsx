@@ -16,6 +16,7 @@ import SignUpPage from '../../pages/auth/SignUpPage'
 import ChildDiaryListPage from '../../pages/child/ChildDiaryListPage'
 import ChildSettingsPage from '../../pages/child/ChildSettingsPage'
 import ParentHomePage from '../../pages/parent/ParentHomePage'
+import ParentObservationsPage from '../../pages/parent/ParentObservationsPage'
 import ParentPlaceholderPage from '../../pages/parent/ParentPlaceholderPage'
 import { useAppSessionStore } from '../../features/auth/store/useAppSessionStore'
 import { useSelectedChildStore } from '../../features/student/store/useSelectedChildStore'
@@ -244,15 +245,7 @@ function AppRouter() {
       <Route path="/parent" element={<ParentRouteLayout />}>
         <Route index element={<Navigate replace to="/parent/home" />} />
         <Route path="home" element={<ParentHomePage />} />
-        <Route
-          path="observations"
-          element={
-            <ParentPlaceholderPage
-              title="아이 관찰 기록"
-              description="아이 관찰 기록 조회 화면은 다음 태스크에서 실제 목록과 캘린더 흐름으로 연결할 예정입니다."
-            />
-          }
-        />
+        <Route path="observations" element={<ParentObservationsPage />} />
         <Route
           path="report"
           element={
@@ -288,7 +281,7 @@ function AppRouter() {
         element={
           <PlaceholderRoutePage
             title="상담사 대시보드"
-            description="상담사 화면 구현 전에 레이아웃과 공통 구조를 먼저 정리한 상태입니다."
+            description="상담사 화면 구현 전에 라우팅과 공통 구조를 먼저 정리한 상태입니다."
             role="counselor"
           />
         }

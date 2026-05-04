@@ -392,3 +392,182 @@
   line-height: 22px;
   word-break: keep-all;
 }
+
+.parent-observations-page__content {
+  padding: 0;
+}
+
+.parent-observations-page__body {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 24px 24px 32px;
+}
+
+.parent-observations-page__section {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  border-radius: 24px;
+  border: 1px solid rgba(168, 178, 188, 0.12);
+  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+  padding: 22px 20px;
+}
+
+.parent-observations-page__section--calendar {
+  min-height: 334px;
+}
+
+.parent-observations-page__section--list {
+  min-height: 320px;
+}
+
+.parent-observations-page__section-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.parent-observations-page__eyebrow {
+  margin: 0;
+  color: #88b5c4;
+  font-family: 'Inter', 'Noto Sans KR', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  line-height: 16px;
+  text-transform: uppercase;
+}
+
+.parent-observations-page__section-title {
+  margin: 0;
+  color: #2d3748;
+  font-family: 'Inter', 'Noto Sans KR', sans-serif;
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 28px;
+}
+
+.parent-observations-page__section-description {
+  margin: 0;
+  color: #718096;
+  font-family: 'Inter', 'Noto Sans KR', sans-serif;
+  font-size: 13px;
+  line-height: 21px;
+  word-break: keep-all;
+}
+
+.parent-observations-page__calendar-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  border-radius: 20px;
+  background: linear-gradient(180deg, rgba(245, 248, 250, 0.78) 0%, rgba(250, 251, 252, 0.92) 100%);
+  padding: 18px 16px 20px;
+}
+
+.parent-observations-page__month-row {
+  display: grid;
+  grid-template-columns: 28px 1fr 28px;
+  align-items: center;
+  gap: 12px;
+}
+
+.parent-observations-page__month-button,
+.parent-observations-page__month-label,
+.parent-observations-page__day-cell,
+.parent-observations-page__list-card-date,
+.parent-observations-page__list-card-badge,
+.parent-observations-page__list-card-line {
+  background: linear-gradient(180deg, rgba(136, 181, 196, 0.18) 0%, rgba(155, 196, 168, 0.12) 100%);
+}
+
+.parent-observations-page__month-button {
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+}
+
+.parent-observations-page__month-label {
+  width: 116px;
+  height: 18px;
+  justify-self: center;
+  border-radius: 999px;
+}
+
+.parent-observations-page__week-row {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.parent-observations-page__week-label {
+  color: #a8b2bc;
+  font-family: 'Inter', 'Noto Sans KR', sans-serif;
+  font-size: 11px;
+  line-height: 16px;
+  text-align: center;
+}
+
+.parent-observations-page__day-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 8px 6px;
+}
+
+.parent-observations-page__day-cell {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 12px;
+}
+
+.parent-observations-page__list-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.parent-observations-page__list-card {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  border-radius: 18px;
+  background: rgba(155, 196, 168, 0.04);
+  border: 1px solid rgba(168, 178, 188, 0.08);
+  padding: 16px;
+}
+
+.parent-observations-page__list-card-date {
+  width: 40px;
+  height: 46px;
+  flex-shrink: 0;
+  border-radius: 14px;
+}
+
+.parent-observations-page__list-card-content {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.parent-observations-page__list-card-badge {
+  width: 52px;
+  height: 24px;
+  border-radius: 999px;
+}
+
+.parent-observations-page__list-card-line {
+  height: 14px;
+  border-radius: 999px;
+}
+
+.parent-observations-page__list-card-line--long {
+  width: 88%;
+}
+
+.parent-observations-page__list-card-line--short {
+  width: 64%;
+}
