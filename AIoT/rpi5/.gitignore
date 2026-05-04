@@ -1,0 +1,59 @@
+# Local Codex/session files
+.codex
+
+# Secrets and machine-local environment
+.env
+.env.*
+!.env.example
+!*.env.example
+!**/*.env.example
+
+# Python caches and virtual environments
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+venv/
+.venv/
+env/
+
+# Logs and runtime artifacts
+*.log
+*.pid
+*.sock
+*.tmp
+tmp/
+logs/
+
+# Audio capture / speech test outputs
+*.wav
+*.mp3
+*.flac
+*.ogg
+*.pcm
+*.raw
+recordings/
+
+# Local model and generated ML artifacts
+*.onnx
+*.tflite
+*.pt
+*.pth
+*.gguf
+*.bin
+models/
+
+# Raspberry Pi / provisioning local state
+wpa_supplicant.conf
+*.sqlite
+*.sqlite3
+*.db
+
+# Keep shareable service and example config files trackable.
+!LLM/rebloom-voice.env.example
+!LLM/rebloom-voice.service
+!ble_provisioning/rebloom-ble.service
