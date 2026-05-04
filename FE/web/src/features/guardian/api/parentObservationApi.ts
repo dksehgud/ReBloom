@@ -8,7 +8,7 @@ import type {
 } from '../types/parentObservation'
 
 type GetParentObservationPreviewParams = {
-  childId?: string
+  childrenId?: string
   year?: number
   month?: number
   limit?: number
@@ -84,17 +84,17 @@ function createObservationListSearchParams({
 }
 
 export async function getParentObservationPreview({
-  childId,
+  childrenId,
   year,
   month,
   limit = PARENT_OBSERVATION_PREVIEW_LIMIT,
 }: GetParentObservationPreviewParams = {}): Promise<ParentObservationPreviewResponse> {
-  if (!childId) {
+  if (!childrenId) {
     return getParentObservationPreviewFromMock(limit)
   }
 
   const requestPath = `${parentObservationApiPaths.list(
-    childId,
+    childrenId,
   )}${createObservationListSearchParams({
     year,
     month,
