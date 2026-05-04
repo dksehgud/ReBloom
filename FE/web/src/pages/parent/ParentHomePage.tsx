@@ -1,8 +1,12 @@
-import ParentPageLayout from '../../components/templates/ParentPageLayout/ParentPageLayout'
+import MobilePageLayout from '../../components/templates/MobilePageLayout/MobilePageLayout'
 
 function ParentHomePage() {
   return (
-    <ParentPageLayout className="parent-home-page" contentClassName="parent-home-page__content">
+    <MobilePageLayout
+      className="parent-home-page"
+      contentClassName="parent-home-page__content"
+      bottomNavigation={<div className="parent-home-page__bottom-placeholder" aria-hidden="true" />}
+    >
       <div className="parent-home-page__viewport">
         <header className="parent-home-page__header">
           <div className="parent-home-page__header-copy">
@@ -45,7 +49,7 @@ function ParentHomePage() {
           </section>
         </div>
       </div>
-    </ParentPageLayout>
+    </MobilePageLayout>
   )
 }
 

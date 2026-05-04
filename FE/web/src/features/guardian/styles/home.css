@@ -1,35 +1,3 @@
-.parent-page-layout {
-  width: 100%;
-  min-height: 100%;
-}
-
-.parent-page-layout__surface {
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-  min-height: min(844px, 100svh - 48px);
-  background: #ffffff;
-  border-radius: 40px;
-  overflow: hidden;
-  position: relative;
-}
-
-.parent-page-layout__content {
-  display: flex;
-  flex: 1;
-  flex-direction: column;
-  min-height: 0;
-  overflow-y: auto;
-}
-
-.parent-page-layout__bottom-slot {
-  flex-shrink: 0;
-}
-
-.parent-page-layout__bottom-placeholder {
-  min-height: 98px;
-}
-
 .parent-home-page {
   background: linear-gradient(180deg, #ffffff 0%, #fbfcfd 100%);
 }
@@ -43,6 +11,10 @@
   flex: 1;
   flex-direction: column;
   min-height: 0;
+}
+
+.parent-home-page__bottom-placeholder {
+  min-height: 98px;
 }
 
 .parent-home-page__header {
