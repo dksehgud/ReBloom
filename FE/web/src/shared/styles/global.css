@@ -46,8 +46,14 @@
   flex-direction: column;
   min-height: 0;
   overflow-y: auto;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
   padding: 0 24px;
   box-sizing: border-box;
+}
+
+.mobile-page-content::-webkit-scrollbar {
+  display: none;
 }
 
 .mobile-page-bottom-slot {
