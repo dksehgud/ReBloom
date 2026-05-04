@@ -103,7 +103,11 @@ function ParentRouteLayout() {
     clearSelectedChild()
   }, [clearSelectedChild, setActiveRole])
 
-  return <Outlet />
+  return (
+    <PhoneShell>
+      <Outlet />
+    </PhoneShell>
+  )
 }
 
 function useAuthRouteContext() {
