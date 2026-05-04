@@ -5,16 +5,17 @@ import com.ssafy.rebloom.auth_service.auth.util.CookieUtil;
 import com.ssafy.rebloom.auth_service.user.dto.request.UserCreateRequestDto;
 import com.ssafy.rebloom.auth_service.user.service.UserService;
 import com.ssafy.rebloom.common.dto.BaseResponse;
+import com.ssafy.rebloom.security.annotation.LoginUserId;
 import jakarta.validation.Valid;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -37,8 +38,9 @@ public class UserController {
     }
 
     @DeleteMapping
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<BaseResponse<Void>> withdraw(
-        @RequestHeader("X-User-Id") UUID userId
+        @LoginUserId UUID userId
     ) {
         // 회원 탈퇴
         userService.withDrawUser(userId);
