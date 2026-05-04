@@ -29,4 +29,7 @@ dependencies {
 	implementation 'org.springframework.kafka:spring-kafka'
 	runtimeOnly 'org.postgresql:postgresql'
 	testImplementation 'org.springframework.kafka:spring-kafka-test'
+
+	// security module
+	implementation project(':modules:security-module')
 }

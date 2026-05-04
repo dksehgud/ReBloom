@@ -30,4 +30,7 @@ dependencies {
 
 	// Swagger(OpenAPI) UI 및 문서 자동 생성
 	implementation "org.springdoc:springdoc-openapi-starter-webmvc-ui:${springdocVersion}"
+
+	// security module
+	implementation project(':modules:security-module')
 }
