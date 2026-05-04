@@ -1,17 +1,16 @@
 [Unit]
 Description=Re:Bloom BLE Provisioning Service
 Documentation=https://github.com/your-repo/rebloom
-After=dbus.service bluetooth.service NetworkManager.service
-Wants=bluetooth.service NetworkManager.service
+After=bluetooth.target network-online.target
+Wants=bluetooth.target
 
 [Service]
 Type=simple
-User=root
-WorkingDirectory=__BLE_PROVISIONING_DIR__
-ExecStart=__VENV_PYTHON__ __BLE_PROVISIONING_DIR__/main.py
-Restart=always
+User=pi
+WorkingDirectory=/home/pi/rebloom/ble_provisioning
+ExecStart=/home/pi/rebloom/venv/bin/python /home/pi/rebloom/ble_provisioning/main.py
+Restart=on-failure
 RestartSec=5
-Environment=PYTHONUNBUFFERED=1
 
 StandardOutput=journal
 StandardError=journal
