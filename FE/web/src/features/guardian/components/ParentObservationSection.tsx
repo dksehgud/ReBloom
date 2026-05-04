@@ -1,23 +1,4 @@
-const previewRecords = [
-  {
-    date: '04/15',
-    weekday: '화',
-    mood: '침묵',
-    description: '저녁 식사 때 말이 별로 없었음',
-  },
-  {
-    date: '04/14',
-    weekday: '월',
-    mood: '예민',
-    description: '학교 얘기를 물어봤는데 짜증을 냄',
-  },
-  {
-    date: '04/13',
-    weekday: '일',
-    mood: '평온',
-    description: '가족과 영화를 보며 편안해 보였음',
-  },
-] as const
+import { useParentObservationPreview } from '../hooks/useParentObservationPreview'
 
 function ObservationIcon() {
   return (
@@ -55,8 +36,20 @@ function AddIcon() {
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
     >
-      <path d="M4.16675 10H15.8334" stroke="currentColor" strokeWidth="1.66667" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M10 4.16663V15.8333" stroke="currentColor" strokeWidth="1.66667" strokeLinecap="round" strokeLinejoin="round" />
+      <path
+        d="M4.16675 10H15.8334"
+        stroke="currentColor"
+        strokeWidth="1.66667"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M10 4.16663V15.8333"
+        stroke="currentColor"
+        strokeWidth="1.66667"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
     </svg>
   )
 }
@@ -82,6 +75,8 @@ function PromptIcon() {
 }
 
 function ParentObservationSection() {
+  const { records, isLoading, isError } = useParentObservationPreview()
+
   return (
     <section className="parent-home-page__records-card" aria-label="아이 관찰 기록 영역">
       <div className="parent-home-page__records-header">
@@ -105,21 +100,35 @@ function ParentObservationSection() {
         </div>
       </div>
 
-      <div className="parent-home-page__preview-list">
-        {previewRecords.map((record) => (
-          <article key={`${record.date}-${record.mood}`} className="parent-home-page__record-item">
-            <div className="parent-home-page__record-date-block">
-              <p className="parent-home-page__record-date">{record.date}</p>
-              <p className="parent-home-page__record-weekday">{record.weekday}</p>
-            </div>
+      {isError ? (
+        <p className="parent-home-page__records-status">
+          최근 관찰 기록을 불러오지 못했어요.
+        </p>
+      ) : null}
 
-            <div className="parent-home-page__record-content">
-              <span className="parent-home-page__record-badge">{record.mood}</span>
-              <p className="parent-home-page__record-description">{record.description}</p>
-            </div>
-          </article>
-        ))}
-      </div>
+      {isLoading ? (
+        <div className="parent-home-page__preview-list" aria-hidden="true">
+          <div className="parent-home-page__record-item" />
+          <div className="parent-home-page__record-item" />
+          <div className="parent-home-page__record-item" />
+        </div>
+      ) : (
+        <div className="parent-home-page__preview-list">
+          {records.map((record) => (
+            <article key={record.id} className="parent-home-page__record-item">
+              <div className="parent-home-page__record-date-block">
+                <p className="parent-home-page__record-date">{record.date}</p>
+                <p className="parent-home-page__record-weekday">{record.weekday}</p>
+              </div>
+
+              <div className="parent-home-page__record-content">
+                <span className="parent-home-page__record-badge">{record.mood}</span>
+                <p className="parent-home-page__record-description">{record.description}</p>
+              </div>
+            </article>
+          ))}
+        </div>
+      )}
     </section>
   )
 }

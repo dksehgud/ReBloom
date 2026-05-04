@@ -228,6 +228,14 @@
   gap: 12px;
 }
 
+.parent-home-page__records-status {
+  margin: -4px 0 0;
+  color: #d97745;
+  font-family: 'Inter', 'Noto Sans KR', sans-serif;
+  font-size: 12px;
+  line-height: 18px;
+}
+
 .parent-home-page__record-item {
   display: flex;
   align-items: flex-start;
