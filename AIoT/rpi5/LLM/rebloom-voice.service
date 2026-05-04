@@ -1,0 +1,22 @@
+[Unit]
+Description=Re:Bloom Voice Chat Service
+After=network-online.target sound.target ollama.service
+Wants=network-online.target sound.target ollama.service
+
+[Service]
+Type=simple
+User=ssafy
+SupplementaryGroups=audio bluetooth input
+WorkingDirectory=__LLM_DIR__
+Environment=PYTHONUNBUFFERED=1
+EnvironmentFile=-/etc/default/rebloom-voice
+ExecStart=__LLM_DIR__/run_voice_chat.sh
+Restart=on-failure
+RestartSec=5
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=rebloom-voice
+
+[Install]
+WantedBy=multi-user.target

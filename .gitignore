@@ -19,3 +19,7 @@ Thumbs.db
 !**/.env.example
 AIoT/rpi5/LLM/rebloom-voice.env.example
 AIoT/rpi5/LLM/rebloom-voice.service
+AIoT/.codex
+AIoT/rpi5/LLM/rebloom-voice.env.example
+AIoT/rpi5/LLM/rebloom-voice.service
+AIoT/rpi5/LLM/rebloom-voice.env.example
