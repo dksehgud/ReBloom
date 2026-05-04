@@ -1,31 +1,24 @@
-plugins {
-    id 'java'
-    id 'org.springframework.boot' version '3.5.13' apply false
-    id 'io.spring.dependency-management' version '1.1.7' apply false
-}
-
 group = 'com.ssafy.rebloom'
 version = '0.0.1-SNAPSHOT'
 
-ext {
-    set('springCloudVersion', '2025.0.2')
-    set('springdocVersion', '2.8.17')
-}
+def serviceProjects = [
+        project(':services:gateway-service'),
+        project(':services:auth-service'),
+        project(':services:biometric-service'),
+        project(':services:ai-service'),
+        project(':services:notification-service'),
+        project(':services:report-service')
+]
 
-allprojects {
+configure(serviceProjects) {
+    group = 'com.ssafy.rebloom'
+    version = '0.0.1-SNAPSHOT'
+
     repositories {
         mavenCentral()
     }
 
-    def safeProjectPath = project.path == ':' ? 'root' : project.path.replace(':', '/')
-    layout.buildDirectory.set(file("${System.properties['java.io.tmpdir']}/rebloom-gradle/${safeProjectPath}"))
-}
-
-subprojects {
-    group = rootProject.group
-    version = rootProject.version
-
-    plugins.withId('java') {
+    pluginManager.withPlugin('java') {
         java {
             toolchain {
                 languageVersion = JavaLanguageVersion.of(21)
@@ -37,6 +30,21 @@ subprojects {
             annotationProcessor 'org.projectlombok:lombok'
             testCompileOnly 'org.projectlombok:lombok'
             testAnnotationProcessor 'org.projectlombok:lombok'
+
+            implementation 'org.springframework.boot:spring-boot-starter-actuator'
+            implementation 'org.springframework.boot:spring-boot-starter-validation'
+            testImplementation 'org.springframework.boot:spring-boot-starter-test'
+            testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+
+            if (!project.hasProperty('skipDefaultWebServiceDependencies')) {
+                implementation project(':modules:common-module')
+                implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+                implementation 'org.springframework.boot:spring-boot-starter-web'
+                implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.17'
+                implementation 'org.flywaydb:flyway-core'
+                implementation 'org.flywaydb:flyway-database-postgresql'
+                runtimeOnly 'org.postgresql:postgresql'
+            }
         }
 
         tasks.named('test') {
@@ -44,20 +52,17 @@ subprojects {
         }
     }
 
-    plugins.withId('org.springframework.boot') {
+    pluginManager.withPlugin('org.springframework.boot') {
         dependencies {
-            implementation 'org.springframework.boot:spring-boot-starter-actuator'
-            implementation 'org.springframework.boot:spring-boot-starter-validation'
             developmentOnly 'org.springframework.boot:spring-boot-devtools'
-            testImplementation 'org.springframework.boot:spring-boot-starter-test'
-            testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
         }
     }
 
-    plugins.withId('io.spring.dependency-management') {
+    pluginManager.withPlugin('io.spring.dependency-management') {
         dependencyManagement {
             imports {
-                mavenBom "org.springframework.cloud:spring-cloud-dependencies:${springCloudVersion}"
+                mavenBom 'org.springframework.boot:spring-boot-dependencies:3.5.13'
+                mavenBom 'org.springframework.cloud:spring-cloud-dependencies:2025.0.2'
             }
         }
     }
