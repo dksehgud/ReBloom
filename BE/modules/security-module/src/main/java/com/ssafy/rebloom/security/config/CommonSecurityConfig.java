@@ -14,7 +14,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @EnableMethodSecurity
 public class CommonSecurityConfig {
 
-    @Value("${rebloom.security.permit-all:}")
+    @Value("${rebloom.security.permit-all:#{new String[0]}}")
     private String[] permitAllPatterns;
 
     @Bean
