@@ -41,3 +41,4 @@ public class ChildrenReport extends BaseTime {
     @Column(name = "report_date", nullable = false)
     private LocalDateTime reportDate;
 }
+

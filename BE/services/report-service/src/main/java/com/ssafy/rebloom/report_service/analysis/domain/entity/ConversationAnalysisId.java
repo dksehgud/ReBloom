@@ -24,3 +24,4 @@ public class ConversationAnalysisId implements Serializable {
     @Column(name = "user_id", nullable = false)
     private UUID userId;
 }
+

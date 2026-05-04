@@ -21,12 +21,12 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor(access = AccessLevel.PROTECTED)
 public class DiaryKeyword {
 
-    // (keyword_id, analysis_id, user_id) 복합 PK
+    // (keyword_id, analysis_id, user_id) 蹂듯빀 PK
     @EmbeddedId
     private DiaryKeywordId id;
 
-    // 여러 diary_keywords 행이 하나의 diary_analysis를 참조한다.
-    // FK가 EmbeddedId 안에 있으므로 insert/update 충돌을 막기 위해 읽기 전용으로 둔다.
+    // ?щ윭 diary_keywords ?됱씠 ?섎굹??diary_analysis瑜?李몄“?쒕떎.
+    // FK媛 EmbeddedId ?덉뿉 ?덉쑝誘濡?insert/update 異⑸룎??留됯린 ?꾪빐 ?쎄린 ?꾩슜?쇰줈 ?붾떎.
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumns({
             @JoinColumn(name = "analysis_id", referencedColumnName = "id", insertable = false, updatable = false),
@@ -34,9 +34,10 @@ public class DiaryKeyword {
     })
     private DiaryAnalysis diaryAnalysis;
 
-    // 여러 diary_keywords 행이 하나의 키워드 사전 항목을 참조한다.
-    // keyword_id도 EmbeddedId에 있으므로 읽기 전용 매핑이다.
+    // ?щ윭 diary_keywords ?됱씠 ?섎굹???ㅼ썙???ъ쟾 ??ぉ??李몄“?쒕떎.
+    // keyword_id??EmbeddedId???덉쑝誘濡??쎄린 ?꾩슜 留ㅽ븨?대떎.
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "keyword_id", referencedColumnName = "keyword_id", insertable = false, updatable = false)
     private AnalysisKeyword analysisKeyword;
 }
+

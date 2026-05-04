@@ -40,3 +40,4 @@ public class ConversationAnalysis extends BaseTime {
     @Column(name = "depression_score", nullable = false)
     private Float depressionScore;
 }
+

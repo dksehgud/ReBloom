@@ -37,3 +37,4 @@ public class DiaryAnalysis extends BaseTime {
     @Column(name = "depression_score", nullable = false)
     private Float depressionScore;
 }
+
