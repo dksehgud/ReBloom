@@ -16,6 +16,7 @@ import SignUpPage from '../../pages/auth/SignUpPage'
 import ChildDiaryListPage from '../../pages/child/ChildDiaryListPage'
 import ChildSettingsPage from '../../pages/child/ChildSettingsPage'
 import ParentHomePage from '../../pages/parent/ParentHomePage'
+import ParentPlaceholderPage from '../../pages/parent/ParentPlaceholderPage'
 import { useAppSessionStore } from '../../features/auth/store/useAppSessionStore'
 import { useSelectedChildStore } from '../../features/student/store/useSelectedChildStore'
 import type { AppRole } from '../../shared/types/appRole'
@@ -46,9 +47,7 @@ type PlaceholderRoutePageProps = {
 function PhoneShell({ children, className }: PhoneShellProps) {
   return (
     <main className="app-shell">
-      <section className={`phone-shell${className ? ` ${className}` : ''}`}>
-        {children}
-      </section>
+      <section className={`phone-shell${className ? ` ${className}` : ''}`}>{children}</section>
     </main>
   )
 }
@@ -242,29 +241,54 @@ function AppRouter() {
         <Route path="settings" element={<ChildSettingsRoute />} />
       </Route>
 
-      <Route
-        path="/parent"
-        element={<ParentRouteLayout />}
-      >
+      <Route path="/parent" element={<ParentRouteLayout />}>
         <Route index element={<Navigate replace to="/parent/home" />} />
         <Route path="home" element={<ParentHomePage />} />
         <Route
-          path="*"
+          path="observations"
           element={
-            <PlaceholderRoutePage
-              title="보호자 화면"
-              description="보호자 홈 이후 화면은 다음 하위 태스크에서 순서대로 연결할 예정입니다."
-              role="parent"
+            <ParentPlaceholderPage
+              title="아이 관찰 기록"
+              description="아이 관찰 기록 조회 화면은 다음 태스크에서 실제 목록과 캘린더 흐름으로 연결할 예정입니다."
             />
           }
         />
+        <Route
+          path="report"
+          element={
+            <ParentPlaceholderPage
+              title="리포트"
+              description="리포트 요약 화면은 다음 태스크에서 감정 흐름과 지표 카드를 중심으로 구성할 예정입니다."
+            />
+          }
+        />
+        <Route
+          path="notifications"
+          element={
+            <ParentPlaceholderPage
+              title="알림"
+              description="보호자 알림 화면은 다음 태스크에서 알림 상태 카드와 액션 흐름으로 연결할 예정입니다."
+            />
+          }
+        />
+        <Route
+          path="settings"
+          element={
+            <ParentPlaceholderPage
+              title="설정"
+              description="보호자 설정 화면은 다음 태스크에서 상담사 연결, 프로필, 비밀번호 변경 흐름으로 이어질 예정입니다."
+            />
+          }
+        />
+        <Route path="*" element={<Navigate replace to="/parent/home" />} />
       </Route>
+
       <Route
         path="/counselor/*"
         element={
           <PlaceholderRoutePage
             title="상담사 대시보드"
-            description="상담사 화면 구현 전에 라우트 구조를 먼저 열어 둔 상태입니다."
+            description="상담사 화면 구현 전에 레이아웃과 공통 구조를 먼저 정리한 상태입니다."
             role="counselor"
           />
         }

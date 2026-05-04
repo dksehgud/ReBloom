@@ -1,4 +1,5 @@
 import MobilePageLayout from '../../components/templates/MobilePageLayout/MobilePageLayout'
+import ParentBottomNavigation from '../../features/guardian/components/ParentBottomNavigation'
 import ParentObservationSection from '../../features/guardian/components/ParentObservationSection'
 
 function InsightTipIcon() {
@@ -52,7 +53,7 @@ function ParentHomePage() {
       header={<ParentHomeHeader />}
       className="parent-home-page"
       contentClassName="parent-home-page__content"
-      bottomNavigation={<div className="parent-home-page__bottom-placeholder" aria-hidden="true" />}
+      bottomNavigation={<ParentBottomNavigation />}
     >
       <div className="parent-home-page__body">
         <section className="parent-home-page__summary-card" aria-label="보호자 홈 요약 영역">
