@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import {
   Navigate,
   Outlet,
@@ -15,6 +15,9 @@ import LoginPage from '../../pages/auth/LoginPage'
 import SignUpPage from '../../pages/auth/SignUpPage'
 import ChildDiaryListPage from '../../pages/child/ChildDiaryListPage'
 import ChildSettingsPage from '../../pages/child/ChildSettingsPage'
+import { useAppSessionStore } from '../../features/auth/store/useAppSessionStore'
+import { useSelectedChildStore } from '../../features/student/store/useSelectedChildStore'
+import type { AppRole } from '../../shared/types/appRole'
 
 type AuthRouteContextValue = {
   email: string
@@ -36,6 +39,7 @@ type PhoneShellProps = {
 type PlaceholderRoutePageProps = {
   title: string
   description: string
+  role: Exclude<AppRole, null>
 }
 
 function PhoneShell({ children, className }: PhoneShellProps) {
@@ -52,8 +56,15 @@ function AuthRouteLayout() {
   const location = useLocation()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const setActiveRole = useAppSessionStore((state) => state.setActiveRole)
+  const clearSelectedChild = useSelectedChildStore((state) => state.clearSelectedChild)
 
   const phoneShellClassName = location.pathname === '/signup' ? 'phone-shell--signup' : ''
+
+  useEffect(() => {
+    setActiveRole(null)
+    clearSelectedChild()
+  }, [clearSelectedChild, setActiveRole])
 
   return (
     <PhoneShell className={phoneShellClassName}>
@@ -71,6 +82,13 @@ function AuthRouteLayout() {
 
 function ChildRouteLayout() {
   const [profileAddress, setProfileAddress] = useState('서울특별시 강남구 테헤란로 212')
+  const setActiveRole = useAppSessionStore((state) => state.setActiveRole)
+  const clearSelectedChild = useSelectedChildStore((state) => state.clearSelectedChild)
+
+  useEffect(() => {
+    setActiveRole('child')
+    clearSelectedChild()
+  }, [clearSelectedChild, setActiveRole])
 
   return <Outlet context={{ profileAddress, setProfileAddress }} />
 }
@@ -141,6 +159,8 @@ function ChildDiaryRoute() {
 function ChildSettingsRoute() {
   const navigate = useNavigate()
   const { profileAddress, setProfileAddress } = useChildRouteContext()
+  const clearSession = useAppSessionStore((state) => state.clearSession)
+  const clearSelectedChild = useSelectedChildStore((state) => state.clearSelectedChild)
 
   return (
     <PhoneShell>
@@ -148,9 +168,8 @@ function ChildSettingsRoute() {
         profileAddress={profileAddress}
         onBack={() => navigate('/child/diary')}
         onLogout={() => {
-          sessionStorage.clear()
-          localStorage.removeItem('accessToken')
-          localStorage.removeItem('refreshToken')
+          clearSession()
+          clearSelectedChild()
           navigate('/login', { replace: true })
         }}
         onSaveProfileAddress={setProfileAddress}
@@ -159,7 +178,13 @@ function ChildSettingsRoute() {
   )
 }
 
-function PlaceholderRoutePage({ title, description }: PlaceholderRoutePageProps) {
+function PlaceholderRoutePage({ title, description, role }: PlaceholderRoutePageProps) {
+  const setActiveRole = useAppSessionStore((state) => state.setActiveRole)
+
+  useEffect(() => {
+    setActiveRole(role)
+  }, [role, setActiveRole])
+
   return (
     <main className="app-shell">
       <section className="phone-shell">
@@ -206,6 +231,7 @@ function AppRouter() {
           <PlaceholderRoutePage
             title="보호자 화면"
             description="보호자 화면 구현 전에 라우트 구조를 먼저 열어 둔 상태입니다."
+            role="parent"
           />
         }
       />
@@ -215,6 +241,7 @@ function AppRouter() {
           <PlaceholderRoutePage
             title="상담사 대시보드"
             description="상담사 화면 구현 전에 라우트 구조를 먼저 열어 둔 상태입니다."
+            role="counselor"
           />
         }
       />
