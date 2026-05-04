@@ -153,6 +153,19 @@
   gap: 16px;
 }
 
+.parent-home-page__records-title-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.parent-home-page__records-icon {
+  width: 20px;
+  height: 20px;
+  color: #9bc4a8;
+  flex-shrink: 0;
+}
+
 .parent-home-page__records-heading {
   margin: 0;
   color: #2d3748;
@@ -176,15 +189,33 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-size: 24px;
-  line-height: 1;
+  padding: 0;
+}
+
+.parent-home-page__add-icon {
+  width: 20px;
+  height: 20px;
+  color: #ffffff;
 }
 
 .parent-home-page__empty-banner {
   border: 1.11px dashed rgba(107, 154, 196, 0.3);
   border-radius: 20px;
   background: linear-gradient(171.23deg, #f5f8fa 5.65%, #fafbfc 94.35%);
-  padding: 18px 17px;
+  padding: 17px;
+}
+
+.parent-home-page__empty-banner-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.parent-home-page__prompt-icon {
+  width: 18px;
+  height: 18px;
+  color: #88b5c4;
+  flex-shrink: 0;
 }
 
 .parent-home-page__empty-copy {
@@ -201,9 +232,75 @@
   gap: 12px;
 }
 
-.parent-home-page__preview-item {
+.parent-home-page__record-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
   min-height: 92px;
+  box-sizing: border-box;
   border-radius: 16px;
   background: rgba(155, 196, 168, 0.04);
   border: 1px solid rgba(168, 178, 188, 0.08);
+  padding: 17px;
+}
+
+.parent-home-page__record-date-block {
+  display: flex;
+  width: 38px;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding-top: 1px;
+  flex-shrink: 0;
+}
+
+.parent-home-page__record-date {
+  margin: 0;
+  color: #88b5c4;
+  font-family: 'Inter', 'Noto Sans KR', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 20px;
+}
+
+.parent-home-page__record-weekday {
+  margin: 0;
+  color: #a8b2bc;
+  font-family: 'Inter', 'Noto Sans KR', sans-serif;
+  font-size: 12px;
+  line-height: 16px;
+}
+
+.parent-home-page__record-content {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.parent-home-page__record-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 27px;
+  padding: 0 13px;
+  border-radius: 999px;
+  border: 1.11px solid rgba(155, 196, 168, 0.2);
+  background: rgba(155, 196, 168, 0.12);
+  color: #9bc4a8;
+  font-family: 'Inter', 'Noto Sans KR', sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 16px;
+}
+
+.parent-home-page__record-description {
+  margin: 0;
+  color: #4a5568;
+  font-family: 'Inter', 'Noto Sans KR', sans-serif;
+  font-size: 13px;
+  line-height: 21px;
+  word-break: keep-all;
 }

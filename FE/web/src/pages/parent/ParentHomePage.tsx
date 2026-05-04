@@ -1,4 +1,5 @@
 import MobilePageLayout from '../../components/templates/MobilePageLayout/MobilePageLayout'
+import ParentObservationSection from '../../features/guardian/components/ParentObservationSection'
 
 function InsightTipIcon() {
   return (
@@ -71,26 +72,7 @@ function ParentHomePage() {
             </div>
           </section>
 
-          <section className="parent-home-page__records-card" aria-label="아이 관찰 기록 영역">
-            <div className="parent-home-page__records-header">
-              <h2 className="parent-home-page__records-heading">아이 관찰 기록</h2>
-              <button
-                type="button"
-                className="parent-home-page__add-button"
-                aria-label="관찰 기록 추가"
-              >
-                +
-              </button>
-            </div>
-            <div className="parent-home-page__empty-banner">
-              <p className="parent-home-page__empty-copy">오늘 아이의 모습을 기록해보세요.</p>
-            </div>
-            <div className="parent-home-page__preview-list" aria-hidden="true">
-              <div className="parent-home-page__preview-item" />
-              <div className="parent-home-page__preview-item" />
-              <div className="parent-home-page__preview-item" />
-            </div>
-          </section>
+          <ParentObservationSection />
         </div>
       </div>
     </MobilePageLayout>
