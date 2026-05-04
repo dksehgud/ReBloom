@@ -7,7 +7,7 @@ FROM eclipse-temurin:21-jdk AS build
 WORKDIR /app
 
 # Copy root Gradle files
-COPY gradlew gradlew.bat build.gradle settings.gradle ./
+COPY gradlew gradlew.bat build.gradle settings.gradle common-service.gradle ./
 # Copy root Gradle wrapper
 COPY gradle ./gradle
 # Copy shared modules
@@ -26,7 +26,7 @@ FROM eclipse-temurin:21-jre AS runtime
 WORKDIR /app
 
 # Copy built jar
-COPY --from=build /tmp/rebloom-gradle/services/report-service/libs/*.jar app.jar
+COPY --from=build /app/services/report-service/build/libs/*.jar app.jar
 
 # Start the application
 ENTRYPOINT ["java", "-jar", "app.jar"]
