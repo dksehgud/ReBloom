@@ -8,8 +8,8 @@
 }
 
 .phone-shell {
-  width: min(100%, 390px);
-  min-height: min(844px, 100svh - 48px);
+  width: 390px;
+  height: 844px;
   background: #ffffff;
   border-radius: 40px;
   box-shadow:
@@ -21,14 +21,15 @@
 
 .mobile-page-layout {
   width: 100%;
-  min-height: 100%;
+  height: 100%;
 }
 
 .mobile-page-surface {
   display: flex;
   flex-direction: column;
   width: 100%;
-  min-height: min(844px, 100svh - 48px);
+  height: 844px;
+  min-height: 844px;
   background: #ffffff;
   border-radius: 40px;
   overflow: hidden;
@@ -160,7 +161,7 @@
 }
 
 .phone-shell--signup {
-  height: min(844px, 100svh - 48px);
+  height: 844px;
 }
 
 .primary-button {
