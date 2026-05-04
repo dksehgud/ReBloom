@@ -1,8 +1,8 @@
 import './App.css'
-import AuthPage from './pages/auth/AuthPage'
+import AppRouter from './app/router/AppRouter'
 
 function App() {
-  return <AuthPage />
+  return <AppRouter />
 }
 
 export default App
