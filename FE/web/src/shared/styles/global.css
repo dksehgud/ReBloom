@@ -170,6 +170,29 @@
   height: 844px;
 }
 
+body[data-shell-mode='webview'] .app-shell {
+  align-items: stretch;
+  justify-content: stretch;
+  padding: 0;
+}
+
+body[data-shell-mode='webview'] .phone-shell {
+  width: 100%;
+  height: 100svh;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+body[data-shell-mode='webview'] .mobile-page-surface {
+  height: 100svh;
+  min-height: 100svh;
+  border-radius: 0;
+}
+
+body[data-shell-mode='webview'] .phone-shell--signup {
+  height: 100svh;
+}
+
 .primary-button {
   border: none;
   border-radius: 15px;
