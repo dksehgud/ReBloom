@@ -1,27 +1,35 @@
+# Docker-in-Docker(DinD)로 세팅
+image: docker:24.0.5
+
+services:
+  - docker:24.0.5-dind
+
+variables:
+  DOCKER_HOST: tcp://docker:2376
+  DOCKER_TLS_CERTDIR: "/certs"
+  IMAGE_TAG: $CI_COMMIT_SHORT_SHA
+  DOCKER_NAMESPACE: $DOCKER_USERNAME
+
 stages:
   - build
   - docker-push
 
-# 파이프라인 전역 설정: 'develop' 브랜치, BE/ 폴더 변경 시 파이프라인 전체 시작
 workflow:
   rules:
     - if: '$CI_COMMIT_BRANCH == "develop"'
       changes:
         - "BE/**/*"
 
-variables:
-  IMAGE_TAG: $CI_COMMIT_SHORT_SHA
-  DOCKER_NAMESPACE: $DOCKER_USERNAME
-
 # ----------------------------------------------------
-# Spring Boot 전체 빌드
+# Spring Boot 전체 빌드 (Java 21 환경)
 # ----------------------------------------------------
 backend-build:
+  image: eclipse-temurin:21-jdk-alpine
   stage: build
   tags:
     - rebloom-dev
   script:
-    - echo "----- 전체 소스코드 Gradle 빌드 시작 -----"
+    - echo "----- 무균실(Docker) 내부에서 Gradle 빌드 시작 -----"
     - cd BE
     - chmod +x ./gradlew
     - ./gradlew clean build -x test
@@ -48,8 +56,9 @@ push-auth-service:
     - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
   script:
     - cd BE
-    - docker build -t $DOCKER_NAMESPACE/rebloom-auth-service:$IMAGE_TAG -f services/auth-service/Dockerfile .
-    - docker push $DOCKER_NAMESPACE/rebloom-auth-service:$IMAGE_TAG
+    - docker build -t $DOCKER_NAMESPACE/rebloom-auth:$IMAGE_TAG -t $DOCKER_NAMESPACE/rebloom-auth:latest -f services/auth-service/Dockerfile .
+    - docker push $DOCKER_NAMESPACE/rebloom-auth:$IMAGE_TAG
+    - docker push $DOCKER_NAMESPACE/rebloom-auth:latest
 
 # Gateway Service
 push-gateway-service:
@@ -65,8 +74,9 @@ push-gateway-service:
     - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
   script:
     - cd BE
-    - docker build -t $DOCKER_NAMESPACE/rebloom-gateway-service:$IMAGE_TAG -f services/gateway-service/Dockerfile .
-    - docker push $DOCKER_NAMESPACE/rebloom-gateway-service:$IMAGE_TAG
+    - docker build -t $DOCKER_NAMESPACE/rebloom-gateway:$IMAGE_TAG -t $DOCKER_NAMESPACE/rebloom-gateway:latest -f services/gateway-service/Dockerfile .
+    - docker push $DOCKER_NAMESPACE/rebloom-gateway:$IMAGE_TAG
+    - docker push $DOCKER_NAMESPACE/rebloom-gateway:latest
 
 # AI Service
 push-ai-service:
@@ -82,8 +92,9 @@ push-ai-service:
     - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
   script:
     - cd BE
-    - docker build -t $DOCKER_NAMESPACE/rebloom-ai-service:$IMAGE_TAG -f services/ai-service/Dockerfile .
-    - docker push $DOCKER_NAMESPACE/rebloom-ai-service:$IMAGE_TAG
+    - docker build -t $DOCKER_NAMESPACE/rebloom-ai:$IMAGE_TAG -t $DOCKER_NAMESPACE/rebloom-ai:latest -f services/ai-service/Dockerfile .
+    - docker push $DOCKER_NAMESPACE/rebloom-ai:$IMAGE_TAG
+    - docker push $DOCKER_NAMESPACE/rebloom-ai:latest
 
 # Biometric Service
 push-biometric-service:
@@ -99,8 +110,9 @@ push-biometric-service:
     - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
   script:
     - cd BE
-    - docker build -t $DOCKER_NAMESPACE/rebloom-biometric-service:$IMAGE_TAG -f services/biometric-service/Dockerfile .
-    - docker push $DOCKER_NAMESPACE/rebloom-biometric-service:$IMAGE_TAG
+    - docker build -t $DOCKER_NAMESPACE/rebloom-biometric:$IMAGE_TAG -t $DOCKER_NAMESPACE/rebloom-biometric:latest -f services/biometric-service/Dockerfile .
+    - docker push $DOCKER_NAMESPACE/rebloom-biometric:$IMAGE_TAG
+    - docker push $DOCKER_NAMESPACE/rebloom-biometric:latest
 
 # Report Service
 push-report-service:
@@ -116,8 +128,9 @@ push-report-service:
     - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
   script:
     - cd BE
-    - docker build -t $DOCKER_NAMESPACE/rebloom-report-service:$IMAGE_TAG -f services/report-service/Dockerfile .
-    - docker push $DOCKER_NAMESPACE/rebloom-report-service:$IMAGE_TAG
+    - docker build -t $DOCKER_NAMESPACE/rebloom-report:$IMAGE_TAG -t $DOCKER_NAMESPACE/rebloom-report:latest -f services/report-service/Dockerfile .
+    - docker push $DOCKER_NAMESPACE/rebloom-report:$IMAGE_TAG
+    - docker push $DOCKER_NAMESPACE/rebloom-report:latest
 
 # Notification Service
 push-notification-service:
@@ -133,10 +146,6 @@ push-notification-service:
     - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
   script:
     - cd BE
-    # 2개(커밋해시, latest)를 동시에 붙임
-    - docker build -t $DOCKER_NAMESPACE/rebloom-auth-service:$IMAGE_TAG -t $DOCKER_NAMESPACE/rebloom-auth-service:latest -f services/auth-service/Dockerfile .
-    
-    # 푸시도 두 번(이미지는 1개)
-    - docker push $DOCKER_NAMESPACE/rebloom-auth-service:$IMAGE_TAG
-    - docker push $DOCKER_NAMESPACE/rebloom-auth-service:latest
-
+    - docker build -t $DOCKER_NAMESPACE/rebloom-notification:$IMAGE_TAG -t $DOCKER_NAMESPACE/rebloom-notification:latest -f services/notification-service/Dockerfile .
+    - docker push $DOCKER_NAMESPACE/rebloom-notification:$IMAGE_TAG
+    - docker push $DOCKER_NAMESPACE/rebloom-notification:latest
