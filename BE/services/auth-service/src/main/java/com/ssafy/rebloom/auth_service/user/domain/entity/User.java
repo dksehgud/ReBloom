@@ -70,4 +70,10 @@ public class User extends BaseTime {
     public void withDrawUser() {
         this.status = UserStatus.WITHDRAW;
     }
+
+    public void updateProfile(String email, String name, String phone) {
+        this.email = email;
+        this.name = name;
+        this.phone = phone;
+    }
 }
