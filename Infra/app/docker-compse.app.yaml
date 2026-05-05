@@ -1,0 +1,112 @@
+services:
+  auth-service:
+    image: ${DOCKER_NAMESPACE}/rebloom-auth:${AUTH_IMAGE_TAG:-latest}
+    container_name: rebloom-auth
+    profiles: ["app"]
+    env_file:
+      - ../services/auth-service/.env
+    environment:
+      DB_HOST: postgres
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      TZ: Asia/Seoul
+      JAVA_TOOL_OPTIONS: -Duser.timezone=Asia/Seoul
+    expose:
+      - "8081"
+    networks:
+      - rebloom-network
+    restart: unless-stopped
+
+  ai-service:
+    image: ${DOCKER_NAMESPACE}/rebloom-ai:${AI_IMAGE_TAG:-latest}
+    container_name: rebloom-ai
+    profiles: ["app"]
+    env_file:
+      - ../services/ai-service/.env
+    environment:
+      DB_HOST: postgres
+      TZ: Asia/Seoul
+      JAVA_TOOL_OPTIONS: -Duser.timezone=Asia/Seoul
+    expose:
+      - "8082"
+    networks:
+      - rebloom-network
+    restart: unless-stopped
+
+  biometric-service:
+    image: ${DOCKER_NAMESPACE}/rebloom-biometric:${BIOMETRIC_IMAGE_TAG:-latest}
+    container_name: rebloom-biometric
+    profiles: ["app"]
+    env_file:
+      - ../services/biometric-service/.env
+    environment:
+      DB_HOST: postgres
+      TZ: Asia/Seoul
+      JAVA_TOOL_OPTIONS: -Duser.timezone=Asia/Seoul
+    expose:
+      - "8083"
+    networks:
+      - rebloom-network
+    restart: unless-stopped
+
+  report-service:
+    image: ${DOCKER_NAMESPACE}/rebloom-report:${REPORT_IMAGE_TAG:-latest}
+    container_name: rebloom-report
+    profiles: ["app"]
+    env_file:
+      - ../services/report-service/.env
+    environment:
+      DB_HOST: postgres
+      TZ: Asia/Seoul
+      JAVA_TOOL_OPTIONS: -Duser.timezone=Asia/Seoul
+    expose:
+      - "8084"
+    networks:
+      - rebloom-network
+    restart: unless-stopped
+
+  notification-service:
+    image: ${DOCKER_NAMESPACE}/rebloom-notification:${NOTIFICATION_IMAGE_TAG:-latest}
+    container_name: rebloom-notification
+    profiles: ["app"]
+    env_file:
+      - ../services/notification-service/.env
+    environment:
+      DB_HOST: postgres
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      TZ: Asia/Seoul
+      JAVA_TOOL_OPTIONS: -Duser.timezone=Asia/Seoul
+    expose:
+      - "8085"
+    networks:
+      - rebloom-network
+    restart: unless-stopped
+
+  gateway-service:
+    image: ${DOCKER_NAMESPACE}/rebloom-gateway:${GATEWAY_IMAGE_TAG:-latest}
+    container_name: rebloom-gateway
+    profiles: ["app"]
+    env_file:
+      - ../services/gateway-service/.env
+    environment:
+      AUTH_SERVICE_URI: http://auth-service:8081
+      BIOMETRIC_SERVICE_URI: http://biometric-service:8083
+      REPORT_SERVICE_URI: http://report-service:8084
+      NOTIFICATION_SERVICE_URI: http://notification-service:8085
+      AIOT_AI_SERVICE_URI: http://host.docker.internal:8001
+      BIO_ML_SERVICE_URI: http://host.docker.internal:8002
+      EMOTION_INFERENCE_SERVICE_URI: http://host.docker.internal:8003
+      TZ: Asia/Seoul
+      JAVA_TOOL_OPTIONS: -Duser.timezone=Asia/Seoul
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    ports:
+      - "${GATEWAY_PORT:-8080}:8080"
+    networks:
+      - rebloom-network
+    restart: unless-stopped
+
+networks:
+  rebloom-network:
+    external: true
