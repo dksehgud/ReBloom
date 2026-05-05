@@ -133,5 +133,10 @@ push-notification-service:
     - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
   script:
     - cd BE
-    - docker build -t $DOCKER_NAMESPACE/rebloom-notification-service:$IMAGE_TAG -f services/notification-service/Dockerfile .
-    - docker push $DOCKER_NAMESPACE/rebloom-notification-service:$IMAGE_TAG
+    # 2개(커밋해시, latest)를 동시에 붙임
+    - docker build -t $DOCKER_NAMESPACE/rebloom-auth-service:$IMAGE_TAG -t $DOCKER_NAMESPACE/rebloom-auth-service:latest -f services/auth-service/Dockerfile .
+    
+    # 푸시도 두 번(이미지는 1개)
+    - docker push $DOCKER_NAMESPACE/rebloom-auth-service:$IMAGE_TAG
+    - docker push $DOCKER_NAMESPACE/rebloom-auth-service:latest
+
