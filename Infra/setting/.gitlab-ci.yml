@@ -20,34 +20,110 @@ workflow:
       changes:
         - "BE/**/*"
 
-# ----------------------------------------------------
-# Spring Boot 전체 빌드 (Java 21 환경)
-# ----------------------------------------------------
-backend-build:
+# ====================================================
+# [STAGE 1] Spring Boot 개별 빌드 (Java 21 환경)
+# ====================================================
+
+build-auth-service:
   image: eclipse-temurin:21-jdk-alpine
   stage: build
   tags:
     - rebloom-dev
   script:
-    - echo "----- 무균실(Docker) 내부에서 Gradle 빌드 시작 -----"
+    - echo "----- Auth Service 빌드 시작 -----"
     - cd BE
     - chmod +x ./gradlew
-    - ./gradlew clean build -x test
+    - ./gradlew :services:auth-service:build -x test
   artifacts:
     paths:
-      - BE/services/*/build/libs/*.jar
+      - BE/services/auth-service/build/libs/*.jar
     expire_in: 1 hour
 
-# ----------------------------------------------------
-# Docker 이미지 빌드 및 Push (각 서비스별 분리)
-# ----------------------------------------------------
+build-gateway-service:
+  image: eclipse-temurin:21-jdk-alpine
+  stage: build
+  tags:
+    - rebloom-dev
+  script:
+    - echo "----- Gateway Service 빌드 시작 -----"
+    - cd BE
+    - chmod +x ./gradlew
+    - ./gradlew :services:gateway-service:build -x test
+  artifacts:
+    paths:
+      - BE/services/gateway-service/build/libs/*.jar
+    expire_in: 1 hour
+
+build-ai-service:
+  image: eclipse-temurin:21-jdk-alpine
+  stage: build
+  tags:
+    - rebloom-dev
+  script:
+    - echo "----- AI Service 빌드 시작 -----"
+    - cd BE
+    - chmod +x ./gradlew
+    - ./gradlew :services:ai-service:build -x test
+  artifacts:
+    paths:
+      - BE/services/ai-service/build/libs/*.jar
+    expire_in: 1 hour
+
+build-biometric-service:
+  image: eclipse-temurin:21-jdk-alpine
+  stage: build
+  tags:
+    - rebloom-dev
+  script:
+    - echo "----- Biometric Service 빌드 시작 -----"
+    - cd BE
+    - chmod +x ./gradlew
+    - ./gradlew :services:biometric-service:build -x test
+  artifacts:
+    paths:
+      - BE/services/biometric-service/build/libs/*.jar
+    expire_in: 1 hour
+
+build-report-service:
+  image: eclipse-temurin:21-jdk-alpine
+  stage: build
+  tags:
+    - rebloom-dev
+  script:
+    - echo "----- Report Service 빌드 시작 -----"
+    - cd BE
+    - chmod +x ./gradlew
+    - ./gradlew :services:report-service:build -x test
+  artifacts:
+    paths:
+      - BE/services/report-service/build/libs/*.jar
+    expire_in: 1 hour
+
+build-notification-service:
+  image: eclipse-temurin:21-jdk-alpine
+  stage: build
+  tags:
+    - rebloom-dev
+  script:
+    - echo "----- Notification Service 빌드 시작 -----"
+    - cd BE
+    - chmod +x ./gradlew
+    - ./gradlew :services:notification-service:build -x test
+  artifacts:
+    paths:
+      - BE/services/notification-service/build/libs/*.jar
+    expire_in: 1 hour
+
+# ====================================================
+# [STAGE 2] Docker 이미지 빌드 및 Push
+# ====================================================
 
 # Auth Service
 push-auth-service:
   stage: docker-push
   tags:
     - rebloom-dev
-  needs: [backend-build]
+  needs: [build-auth-service]
   rules:
     - changes:
         - "BE/services/auth-service/**/*"
@@ -65,7 +141,7 @@ push-gateway-service:
   stage: docker-push
   tags:
     - rebloom-dev
-  needs: [backend-build]
+  needs: [build-gateway-service]
   rules:
     - changes:
         - "BE/services/gateway-service/**/*"
@@ -83,7 +159,7 @@ push-ai-service:
   stage: docker-push
   tags:
     - rebloom-dev
-  needs: [backend-build]
+  needs: [build-ai-service]
   rules:
     - changes:
         - "BE/services/ai-service/**/*"
@@ -101,7 +177,7 @@ push-biometric-service:
   stage: docker-push
   tags:
     - rebloom-dev
-  needs: [backend-build]
+  needs: [build-biometric-service]
   rules:
     - changes:
         - "BE/services/biometric-service/**/*"
@@ -119,7 +195,7 @@ push-report-service:
   stage: docker-push
   tags:
     - rebloom-dev
-  needs: [backend-build]
+  needs: [build-report-service]
   rules:
     - changes:
         - "BE/services/report-service/**/*"
@@ -137,7 +213,7 @@ push-notification-service:
   stage: docker-push
   tags:
     - rebloom-dev
-  needs: [backend-build]
+  needs: [build-notification-service]
   rules:
     - changes:
         - "BE/services/notification-service/**/*"
