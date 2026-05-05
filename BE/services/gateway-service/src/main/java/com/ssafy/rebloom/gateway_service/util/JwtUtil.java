@@ -3,16 +3,15 @@ package com.ssafy.rebloom.gateway_service.util;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
+import java.nio.charset.StandardCharsets;
+import javax.crypto.SecretKey;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
-
-import java.nio.charset.StandardCharsets;
-import java.security.Key;
 
 @Component
 public class JwtUtil {
 
-    private final Key secretKey;
+    private final SecretKey secretKey;
 
     // ⭐️ 핵심: Auth 서버의 application.yml에 있는 jwt.secret 값과
     // 게이트웨이의 application.yml에 있는 jwt.secret 값이 "완전히 동일"해야 합니다!
@@ -30,10 +29,10 @@ public class JwtUtil {
      * @throws io.jsonwebtoken.MalformedJwtException       토큰 형태가 이상할 때
      */
     public Claims parseClaims(String token) {
-        return Jwts.parserBuilder()
-            .setSigningKey(secretKey) // 똑같은 비밀키로 열어봄
+        return Jwts.parser()
+            .verifyWith(secretKey)
             .build()
-            .parseClaimsJws(token)    // 여기서 검증! 실패하면 Exception 터짐
-            .getBody();               // 통과하면 데이터 꺼냄
+            .parseSignedClaims(token)
+            .getPayload();
     }
 }
