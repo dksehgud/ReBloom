@@ -18,6 +18,7 @@ import ChildSettingsPage from '../../pages/child/ChildSettingsPage'
 import ParentHomePage from '../../pages/parent/ParentHomePage'
 import ParentObservationsPage from '../../pages/parent/ParentObservationsPage'
 import ParentPlaceholderPage from '../../pages/parent/ParentPlaceholderPage'
+import ParentReportPage from '../../pages/parent/ParentReportPage'
 import { useAppSessionStore } from '../../features/auth/store/useAppSessionStore'
 import { useSelectedChildStore } from '../../features/student/store/useSelectedChildStore'
 import type { AppRole } from '../../shared/types/appRole'
@@ -82,7 +83,7 @@ function AuthRouteLayout() {
 }
 
 function ChildRouteLayout() {
-  const [profileAddress, setProfileAddress] = useState('서울특별시 강남구 테헤란로 212')
+  const [profileAddress, setProfileAddress] = useState('부산 해운대구 예시로 212')
   const setActiveRole = useAppSessionStore((state) => state.setActiveRole)
   const clearSelectedChild = useSelectedChildStore((state) => state.clearSelectedChild)
 
@@ -246,21 +247,13 @@ function AppRouter() {
         <Route index element={<Navigate replace to="/parent/home" />} />
         <Route path="home" element={<ParentHomePage />} />
         <Route path="observations" element={<ParentObservationsPage />} />
-        <Route
-          path="report"
-          element={
-            <ParentPlaceholderPage
-              title="리포트"
-              description="리포트 요약 화면은 다음 태스크에서 감정 흐름과 지표 카드를 중심으로 구성할 예정입니다."
-            />
-          }
-        />
+        <Route path="report" element={<ParentReportPage />} />
         <Route
           path="notifications"
           element={
             <ParentPlaceholderPage
               title="알림"
-              description="보호자 알림 화면은 다음 태스크에서 알림 상태 카드와 액션 흐름으로 연결할 예정입니다."
+              description="보호자 알림 화면은 다음 태스크에서 알림 상태 카드와 액션 흐름으로 연결될 예정입니다."
             />
           }
         />
@@ -281,7 +274,7 @@ function AppRouter() {
         element={
           <PlaceholderRoutePage
             title="상담사 대시보드"
-            description="상담사 화면 구현 전에 라우팅과 공통 구조를 먼저 정리한 상태입니다."
+            description="상담사 화면 구현 전에 라우트와 공통 구조를 먼저 정리한 상태입니다."
             role="counselor"
           />
         }
