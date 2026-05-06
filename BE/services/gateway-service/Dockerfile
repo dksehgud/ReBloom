@@ -1,32 +1,4 @@
-# syntax=docker/dockerfile:1.7
-
-# Gradle build image
-FROM eclipse-temurin:21-jdk AS build
-
-# Container working directory
+FROM eclipse-temurin:21-jre
 WORKDIR /app
-
-# Copy root Gradle files
-COPY gradlew gradlew.bat build.gradle settings.gradle ./
-# Copy root Gradle wrapper
-COPY gradle ./gradle
-# Copy shared modules
-COPY modules ./modules
-# Copy gateway-service source
-COPY services/gateway-service ./services/gateway-service
-
-# Build gateway-service jar
-RUN --mount=type=cache,target=/root/.gradle \
-    chmod +x ./gradlew && ./gradlew :services:gateway-service:bootJar -x test --no-daemon
-
-# Runtime-only JRE image
-FROM eclipse-temurin:21-jre AS runtime
-
-# Application runtime directory
-WORKDIR /app
-
-# Copy built jar
-COPY --from=build /tmp/rebloom-gradle/services/gateway-service/libs/*.jar app.jar
-
-# Start the application
-ENTRYPOINT ["java", "-jar", "app.jar"]
+COPY services/gateway-service/build/libs/ /app/libs/
+ENTRYPOINT ["sh", "-c", "java -jar $(find /app/libs -name '*.jar' ! -name '*-plain.jar' | head -n 1)"]
