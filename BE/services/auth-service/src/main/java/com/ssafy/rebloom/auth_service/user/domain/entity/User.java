@@ -49,7 +49,7 @@ public class User extends BaseTime {
 
     @NotNull
     @Enumerated(EnumType.STRING)
-    @Column(name = "role", nullable = false)
+    @Column(name = "role", nullable = false, insertable = false, updatable = false)
     private UserRole role;
 
     @NotNull
