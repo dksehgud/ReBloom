@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 
 import MobilePageLayout from '../../components/templates/MobilePageLayout/MobilePageLayout'
 import ParentBottomNavigation from '../../features/guardian/components/ParentBottomNavigation'
@@ -8,11 +8,13 @@ import {
   parentSupportContacts,
   type ParentSupportContact,
 } from '../../features/guardian/constants/parentSettings'
+import ChildPasswordChangeModal from '../../features/user/components/ChildPasswordChangeModal'
 
 type ParentSettingsRowProps = {
   title: string
   description?: ReactNode
   icon: ReactNode
+  onClick?: () => void
   trailing?: ReactNode
   showChevron?: boolean
   showDivider?: boolean
@@ -131,14 +133,13 @@ function ParentSettingsRow({
   title,
   description,
   icon,
+  onClick,
   trailing,
   showChevron = false,
   showDivider = true,
 }: ParentSettingsRowProps) {
-  return (
-    <div
-      className={`parent-settings-page__row${showDivider ? ' has-divider' : ''}`}
-    >
+  const content = (
+    <>
       <span className="parent-settings-page__icon-circle">{icon}</span>
       <span className="parent-settings-page__copy">
         <span className="parent-settings-page__row-title">{title}</span>
@@ -154,6 +155,28 @@ function ParentSettingsRow({
           </span>
         ) : null}
       </span>
+    </>
+  )
+
+  if (onClick) {
+    return (
+      <button
+        type="button"
+        className={`parent-settings-page__row${
+          showDivider ? ' has-divider' : ''
+        } is-button`}
+        onClick={onClick}
+      >
+        {content}
+      </button>
+    )
+  }
+
+  return (
+    <div
+      className={`parent-settings-page__row${showDivider ? ' has-divider' : ''}`}
+    >
+      {content}
     </div>
   )
 }
@@ -198,6 +221,8 @@ function ContactRow({
 }
 
 function ParentSettingsPage() {
+  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false)
+
   return (
     <MobilePageLayout
       header={<ParentSettingsHeader />}
@@ -219,6 +244,7 @@ function ParentSettingsPage() {
               title="계정 비밀번호 변경"
               description="로그인 비밀번호"
               icon={<KeyIcon />}
+              onClick={() => setIsPasswordModalOpen(true)}
               showChevron
               showDivider={false}
             />
@@ -235,9 +261,12 @@ function ParentSettingsPage() {
                   <span className="parent-settings-page__muted-text">
                     {mockLinkedChild.ageLabel}
                   </span>
-                  <span className="parent-settings-page__linked-email">
+                  <a
+                    className="parent-settings-page__linked-email"
+                    href={`mailto:${mockLinkedChild.email}`}
+                  >
                     {mockLinkedChild.email}
-                  </span>
+                  </a>
                 </>
               }
               icon={<UserIcon />}
@@ -270,6 +299,10 @@ function ParentSettingsPage() {
           </div>
         </section>
       </div>
+
+      {isPasswordModalOpen ? (
+        <ChildPasswordChangeModal onClose={() => setIsPasswordModalOpen(false)} />
+      ) : null}
     </MobilePageLayout>
   )
 }

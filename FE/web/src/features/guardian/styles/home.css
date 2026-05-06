@@ -1619,6 +1619,21 @@
   border-bottom: 0;
 }
 
+.parent-settings-page__row.is-button {
+  cursor: pointer;
+}
+
+.parent-settings-page__row.is-button:hover {
+  background: rgba(248, 250, 252, 0.82);
+}
+
+.parent-settings-page__row.is-button:focus-visible,
+.parent-settings-page__phone-chip:focus-visible,
+.parent-settings-page__linked-email:focus-visible {
+  outline: 2px solid rgba(107, 154, 196, 0.38);
+  outline-offset: 2px;
+}
+
 .parent-settings-page__icon-circle {
   display: inline-flex;
   align-items: center;
