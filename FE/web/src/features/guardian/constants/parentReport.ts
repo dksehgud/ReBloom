@@ -19,6 +19,11 @@ export type ParentReportWeek = {
     score: number
   }[]
   sleepInsight: string
+  stabilityScores: {
+    weekday: ReportWeekday
+    score: number
+  }[]
+  stabilityInsight: string
 }
 
 export const parentReportWeeks: ParentReportWeek[] = [
@@ -44,6 +49,16 @@ export const parentReportWeeks: ParentReportWeek[] = [
       { weekday: '일', score: 81 },
     ],
     sleepInsight: '수요일과 목요일의 수면 점수가 다른 날보다 낮아 보여요.',
+    stabilityScores: [
+      { weekday: '월', score: 66 },
+      { weekday: '화', score: 71 },
+      { weekday: '수', score: 58 },
+      { weekday: '목', score: 63 },
+      { weekday: '금', score: 74 },
+      { weekday: '토', score: 82 },
+      { weekday: '일', score: 79 },
+    ],
+    stabilityInsight: '주 중반에는 긴장도가 높아졌지만, 주말로 갈수록 다시 안정되는 흐름이에요.',
   },
   {
     id: '2026-05-w1',
@@ -67,6 +82,16 @@ export const parentReportWeeks: ParentReportWeek[] = [
       { weekday: '일', score: 75 },
     ],
     sleepInsight: '수요일의 수면 점수가 다른 날보다 크게 낮아 보여요.',
+    stabilityScores: [
+      { weekday: '월', score: 64 },
+      { weekday: '화', score: 59 },
+      { weekday: '수', score: 43 },
+      { weekday: '목', score: 56 },
+      { weekday: '금', score: 67 },
+      { weekday: '토', score: 79 },
+      { weekday: '일', score: 74 },
+    ],
+    stabilityInsight: '자율신경 안정도는 주 중반에 내려갔다가 주말로 갈수록 회복되는 흐름이에요.',
   },
   {
     id: '2026-05-w2',
@@ -90,5 +115,15 @@ export const parentReportWeeks: ParentReportWeek[] = [
       { weekday: '일', score: 86 },
     ],
     sleepInsight: '전반적으로 수면 점수가 안정적이고 주말로 갈수록 더 좋아졌어요.',
+    stabilityScores: [
+      { weekday: '월', score: 72 },
+      { weekday: '화', score: 69 },
+      { weekday: '수', score: 74 },
+      { weekday: '목', score: 78 },
+      { weekday: '금', score: 70 },
+      { weekday: '토', score: 84 },
+      { weekday: '일', score: 83 },
+    ],
+    stabilityInsight: '전반적으로 안정도가 높은 편이고, 큰 흔들림 없이 유지되고 있어요.',
   },
 ]

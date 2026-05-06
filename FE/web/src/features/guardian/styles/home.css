@@ -1225,10 +1225,56 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-family: 'Inter', 'Noto Sans KR', sans-serif;
+  cursor: pointer;
+}
+
+.parent-report-page__info-button svg {
+  width: 14px;
+  height: 14px;
+}
+
+.parent-report-page__info-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.parent-report-page__tooltip {
+  position: absolute;
+  right: -8px;
+  bottom: calc(100% + 12px);
+  box-sizing: border-box;
+  width: 256px;
+  max-width: min(256px, calc(100vw - 80px));
+  border-radius: 12px;
+  border: 0.761753px solid rgba(168, 178, 188, 0.2);
+  background: #ffffff;
+  box-shadow:
+    0 10px 15px -3px rgba(0, 0, 0, 0.1),
+    0 4px 6px -4px rgba(0, 0, 0, 0.1);
+  padding: 13px;
+  z-index: 2;
+}
+
+.parent-report-page__tooltip-copy {
+  margin: 0;
+  color: #4a5568;
+  font-family: 'Noto Sans KR', sans-serif;
   font-size: 10px;
-  font-weight: 700;
-  cursor: default;
+  line-height: 16px;
+}
+
+.parent-report-page__tooltip-close {
+  margin-top: 10px;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  color: #88b5c4;
+  font-family: 'Inter', 'Noto Sans KR', sans-serif;
+  font-size: 9px;
+  font-weight: 500;
+  line-height: 14px;
+  cursor: pointer;
 }
 
 .parent-report-page__line-chart-placeholder {

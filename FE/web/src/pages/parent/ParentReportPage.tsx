@@ -8,6 +8,12 @@ import {
   type ParentReportMood,
 } from '../../features/guardian/constants/parentReport'
 
+const STABILITY_CHART_WIDTH = 300
+const STABILITY_CHART_HEIGHT = 180
+const STABILITY_CHART_PADDING_X = 12
+const STABILITY_CHART_PADDING_TOP = 12
+const STABILITY_CHART_PADDING_BOTTOM = 26
+
 function ShieldIcon() {
   return (
     <svg
@@ -63,6 +69,21 @@ function StabilityIcon() {
         d="M2.5 10H5.83333L8.33333 5L11.6667 15L14.1667 10H17.5"
         stroke="currentColor"
         strokeWidth="1.6657"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  )
+}
+
+function InfoIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 16 16" fill="none">
+      <circle cx="8" cy="8" r="7.23825" stroke="currentColor" strokeWidth="0.761753" />
+      <path
+        d="M8 7V10.5M8 5.25H8.01"
+        stroke="currentColor"
+        strokeWidth="1.1"
         strokeLinecap="round"
         strokeLinejoin="round"
       />
@@ -134,12 +155,39 @@ function getBarTone(score: number) {
   return 'default'
 }
 
+function createStabilityChartData(scores: typeof parentReportWeeks[number]['stabilityScores']) {
+  const usableWidth = STABILITY_CHART_WIDTH - STABILITY_CHART_PADDING_X * 2
+  const usableHeight =
+    STABILITY_CHART_HEIGHT - STABILITY_CHART_PADDING_TOP - STABILITY_CHART_PADDING_BOTTOM
+  const stepX = usableWidth / Math.max(scores.length - 1, 1)
+
+  const points = scores.map((item, index) => {
+    const x = STABILITY_CHART_PADDING_X + stepX * index
+    const y =
+      STABILITY_CHART_PADDING_TOP +
+      ((100 - item.score) / 100) * usableHeight
+
+    return {
+      ...item,
+      x,
+      y,
+    }
+  })
+
+  return {
+    points,
+    path: points.map((point, index) => `${index === 0 ? 'M' : 'L'}${point.x} ${point.y}`).join(' '),
+  }
+}
+
 function ParentReportPage() {
   const [selectedWeekIndex, setSelectedWeekIndex] = useState(1)
+  const [isInfoOpen, setIsInfoOpen] = useState(false)
 
   const currentWeek = parentReportWeeks[selectedWeekIndex]
   const isPrevDisabled = selectedWeekIndex === 0
   const isNextDisabled = selectedWeekIndex === parentReportWeeks.length - 1
+  const stabilityChart = createStabilityChartData(currentWeek.stabilityScores)
 
   return (
     <MobilePageLayout
@@ -258,9 +306,32 @@ function ParentReportPage() {
               <h2 id="nervous-system-report" className="parent-report-page__section-title">
                 자율신경 안정도
               </h2>
-              <span className="parent-report-page__info-button" aria-hidden="true">
-                i
-              </span>
+              <div className="parent-report-page__info-wrap">
+                <button
+                  type="button"
+                  className="parent-report-page__info-button"
+                  onClick={() => setIsInfoOpen((previous) => !previous)}
+                  aria-label="자율신경 안정도 안내"
+                  aria-expanded={isInfoOpen}
+                >
+                  <InfoIcon />
+                </button>
+                {isInfoOpen ? (
+                  <div className="parent-report-page__tooltip" role="dialog" aria-label="자율신경 안정도 안내">
+                    <p className="parent-report-page__tooltip-copy">
+                      일기에 나타난 감정 상태를 점수화해 보여줍니다. 높을수록 긍정적인 감정과
+                      안정감이 높고, 낮을수록 긴장과 피로가 커졌다고 해석할 수 있어요.
+                    </p>
+                    <button
+                      type="button"
+                      className="parent-report-page__tooltip-close"
+                      onClick={() => setIsInfoOpen(false)}
+                    >
+                      닫기
+                    </button>
+                  </div>
+                ) : null}
+              </div>
             </div>
           </div>
 
@@ -270,30 +341,22 @@ function ParentReportPage() {
               <svg
                 aria-hidden="true"
                 className="parent-report-page__line-chart-plot"
-                viewBox="0 0 280 160"
+                viewBox={`0 0 ${STABILITY_CHART_WIDTH} ${STABILITY_CHART_HEIGHT}`}
                 fill="none"
                 xmlns="http://www.w3.org/2000/svg"
               >
                 <path
-                  d="M4 120L48 110L92 88L136 98L180 84L224 62L276 72"
+                  d={stabilityChart.path}
                   stroke="#F4B895"
                   strokeWidth="3"
                   strokeLinecap="round"
                   strokeLinejoin="round"
                 />
-                {[
-                  [4, 120],
-                  [48, 110],
-                  [92, 88],
-                  [136, 98],
-                  [180, 84],
-                  [224, 62],
-                  [276, 72],
-                ].map(([cx, cy]) => (
+                {stabilityChart.points.map((point) => (
                   <circle
-                    key={`${cx}-${cy}`}
-                    cx={cx}
-                    cy={cy}
+                    key={`${currentWeek.id}-${point.weekday}`}
+                    cx={point.x}
+                    cy={point.y}
                     r="5"
                     fill="#F4B895"
                     stroke="white"
@@ -302,14 +365,12 @@ function ParentReportPage() {
                 ))}
               </svg>
               <div className="parent-report-page__line-chart-labels">
-                {['월', '화', '수', '목', '금', '토', '일'].map((day) => (
-                  <span key={day}>{day}</span>
+                {currentWeek.stabilityScores.map((point) => (
+                  <span key={`${currentWeek.id}-${point.weekday}`}>{point.weekday}</span>
                 ))}
               </div>
             </div>
-            <div className="parent-report-page__insight-line">
-              자율신경 안정도가 주말로 갈수록 개선되는 추세입니다.
-            </div>
+            <div className="parent-report-page__insight-line">{currentWeek.stabilityInsight}</div>
           </div>
         </section>
       </div>
