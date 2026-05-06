@@ -55,7 +55,7 @@ public class UserServiceImpl implements UserService {
         boolean isSocialSignup = StringUtils.hasText(registerUUID);
 
         if (!isSocialSignup) {
-//            validateEmailVerification(userCreateRequestDto.email());
+            validateEmailVerification(userCreateRequestDto.email());
         }
 
         String encryptedPassword = passwordEncoder.encode(userCreateRequestDto.password());
