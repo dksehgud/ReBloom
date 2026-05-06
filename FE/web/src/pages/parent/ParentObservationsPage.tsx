@@ -1,6 +1,7 @@
 import MobilePageLayout from '../../components/templates/MobilePageLayout/MobilePageLayout'
 import ParentBottomNavigation from '../../features/guardian/components/ParentBottomNavigation'
 import ParentObservationCalendar from '../../features/guardian/components/ParentObservationCalendar'
+import ParentObservationDetailModal from '../../features/guardian/components/ParentObservationDetailModal'
 import ParentObservationListSection from '../../features/guardian/components/ParentObservationListSection'
 import { useParentObservationPageState } from '../../features/guardian/hooks/useParentObservationPageState'
 
@@ -23,11 +24,16 @@ function ParentObservationsPage() {
     selectedDay,
     selectedDateLabel,
     selectedDateRecords,
+    selectedRecord,
+    detailDateLabel,
+    modalMode,
     isLoading,
     isError,
     handlePreviousMonth,
     handleNextMonth,
     handleSelectDay,
+    handleSelectRecord,
+    handleCloseModal,
   } = useParentObservationPageState()
 
   return (
@@ -53,8 +59,17 @@ function ParentObservationsPage() {
           currentMonthLabel={`${currentMonth}월`}
           isLoading={isLoading}
           isError={isError}
+          onSelectRecord={handleSelectRecord}
         />
       </div>
+
+      {modalMode === 'detail' && selectedRecord ? (
+        <ParentObservationDetailModal
+          record={selectedRecord}
+          dateLabel={detailDateLabel}
+          onClose={handleCloseModal}
+        />
+      ) : null}
     </MobilePageLayout>
   )
 }
