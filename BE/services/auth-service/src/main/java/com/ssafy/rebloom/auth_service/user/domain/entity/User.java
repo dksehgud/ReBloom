@@ -71,9 +71,13 @@ public class User extends BaseTime {
         this.status = UserStatus.WITHDRAW;
     }
 
-    public void updateProfile(String email, String name, String phone) {
+    protected void updateProfile(String email, String name, String phone) {
         this.email = email;
         this.name = name;
         this.phone = phone;
+    }
+
+    public void changePassword(String password) {
+        this.password = password;
     }
 }

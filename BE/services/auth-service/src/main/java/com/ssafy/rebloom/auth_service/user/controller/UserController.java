@@ -2,18 +2,26 @@ package com.ssafy.rebloom.auth_service.user.controller;
 
 import com.ssafy.rebloom.auth_service.auth.service.AuthService;
 import com.ssafy.rebloom.auth_service.auth.util.CookieUtil;
+import com.ssafy.rebloom.auth_service.user.dto.request.PasswordChangeRequestDto;
+import com.ssafy.rebloom.auth_service.user.dto.request.PasswordVerifyRequestDto;
 import com.ssafy.rebloom.auth_service.user.dto.request.UserCreateRequestDto;
+import com.ssafy.rebloom.auth_service.user.dto.request.UserUpdateRequestDto;
+import com.ssafy.rebloom.auth_service.user.dto.response.UserInfoResponseDto;
 import com.ssafy.rebloom.auth_service.user.service.UserService;
 import com.ssafy.rebloom.common.dto.BaseResponse;
 import com.ssafy.rebloom.security.annotation.LoginUserId;
 import jakarta.validation.Valid;
+
 import java.util.UUID;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -26,7 +34,6 @@ public class UserController {
 
     private final UserService userService;
     private final AuthService authService;
-
     private final CookieUtil cookieUtil;
 
     @PostMapping
@@ -52,5 +59,44 @@ public class UserController {
         return ResponseEntity.ok()
             .header(HttpHeaders.SET_COOKIE, deleteCookie.toString())
             .body(BaseResponse.success("회원 탈퇴가 완료되었습니다."));
+    }
+
+    @GetMapping
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<BaseResponse<UserInfoResponseDto>> getMyInfo(
+        @LoginUserId UUID userId
+    ) {
+        UserInfoResponseDto response = userService.getMyInfo(userId);
+        return ResponseEntity.ok(BaseResponse.success("정보 확인 성공", response));
+    }
+
+    @PatchMapping
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<BaseResponse<UserInfoResponseDto>> updateMyInfo(
+        @LoginUserId UUID userId,
+        @RequestBody @Valid UserUpdateRequestDto request
+    ) {
+        UserInfoResponseDto response = userService.updateMyInfo(userId, request);
+        return ResponseEntity.ok(BaseResponse.success("유저 정보 수정 성공", response));
+    }
+
+    @PatchMapping("/passwords")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<BaseResponse<Void>> changePassword(
+        @LoginUserId UUID userId,
+        @RequestBody @Valid PasswordChangeRequestDto request
+    ) {
+        userService.changePassword(userId, request.newPassword());
+        return ResponseEntity.ok(BaseResponse.success("비밀번호가 변경되었습니다."));
+    }
+
+    @PostMapping("/passwords/verifications")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<BaseResponse<Void>> verifyPassword(
+        @LoginUserId UUID userId,
+        @RequestBody @Valid PasswordVerifyRequestDto request
+    ) {
+        userService.verifyPassword(userId, request.password());
+        return ResponseEntity.ok(BaseResponse.success("현재 비밀번호가 일치합니다."));
     }
 }
