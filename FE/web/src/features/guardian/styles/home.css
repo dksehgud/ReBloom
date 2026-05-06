@@ -404,36 +404,6 @@
   padding: 24px 24px 32px;
 }
 
-.parent-observations-page__section {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.parent-observations-page__section-copy {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.parent-observations-page__section-title {
-  margin: 0;
-  color: #2d3748;
-  font-family: 'Inter', 'Noto Sans KR', sans-serif;
-  font-size: 18px;
-  font-weight: 700;
-  line-height: 28px;
-}
-
-.parent-observations-page__section-description {
-  margin: 0;
-  color: #718096;
-  font-family: 'Inter', 'Noto Sans KR', sans-serif;
-  font-size: 13px;
-  line-height: 21px;
-  word-break: keep-all;
-}
-
 .parent-observation-calendar {
   display: flex;
   flex-direction: column;
@@ -534,57 +504,4 @@
 
 .parent-observation-calendar__day-marker.is-visible {
   background: #c46b6b;
-}
-
-.parent-observations-page__list-skeleton {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.parent-observations-page__list-card {
-  display: flex;
-  gap: 14px;
-  align-items: flex-start;
-  border-radius: 18px;
-  background: rgba(155, 196, 168, 0.04);
-  border: 1px solid rgba(168, 178, 188, 0.08);
-  padding: 16px;
-}
-
-.parent-observations-page__list-card-date {
-  width: 40px;
-  height: 46px;
-  flex-shrink: 0;
-  border-radius: 14px;
-  background: linear-gradient(180deg, rgba(136, 181, 196, 0.18) 0%, rgba(155, 196, 168, 0.12) 100%);
-}
-
-.parent-observations-page__list-card-content {
-  display: flex;
-  min-width: 0;
-  flex: 1;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.parent-observations-page__list-card-badge {
-  width: 52px;
-  height: 24px;
-  border-radius: 999px;
-  background: linear-gradient(180deg, rgba(136, 181, 196, 0.18) 0%, rgba(155, 196, 168, 0.12) 100%);
-}
-
-.parent-observations-page__list-card-line {
-  height: 14px;
-  border-radius: 999px;
-  background: linear-gradient(180deg, rgba(136, 181, 196, 0.18) 0%, rgba(155, 196, 168, 0.12) 100%);
-}
-
-.parent-observations-page__list-card-line--long {
-  width: 88%;
-}
-
-.parent-observations-page__list-card-line--short {
-  width: 64%;
 }
