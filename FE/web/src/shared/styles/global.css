@@ -8,8 +8,8 @@
 }
 
 .phone-shell {
-  width: min(100%, 390px);
-  min-height: min(844px, 100svh - 48px);
+  width: 390px;
+  height: 844px;
   background: #ffffff;
   border-radius: 40px;
   box-shadow:
@@ -21,14 +21,15 @@
 
 .mobile-page-layout {
   width: 100%;
-  min-height: 100%;
+  height: 100%;
 }
 
 .mobile-page-surface {
   display: flex;
   flex-direction: column;
   width: 100%;
-  min-height: min(844px, 100svh - 48px);
+  height: 844px;
+  min-height: 844px;
   background: #ffffff;
   border-radius: 40px;
   overflow: hidden;
@@ -45,8 +46,14 @@
   flex-direction: column;
   min-height: 0;
   overflow-y: auto;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
   padding: 0 24px;
   box-sizing: border-box;
+}
+
+.mobile-page-content::-webkit-scrollbar {
+  display: none;
 }
 
 .mobile-page-bottom-slot {
@@ -160,7 +167,30 @@
 }
 
 .phone-shell--signup {
-  height: min(844px, 100svh - 48px);
+  height: 844px;
+}
+
+body[data-shell-mode='webview'] .app-shell {
+  align-items: stretch;
+  justify-content: stretch;
+  padding: 0;
+}
+
+body[data-shell-mode='webview'] .phone-shell {
+  width: 100%;
+  height: 100svh;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+body[data-shell-mode='webview'] .mobile-page-surface {
+  height: 100svh;
+  min-height: 100svh;
+  border-radius: 0;
+}
+
+body[data-shell-mode='webview'] .phone-shell--signup {
+  height: 100svh;
 }
 
 .primary-button {

@@ -231,26 +231,12 @@
   overflow-y: auto;
   padding-left: 4px;
   padding-right: 18px;
-  scrollbar-gutter: stable;
-  scrollbar-color: rgba(52, 73, 102, 0.38) transparent;
-  scrollbar-width: thin;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 
 .phone-shell--signup .auth-body.is-scrollable::-webkit-scrollbar {
-  width: 6px;
-}
-
-.phone-shell--signup .auth-body.is-scrollable::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.phone-shell--signup .auth-body.is-scrollable::-webkit-scrollbar-thumb {
-  background: rgba(52, 73, 102, 0.32);
-  border-radius: 999px;
-}
-
-.phone-shell--signup .auth-body.is-scrollable::-webkit-scrollbar-thumb:hover {
-  background: rgba(52, 73, 102, 0.48);
+  display: none;
 }
 
 .phone-shell--signup .auth-body.is-scrollable .field-input:focus-visible {
