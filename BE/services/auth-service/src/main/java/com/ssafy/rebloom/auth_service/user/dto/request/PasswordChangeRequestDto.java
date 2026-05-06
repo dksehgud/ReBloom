@@ -4,7 +4,11 @@ import jakarta.validation.constraints.NotBlank;
 
 public record PasswordChangeRequestDto(
 
+    String currentPassword,
+
     @NotBlank
-    String newPassword
+    String newPassword,
+
+    String newPasswordConfirm
 ) {
 }
