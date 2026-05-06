@@ -45,7 +45,9 @@ recordings/
 *.pth
 *.gguf
 *.bin
-models/
+
+# Exception: Track the custom WakeOnWord models
+!WakeOnWord/models/hi_blooming*
 
 # Raspberry Pi / provisioning local state
 wpa_supplicant.conf
