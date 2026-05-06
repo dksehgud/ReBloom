@@ -11,7 +11,10 @@ from pathlib import Path
 
 import numpy as np
 
-from voice_chat import choose_alsa_device, write_tone_wav
+try:
+    from etc.voice_runtime import choose_alsa_device, write_tone_wav
+except ModuleNotFoundError:
+    from .etc.voice_runtime import choose_alsa_device, write_tone_wav
 
 
 SAMPLE_RATE = 16000
