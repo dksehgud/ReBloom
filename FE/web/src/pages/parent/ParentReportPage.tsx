@@ -126,6 +126,14 @@ function EmotionChip({ mood }: { mood: ParentReportMood }) {
   )
 }
 
+function getBarTone(score: number) {
+  if (score <= 55) {
+    return 'warning'
+  }
+
+  return 'default'
+}
+
 function ParentReportPage() {
   const [selectedWeekIndex, setSelectedWeekIndex] = useState(1)
 
@@ -215,30 +223,29 @@ function ParentReportPage() {
 
           <div className="parent-report-page__card parent-report-page__card--chart">
             <div className="parent-report-page__bar-chart-placeholder">
-              {[80, 90, 50, 60, 70, 85, 75].map((score, index) => (
-                <div key={`${score}-${index}`} className="parent-report-page__bar-column">
+              {currentWeek.sleepScores.map((item) => {
+                const tone = getBarTone(item.score)
+
+                return (
+                <div key={`${currentWeek.id}-${item.weekday}`} className="parent-report-page__bar-column">
                   <span
                     className={`parent-report-page__bar-score${
-                      score <= 50 ? ' is-warning' : ''
+                      tone === 'warning' ? ' is-warning' : ''
                     }`}
                   >
-                    {score}
+                    {item.score}
                   </span>
                   <span
                     className={`parent-report-page__bar${
-                      score <= 50 ? ' is-warning' : ''
+                      tone === 'warning' ? ' is-warning' : ''
                     }`}
-                    style={{ height: `${score * 1.8}px` }}
+                    style={{ height: `${Math.max(44, item.score * 1.8)}px` }}
                   />
-                  <span className="parent-report-page__bar-day">
-                    {['월', '화', '수', '목', '금', '토', '일'][index]}
-                  </span>
+                  <span className="parent-report-page__bar-day">{item.weekday}</span>
                 </div>
-              ))}
+              )})}
             </div>
-            <div className="parent-report-page__insight-line">
-              수요일의 수면 점수가 다른 날보다 낮습니다.
-            </div>
+            <div className="parent-report-page__insight-line">{currentWeek.sleepInsight}</div>
           </div>
         </section>
 
