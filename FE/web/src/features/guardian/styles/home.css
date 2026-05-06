@@ -1562,3 +1562,150 @@
   color: #718096;
   box-shadow: none;
 }
+
+.parent-settings-page {
+  background: linear-gradient(180deg, #ffffff 0%, #fbfcfd 100%);
+}
+
+.parent-settings-page__content {
+  padding: 0;
+}
+
+.parent-settings-page__body {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding: 24px 24px 32px;
+}
+
+.parent-settings-page__section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.parent-settings-page__section-title {
+  margin: 0 0 0 8px;
+  color: #6a7282;
+  font-family: 'Inter', 'Noto Sans KR', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 16px;
+}
+
+.parent-settings-page__box {
+  background: #ffffff;
+  border: 1px solid #f3f4f6;
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.parent-settings-page__row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 72px;
+  padding: 16px;
+  box-sizing: border-box;
+  border: 0;
+  border-bottom: 1px solid #f9fafb;
+  background: transparent;
+  text-align: left;
+}
+
+.parent-settings-page__row.has-divider:last-child,
+.parent-settings-page__row:not(.has-divider) {
+  border-bottom: 0;
+}
+
+.parent-settings-page__icon-circle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  background: #f3f4f6;
+  color: #4a5565;
+  flex-shrink: 0;
+}
+
+.parent-settings-page__icon-circle svg {
+  width: 20px;
+  height: 20px;
+}
+
+.parent-settings-page__copy {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.parent-settings-page__row-title {
+  color: #0a0a0a;
+  font-family: 'Inter', 'Noto Sans KR', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 20px;
+}
+
+.parent-settings-page__row-description {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  color: #6a7282;
+  font-family: 'Inter', 'Noto Sans KR', sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 16px;
+}
+
+.parent-settings-page__muted-text {
+  color: #a8b2bc;
+}
+
+.parent-settings-page__linked-email {
+  color: #6a7282;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.parent-settings-page__row-end {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+.parent-settings-page__chevron {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #99a1af;
+}
+
+.parent-settings-page__chevron svg {
+  width: 20px;
+  height: 20px;
+}
+
+.parent-settings-page__phone-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 133px;
+  min-height: 23px;
+  padding: 0 12px;
+  border-radius: 16px;
+  background: #f3f4f6;
+  color: #0a0a0a;
+  font-family: 'Inter', 'Noto Sans KR', sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 12px;
+  text-decoration: none;
+}

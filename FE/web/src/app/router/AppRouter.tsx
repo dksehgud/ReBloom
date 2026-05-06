@@ -18,8 +18,8 @@ import ChildSettingsPage from '../../pages/child/ChildSettingsPage'
 import ParentHomePage from '../../pages/parent/ParentHomePage'
 import ParentNotificationsPage from '../../pages/parent/ParentNotificationsPage'
 import ParentObservationsPage from '../../pages/parent/ParentObservationsPage'
-import ParentPlaceholderPage from '../../pages/parent/ParentPlaceholderPage'
 import ParentReportPage from '../../pages/parent/ParentReportPage'
+import ParentSettingsPage from '../../pages/parent/ParentSettingsPage'
 import { useAppSessionStore } from '../../features/auth/store/useAppSessionStore'
 import { useSelectedChildStore } from '../../features/student/store/useSelectedChildStore'
 import type { AppRole } from '../../shared/types/appRole'
@@ -250,15 +250,7 @@ function AppRouter() {
         <Route path="observations" element={<ParentObservationsPage />} />
         <Route path="report" element={<ParentReportPage />} />
         <Route path="notifications" element={<ParentNotificationsPage />} />
-        <Route
-          path="settings"
-          element={
-            <ParentPlaceholderPage
-              title="설정"
-              description="보호자 설정 화면은 다음 태스크에서 상담사 연결, 프로필, 비밀번호 변경 흐름으로 이어질 예정입니다."
-            />
-          }
-        />
+        <Route path="settings" element={<ParentSettingsPage />} />
         <Route path="*" element={<Navigate replace to="/parent/home" />} />
       </Route>
 
