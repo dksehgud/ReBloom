@@ -1,7 +1,8 @@
 import MobilePageLayout from '../../components/templates/MobilePageLayout/MobilePageLayout'
 import ParentBottomNavigation from '../../features/guardian/components/ParentBottomNavigation'
 import ParentObservationCalendar from '../../features/guardian/components/ParentObservationCalendar'
-import ParentObservationSection from '../../features/guardian/components/ParentObservationSection'
+import ParentObservationListSection from '../../features/guardian/components/ParentObservationListSection'
+import { useParentObservationPageState } from '../../features/guardian/hooks/useParentObservationPageState'
 
 function ParentObservationsHeader() {
   return (
@@ -15,6 +16,20 @@ function ParentObservationsHeader() {
 }
 
 function ParentObservationsPage() {
+  const {
+    currentYear,
+    currentMonth,
+    markedDays,
+    selectedDay,
+    selectedDateLabel,
+    selectedDateRecords,
+    isLoading,
+    isError,
+    handlePreviousMonth,
+    handleNextMonth,
+    handleSelectDay,
+  } = useParentObservationPageState()
+
   return (
     <MobilePageLayout
       header={<ParentObservationsHeader />}
@@ -23,8 +38,22 @@ function ParentObservationsPage() {
       bottomNavigation={<ParentBottomNavigation />}
     >
       <div className="parent-observations-page__body">
-        <ParentObservationCalendar />
-        <ParentObservationSection />
+        <ParentObservationCalendar
+          year={currentYear}
+          month={currentMonth}
+          markedDays={markedDays}
+          selectedDay={selectedDay}
+          onPreviousMonth={handlePreviousMonth}
+          onNextMonth={handleNextMonth}
+          onSelectDay={handleSelectDay}
+        />
+        <ParentObservationListSection
+          records={selectedDateRecords}
+          selectedDateLabel={selectedDateLabel}
+          currentMonthLabel={`${currentMonth}월`}
+          isLoading={isLoading}
+          isError={isError}
+        />
       </div>
     </MobilePageLayout>
   )

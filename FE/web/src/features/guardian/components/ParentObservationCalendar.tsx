@@ -3,45 +3,17 @@ type ParentObservationCalendarDay = {
   hasRecord?: boolean
 }
 
-const weekLabels = ['일', '월', '화', '수', '목', '금', '토']
+type ParentObservationCalendarProps = {
+  year: number
+  month: number
+  markedDays?: number[]
+  selectedDay?: number | null
+  onPreviousMonth?: () => void
+  onNextMonth?: () => void
+  onSelectDay?: (day: number) => void
+}
 
-const aprilCalendarDays: ParentObservationCalendarDay[] = [
-  { day: null },
-  { day: null },
-  { day: null },
-  { day: 1 },
-  { day: 2 },
-  { day: 3, hasRecord: true },
-  { day: 4, hasRecord: true },
-  { day: 5 },
-  { day: 6 },
-  { day: 7 },
-  { day: 8 },
-  { day: 9 },
-  { day: 10 },
-  { day: 11 },
-  { day: 12 },
-  { day: 13, hasRecord: true },
-  { day: 14, hasRecord: true },
-  { day: 15, hasRecord: true },
-  { day: 16 },
-  { day: 17 },
-  { day: 18 },
-  { day: 19 },
-  { day: 20 },
-  { day: 21 },
-  { day: 22 },
-  { day: 23 },
-  { day: 24 },
-  { day: 25 },
-  { day: 26 },
-  { day: 27 },
-  { day: 28 },
-  { day: 29 },
-  { day: 30 },
-  { day: null },
-  { day: null },
-]
+const weekLabels = ['일', '월', '화', '수', '목', '금', '토']
 
 function ChevronLeftIcon() {
   return (
@@ -52,7 +24,13 @@ function ChevronLeftIcon() {
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
     >
-      <path d="M12.5 5L7.5 10L12.5 15" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+      <path
+        d="M12.5 5L7.5 10L12.5 15"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
     </svg>
   )
 }
@@ -66,12 +44,57 @@ function ChevronRightIcon() {
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
     >
-      <path d="M7.5 5L12.5 10L7.5 15" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+      <path
+        d="M7.5 5L12.5 10L7.5 15"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
     </svg>
   )
 }
 
-function ParentObservationCalendar() {
+function getDaysInMonth(year: number, month: number) {
+  return new Date(year, month, 0).getDate()
+}
+
+function getFirstDayOffset(year: number, month: number) {
+  return new Date(year, month - 1, 1).getDay()
+}
+
+function buildCalendarDays(year: number, month: number, markedDays: number[]) {
+  const firstDayOffset = getFirstDayOffset(year, month)
+  const daysInMonth = getDaysInMonth(year, month)
+  const totalCells = Math.ceil((firstDayOffset + daysInMonth) / 7) * 7
+  const markedDaySet = new Set(markedDays)
+
+  return Array.from({ length: totalCells }, (_, index): ParentObservationCalendarDay => {
+    const day = index - firstDayOffset + 1
+    const isInMonth = day > 0 && day <= daysInMonth
+
+    if (!isInMonth) {
+      return { day: null }
+    }
+
+    return {
+      day,
+      hasRecord: markedDaySet.has(day),
+    }
+  })
+}
+
+function ParentObservationCalendar({
+  year,
+  month,
+  markedDays = [],
+  selectedDay = null,
+  onPreviousMonth,
+  onNextMonth,
+  onSelectDay,
+}: ParentObservationCalendarProps) {
+  const calendarDays = buildCalendarDays(year, month, markedDays)
+
   return (
     <section className="parent-observation-calendar" aria-label="아이 관찰 기록 캘린더">
       <div className="parent-observation-calendar__header">
@@ -79,16 +102,18 @@ function ParentObservationCalendar() {
           type="button"
           className="parent-observation-calendar__nav-button"
           aria-label="이전 달"
+          onClick={onPreviousMonth}
         >
           <ChevronLeftIcon />
         </button>
 
-        <h2 className="parent-observation-calendar__month-label">2026년 4월</h2>
+        <h2 className="parent-observation-calendar__month-label">{`${year}년 ${month}월`}</h2>
 
         <button
           type="button"
           className="parent-observation-calendar__nav-button"
           aria-label="다음 달"
+          onClick={onNextMonth}
         >
           <ChevronRightIcon />
         </button>
@@ -103,13 +128,29 @@ function ParentObservationCalendar() {
       </div>
 
       <div className="parent-observation-calendar__grid">
-        {aprilCalendarDays.map((entry, index) => {
+        {calendarDays.map((entry, index) => {
           if (entry.day === null) {
-            return <span key={`blank-${index}`} className="parent-observation-calendar__day is-empty" aria-hidden="true" />
+            return (
+              <span
+                key={`blank-${index}`}
+                className="parent-observation-calendar__day is-empty"
+                aria-hidden="true"
+              />
+            )
           }
 
+          const isSelected = selectedDay === entry.day
+
           return (
-            <div key={entry.day} className="parent-observation-calendar__day">
+            <button
+              key={entry.day}
+              type="button"
+              className={`parent-observation-calendar__day${
+                isSelected ? ' is-selected' : ''
+              }`}
+              aria-pressed={isSelected}
+              onClick={() => onSelectDay?.(entry.day!)}
+            >
               <span className="parent-observation-calendar__day-number">{entry.day}</span>
               <span
                 className={`parent-observation-calendar__day-marker${
@@ -117,7 +158,7 @@ function ParentObservationCalendar() {
                 }`}
                 aria-hidden="true"
               />
-            </div>
+            </button>
           )
         })}
       </div>

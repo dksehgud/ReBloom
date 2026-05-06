@@ -1,16 +1,20 @@
 import { PARENT_OBSERVATION_PREVIEW_LIMIT } from '../constants/parentObservation'
-import { parentObservationPreviewMock } from '../mocks/parentObservationPreview'
+import { parentObservationListMock } from '../mocks/parentObservationList'
 import type {
   ParentObservationListItemDto,
+  ParentObservationListResponse,
   ParentObservationListResponseDto,
-  ParentObservationPreviewItem,
   ParentObservationPreviewResponse,
+  ParentObservationRecord,
 } from '../types/parentObservation'
 
-type GetParentObservationPreviewParams = {
+type ParentObservationQueryParams = {
   childrenId?: string
   year?: number
   month?: number
+}
+
+type GetParentObservationPreviewParams = ParentObservationQueryParams & {
   limit?: number
 }
 
@@ -30,10 +34,6 @@ const dayOfWeekLabelMap: Record<string, string> = {
   SUN: '일',
 }
 
-function trimPreviewRecords(records: ParentObservationPreviewItem[], limit: number) {
-  return records.slice(0, limit)
-}
-
 function formatReportDate(reportDate: string) {
   const [year, month, day] = reportDate.split('-')
 
@@ -44,30 +44,41 @@ function formatReportDate(reportDate: string) {
   return `${month}/${day}`
 }
 
-function mapObservationListItemToPreview(
-  item: ParentObservationListItemDto,
-): ParentObservationPreviewItem {
+function parseReportDay(reportDate: string) {
+  const [, , day] = reportDate.split('-')
+  return day ? Number(day) : 0
+}
+
+function mapObservationListItemToRecord(item: ParentObservationListItemDto): ParentObservationRecord {
   return {
     id: item.reportId,
+    reportDate: item.reportDate,
+    recordedAt: item.recordedAt ?? '00:00',
     date: formatReportDate(item.reportDate),
+    day: parseReportDay(item.reportDate),
     weekday: dayOfWeekLabelMap[item.dayOfWeek] ?? item.dayOfWeek,
     mood: item.emotionTag,
     description: item.context,
+    counselorComment:
+      item.counselorComment && item.counselorCommentRelativeTime
+        ? {
+            content: item.counselorComment,
+            relativeTimeLabel: item.counselorCommentRelativeTime,
+          }
+        : null,
   }
 }
 
-async function getParentObservationPreviewFromMock(
-  limit: number,
-): Promise<ParentObservationPreviewResponse> {
-  return {
-    records: trimPreviewRecords(parentObservationPreviewMock, limit),
-  }
+function sortObservationRecords(records: ParentObservationRecord[]) {
+  return [...records].sort((left, right) => {
+    const leftKey = `${left.reportDate}T${left.recordedAt}`
+    const rightKey = `${right.reportDate}T${right.recordedAt}`
+
+    return rightKey.localeCompare(leftKey)
+  })
 }
 
-function createObservationListSearchParams({
-  year,
-  month,
-}: Pick<GetParentObservationPreviewParams, 'year' | 'month'>) {
+function createObservationListSearchParams({ year, month }: Pick<ParentObservationQueryParams, 'year' | 'month'>) {
   const searchParams = new URLSearchParams()
 
   if (typeof year === 'number') {
@@ -79,18 +90,45 @@ function createObservationListSearchParams({
   }
 
   const query = searchParams.toString()
-
   return query ? `?${query}` : ''
 }
 
-export async function getParentObservationPreview({
+function filterMockRecords(records: ParentObservationListItemDto[], year?: number, month?: number) {
+  return records.filter((record) => {
+    const [recordYear, recordMonth] = record.reportDate.split('-').map((value) => Number(value))
+
+    if (typeof year === 'number' && recordYear !== year) {
+      return false
+    }
+
+    if (typeof month === 'number' && recordMonth !== month) {
+      return false
+    }
+
+    return true
+  })
+}
+
+async function getParentObservationListFromMock({
+  year,
+  month,
+}: ParentObservationQueryParams = {}): Promise<ParentObservationListResponse> {
+  return {
+    records: sortObservationRecords(
+      filterMockRecords(parentObservationListMock, year, month).map(
+        mapObservationListItemToRecord,
+      ),
+    ),
+  }
+}
+
+export async function getParentObservationList({
   childrenId,
   year,
   month,
-  limit = PARENT_OBSERVATION_PREVIEW_LIMIT,
-}: GetParentObservationPreviewParams = {}): Promise<ParentObservationPreviewResponse> {
+}: ParentObservationQueryParams = {}): Promise<ParentObservationListResponse> {
   if (!childrenId) {
-    return getParentObservationPreviewFromMock(limit)
+    return getParentObservationListFromMock({ year, month })
   }
 
   const requestPath = `${parentObservationApiPaths.list(
@@ -103,16 +141,32 @@ export async function getParentObservationPreview({
   const response = await fetch(requestPath)
 
   if (!response.ok) {
-    throw new Error('보호자 관찰 기록 미리보기를 불러오지 못했습니다.')
+    throw new Error('보호자 관찰 기록 목록을 불러오지 못했습니다.')
   }
 
   const result = (await response.json()) as ParentObservationListResponseDto
 
   return {
-    records: trimPreviewRecords(
-      result.data.reports.map(mapObservationListItemToPreview),
-      limit,
+    records: sortObservationRecords(
+      result.data.reports.map(mapObservationListItemToRecord),
     ),
+  }
+}
+
+export async function getParentObservationPreview({
+  childrenId,
+  year,
+  month,
+  limit = PARENT_OBSERVATION_PREVIEW_LIMIT,
+}: GetParentObservationPreviewParams = {}): Promise<ParentObservationPreviewResponse> {
+  const response = await getParentObservationList({
+    childrenId,
+    year,
+    month,
+  })
+
+  return {
+    records: response.records.slice(0, limit),
   }
 }
 

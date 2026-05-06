@@ -181,11 +181,16 @@
     0 4px 6px -1px rgba(0, 0, 0, 0.1),
     0 2px 4px -2px rgba(0, 0, 0, 0.1);
   color: #ffffff;
-  cursor: default;
+  cursor: pointer;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   padding: 0;
+}
+
+.parent-home-page__add-button:disabled {
+  cursor: default;
+  opacity: 0.9;
 }
 
 .parent-home-page__add-icon {
@@ -203,7 +208,7 @@
 
 .parent-home-page__empty-banner-row {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 12px;
 }
 
@@ -215,8 +220,14 @@
 }
 
 .parent-home-page__empty-copy {
-  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
   color: rgba(74, 85, 104, 0.5);
+}
+
+.parent-home-page__empty-copy-line {
+  margin: 0;
   font-family: 'Inter', 'Noto Sans KR', sans-serif;
   font-size: 14px;
   line-height: 20px;
@@ -236,6 +247,15 @@
   line-height: 18px;
 }
 
+.parent-home-page__selected-date {
+  margin: -4px 0 0;
+  color: #88b5c4;
+  font-family: 'Inter', 'Noto Sans KR', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 18px;
+}
+
 .parent-home-page__record-item {
   display: flex;
   align-items: flex-start;
@@ -246,6 +266,18 @@
   background: rgba(155, 196, 168, 0.04);
   border: 1px solid rgba(168, 178, 188, 0.08);
   padding: 17px;
+}
+
+.parent-home-page__record-item--button {
+  width: 100%;
+  border: 1px solid rgba(168, 178, 188, 0.08);
+  text-align: left;
+  cursor: pointer;
+}
+
+.parent-home-page__record-item--button:hover {
+  border-color: rgba(136, 181, 196, 0.22);
+  box-shadow: 0 10px 20px rgba(107, 154, 196, 0.08);
 }
 
 .parent-home-page__record-date-block {
@@ -477,14 +509,24 @@
 .parent-observation-calendar__day {
   display: flex;
   min-height: 80px;
+  width: 100%;
   flex-direction: column;
   align-items: center;
+  justify-content: flex-start;
   gap: 4px;
   padding: 4px 4px 4px;
+  border: 0;
+  border-radius: 18px;
+  background: transparent;
+  cursor: pointer;
 }
 
 .parent-observation-calendar__day.is-empty {
   visibility: hidden;
+}
+
+.parent-observation-calendar__day.is-selected {
+  background: rgba(136, 181, 196, 0.14);
 }
 
 .parent-observation-calendar__day-number {
@@ -493,6 +535,10 @@
   font-size: 14px;
   font-weight: 700;
   line-height: 20px;
+}
+
+.parent-observation-calendar__day.is-selected .parent-observation-calendar__day-number {
+  color: #2d3748;
 }
 
 .parent-observation-calendar__day-marker {
@@ -504,4 +550,399 @@
 
 .parent-observation-calendar__day-marker.is-visible {
   background: #c46b6b;
+}
+
+.parent-observation-modal-overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(45, 55, 72, 0.28);
+  z-index: 40;
+}
+
+.parent-observation-modal {
+  position: relative;
+  width: 350px;
+  max-width: calc(100vw - 32px);
+  box-sizing: border-box;
+  border-radius: 24px;
+  background: #ffffff;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  padding: 24px;
+}
+
+.parent-observation-modal__close-button {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 999px;
+  background: #f3f4f6;
+  color: #4a5565;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.parent-observation-modal__close-icon {
+  width: 20px;
+  height: 20px;
+}
+
+.parent-observation-detail-modal__header-row,
+.parent-observation-form-modal__header-row {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+
+.parent-observation-form-modal__date-nav {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.parent-observation-form-modal__date-nav.is-static {
+  min-width: 96px;
+  justify-content: center;
+}
+
+.parent-observation-form-modal__nav-button {
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: #0a0a0a;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.parent-observation-detail-modal__nav-icon,
+.parent-observation-form-modal__nav-icon {
+  width: 20px;
+  height: 20px;
+}
+
+.parent-observation-detail-modal__date-label,
+.parent-observation-form-modal__date-label {
+  margin: 0;
+  color: #88b5c4;
+  font-family: 'Inter', 'Noto Sans KR', sans-serif;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 24px;
+  min-width: 72px;
+  text-align: center;
+}
+
+.parent-observation-detail-modal__content-card,
+.parent-observation-form-modal__textarea-wrap {
+  box-sizing: border-box;
+  border-radius: 16px;
+  border: 1.11px solid rgba(168, 178, 188, 0.08);
+  background: rgba(155, 196, 168, 0.04);
+  padding: 16px 17px 18px;
+}
+
+.parent-observation-detail-modal__content-card {
+  min-height: 79px;
+}
+
+.parent-observation-detail-modal__content-text {
+  margin: 0;
+  color: #4a5568;
+  font-family: 'Inter', 'Noto Sans KR', sans-serif;
+  font-size: 14px;
+  line-height: 23px;
+  white-space: pre-wrap;
+  word-break: keep-all;
+}
+
+.parent-observation-detail-modal__record-count {
+  margin: 0;
+  color: #a8b2bc;
+  font-family: 'Inter', 'Noto Sans KR', sans-serif;
+  font-size: 12px;
+  line-height: 16px;
+  text-align: center;
+}
+
+.parent-observation-detail-modal__pager {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  margin-top: 8px;
+}
+
+.parent-observation-detail-modal__pager-button {
+  width: 24px;
+  height: 24px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: #88b5c4;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  cursor: pointer;
+}
+
+.parent-observation-detail-modal__pager-button:disabled {
+  opacity: 0.28;
+  cursor: default;
+}
+
+.parent-observation-detail-modal__mood-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 30px;
+  margin-top: 14px;
+  padding: 0 13px;
+  border-radius: 999px;
+  border: 1.11px solid rgba(155, 196, 168, 0.2);
+  background: rgba(155, 196, 168, 0.12);
+  color: #9bc4a8;
+  font-family: 'Inter', 'Noto Sans KR', sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 16px;
+}
+
+.parent-observation-detail-modal__comment-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 18px;
+  border-radius: 20px;
+  border: 1.11px solid rgba(168, 178, 188, 0.12);
+  background: linear-gradient(135deg, #f5f8fa 0%, #fafbfc 100%);
+  padding: 21px;
+}
+
+.parent-observation-detail-modal__comment-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.parent-observation-detail-modal__comment-title-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.parent-observation-detail-modal__comment-icon {
+  width: 16px;
+  height: 18px;
+  color: #d97745;
+  flex-shrink: 0;
+}
+
+.parent-observation-detail-modal__comment-title {
+  color: #2d3748;
+  font-family: 'Inter', 'Noto Sans KR', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 20px;
+}
+
+.parent-observation-detail-modal__comment-time {
+  color: #a8b2bc;
+  font-family: 'Inter', 'Noto Sans KR', sans-serif;
+  font-size: 12px;
+  line-height: 16px;
+}
+
+.parent-observation-detail-modal__comment-body {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.parent-observation-detail-modal__comment-dot {
+  width: 6px;
+  height: 6px;
+  margin-top: 6px;
+  border-radius: 999px;
+  background: #6b9ac4;
+  flex-shrink: 0;
+}
+
+.parent-observation-detail-modal__comment-copy {
+  margin: 0;
+  color: #718096;
+  font-family: 'Inter', 'Noto Sans KR', sans-serif;
+  font-size: 12px;
+  line-height: 20px;
+  word-break: keep-all;
+}
+
+.parent-observation-detail-modal__actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 24px;
+}
+
+.parent-observation-detail-modal__action-button {
+  min-height: 44px;
+  border: 0;
+  border-radius: 14px;
+  color: #ffffff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-family: 'Inter', 'Noto Sans KR', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.parent-observation-detail-modal__action-button.is-edit {
+  background: #6b9ac4;
+}
+
+.parent-observation-detail-modal__action-button.is-delete {
+  background: #fb2c36;
+}
+
+.parent-observation-detail-modal__action-icon {
+  width: 16px;
+  height: 16px;
+}
+
+.parent-observation-form-modal__textarea {
+  width: 100%;
+  min-height: 106px;
+  border: 0;
+  background: transparent;
+  resize: none;
+  padding: 0;
+  color: #4a5568;
+  font-family: 'Inter', 'Noto Sans KR', sans-serif;
+  font-size: 14px;
+  line-height: 20px;
+  outline: none;
+}
+
+.parent-observation-form-modal__textarea::placeholder {
+  color: rgba(74, 85, 104, 0.5);
+}
+
+.parent-observation-form-modal__mood-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 22px;
+}
+
+.parent-observation-form-modal__mood-button {
+  min-height: 50px;
+  border-radius: 14px;
+  border: 1.11px solid #e5e7eb;
+  background: #ffffff;
+  color: #718096;
+  font-family: 'Inter', 'Noto Sans KR', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.parent-observation-form-modal__mood-button.is-selected {
+  border-color: rgba(155, 196, 168, 0.3);
+  background: rgba(155, 196, 168, 0.12);
+  color: #9bc4a8;
+}
+
+.parent-observation-form-modal__submit-button {
+  width: 100%;
+  min-height: 44px;
+  margin-top: 24px;
+  border: 0;
+  border-radius: 14px;
+  background: #6b9ac4;
+  color: #ffffff;
+  font-family: 'Inter', 'Noto Sans KR', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.parent-observation-form-modal__submit-button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.parent-observation-delete-modal {
+  max-width: 300px;
+}
+
+.parent-observation-delete-modal .common-modal-header {
+  padding-bottom: 0;
+}
+
+.parent-observation-delete-modal .common-modal-topbar {
+  justify-content: center;
+}
+
+.parent-observation-delete-modal .common-modal-title {
+  color: #2d3748;
+  font-family: 'Inter', 'Noto Sans KR', sans-serif;
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 28px;
+}
+
+.parent-observation-delete-modal__body {
+  padding-top: 10px;
+}
+
+.parent-observation-delete-modal__message {
+  margin: 0;
+  color: #718096;
+  font-family: 'Inter', 'Noto Sans KR', sans-serif;
+  font-size: 14px;
+  line-height: 20px;
+  text-align: center;
+}
+
+.parent-observation-delete-modal__actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  padding-top: 16px;
+}
+
+.parent-observation-delete-modal__button {
+  min-height: 40px;
+  border: 0;
+  border-radius: 14px;
+  font-family: 'Inter', 'Noto Sans KR', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.parent-observation-delete-modal__button.is-secondary {
+  background: #e5e7eb;
+  color: #364153;
+}
+
+.parent-observation-delete-modal__button.is-danger {
+  background: #fb2c36;
+  color: #ffffff;
 }
