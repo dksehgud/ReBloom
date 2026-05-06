@@ -21,4 +21,4 @@ server:
 
 rebloom:
   security:
-    permit-all: /api/v1/conversations/sessions/analysis
+    permit-all: /api/v1/analyses/conversations
