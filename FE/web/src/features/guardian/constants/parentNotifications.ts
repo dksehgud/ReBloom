@@ -15,6 +15,7 @@ export type ParentNotificationItem = {
   unread: boolean
   highlightLabel?: string
   actions?: ParentNotificationAction[]
+  selectedActionKey?: string
 }
 
 export const parentNotifications: ParentNotificationItem[] = [

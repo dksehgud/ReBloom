@@ -2,6 +2,8 @@ import type { ParentNotificationItem } from '../constants/parentNotifications'
 
 type ParentNotificationFeedProps = {
   items: ParentNotificationItem[]
+  onCardClick: (notificationId: string) => void
+  onActionClick: (notificationId: string, actionKey: string) => void
 }
 
 function NotificationCardIcon({ tone }: { tone: ParentNotificationItem['tone'] }) {
@@ -22,13 +24,26 @@ function NotificationCardIcon({ tone }: { tone: ParentNotificationItem['tone'] }
   )
 }
 
-function ParentNotificationFeed({ items }: ParentNotificationFeedProps) {
+function ParentNotificationFeed({
+  items,
+  onCardClick,
+  onActionClick,
+}: ParentNotificationFeedProps) {
   return (
     <div className="parent-notifications-page__feed" aria-label="보호자 알림 리스트">
       {items.map((item) => (
         <article
           key={item.id}
-          className={`parent-notification-card parent-notification-card--${item.tone}`}
+          className={`parent-notification-card parent-notification-card--${item.tone} parent-notification-card--interactive${item.unread ? '' : ' is-read'}`}
+          onClick={() => onCardClick(item.id)}
+          onKeyDown={(event) => {
+            if (event.key === 'Enter' || event.key === ' ') {
+              event.preventDefault()
+              onCardClick(item.id)
+            }
+          }}
+          role="button"
+          tabIndex={0}
         >
           <div className="parent-notification-card__content">
             <NotificationCardIcon tone={item.tone} />
@@ -54,7 +69,12 @@ function ParentNotificationFeed({ items }: ParentNotificationFeedProps) {
                     <button
                       key={action.key}
                       type="button"
-                      className={`parent-notification-card__action-button parent-notification-card__action-button--${action.tone}`}
+                      className={`parent-notification-card__action-button parent-notification-card__action-button--${action.tone}${item.selectedActionKey === action.key ? ' is-selected' : ''}${item.selectedActionKey && item.selectedActionKey !== action.key ? ' is-muted' : ''}`}
+                      aria-pressed={item.selectedActionKey === action.key}
+                      onClick={(event) => {
+                        event.stopPropagation()
+                        onActionClick(item.id, action.key)
+                      }}
                     >
                       {action.label}
                     </button>
