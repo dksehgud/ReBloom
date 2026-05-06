@@ -76,4 +76,8 @@ public class User extends BaseTime {
         this.name = name;
         this.phone = phone;
     }
+
+    public void changePassword(String password) {
+        this.password = password;
+    }
 }
