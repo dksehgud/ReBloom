@@ -58,6 +58,20 @@
   margin-top: 16px;
 }
 
+.child-profile-address-modal__field--change {
+  border-top: 1px solid #eef2f7;
+  padding-top: 16px;
+}
+
+.child-profile-address-modal__section-label-row {
+  margin-bottom: 2px;
+}
+
+.child-profile-address-modal__field--change .field-group .field-label {
+  font-size: 11px;
+  line-height: 14px;
+}
+
 .child-profile-address-modal__address-box {
   min-height: 76px;
   padding: 14px 16px;

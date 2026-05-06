@@ -94,6 +94,10 @@ function ChildProfileAddressModal({
           </div>
 
           <div className="child-profile-address-modal__field child-profile-address-modal__field--change">
+            <div className="field-label-row child-profile-address-modal__section-label-row">
+              <span className="field-label">주소 변경</span>
+            </div>
+
             <AuthInput
               label="기본 주소"
               id="child-profile-next-base-address"
@@ -113,11 +117,9 @@ function ChildProfileAddressModal({
               }
               error={scriptError ?? undefined}
               help={
-                scriptError
-                  ? '주소 검색이 안 되면 기본 주소를 직접 입력해 주세요.'
-                  : !draftAddress.baseAddress
-                    ? '기본 주소는 필수 입력 값이에요.'
-                    : '주소 검색이 안 되면 직접 수정할 수 있어요.'
+                !draftAddress.baseAddress && !scriptError
+                  ? '기본 주소는 필수 입력 값이에요.'
+                  : undefined
               }
               onChange={(event) =>
                 setDraftAddress((prev) => ({
@@ -140,10 +142,6 @@ function ChildProfileAddressModal({
                 }))
               }
             />
-
-            <p className="child-profile-address-modal__field-help">
-              {scriptError ? scriptError : '검색한 주소와 상세 주소를 함께 저장해 주세요.'}
-            </p>
           </div>
         </div>
       </div>
