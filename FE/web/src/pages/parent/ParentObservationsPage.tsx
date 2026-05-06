@@ -1,6 +1,7 @@
 import MobilePageLayout from '../../components/templates/MobilePageLayout/MobilePageLayout'
 import ParentBottomNavigation from '../../features/guardian/components/ParentBottomNavigation'
 import ParentObservationCalendar from '../../features/guardian/components/ParentObservationCalendar'
+import ParentObservationDeleteModal from '../../features/guardian/components/ParentObservationDeleteModal'
 import ParentObservationDetailModal from '../../features/guardian/components/ParentObservationDetailModal'
 import ParentObservationFormModal from '../../features/guardian/components/ParentObservationFormModal'
 import ParentObservationListSection from '../../features/guardian/components/ParentObservationListSection'
@@ -27,12 +28,16 @@ function ParentObservationsPage() {
     selectedDateRecords,
     selectedRecord,
     detailDateLabel,
+    detailRecordPosition,
+    detailRecordCount,
     draftDateLabel,
     draftMood,
     draftDescription,
     modalMode,
     isLoading,
     isError,
+    hasPreviousDetailRecord,
+    hasNextDetailRecord,
     isDraftSubmitDisabled,
     handlePreviousMonth,
     handleNextMonth,
@@ -41,6 +46,10 @@ function ParentObservationsPage() {
     handleCloseModal,
     handleOpenCreate,
     handleOpenEdit,
+    handleOpenDelete,
+    handleConfirmDelete,
+    handleViewPreviousRecord,
+    handleViewNextRecord,
     handleDraftPreviousDate,
     handleDraftNextDate,
     handleSelectDraftMood,
@@ -80,8 +89,15 @@ function ParentObservationsPage() {
         <ParentObservationDetailModal
           record={selectedRecord}
           dateLabel={detailDateLabel}
+          currentPosition={detailRecordPosition}
+          totalCount={detailRecordCount}
+          hasPrevious={hasPreviousDetailRecord}
+          hasNext={hasNextDetailRecord}
           onClose={handleCloseModal}
           onEdit={handleOpenEdit}
+          onDelete={handleOpenDelete}
+          onPrevious={handleViewPreviousRecord}
+          onNext={handleViewNextRecord}
         />
       ) : null}
 
@@ -98,6 +114,13 @@ function ParentObservationsPage() {
           onSelectMood={handleSelectDraftMood}
           onContentChange={handleDraftDescriptionChange}
           onSubmit={handleSubmitDraft}
+        />
+      ) : null}
+
+      {modalMode === 'delete' ? (
+        <ParentObservationDeleteModal
+          onCancel={handleCloseModal}
+          onConfirm={handleConfirmDelete}
         />
       ) : null}
     </MobilePageLayout>
