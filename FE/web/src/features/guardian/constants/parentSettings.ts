@@ -37,12 +37,12 @@ export const parentSupportContacts: ParentSupportContact[] = [
   {
     id: 'support-youth',
     label: '청소년 상담전화',
-    phoneNumber: '010-1234-5678',
+    phoneNumber: '1388',
   },
   {
     id: 'support-suicide',
     label: '자살예방 상담전화',
-    phoneNumber: '010-1234-5678',
+    phoneNumber: '1393',
   },
 ]
 
