@@ -1,5 +1,7 @@
 import MobilePageLayout from '../../components/templates/MobilePageLayout/MobilePageLayout'
 import ParentBottomNavigation from '../../features/guardian/components/ParentBottomNavigation'
+import ParentNotificationFeed from '../../features/guardian/components/ParentNotificationFeed'
+import { parentNotifications } from '../../features/guardian/constants/parentNotifications'
 
 function NotificationsHeaderIcon() {
   return (
@@ -42,7 +44,7 @@ function ParentNotificationsPage() {
       bottomNavigation={<ParentBottomNavigation />}
     >
       <section className="parent-notifications-page__body" aria-label="보호자 알림 목록 영역">
-        <div className="parent-notifications-page__feed" />
+        <ParentNotificationFeed items={parentNotifications} />
       </section>
     </MobilePageLayout>
   )
