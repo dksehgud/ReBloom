@@ -10,6 +10,8 @@ type LoginPageProps = {
   onPasswordChange: (value: string) => void
   onForgotPasswordClick: () => void
   onSignUpClick: () => void
+  onStartChildClick: () => void
+  onStartParentClick: () => void
 }
 
 function LoginPage({
@@ -19,6 +21,8 @@ function LoginPage({
   onPasswordChange,
   onForgotPasswordClick,
   onSignUpClick,
+  onStartChildClick,
+  onStartParentClick,
 }: LoginPageProps) {
   const isLoginEnabled = email.trim().length > 0 && password.trim().length > 0
 
@@ -71,6 +75,26 @@ function LoginPage({
           로그인
         </button>
       </form>
+
+      <div className="mock-entry-section" aria-label="개발용 빠른 진입">
+        <p className="mock-entry-title">API 연동 전 임시 진입</p>
+        <div className="mock-entry-actions">
+          <button
+            type="button"
+            className="auth-button is-secondary mock-entry-button"
+            onClick={onStartChildClick}
+          >
+            아이로 시작
+          </button>
+          <button
+            type="button"
+            className="auth-button is-primary mock-entry-button"
+            onClick={onStartParentClick}
+          >
+            부모로 시작
+          </button>
+        </div>
+      </div>
 
       <div className="social-login">
         <div className="social-divider" aria-hidden="true">

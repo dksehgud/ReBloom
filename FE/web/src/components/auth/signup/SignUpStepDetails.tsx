@@ -16,7 +16,8 @@ type SignUpStepDetailsProps = {
   passwordConfirm: string
   parentEmail: string
   parentEmailError?: string
-  address: string
+  baseAddress: string
+  detailAddress: string
   addressError?: string
   isLoadingAddressSearch: boolean
   showPassword: boolean
@@ -32,6 +33,8 @@ type SignUpStepDetailsProps = {
   onNameChange: (event: ChangeEvent<HTMLInputElement>) => void
   onSelectGender: (gender: Exclude<Gender, null>) => void
   onBirthDateChange: (event: ChangeEvent<HTMLInputElement>) => void
+  onBaseAddressChange: (event: ChangeEvent<HTMLInputElement>) => void
+  onDetailAddressChange: (event: ChangeEvent<HTMLInputElement>) => void
   onPasswordChange: (event: ChangeEvent<HTMLInputElement>) => void
   onPasswordConfirmChange: (event: ChangeEvent<HTMLInputElement>) => void
   onParentEmailChange: (event: ChangeEvent<HTMLInputElement>) => void
@@ -84,7 +87,8 @@ function SignUpStepDetails({
   passwordConfirm,
   parentEmail,
   parentEmailError,
-  address,
+  baseAddress,
+  detailAddress,
   addressError,
   isLoadingAddressSearch,
   showPassword,
@@ -100,6 +104,8 @@ function SignUpStepDetails({
   onNameChange,
   onSelectGender,
   onBirthDateChange,
+  onBaseAddressChange,
+  onDetailAddressChange,
   onPasswordChange,
   onPasswordConfirmChange,
   onParentEmailChange,
@@ -162,10 +168,9 @@ function SignUpStepDetails({
           />
 
           <AuthInput
-            label="주소"
-            readOnly
+            label="기본 주소"
             placeholder="주소 검색"
-            value={address}
+            value={baseAddress}
             action={
               <button
                 className={`field-input-action ${
@@ -179,7 +184,22 @@ function SignUpStepDetails({
               </button>
             }
             error={addressError}
-            help={!address && !addressError ? '주소는 필수 입력 값이에요.' : undefined}
+            help={
+              addressError
+                ? '주소 검색이 안 되면 기본 주소를 직접 입력해 주세요.'
+                : !baseAddress
+                  ? '기본 주소는 필수 입력 값이에요.'
+                  : '주소 검색이 안 되면 직접 수정할 수 있어요.'
+            }
+            onChange={onBaseAddressChange}
+          />
+
+          <AuthInput
+            label="상세 주소"
+            onChange={onDetailAddressChange}
+            placeholder="상세 주소"
+            value={detailAddress}
+            help={!detailAddress ? '상세 주소는 필수 입력 값이에요.' : undefined}
           />
         </>
       ) : null}

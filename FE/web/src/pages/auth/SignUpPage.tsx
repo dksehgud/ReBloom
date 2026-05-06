@@ -34,7 +34,8 @@ function SignUpPage({ onBackToLogin }: SignUpPageProps) {
   const [name, setName] = useState('')
   const [gender, setGender] = useState<Gender>(null)
   const [birthDate, setBirthDate] = useState('')
-  const [address, setAddress] = useState('')
+  const [baseAddress, setBaseAddress] = useState('')
+  const [detailAddress, setDetailAddress] = useState('')
   const [addressError, setAddressError] = useState<string | undefined>()
   const [isLoadingAddressSearch, setIsLoadingAddressSearch] = useState(false)
   const [password, setPassword] = useState('')
@@ -70,14 +71,14 @@ function SignUpPage({ onBackToLogin }: SignUpPageProps) {
     password.length > 0 &&
     passwordConfirm.length > 0 &&
     password === passwordConfirm
-
   const parentFormValid =
     name.trim().length > 0 && hasPasswordRuleMatch && passwordsMatch
   const childFormValid =
     name.trim().length > 0 &&
     gender !== null &&
     birthDate.trim().length > 0 &&
-    address.trim().length > 0 &&
+    baseAddress.trim().length > 0 &&
+    detailAddress.trim().length > 0 &&
     hasPasswordRuleMatch &&
     passwordsMatch &&
     hasParentEmailValue &&
@@ -186,13 +187,16 @@ function SignUpPage({ onBackToLogin }: SignUpPageProps) {
       setIsLoadingAddressSearch(true)
       setAddressError(undefined)
 
-      await openDaumPostcodePopup((data) => {
-        const nextAddress = data.roadAddress || data.address || data.jibunAddress
-        setAddress(nextAddress)
-        setAddressError(undefined)
-      }, '회원가입 주소 검색')
+      await openDaumPostcodePopup(
+        (data) => {
+          const nextAddress = data.roadAddress || data.address || data.jibunAddress
+          setBaseAddress(nextAddress)
+          setAddressError(undefined)
+        },
+        '회원가입 주소 검색',
+      )
     } catch {
-      setAddressError('주소 검색창을 여는 데 실패했어요. 다시 시도해주세요.')
+      setAddressError('주소 검색창을 여는 데 실패했어요. 기본 주소를 직접 입력해 주세요.')
     } finally {
       setIsLoadingAddressSearch(false)
     }
@@ -208,8 +212,12 @@ function SignUpPage({ onBackToLogin }: SignUpPageProps) {
       return
     }
 
-    if (!address.trim()) {
-      setAddressError('주소는 필수 입력 값이에요.')
+    if (!baseAddress.trim()) {
+      setAddressError('기본 주소는 필수 입력 값이에요.')
+      return
+    }
+
+    if (!detailAddress.trim()) {
       return
     }
 
@@ -241,7 +249,8 @@ function SignUpPage({ onBackToLogin }: SignUpPageProps) {
     setName('')
     setGender(null)
     setBirthDate('')
-    setAddress('')
+    setBaseAddress('')
+    setDetailAddress('')
     setAddressError(undefined)
     setIsLoadingAddressSearch(false)
     setPassword('')
@@ -343,10 +352,11 @@ function SignUpPage({ onBackToLogin }: SignUpPageProps) {
 
       {step === 'details' ? (
         <SignUpStepDetails
-          address={address}
           addressError={addressError}
+          baseAddress={baseAddress}
           birthDate={birthDate}
           childFormValid={childFormValid}
+          detailAddress={detailAddress}
           email={email}
           gender={gender}
           hasPasswordLengthRule={hasPasswordLengthRule}
@@ -354,7 +364,12 @@ function SignUpPage({ onBackToLogin }: SignUpPageProps) {
           hasPasswordSpecialRule={hasPasswordSpecialRule}
           isLoadingAddressSearch={isLoadingAddressSearch}
           name={name}
+          onBaseAddressChange={(event) => {
+            setBaseAddress(event.target.value)
+            setAddressError(undefined)
+          }}
           onBirthDateChange={handleBirthDateChange}
+          onDetailAddressChange={(event) => setDetailAddress(event.target.value)}
           onNameChange={(event) => setName(event.target.value)}
           onParentEmailChange={(event) => setParentEmail(event.target.value)}
           onPasswordChange={(event) => setPassword(event.target.value)}

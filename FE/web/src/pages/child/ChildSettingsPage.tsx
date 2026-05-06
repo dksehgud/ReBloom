@@ -8,15 +8,16 @@ import ChildDiaryNotificationDetailModal, {
 import ChildLogoutConfirmModal from '../../features/user/components/ChildLogoutConfirmModal'
 import ChildPasswordChangeModal from '../../features/user/components/ChildPasswordChangeModal'
 import ChildProfileAddressModal from '../../features/user/components/ChildProfileAddressModal'
+import { formatChildAddress, type ChildAddress } from '../../shared/types/childAddress'
 
 type ChildSettingsPageProps = {
   profileName?: string
   profileEmail?: string
-  profileAddress?: string
+  profileAddress?: ChildAddress
   counselorName?: string | null
   counselorSubtitle?: string | null
   onBack?: () => void
-  onSaveProfileAddress?: (address: string) => void
+  onSaveProfileAddress?: (address: ChildAddress) => void
   onOpenCounselStatus?: () => void
   onLogout?: () => void
 }
@@ -77,7 +78,7 @@ function formatNotificationSummary(settings: DiaryNotificationSettings) {
   const scheduleLabel = isEveryday
     ? '매일'
     : isWeekdays
-      ? '평일만'
+      ? '주중만'
       : isWeekend
         ? '주말만'
         : orderedDays.map((day) => WEEKDAY_LABEL[day]).join(', ')
@@ -86,7 +87,7 @@ function formatNotificationSummary(settings: DiaryNotificationSettings) {
     return `${scheduleLabel} ${formatHourMinute(settings.times[0] ?? '20:00')}`
   }
 
-  return `${scheduleLabel} · 하루 ${settings.frequencyPerDay}번`
+  return `${scheduleLabel} 하루 ${settings.frequencyPerDay}회`
 }
 
 function BackIcon() {
@@ -231,9 +232,12 @@ function SettingsCardRow({
 }
 
 function ChildSettingsPage({
-  profileName = '이승형',
+  profileName = '이재동',
   profileEmail = 'test@naver.com',
-  profileAddress = '',
+  profileAddress = {
+    baseAddress: '',
+    detailAddress: '',
+  },
   counselorName = null,
   counselorSubtitle = null,
   onBack,
@@ -256,6 +260,7 @@ function ChildSettingsPage({
     })
 
   const isCounselConnected = Boolean(counselorName && counselorSubtitle)
+  const profileAddressText = formatChildAddress(profileAddress)
 
   return (
     <MobilePageLayout
@@ -323,7 +328,7 @@ function ChildSettingsPage({
               description={
                 isCounselConnected
                   ? counselorSubtitle ?? ''
-                  : '부모 계정에서 상담사를 연결하세요.'
+                  : '부모 계정에서 상담사를 연결해주세요.'
               }
               icon={<UserIcon />}
               onClick={onOpenCounselStatus}
@@ -382,6 +387,8 @@ function ChildSettingsPage({
           }}
         />
       ) : null}
+
+      <span className="sr-only">{profileAddressText}</span>
     </MobilePageLayout>
   )
 }

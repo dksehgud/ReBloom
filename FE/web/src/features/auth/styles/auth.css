@@ -154,6 +154,33 @@
   margin-top: 52px;
 }
 
+.mock-entry-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.mock-entry-title {
+  margin: 0;
+  color: #6a7282;
+  font-family: 'Inter', 'Noto Sans KR', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 16px;
+  text-align: center;
+}
+
+.mock-entry-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.mock-entry-button {
+  min-height: 44px;
+}
+
 .signup-copy {
   margin: 40px 0 0;
   text-align: center;

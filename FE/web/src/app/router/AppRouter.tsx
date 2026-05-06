@@ -23,6 +23,7 @@ import ParentSettingsPage from '../../pages/parent/ParentSettingsPage'
 import { useAppSessionStore } from '../../features/auth/store/useAppSessionStore'
 import { useSelectedChildStore } from '../../features/student/store/useSelectedChildStore'
 import type { AppRole } from '../../shared/types/appRole'
+import type { ChildAddress } from '../../shared/types/childAddress'
 
 type AuthRouteContextValue = {
   email: string
@@ -32,8 +33,8 @@ type AuthRouteContextValue = {
 }
 
 type ChildRouteContextValue = {
-  profileAddress: string
-  setProfileAddress: (address: string) => void
+  profileAddress: ChildAddress
+  setProfileAddress: (address: ChildAddress) => void
 }
 
 type PhoneShellProps = {
@@ -84,7 +85,10 @@ function AuthRouteLayout() {
 }
 
 function ChildRouteLayout() {
-  const [profileAddress, setProfileAddress] = useState('부산 해운대구 예시로 212')
+  const [profileAddress, setProfileAddress] = useState<ChildAddress>({
+    baseAddress: '부산 해운대구 예시로 212',
+    detailAddress: '101동 1203호',
+  })
   const setActiveRole = useAppSessionStore((state) => state.setActiveRole)
   const clearSelectedChild = useSelectedChildStore((state) => state.clearSelectedChild)
 
@@ -138,6 +142,8 @@ function LoginRoute() {
       onPasswordChange={setPassword}
       onForgotPasswordClick={() => navigate('/find-password')}
       onSignUpClick={() => navigate('/signup')}
+      onStartChildClick={() => navigate('/child/diary')}
+      onStartParentClick={() => navigate('/parent/home')}
     />
   )
 }
@@ -259,7 +265,7 @@ function AppRouter() {
         element={
           <PlaceholderRoutePage
             title="상담사 대시보드"
-            description="상담사 화면 구현 전에 라우트와 공통 구조를 먼저 정리한 상태입니다."
+            description="상담사 화면 구현 전에 공통 구조를 먼저 정리한 상태입니다."
             role="counselor"
           />
         }
