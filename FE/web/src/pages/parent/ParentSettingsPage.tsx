@@ -2,7 +2,9 @@ import { useState, type ReactNode } from 'react'
 
 import MobilePageLayout from '../../components/templates/MobilePageLayout/MobilePageLayout'
 import ParentBottomNavigation from '../../features/guardian/components/ParentBottomNavigation'
+import ParentCounselorConnectModal from '../../features/guardian/components/ParentCounselorConnectModal'
 import {
+  mockCounselorCandidate,
   mockLinkedChild,
   mockParentProfile,
   parentSupportContacts,
@@ -222,6 +224,7 @@ function ContactRow({
 
 function ParentSettingsPage() {
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false)
+  const [isCounselorModalOpen, setIsCounselorModalOpen] = useState(false)
 
   return (
     <MobilePageLayout
@@ -281,6 +284,7 @@ function ParentSettingsPage() {
             <ParentSettingsRow
               title="상담사를 연결하세요."
               icon={<PlusIcon />}
+              onClick={() => setIsCounselorModalOpen(true)}
               showDivider={false}
             />
           </div>
@@ -302,6 +306,14 @@ function ParentSettingsPage() {
 
       {isPasswordModalOpen ? (
         <ChildPasswordChangeModal onClose={() => setIsPasswordModalOpen(false)} />
+      ) : null}
+
+      {isCounselorModalOpen ? (
+        <ParentCounselorConnectModal
+          candidate={mockCounselorCandidate}
+          onClose={() => setIsCounselorModalOpen(false)}
+          onComplete={() => setIsCounselorModalOpen(false)}
+        />
       ) : null}
     </MobilePageLayout>
   )

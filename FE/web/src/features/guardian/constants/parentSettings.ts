@@ -15,6 +15,13 @@ export type ParentSupportContact = {
   phoneNumber: string
 }
 
+export type ParentCounselorCandidate = {
+  name: string
+  email: string
+  clinicName: string
+  phoneNumber: string
+}
+
 export const mockParentProfile: ParentSettingsProfile = {
   name: '이승형',
   email: 'test@naver.com',
@@ -38,3 +45,10 @@ export const parentSupportContacts: ParentSupportContact[] = [
     phoneNumber: '010-1234-5678',
   },
 ]
+
+export const mockCounselorCandidate: ParentCounselorCandidate = {
+  name: '안도형 상담사',
+  email: 'clinic@clinic.com',
+  clinicName: '유주경 의원',
+  phoneNumber: '010-1234-5678',
+}
