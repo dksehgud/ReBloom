@@ -16,6 +16,7 @@ import SignUpPage from '../../pages/auth/SignUpPage'
 import ChildDiaryListPage from '../../pages/child/ChildDiaryListPage'
 import ChildSettingsPage from '../../pages/child/ChildSettingsPage'
 import ParentHomePage from '../../pages/parent/ParentHomePage'
+import ParentNotificationsPage from '../../pages/parent/ParentNotificationsPage'
 import ParentObservationsPage from '../../pages/parent/ParentObservationsPage'
 import ParentPlaceholderPage from '../../pages/parent/ParentPlaceholderPage'
 import ParentReportPage from '../../pages/parent/ParentReportPage'
@@ -248,15 +249,7 @@ function AppRouter() {
         <Route path="home" element={<ParentHomePage />} />
         <Route path="observations" element={<ParentObservationsPage />} />
         <Route path="report" element={<ParentReportPage />} />
-        <Route
-          path="notifications"
-          element={
-            <ParentPlaceholderPage
-              title="알림"
-              description="보호자 알림 화면은 다음 태스크에서 알림 상태 카드와 액션 흐름으로 연결될 예정입니다."
-            />
-          }
-        />
+        <Route path="notifications" element={<ParentNotificationsPage />} />
         <Route
           path="settings"
           element={
