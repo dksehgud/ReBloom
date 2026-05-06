@@ -1,5 +1,12 @@
+import { useState } from 'react'
+
 import MobilePageLayout from '../../components/templates/MobilePageLayout/MobilePageLayout'
 import ParentBottomNavigation from '../../features/guardian/components/ParentBottomNavigation'
+import {
+  parentReportWeeks,
+  reportWeekdays,
+  type ParentReportMood,
+} from '../../features/guardian/constants/parentReport'
 
 function ShieldIcon() {
   return (
@@ -63,14 +70,27 @@ function StabilityIcon() {
   )
 }
 
-function InfoIcon() {
+function ChevronLeftIcon() {
   return (
-    <svg aria-hidden="true" viewBox="0 0 16 16" fill="none">
-      <circle cx="8" cy="8" r="7.23825" stroke="currentColor" strokeWidth="0.761753" />
+    <svg aria-hidden="true" viewBox="0 0 20 20" fill="none">
       <path
-        d="M8 7V10.5M8 5.25H8.01"
+        d="M12.5 5L7.5 10L12.5 15"
         stroke="currentColor"
-        strokeWidth="1.1"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  )
+}
+
+function ChevronRightIcon() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 20 20" fill="none">
+      <path
+        d="M7.5 5L12.5 10L7.5 15"
+        stroke="currentColor"
+        strokeWidth="1.6"
         strokeLinecap="round"
         strokeLinejoin="round"
       />
@@ -89,7 +109,30 @@ function ParentReportHeader() {
   )
 }
 
+function EmotionChip({ mood }: { mood: ParentReportMood }) {
+  const toneClass = mood.tone ? ` parent-report-page__week-mood--${mood.tone}` : ''
+
+  return (
+    <div className="parent-report-page__week-day">
+      <span className="parent-report-page__week-label">{mood.weekday}</span>
+      <span
+        className={`parent-report-page__week-mood${
+          mood.emoji ? toneClass : ' parent-report-page__week-mood--empty'
+        }`}
+      >
+        {mood.emoji}
+      </span>
+    </div>
+  )
+}
+
 function ParentReportPage() {
+  const [selectedWeekIndex, setSelectedWeekIndex] = useState(1)
+
+  const currentWeek = parentReportWeeks[selectedWeekIndex]
+  const isPrevDisabled = selectedWeekIndex === 0
+  const isNextDisabled = selectedWeekIndex === parentReportWeeks.length - 1
+
   return (
     <MobilePageLayout
       header={<ParentReportHeader />}
@@ -103,9 +146,31 @@ function ParentReportPage() {
             <ShieldIcon />
             <p className="parent-report-page__privacy-copy">
               자녀의 프라이버시 보호를 위해 대화 원문은 제공되지 않으며, 분석된 감정 패턴
-              지표만 공유됩니다.
+              지표만 공유합니다.
             </p>
           </div>
+        </section>
+
+        <section className="parent-report-page__week-nav" aria-label="리포트 주차 이동">
+          <button
+            type="button"
+            className="parent-report-page__week-nav-button"
+            onClick={() => setSelectedWeekIndex((previous) => previous - 1)}
+            disabled={isPrevDisabled}
+            aria-label="이전 주차 보기"
+          >
+            <ChevronLeftIcon />
+          </button>
+          <p className="parent-report-page__week-nav-label">{currentWeek.label}</p>
+          <button
+            type="button"
+            className="parent-report-page__week-nav-button"
+            onClick={() => setSelectedWeekIndex((previous) => previous + 1)}
+            disabled={isNextDisabled}
+            aria-label="다음 주차 보기"
+          >
+            <ChevronRightIcon />
+          </button>
         </section>
 
         <section className="parent-report-page__section" aria-labelledby="weekly-emotion-report">
@@ -118,28 +183,20 @@ function ParentReportPage() {
                 이번 주 감정 기록
               </h2>
             </div>
-            <button
-              type="button"
-              className="parent-report-page__link-button"
-              disabled
-              aria-disabled="true"
-            >
-              전체보기
-            </button>
           </div>
 
-          <div className="parent-report-page__card parent-report-page__card--compact">
+          <div className="parent-report-page__card">
             <div className="parent-report-page__week-placeholder">
-              {['월', '화', '수', '목', '금', '토', '일'].map((day, index) => (
-                <div key={day} className="parent-report-page__week-day">
-                  <span className="parent-report-page__week-label">{day}</span>
-                  <span
-                    className={`parent-report-page__week-mood parent-report-page__week-mood--${
-                      index % 3 === 0 ? 'yellow' : index % 3 === 1 ? 'blue' : 'green'
-                    }`}
+              {reportWeekdays.map((weekday) => {
+                const mood = currentWeek.moods.find((item) => item.weekday === weekday)
+
+                return (
+                  <EmotionChip
+                    key={`${currentWeek.id}-${weekday}`}
+                    mood={mood ?? { weekday, emoji: null, tone: null }}
                   />
-                </div>
-              ))}
+                )
+              })}
             </div>
           </div>
         </section>
@@ -185,10 +242,7 @@ function ParentReportPage() {
           </div>
         </section>
 
-        <section
-          className="parent-report-page__section"
-          aria-labelledby="nervous-system-report"
-        >
+        <section className="parent-report-page__section" aria-labelledby="nervous-system-report">
           <div className="parent-report-page__section-header">
             <div className="parent-report-page__section-title-wrap">
               <span className="parent-report-page__section-icon parent-report-page__section-icon--orange">
@@ -197,15 +251,9 @@ function ParentReportPage() {
               <h2 id="nervous-system-report" className="parent-report-page__section-title">
                 자율신경 안정도
               </h2>
-              <button
-                type="button"
-                className="parent-report-page__info-button"
-                disabled
-                aria-label="자율신경 안정도 안내"
-                aria-disabled="true"
-              >
-                <InfoIcon />
-              </button>
+              <span className="parent-report-page__info-button" aria-hidden="true">
+                i
+              </span>
             </div>
           </div>
 
@@ -235,7 +283,15 @@ function ParentReportPage() {
                   [224, 62],
                   [276, 72],
                 ].map(([cx, cy]) => (
-                  <circle key={`${cx}-${cy}`} cx={cx} cy={cy} r="5" fill="#F4B895" stroke="white" strokeWidth="3" />
+                  <circle
+                    key={`${cx}-${cy}`}
+                    cx={cx}
+                    cy={cy}
+                    r="5"
+                    fill="#F4B895"
+                    stroke="white"
+                    strokeWidth="3"
+                  />
                 ))}
               </svg>
               <div className="parent-report-page__line-chart-labels">
