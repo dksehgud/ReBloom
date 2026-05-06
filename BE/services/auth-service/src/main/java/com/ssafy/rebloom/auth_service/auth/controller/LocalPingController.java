@@ -3,10 +3,12 @@ package com.ssafy.rebloom.auth_service.auth.controller;
 import java.util.Map;
 import org.springframework.context.annotation.Profile;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-@RestController
+@RestController("authLocalPingController")
 @Profile("local")
+@RequestMapping("/internal/auth")
 public class LocalPingController {
 
     @GetMapping("/internal/ping")
