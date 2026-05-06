@@ -5,6 +5,7 @@
 .vscode
 .gradle
 **/build
+!services/*/build/libs/*.jar
 services/*/gradle
 services/*/gradlew
 services/*/gradlew.bat
