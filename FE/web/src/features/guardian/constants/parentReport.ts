@@ -1,3 +1,5 @@
+import type { DiaryEmotionKey } from '../../diary/constants/diaryEmotions'
+
 export const reportWeekdays = ['월', '화', '수', '목', '금', '토', '일'] as const
 
 type ReportWeekday = (typeof reportWeekdays)[number]
@@ -6,7 +8,7 @@ export type ParentReportMoodTone = 'yellow' | 'blue' | 'green' | 'pink' | 'purpl
 
 export type ParentReportMood = {
   weekday: ReportWeekday
-  emoji: string | null
+  emotionKey: DiaryEmotionKey | null
   tone: ParentReportMoodTone | null
 }
 
@@ -31,13 +33,13 @@ export const parentReportWeeks: ParentReportWeek[] = [
     id: '2026-04-w4',
     label: '2026년 4월 4주차',
     moods: [
-      { weekday: '월', emoji: '😊', tone: 'yellow' },
-      { weekday: '화', emoji: '😢', tone: 'blue' },
-      { weekday: '수', emoji: '😌', tone: 'green' },
-      { weekday: '목', emoji: null, tone: null },
-      { weekday: '금', emoji: '😊', tone: 'yellow' },
-      { weekday: '토', emoji: '😍', tone: 'pink' },
-      { weekday: '일', emoji: '😰', tone: 'purple' },
+      { weekday: '월', emotionKey: 'happy', tone: 'yellow' },
+      { weekday: '화', emotionKey: 'sad', tone: 'blue' },
+      { weekday: '수', emotionKey: 'calm', tone: 'green' },
+      { weekday: '목', emotionKey: null, tone: null },
+      { weekday: '금', emotionKey: 'happy', tone: 'yellow' },
+      { weekday: '토', emotionKey: 'excited', tone: 'pink' },
+      { weekday: '일', emotionKey: 'tired', tone: 'purple' },
     ],
     sleepScores: [
       { weekday: '월', score: 78 },
@@ -64,13 +66,13 @@ export const parentReportWeeks: ParentReportWeek[] = [
     id: '2026-05-w1',
     label: '2026년 5월 1주차',
     moods: [
-      { weekday: '월', emoji: '😊', tone: 'yellow' },
-      { weekday: '화', emoji: '😰', tone: 'orange' },
-      { weekday: '수', emoji: null, tone: null },
-      { weekday: '목', emoji: '😌', tone: 'green' },
-      { weekday: '금', emoji: '😊', tone: 'yellow' },
-      { weekday: '토', emoji: '😍', tone: 'pink' },
-      { weekday: '일', emoji: null, tone: null },
+      { weekday: '월', emotionKey: 'happy', tone: 'yellow' },
+      { weekday: '화', emotionKey: 'angry', tone: 'orange' },
+      { weekday: '수', emotionKey: null, tone: null },
+      { weekday: '목', emotionKey: 'calm', tone: 'green' },
+      { weekday: '금', emotionKey: 'happy', tone: 'yellow' },
+      { weekday: '토', emotionKey: 'excited', tone: 'pink' },
+      { weekday: '일', emotionKey: null, tone: null },
     ],
     sleepScores: [
       { weekday: '월', score: 80 },
@@ -97,13 +99,13 @@ export const parentReportWeeks: ParentReportWeek[] = [
     id: '2026-05-w2',
     label: '2026년 5월 2주차',
     moods: [
-      { weekday: '월', emoji: '😌', tone: 'green' },
-      { weekday: '화', emoji: '😊', tone: 'yellow' },
-      { weekday: '수', emoji: '😌', tone: 'green' },
-      { weekday: '목', emoji: '😊', tone: 'yellow' },
-      { weekday: '금', emoji: null, tone: null },
-      { weekday: '토', emoji: '😍', tone: 'pink' },
-      { weekday: '일', emoji: '😊', tone: 'yellow' },
+      { weekday: '월', emotionKey: 'calm', tone: 'green' },
+      { weekday: '화', emotionKey: 'happy', tone: 'yellow' },
+      { weekday: '수', emotionKey: 'calm', tone: 'green' },
+      { weekday: '목', emotionKey: 'happy', tone: 'yellow' },
+      { weekday: '금', emotionKey: null, tone: null },
+      { weekday: '토', emotionKey: 'excited', tone: 'pink' },
+      { weekday: '일', emotionKey: 'happy', tone: 'yellow' },
     ],
     sleepScores: [
       { weekday: '월', score: 82 },

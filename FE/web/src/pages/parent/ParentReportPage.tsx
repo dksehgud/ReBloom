@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 
 import MobilePageLayout from '../../components/templates/MobilePageLayout/MobilePageLayout'
+import DiaryEmotionIcon from '../../features/diary/components/DiaryEmotionIcon'
 import ParentBottomNavigation from '../../features/guardian/components/ParentBottomNavigation'
 import {
   parentReportWeeks,
@@ -13,26 +14,7 @@ const STABILITY_CHART_HEIGHT = 180
 const STABILITY_CHART_PADDING_X = 12
 const STABILITY_CHART_PADDING_TOP = 12
 const STABILITY_CHART_PADDING_BOTTOM = 26
-
-function ShieldIcon() {
-  return (
-    <svg
-      aria-hidden="true"
-      className="parent-report-page__privacy-icon"
-      viewBox="0 0 20 20"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-    >
-      <path
-        d="M10.0001 1.66663L4.16675 4.16663V8.33329C4.16675 12.1875 6.65841 15.775 10.0001 16.6666C13.3417 15.775 15.8334 12.1875 15.8334 8.33329V4.16663L10.0001 1.66663Z"
-        stroke="currentColor"
-        strokeWidth="1.6657"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  )
-}
+const TOOLTIP_AUTO_CLOSE_MS = 1800
 
 function EmotionsIcon() {
   return (
@@ -76,21 +58,6 @@ function StabilityIcon() {
   )
 }
 
-function InfoIcon() {
-  return (
-    <svg aria-hidden="true" viewBox="0 0 16 16" fill="none">
-      <circle cx="8" cy="8" r="7.23825" stroke="currentColor" strokeWidth="0.761753" />
-      <path
-        d="M8 7V10.5M8 5.25H8.01"
-        stroke="currentColor"
-        strokeWidth="1.1"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  )
-}
-
 function ChevronLeftIcon() {
   return (
     <svg aria-hidden="true" viewBox="0 0 20 20" fill="none">
@@ -119,6 +86,28 @@ function ChevronRightIcon() {
   )
 }
 
+function InfoIcon() {
+  return (
+    <svg
+      aria-hidden="true"
+      fill="none"
+      height="20"
+      viewBox="0 0 24 24"
+      width="20"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <circle cx="12" cy="12" r="8" stroke="currentColor" strokeWidth="1.8" />
+      <path
+        d="M12 10V15"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeWidth="1.8"
+      />
+      <circle cx="12" cy="7.25" fill="currentColor" r="1" />
+    </svg>
+  )
+}
+
 function ParentReportHeader() {
   return (
     <div className="parent-home-page__header">
@@ -126,6 +115,14 @@ function ParentReportHeader() {
         <h1 className="parent-home-page__title">리포트</h1>
         <p className="parent-home-page__subtitle">지민이의 변화 흐름입니다.</p>
       </div>
+    </div>
+  )
+}
+
+function ReportInfoTooltip({ message }: { message: string }) {
+  return (
+    <div className="parent-report-page__tooltip" role="note">
+      {message}
     </div>
   )
 }
@@ -138,21 +135,23 @@ function EmotionChip({ mood }: { mood: ParentReportMood }) {
       <span className="parent-report-page__week-label">{mood.weekday}</span>
       <span
         className={`parent-report-page__week-mood${
-          mood.emoji ? toneClass : ' parent-report-page__week-mood--empty'
+          mood.emotionKey ? toneClass : ' parent-report-page__week-mood--empty'
         }`}
       >
-        {mood.emoji}
+        {mood.emotionKey ? (
+          <DiaryEmotionIcon
+            emotionKey={mood.emotionKey}
+            size={30}
+            className="parent-report-page__week-mood-icon"
+          />
+        ) : null}
       </span>
     </div>
   )
 }
 
 function getBarTone(score: number) {
-  if (score <= 55) {
-    return 'warning'
-  }
-
-  return 'default'
+  return score <= 55 ? 'warning' : 'default'
 }
 
 function createStabilityChartData(scores: typeof parentReportWeeks[number]['stabilityScores']) {
@@ -182,12 +181,46 @@ function createStabilityChartData(scores: typeof parentReportWeeks[number]['stab
 
 function ParentReportPage() {
   const [selectedWeekIndex, setSelectedWeekIndex] = useState(1)
-  const [isInfoOpen, setIsInfoOpen] = useState(false)
+  const [isEmotionInfoOpen, setIsEmotionInfoOpen] = useState(false)
+  const [isStabilityInfoOpen, setIsStabilityInfoOpen] = useState(false)
 
   const currentWeek = parentReportWeeks[selectedWeekIndex]
   const isPrevDisabled = selectedWeekIndex === 0
   const isNextDisabled = selectedWeekIndex === parentReportWeeks.length - 1
-  const stabilityChart = createStabilityChartData(currentWeek.stabilityScores)
+  const stabilityChart = useMemo(
+    () => createStabilityChartData(currentWeek.stabilityScores),
+    [currentWeek.stabilityScores],
+  )
+
+  useEffect(() => {
+    if (!isEmotionInfoOpen) return undefined
+
+    const timeoutId = window.setTimeout(() => {
+      setIsEmotionInfoOpen(false)
+    }, TOOLTIP_AUTO_CLOSE_MS)
+
+    return () => window.clearTimeout(timeoutId)
+  }, [isEmotionInfoOpen])
+
+  useEffect(() => {
+    if (!isStabilityInfoOpen) return undefined
+
+    const timeoutId = window.setTimeout(() => {
+      setIsStabilityInfoOpen(false)
+    }, TOOLTIP_AUTO_CLOSE_MS)
+
+    return () => window.clearTimeout(timeoutId)
+  }, [isStabilityInfoOpen])
+
+  const handleOpenEmotionInfo = () => {
+    setIsStabilityInfoOpen(false)
+    setIsEmotionInfoOpen(true)
+  }
+
+  const handleOpenStabilityInfo = () => {
+    setIsEmotionInfoOpen(false)
+    setIsStabilityInfoOpen(true)
+  }
 
   return (
     <MobilePageLayout
@@ -197,16 +230,6 @@ function ParentReportPage() {
       bottomNavigation={<ParentBottomNavigation />}
     >
       <div className="parent-report-page__body">
-        <section className="parent-report-page__privacy-banner" aria-label="프라이버시 안내">
-          <div className="parent-report-page__privacy-row">
-            <ShieldIcon />
-            <p className="parent-report-page__privacy-copy">
-              자녀의 프라이버시 보호를 위해 대화 원문은 제공되지 않으며, 분석된 감정 패턴
-              지표만 공유합니다.
-            </p>
-          </div>
-        </section>
-
         <section className="parent-report-page__week-nav" aria-label="리포트 주차 이동">
           <button
             type="button"
@@ -238,6 +261,22 @@ function ParentReportPage() {
               <h2 id="weekly-emotion-report" className="parent-report-page__section-title">
                 이번 주 감정 기록
               </h2>
+              <div className="parent-report-page__info-wrap">
+                <button
+                  type="button"
+                  className="parent-report-page__info-button"
+                  onClick={handleOpenEmotionInfo}
+                  aria-label="감정 기록 안내 보기"
+                  aria-expanded={isEmotionInfoOpen}
+                >
+                  <InfoIcon />
+                </button>
+                {isEmotionInfoOpen ? (
+                  <div className="parent-report-page__tooltip-row">
+                    <ReportInfoTooltip message="자녀의 프라이버시 보호를 위해 일기 원문은 제공되지 않으며, 감정 패턴 지표만 공유합니다." />
+                  </div>
+                ) : null}
+              </div>
             </div>
           </div>
 
@@ -249,7 +288,7 @@ function ParentReportPage() {
                 return (
                   <EmotionChip
                     key={`${currentWeek.id}-${weekday}`}
-                    mood={mood ?? { weekday, emoji: null, tone: null }}
+                    mood={mood ?? { weekday, emotionKey: null, tone: null }}
                   />
                 )
               })}
@@ -275,23 +314,24 @@ function ParentReportPage() {
                 const tone = getBarTone(item.score)
 
                 return (
-                <div key={`${currentWeek.id}-${item.weekday}`} className="parent-report-page__bar-column">
-                  <span
-                    className={`parent-report-page__bar-score${
-                      tone === 'warning' ? ' is-warning' : ''
-                    }`}
-                  >
-                    {item.score}
-                  </span>
-                  <span
-                    className={`parent-report-page__bar${
-                      tone === 'warning' ? ' is-warning' : ''
-                    }`}
-                    style={{ height: `${Math.max(44, item.score * 1.8)}px` }}
-                  />
-                  <span className="parent-report-page__bar-day">{item.weekday}</span>
-                </div>
-              )})}
+                  <div key={`${currentWeek.id}-${item.weekday}`} className="parent-report-page__bar-column">
+                    <span
+                      className={`parent-report-page__bar-score${
+                        tone === 'warning' ? ' is-warning' : ''
+                      }`}
+                    >
+                      {item.score}
+                    </span>
+                    <span
+                      className={`parent-report-page__bar${
+                        tone === 'warning' ? ' is-warning' : ''
+                      }`}
+                      style={{ height: `${Math.max(44, item.score * 1.8)}px` }}
+                    />
+                    <span className="parent-report-page__bar-day">{item.weekday}</span>
+                  </div>
+                )
+              })}
             </div>
             <div className="parent-report-page__insight-line">{currentWeek.sleepInsight}</div>
           </div>
@@ -310,25 +350,15 @@ function ParentReportPage() {
                 <button
                   type="button"
                   className="parent-report-page__info-button"
-                  onClick={() => setIsInfoOpen((previous) => !previous)}
-                  aria-label="자율신경 안정도 안내"
-                  aria-expanded={isInfoOpen}
+                  onClick={handleOpenStabilityInfo}
+                  aria-label="자율신경 안정도 안내 보기"
+                  aria-expanded={isStabilityInfoOpen}
                 >
                   <InfoIcon />
                 </button>
-                {isInfoOpen ? (
-                  <div className="parent-report-page__tooltip" role="dialog" aria-label="자율신경 안정도 안내">
-                    <p className="parent-report-page__tooltip-copy">
-                      일기에 나타난 감정 상태를 점수화해 보여줍니다. 높을수록 긍정적인 감정과
-                      안정감이 높고, 낮을수록 긴장과 피로가 커졌다고 해석할 수 있어요.
-                    </p>
-                    <button
-                      type="button"
-                      className="parent-report-page__tooltip-close"
-                      onClick={() => setIsInfoOpen(false)}
-                    >
-                      닫기
-                    </button>
+                {isStabilityInfoOpen ? (
+                  <div className="parent-report-page__tooltip-row">
+                    <ReportInfoTooltip message="연속된 심박 간격의 차이를 측정한 값입니다. 수치가 높을수록 신체 회복 상태가 양호하며, 자율신경계가 안정적으로 작동하고 있음을 의미합니다." />
                   </div>
                 ) : null}
               </div>
