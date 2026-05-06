@@ -400,43 +400,20 @@
 .parent-observations-page__body {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 28px;
   padding: 24px 24px 32px;
 }
 
 .parent-observations-page__section {
   display: flex;
   flex-direction: column;
-  gap: 18px;
-  border-radius: 24px;
-  border: 1px solid rgba(168, 178, 188, 0.12);
-  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
-  padding: 22px 20px;
-}
-
-.parent-observations-page__section--calendar {
-  min-height: 334px;
-}
-
-.parent-observations-page__section--list {
-  min-height: 320px;
+  gap: 16px;
 }
 
 .parent-observations-page__section-copy {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-}
-
-.parent-observations-page__eyebrow {
-  margin: 0;
-  color: #88b5c4;
-  font-family: 'Inter', 'Noto Sans KR', sans-serif;
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  line-height: 16px;
-  text-transform: uppercase;
+  gap: 4px;
 }
 
 .parent-observations-page__section-title {
@@ -457,69 +434,106 @@
   word-break: keep-all;
 }
 
-.parent-observations-page__calendar-skeleton {
+.parent-observation-calendar {
   display: flex;
   flex-direction: column;
   gap: 16px;
-  border-radius: 20px;
-  background: linear-gradient(180deg, rgba(245, 248, 250, 0.78) 0%, rgba(250, 251, 252, 0.92) 100%);
-  padding: 18px 16px 20px;
 }
 
-.parent-observations-page__month-row {
-  display: grid;
-  grid-template-columns: 28px 1fr 28px;
+.parent-observation-calendar__header {
+  display: flex;
   align-items: center;
-  gap: 12px;
+  justify-content: space-between;
+  gap: 16px;
 }
 
-.parent-observations-page__month-button,
-.parent-observations-page__month-label,
-.parent-observations-page__day-cell,
-.parent-observations-page__list-card-date,
-.parent-observations-page__list-card-badge,
-.parent-observations-page__list-card-line {
-  background: linear-gradient(180deg, rgba(136, 181, 196, 0.18) 0%, rgba(155, 196, 168, 0.12) 100%);
-}
-
-.parent-observations-page__month-button {
-  width: 28px;
-  height: 28px;
+.parent-observation-calendar__nav-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 8px;
+  border: 0;
   border-radius: 999px;
+  background: transparent;
+  color: #0a0a0a;
+  cursor: default;
 }
 
-.parent-observations-page__month-label {
-  width: 116px;
-  height: 18px;
-  justify-self: center;
-  border-radius: 999px;
+.parent-observation-calendar__nav-icon {
+  width: 20px;
+  height: 20px;
 }
 
-.parent-observations-page__week-row {
+.parent-observation-calendar__month-label {
+  margin: 0;
+  color: #0a0a0a;
+  font-family: 'Inter', 'Noto Sans KR', sans-serif;
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 28px;
+}
+
+.parent-observation-calendar__week-row {
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
-  gap: 6px;
+  gap: 0;
 }
 
-.parent-observations-page__week-label {
-  color: #a8b2bc;
+.parent-observation-calendar__week-label {
+  color: #99a1af;
   font-family: 'Inter', 'Noto Sans KR', sans-serif;
-  font-size: 11px;
-  line-height: 16px;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 20px;
   text-align: center;
 }
 
-.parent-observations-page__day-grid {
+.parent-observation-calendar__grid {
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
-  gap: 8px 6px;
+  gap: 0;
 }
 
-.parent-observations-page__day-cell {
-  display: block;
-  width: 100%;
-  aspect-ratio: 1;
-  border-radius: 12px;
+.parent-observation-calendar__day,
+.parent-observation-calendar__day-marker,
+.parent-observations-page__list-card-date,
+.parent-observations-page__list-card-badge,
+.parent-observations-page__list-card-line {
+  box-sizing: border-box;
+}
+
+.parent-observation-calendar__day {
+  display: flex;
+  min-height: 80px;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 4px 4px;
+}
+
+.parent-observation-calendar__day.is-empty {
+  visibility: hidden;
+}
+
+.parent-observation-calendar__day-number {
+  color: #4a5565;
+  font-family: 'Inter', 'Noto Sans KR', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 20px;
+}
+
+.parent-observation-calendar__day-marker {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: transparent;
+}
+
+.parent-observation-calendar__day-marker.is-visible {
+  background: #c46b6b;
 }
 
 .parent-observations-page__list-skeleton {
@@ -543,6 +557,7 @@
   height: 46px;
   flex-shrink: 0;
   border-radius: 14px;
+  background: linear-gradient(180deg, rgba(136, 181, 196, 0.18) 0%, rgba(155, 196, 168, 0.12) 100%);
 }
 
 .parent-observations-page__list-card-content {
@@ -557,11 +572,13 @@
   width: 52px;
   height: 24px;
   border-radius: 999px;
+  background: linear-gradient(180deg, rgba(136, 181, 196, 0.18) 0%, rgba(155, 196, 168, 0.12) 100%);
 }
 
 .parent-observations-page__list-card-line {
   height: 14px;
   border-radius: 999px;
+  background: linear-gradient(180deg, rgba(136, 181, 196, 0.18) 0%, rgba(155, 196, 168, 0.12) 100%);
 }
 
 .parent-observations-page__list-card-line--long {
