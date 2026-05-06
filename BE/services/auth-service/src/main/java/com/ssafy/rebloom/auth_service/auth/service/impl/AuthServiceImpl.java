@@ -147,7 +147,7 @@ public class AuthServiceImpl implements AuthService {
 
         // 난수 생성
         String code = String.format("%06d", secureRandom.nextInt(1000000));
-
+        log.info("code = {}", code);
         // Redis 저장(5분)
         redisService.setDataWithExpire(
             Constants.VERIFY_CODE_PREFIX + email,
