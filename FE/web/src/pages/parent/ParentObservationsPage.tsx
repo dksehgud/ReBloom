@@ -2,6 +2,7 @@ import MobilePageLayout from '../../components/templates/MobilePageLayout/Mobile
 import ParentBottomNavigation from '../../features/guardian/components/ParentBottomNavigation'
 import ParentObservationCalendar from '../../features/guardian/components/ParentObservationCalendar'
 import ParentObservationDetailModal from '../../features/guardian/components/ParentObservationDetailModal'
+import ParentObservationFormModal from '../../features/guardian/components/ParentObservationFormModal'
 import ParentObservationListSection from '../../features/guardian/components/ParentObservationListSection'
 import { useParentObservationPageState } from '../../features/guardian/hooks/useParentObservationPageState'
 
@@ -26,14 +27,25 @@ function ParentObservationsPage() {
     selectedDateRecords,
     selectedRecord,
     detailDateLabel,
+    draftDateLabel,
+    draftMood,
+    draftDescription,
     modalMode,
     isLoading,
     isError,
+    isDraftSubmitDisabled,
     handlePreviousMonth,
     handleNextMonth,
     handleSelectDay,
     handleSelectRecord,
     handleCloseModal,
+    handleOpenCreate,
+    handleOpenEdit,
+    handleDraftPreviousDate,
+    handleDraftNextDate,
+    handleSelectDraftMood,
+    handleDraftDescriptionChange,
+    handleSubmitDraft,
   } = useParentObservationPageState()
 
   return (
@@ -59,6 +71,7 @@ function ParentObservationsPage() {
           currentMonthLabel={`${currentMonth}월`}
           isLoading={isLoading}
           isError={isError}
+          onAddRecord={handleOpenCreate}
           onSelectRecord={handleSelectRecord}
         />
       </div>
@@ -68,6 +81,23 @@ function ParentObservationsPage() {
           record={selectedRecord}
           dateLabel={detailDateLabel}
           onClose={handleCloseModal}
+          onEdit={handleOpenEdit}
+        />
+      ) : null}
+
+      {modalMode === 'create' || modalMode === 'edit' ? (
+        <ParentObservationFormModal
+          mode={modalMode}
+          dateLabel={draftDateLabel}
+          selectedMood={draftMood}
+          content={draftDescription}
+          isSubmitDisabled={isDraftSubmitDisabled}
+          onClose={handleCloseModal}
+          onPreviousDate={handleDraftPreviousDate}
+          onNextDate={handleDraftNextDate}
+          onSelectMood={handleSelectDraftMood}
+          onContentChange={handleDraftDescriptionChange}
+          onSubmit={handleSubmitDraft}
         />
       ) : null}
     </MobilePageLayout>
