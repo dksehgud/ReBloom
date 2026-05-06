@@ -8,6 +8,8 @@ import com.ssafy.rebloom.auth_service.user.domain.entity.Parent;
 import com.ssafy.rebloom.auth_service.user.domain.entity.User;
 import com.ssafy.rebloom.auth_service.user.domain.enums.RelationStatus;
 import com.ssafy.rebloom.auth_service.user.dto.request.UserCreateRequestDto;
+import com.ssafy.rebloom.auth_service.user.dto.request.UserUpdateRequestDto;
+import com.ssafy.rebloom.auth_service.user.dto.response.UserInfoResponseDto;
 import com.ssafy.rebloom.auth_service.user.repository.ChildrenParentRelationRepository;
 import com.ssafy.rebloom.auth_service.user.repository.ParentRepository;
 import com.ssafy.rebloom.auth_service.user.repository.UserRepository;
@@ -123,8 +125,124 @@ public class UserServiceImpl implements UserService {
             () -> new CustomException("사용자를 찾을 수 없습니다.", ErrorCode.USER_NOT_FOUND)
         );
 
+        user.withDrawUser();
     }
 
+
+    @Override
+    public UserInfoResponseDto getMyInfo(UUID userId) {
+        User user = getUser(userId);
+        return toUserInfoResponse(user);
+    }
+
+    @Override
+    @Transactional
+    public UserInfoResponseDto updateMyInfo(UUID userId, UserUpdateRequestDto request) {
+        User user = getUser(userId);
+
+        validateUpdateRequest(request);
+
+        String email = resolveUpdateValue(request.email(), user.getEmail());
+        if (!user.getEmail().equals(email) && userRepository.existsByEmail(email)) {
+            throw new CustomException("Email already exists.", ErrorCode.EMAIL_ALREADY_EXISTS);
+        }
+
+        return switch (user.getRole()) {
+            case COUNSELOR -> {
+                Counselor counselor = (Counselor) user;
+                counselor.updateCounselorProfile(
+                    email,
+                    resolveUpdateValue(request.name(), counselor.getName()),
+                    resolveUpdateValue(request.phone(), counselor.getPhone()),
+                    resolveUpdateValue(request.hospitalName(), counselor.getHospitalName()),
+                    resolveUpdateValue(request.hospitalAddress(), counselor.getHospitalAddress())
+                );
+                yield toUserInfoResponse(counselor);
+            }
+            case PARENT, CHILDREN -> throw new CustomException(
+                "Profile update is not supported for this role.",
+                ErrorCode.FORBIDDEN
+            );
+        };
+    }
+
+    @Override
+    @Transactional
+    public void changePassword(UUID userId, String newPassword) {
+        User user = getUser(userId);
+        if (passwordEncoder.matches(newPassword, user.getPassword())) {
+            throw new CustomException("New password must be different from current password.", ErrorCode.INVALID_PARAMETER);
+        }
+
+        user.changePassword(passwordEncoder.encode(newPassword));
+    }
+
+    @Override
+    public void verifyPassword(UUID userId, String password) {
+        User user = getUser(userId);
+        if (!passwordEncoder.matches(password, user.getPassword())) {
+            throw new CustomException("Password does not match.", ErrorCode.LOGIN_FAILED);
+        }
+    }
+
+    private User getUser(UUID userId) {
+        return userRepository.findById(userId).orElseThrow(
+            () -> new CustomException("User not found.", ErrorCode.USER_NOT_FOUND)
+        );
+    }
+
+    private UserInfoResponseDto toUserInfoResponse(User user) {
+        UserInfoResponseDto.UserInfoResponseDtoBuilder builder = UserInfoResponseDto.builder()
+            .userId(user.getId())
+            .email(user.getEmail())
+            .name(user.getName())
+            .phone(user.getPhone())
+            .role(user.getRole())
+            .status(user.getStatus());
+
+        return switch (user.getRole()) {
+            case PARENT -> {
+                Parent parent = (Parent) user;
+                yield builder
+                    .parentCode(parent.getCode())
+                    .build();
+            }
+            case CHILDREN -> {
+                Children children = (Children) user;
+                yield builder
+                    .birth(children.getBirth())
+                    .gender(children.getGender())
+                    .address(children.getAddress())
+                    .addressDetail(children.getAddressDetail())
+                    .build();
+            }
+            case COUNSELOR -> {
+                Counselor counselor = (Counselor) user;
+                yield builder
+                    .hospitalName(counselor.getHospitalName())
+                    .hospitalAddress(counselor.getHospitalAddress())
+                    .build();
+            }
+        };
+    }
+
+    private void validateUpdateRequest(UserUpdateRequestDto request) {
+        validateNotBlankIfPresent(request.name(), "name");
+        validateNotBlankIfPresent(request.email(), "email");
+        validateNotBlankIfPresent(request.phone(), "phone");
+        validateNotBlankIfPresent(request.hospitalName(), "hospitalName");
+        validateNotBlankIfPresent(request.hospitalAddress(), "hospitalAddress");
+    }
+
+    private void validateNotBlankIfPresent(String value, String fieldName) {
+        if (value != null && !StringUtils.hasText(value)) {
+            throw new CustomException(fieldName + " must not be blank.", ErrorCode.INVALID_PARAMETER);
+        }
+    }
+
+    private String resolveUpdateValue(String requestedValue, String currentValue) {
+        return requestedValue != null ? requestedValue : currentValue;
+    }
 
     private void validateEmailVerification(String email) {
         String isVerified = redisService.getData(Constants.VERIFIED_EMAIL_PREFIX + email);
