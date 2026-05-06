@@ -6,7 +6,7 @@ import type { ParentCounselorCandidate } from '../constants/parentSettings'
 type ParentCounselorConnectModalProps = {
   candidate: ParentCounselorCandidate
   onClose: () => void
-  onComplete: () => void
+  onComplete: (candidate: ParentCounselorCandidate) => void
 }
 
 type ModalStep = 1 | 2 | 3
@@ -158,7 +158,7 @@ function ParentCounselorConnectModal({
       <button
         type="button"
         className="parent-counselor-modal__button is-primary"
-        onClick={onComplete}
+        onClick={() => onComplete(candidate)}
       >
         신청 완료
       </button>

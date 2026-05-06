@@ -8,7 +8,7 @@ import {
   mockLinkedChild,
   mockParentProfile,
   parentSupportContacts,
-  type ParentSupportContact,
+  type ParentCounselorCandidate,
 } from '../../features/guardian/constants/parentSettings'
 import ChildPasswordChangeModal from '../../features/user/components/ChildPasswordChangeModal'
 
@@ -199,10 +199,14 @@ function ParentSettingsHeader() {
 }
 
 function ContactRow({
-  contact,
+  title,
+  phoneNumber,
+  description,
   showDivider,
 }: {
-  contact: ParentSupportContact
+  title: string
+  phoneNumber: string
+  description?: string
   showDivider: boolean
 }) {
   return (
@@ -211,11 +215,14 @@ function ContactRow({
         <PhoneIcon />
       </span>
       <span className="parent-settings-page__copy">
-        <span className="parent-settings-page__row-title">{contact.label}</span>
+        <span className="parent-settings-page__row-title">{title}</span>
+        {description ? (
+          <span className="parent-settings-page__row-description">{description}</span>
+        ) : null}
       </span>
       <span className="parent-settings-page__row-end">
-        <a className="parent-settings-page__phone-chip" href={`tel:${contact.phoneNumber}`}>
-          {contact.phoneNumber}
+        <a className="parent-settings-page__phone-chip" href={`tel:${phoneNumber}`}>
+          {phoneNumber}
         </a>
       </span>
     </div>
@@ -225,6 +232,10 @@ function ContactRow({
 function ParentSettingsPage() {
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false)
   const [isCounselorModalOpen, setIsCounselorModalOpen] = useState(false)
+  const [connectedCounselor, setConnectedCounselor] =
+    useState<ParentCounselorCandidate | null>(null)
+
+  const isCounselorConnected = connectedCounselor !== null
 
   return (
     <MobilePageLayout
@@ -281,22 +292,42 @@ function ParentSettingsPage() {
         <section className="parent-settings-page__section">
           <h2 className="parent-settings-page__section-title">상담사 연결</h2>
           <div className="parent-settings-page__box">
-            <ParentSettingsRow
-              title="상담사를 연결하세요."
-              icon={<PlusIcon />}
-              onClick={() => setIsCounselorModalOpen(true)}
-              showDivider={false}
-            />
+            {isCounselorConnected && connectedCounselor ? (
+              <ParentSettingsRow
+                title={connectedCounselor.name}
+                description={connectedCounselor.clinicName}
+                icon={<UserIcon />}
+                trailing={<span className="parent-settings-page__status-chip">연결</span>}
+                showDivider={false}
+              />
+            ) : (
+              <ParentSettingsRow
+                title="상담사를 연결하세요."
+                icon={<PlusIcon />}
+                onClick={() => setIsCounselorModalOpen(true)}
+                showDivider={false}
+              />
+            )}
           </div>
         </section>
 
         <section className="parent-settings-page__section">
           <h2 className="parent-settings-page__section-title">연락처</h2>
           <div className="parent-settings-page__box">
+            {isCounselorConnected && connectedCounselor ? (
+              <ContactRow
+                title={connectedCounselor.name}
+                description={connectedCounselor.clinicName}
+                phoneNumber={connectedCounselor.phoneNumber}
+                showDivider
+              />
+            ) : null}
+
             {parentSupportContacts.map((contact, index) => (
               <ContactRow
                 key={contact.id}
-                contact={contact}
+                title={contact.label}
+                phoneNumber={contact.phoneNumber}
                 showDivider={index < parentSupportContacts.length - 1}
               />
             ))}
@@ -312,7 +343,10 @@ function ParentSettingsPage() {
         <ParentCounselorConnectModal
           candidate={mockCounselorCandidate}
           onClose={() => setIsCounselorModalOpen(false)}
-          onComplete={() => setIsCounselorModalOpen(false)}
+          onComplete={(candidate) => {
+            setConnectedCounselor(candidate)
+            setIsCounselorModalOpen(false)
+          }}
         />
       ) : null}
     </MobilePageLayout>

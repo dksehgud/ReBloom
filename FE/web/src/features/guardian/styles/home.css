@@ -1696,6 +1696,22 @@
   margin-left: auto;
 }
 
+.parent-settings-page__status-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 59px;
+  min-height: 23px;
+  padding: 0 14px;
+  border-radius: 16px;
+  background: #344966;
+  color: #ffffff;
+  font-family: 'Inter', 'Noto Sans KR', sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 12px;
+}
+
 .parent-settings-page__chevron {
   display: inline-flex;
   align-items: center;
