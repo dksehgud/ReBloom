@@ -19,6 +19,7 @@ public interface ChildrenReportRepository extends JpaRepository<ChildrenReport, 
                emotion_tag,
                context,
                report_date,
+               has_counselor_comment,
                created_at,
                modified_at
         FROM children_reports

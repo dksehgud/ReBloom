@@ -63,7 +63,9 @@ function AuthRouteLayout() {
   const setActiveRole = useAppSessionStore((state) => state.setActiveRole)
   const clearSelectedChild = useSelectedChildStore((state) => state.clearSelectedChild)
 
-  const phoneShellClassName = location.pathname === '/signup' ? 'phone-shell--signup' : ''
+  const phoneShellClassName = `phone-shell--auth${
+    location.pathname === '/signup' ? ' phone-shell--signup' : ''
+  }`
 
   useEffect(() => {
     setActiveRole(null)

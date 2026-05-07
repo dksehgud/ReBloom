@@ -92,6 +92,14 @@
   padding: 120px 31px 160px;
 }
 
+body[data-shell-mode='webview'] .landing-screen {
+  padding:
+    calc(120px + var(--app-safe-area-top))
+    calc(31px + var(--app-safe-area-right))
+    calc(160px + var(--app-safe-area-bottom))
+    calc(31px + var(--app-safe-area-left));
+}
+
 .landing-logo {
   width: min(266px, 100%);
   height: auto;
@@ -125,6 +133,18 @@
   display: flex;
   flex-direction: column;
   padding: 92px 31px 72px;
+}
+
+body[data-shell-mode='webview'] .login-screen {
+  min-height: var(--app-viewport-height);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding:
+    calc(92px + var(--app-safe-area-top))
+    calc(31px + var(--app-safe-area-right))
+    calc(72px + var(--app-safe-area-bottom))
+    calc(31px + var(--app-safe-area-left));
+  -webkit-overflow-scrolling: touch;
 }
 
 .login-header {
@@ -202,6 +222,10 @@
   position: relative;
 }
 
+body[data-shell-mode='webview'] .auth-screen {
+  min-height: var(--app-viewport-height);
+}
+
 .auth-screen--find-password .auth-content {
   padding-top: 94px;
 }
@@ -218,6 +242,14 @@
   gap: 28px;
   min-height: 0;
   padding: 60px 26px 132px;
+}
+
+body[data-shell-mode='webview'] .auth-content {
+  padding:
+    calc(60px + var(--app-safe-area-top))
+    calc(26px + var(--app-safe-area-right))
+    calc(132px + var(--app-safe-area-bottom))
+    calc(26px + var(--app-safe-area-left));
 }
 
 .auth-title-group {
@@ -286,6 +318,14 @@
   padding: 12px 26px 29px;
   position: absolute;
   right: 0;
+}
+
+body[data-shell-mode='webview'] .auth-footer {
+  padding:
+    12px
+    calc(26px + var(--app-safe-area-right))
+    calc(29px + var(--app-safe-area-bottom))
+    calc(26px + var(--app-safe-area-left));
 }
 
 .auth-button {

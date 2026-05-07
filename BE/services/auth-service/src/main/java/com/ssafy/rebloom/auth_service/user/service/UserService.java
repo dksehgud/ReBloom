@@ -1,6 +1,7 @@
 package com.ssafy.rebloom.auth_service.user.service;
 
 import com.ssafy.rebloom.auth_service.user.domain.enums.UserRole;
+import com.ssafy.rebloom.auth_service.user.dto.request.PasswordChangeRequestDto;
 import com.ssafy.rebloom.auth_service.user.dto.request.UserCreateRequestDto;
 import com.ssafy.rebloom.auth_service.user.dto.request.UserUpdateRequestDto;
 import com.ssafy.rebloom.auth_service.user.dto.response.UserInfoResponseDto;
@@ -24,6 +25,5 @@ public interface UserService {
 
     void verifyPassword(UUID userId, String password);
 
-    ListResponseDto<UserProfileResponseDto> searchProfiles(String email, String name,
-        UserRole userRole);
+    ListResponseDto<UserProfileResponseDto> searchProfiles(String email, UserRole userRole);
 }
