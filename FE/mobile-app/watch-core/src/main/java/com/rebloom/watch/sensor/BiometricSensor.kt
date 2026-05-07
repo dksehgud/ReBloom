@@ -19,10 +19,14 @@ class BiometricSensor(private val context: Context) {
 
     private val connectionListener = object : ConnectionListener {
         override fun onConnectionSuccess() {
+            Log.d("BiometricSensor", "연결 성공!")
             startTracking()
         }
-        override fun onConnectionEnded() {}
+        override fun onConnectionEnded() {
+            Log.d("BiometricSensor", "연결 종료")
+        }
         override fun onConnectionFailed(e: HealthTrackerException) {
+            Log.e("BiometricSensor", "연결 실패: errorCode=${e.errorCode}, msg=${e.message}")
             e.printStackTrace()
         }
     }
