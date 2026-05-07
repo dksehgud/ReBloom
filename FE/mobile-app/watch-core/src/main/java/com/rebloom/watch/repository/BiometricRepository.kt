@@ -22,11 +22,6 @@ class BiometricRepository {
     private var bufferStartTime: Long = System.currentTimeMillis()
 
     companion object {
-        const val ACC_MAG_THRESHOLD = 0.05f
-        const val HR_THRESHOLD = 65f
-        const val RMSSD_THRESHOLD = 30f
-        const val PNN50_THRESHOLD = 0.20f
-        const val LF_HF_THRESHOLD = 1.0f
         const val MIN_LFHF_IBI_SIZE = 30
     }
 
@@ -72,7 +67,6 @@ class BiometricRepository {
         val rmssd = calcRmssd(allIbi)
         val pnn50 = calcPnn(allIbi, 50.0)
         val lfHf = calcLfHf(allIbi)
-        val isSleeping = determineSleeping(accMag, hrAvg, rmssd, pnn50, lfHf)
 
         return BiometricRecord(
             tsStart = tsStart,
@@ -87,7 +81,6 @@ class BiometricRepository {
             rmssd = rmssd,
             pnn50 = pnn50,
             lfHf = lfHf,
-            isSleeping = isSleeping
         )
     }
 
@@ -171,22 +164,6 @@ class BiometricRepository {
         var power = 1
         while (power < n) power = power shl 1
         return power
-    }
-
-    private fun determineSleeping(
-        accMag: Float,
-        hr: Float,
-        rmssd: Float,
-        pnn50: Float,
-        lfHf: Float
-    ): Boolean {
-        val lowActivity = accMag < ACC_MAG_THRESHOLD
-        val highHrv = rmssd > RMSSD_THRESHOLD || pnn50 > PNN50_THRESHOLD
-        val lowHr = hr < HR_THRESHOLD
-        val validLfHf = lfHf > 0f
-        val lowSympathetic = validLfHf && lfHf <= LF_HF_THRESHOLD
-
-        return lowActivity && (highHrv || lowHr || lowSympathetic)
     }
 
     private fun calcMissingness(validCount: Int): Float {

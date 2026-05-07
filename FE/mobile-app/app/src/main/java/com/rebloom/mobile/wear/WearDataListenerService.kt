@@ -28,15 +28,14 @@ class WearDataListenerService : WearableListenerService() {
                 val rmssd = dataMap.getFloat("rmssd")
                 val pnn50 = dataMap.getFloat("pnn50")
                 val lfHf = dataMap.getFloat("lfHf")
-                val isSleeping = dataMap.getBoolean("isSleeping")
                 val missingnessScore = dataMap.getFloat("missingnessScore")
 
-                Log.d("WearDataListener", "데이터 수신: HR=$hr, RMSSD=$rmssd, LF/HF=$lfHf, isSleeping=$isSleeping")
+                Log.d("WearDataListener", "데이터 수신: HR=$hr, RMSSD=$rmssd, LF/HF=$lfHf")
 
                 saveToCsv(
                     tsStart, tsEnd, hr, ibi,
                     accXAvg, accYAvg, accZAvg, accMag,
-                    rmssd, pnn50, lfHf, isSleeping, missingnessScore
+                    rmssd, pnn50, lfHf, missingnessScore
                 )
             }
         }
@@ -48,7 +47,7 @@ class WearDataListenerService : WearableListenerService() {
         accXAvg: Float, accYAvg: Float, accZAvg: Float,
         accMag: Float,
         rmssd: Float, pnn50: Float,
-        lfHf: Float, isSleeping: Boolean,
+        lfHf: Float,
         missingnessScore: Float
     ) {
         val file = File(getExternalFilesDir(null), "biometric.csv")
@@ -56,9 +55,16 @@ class WearDataListenerService : WearableListenerService() {
 
         FileWriter(file, true).use { writer ->
             if (isNew) {
-                writer.append("ts_start,ts_end,hr,ibi,acc_x_avg,acc_y_avg,acc_z_avg,acc_mag,rmssd,pnn50,lf_hf,is_sleeping,missingness_score\n")
+                writer.append("ts_start,ts_end,hr,ibi,acc_x_avg,acc_y_avg,acc_z_avg,acc_mag,rmssd,pnn50,lf_hf,missingness_score\n")
             }
-            writer.append("$tsStart,$tsEnd,$hr,$ibi,$accXAvg,$accYAvg,$accZAvg,$accMag,$rmssd,$pnn50,$lfHf,$isSleeping,$missingnessScore\n")
+            writer.append(
+                try {
+                    "$tsStart,$tsEnd,$hr,$ibi,$accXAvg,$accYAvg,$accZAvg,$accMag,$rmssd,$pnn50,$lfHf,$missingnessScore\n"
+                } catch (e: Exception) {
+                    TODO("Not yet implemented")
+                } finally {
+                }
+            )
         }
 
         Log.d("WearDataListener", "CSV 저장 완료: ${file.absolutePath}")

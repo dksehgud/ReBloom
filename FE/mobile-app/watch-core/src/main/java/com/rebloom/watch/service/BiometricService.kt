@@ -57,7 +57,6 @@ class BiometricService : Service() {
                 dataMap.putFloat("rmssd", record.rmssd)
                 dataMap.putFloat("pnn50", record.pnn50)
                 dataMap.putFloat("lfHf", record.lfHf)
-                dataMap.putBoolean("isSleeping", record.isSleeping)
                 dataMap.putFloat("missingnessScore", record.missingnessScore)
             }.asPutDataRequest()
 
