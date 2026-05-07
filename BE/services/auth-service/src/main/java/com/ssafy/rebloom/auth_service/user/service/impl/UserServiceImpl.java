@@ -8,6 +8,7 @@ import com.ssafy.rebloom.auth_service.user.domain.entity.Parent;
 import com.ssafy.rebloom.auth_service.user.domain.entity.User;
 import com.ssafy.rebloom.auth_service.user.domain.enums.RelationStatus;
 import com.ssafy.rebloom.auth_service.user.domain.enums.UserRole;
+import com.ssafy.rebloom.auth_service.user.dto.request.PasswordChangeRequestDto;
 import com.ssafy.rebloom.auth_service.user.dto.request.UserCreateRequestDto;
 import com.ssafy.rebloom.auth_service.user.dto.request.UserUpdateRequestDto;
 import com.ssafy.rebloom.auth_service.user.dto.response.UserInfoResponseDto;
@@ -183,10 +184,9 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public ListResponseDto<UserProfileResponseDto> searchProfiles(String email, String name,
-        UserRole userRole) {
+    public ListResponseDto<UserProfileResponseDto> searchProfiles(String email, UserRole userRole) {
 
-        List<User> profiles = userRepository.findAllByEmailAndNameAndRole(email, name, userRole);
+        List<User> profiles = userRepository.findAllByEmailAndRole(email, userRole);
         return ListResponseDto.from(profiles.stream().map(UserProfileResponseDto::from).toList());
     }
 

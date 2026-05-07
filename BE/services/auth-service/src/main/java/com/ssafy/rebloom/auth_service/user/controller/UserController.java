@@ -105,10 +105,9 @@ public class UserController {
     @GetMapping("/profiles")
     public ResponseEntity<BaseResponse<ListResponseDto<UserProfileResponseDto>>> searchUserProfile(
         @RequestParam(value = "email", required = true) String email,
-        @RequestParam(value = "name", required = true) String name,
         @RequestParam(value = "role", required = true) UserRole role
     ) {
-        ListResponseDto<UserProfileResponseDto> userProfiles = userService.searchProfiles(email, name, role);
+        ListResponseDto<UserProfileResponseDto> userProfiles = userService.searchProfiles(email, role);
         return ResponseEntity.ok(BaseResponse.success("유저 프로필 조회 성공", userProfiles));
     }
 }
