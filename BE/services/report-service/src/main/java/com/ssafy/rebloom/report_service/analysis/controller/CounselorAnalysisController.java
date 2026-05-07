@@ -2,9 +2,9 @@ package com.ssafy.rebloom.report_service.analysis.controller;
 
 import com.ssafy.rebloom.report_service.analysis.dto.response.AnalysisContentResponse;
 import com.ssafy.rebloom.report_service.analysis.dto.response.ConversationChartResponse;
-import com.ssafy.rebloom.report_service.analysis.dto.response.ConversationChartPointResponse;
+import com.ssafy.rebloom.report_service.analysis.dto.response.ConversationContentResponse;
 import com.ssafy.rebloom.report_service.analysis.dto.response.DiaryChartResponse;
-import com.ssafy.rebloom.report_service.analysis.dto.response.DiaryChartPointResponse;
+import com.ssafy.rebloom.report_service.analysis.dto.response.DiaryContentResponse;
 import com.ssafy.rebloom.report_service.analysis.dto.response.EmotionFlowResponse;
 import com.ssafy.rebloom.report_service.analysis.dto.response.ExpressionAnalysisResponse;
 import com.ssafy.rebloom.report_service.analysis.service.ExpressionAnalysisService;
@@ -76,13 +76,30 @@ public class CounselorAnalysisController {
     }
 
     @GetMapping("/diaries/contents")
-    public ResponseEntity<AnalysisContentResponse> getDiaryAnalysisContent(
+    public ResponseEntity<DiaryContentResponse> getDiaryAnalysisContent(
             @LoginUserId UUID counselorId,
             @RequestParam UUID childId,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate
     ) {
-        AnalysisContentResponse response = expressionAnalysisService.getDiaryAnalysisContent(
+        DiaryContentResponse response = expressionAnalysisService.getDiaryAnalysisContent(
+                counselorId,
+                childId,
+                startDate,
+                endDate
+        );
+
+        return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/contents")
+    public ResponseEntity<AnalysisContentResponse> getAnalysisContent(
+            @LoginUserId UUID counselorId,
+            @RequestParam UUID childId,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate
+    ) {
+        AnalysisContentResponse response = expressionAnalysisService.getAnalysisContent(
                 counselorId,
                 childId,
                 startDate,
@@ -110,13 +127,13 @@ public class CounselorAnalysisController {
     }
 
     @GetMapping("/conversations/contents")
-    public ResponseEntity<AnalysisContentResponse> getConversationAnalysisContent(
+    public ResponseEntity<ConversationContentResponse> getConversationAnalysisContent(
             @LoginUserId UUID counselorId,
             @RequestParam UUID childId,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate
     ) {
-        AnalysisContentResponse response = expressionAnalysisService.getConversationAnalysisContent(
+        ConversationContentResponse response = expressionAnalysisService.getConversationAnalysisContent(
                 counselorId,
                 childId,
                 startDate,

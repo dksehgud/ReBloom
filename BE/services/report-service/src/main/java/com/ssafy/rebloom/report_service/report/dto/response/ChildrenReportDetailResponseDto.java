@@ -5,13 +5,14 @@ import java.util.UUID;
 import lombok.Builder;
 
 @Builder
-public record ChildrenReportResponseDto(
+public record ChildrenReportDetailResponseDto(
     UUID reportId,
     UUID childrenId,
     UUID parentId,
     String emotionTag,
     String context,
     LocalDateTime reportDate,
-    boolean hasCounselorComment
+    boolean hasCounselorComment,
+    CounselorCommentResponseDto counselorComment
 ) {
 }

@@ -1,15 +1,17 @@
 package com.ssafy.rebloom.report_service.analysis.dto.response;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import lombok.Builder;
+
 import java.time.LocalDate;
 import java.util.List;
 
-import lombok.Builder;
-
 @Builder
 public record AnalysisDailyGroupResponse(
-    LocalDate date,
-    String dayOfWeek,
-    List<DiaryAnalysisCardResponse> diaryCards,
-    List<ConversationAnalysisCardResponse> conversationCards
+        LocalDate date,
+        @JsonInclude(JsonInclude.Include.NON_EMPTY)
+        List<DiaryAnalysisCardResponse> diaryList,
+        @JsonInclude(JsonInclude.Include.NON_EMPTY)
+        List<ConversationAnalysisCardResponse> conversationList
 ) {
 }

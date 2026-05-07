@@ -7,6 +7,7 @@ import java.time.temporal.TemporalAdjusters;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -15,14 +16,18 @@ import org.springframework.stereotype.Service;
 import com.ssafy.rebloom.common.exception.CustomException;
 import com.ssafy.rebloom.common.exception.ErrorCode;
 import com.ssafy.rebloom.report_service.analysis.client.AuthAccessClient;
-import com.ssafy.rebloom.report_service.analysis.dto.response.AnalysisDailyGroupResponse;
 import com.ssafy.rebloom.report_service.analysis.dto.response.AnalysisContentResponse;
+import com.ssafy.rebloom.report_service.analysis.dto.response.AnalysisDailyGroupResponse;
 import com.ssafy.rebloom.report_service.analysis.dto.response.ConversationAnalysisCardResponse;
 import com.ssafy.rebloom.report_service.analysis.dto.response.ConversationChartResponse;
 import com.ssafy.rebloom.report_service.analysis.dto.response.ConversationChartPointResponse;
+import com.ssafy.rebloom.report_service.analysis.dto.response.ConversationContentResponse;
+import com.ssafy.rebloom.report_service.analysis.dto.response.ConversationDailyGroupResponse;
 import com.ssafy.rebloom.report_service.analysis.dto.response.DiaryChartPointResponse;
 import com.ssafy.rebloom.report_service.analysis.dto.response.DiaryChartResponse;
 import com.ssafy.rebloom.report_service.analysis.dto.response.DiaryAnalysisCardResponse;
+import com.ssafy.rebloom.report_service.analysis.dto.response.DiaryContentResponse;
+import com.ssafy.rebloom.report_service.analysis.dto.response.DiaryDailyGroupResponse;
 import com.ssafy.rebloom.report_service.analysis.dto.response.EmotionFlowResponse;
 import com.ssafy.rebloom.report_service.analysis.dto.response.ExpressionAnalysisResponse;
 import com.ssafy.rebloom.report_service.analysis.domain.entity.ConversationAnalysis;
@@ -108,7 +113,76 @@ public class ExpressionAnalysisService {
                 .build();
     }
 
-    public AnalysisContentResponse getDiaryAnalysisContent(
+    public AnalysisContentResponse getAnalysisContent(
+            UUID counselorId,
+            UUID childId,
+            LocalDate startDate,
+            LocalDate endDate
+    ) {
+        validateDateRange(startDate, endDate);
+        authAccessClient.validateCounselorChildAccess(counselorId, childId);
+
+        List<DiaryAnalysis> diaryAnalyses = findDiaryAnalyses(childId, startDate, endDate);
+        List<ConversationAnalysis> conversationAnalyses = findConversationAnalyses(childId, startDate, endDate);
+        Map<UUID, List<String>> diaryKeywordsByAnalysisId = getDiaryKeywordsByAnalysisId(childId, diaryAnalyses);
+        Map<UUID, List<String>> conversationKeywordsByAnalysisId =
+                getConversationKeywordsByAnalysisId(childId, conversationAnalyses);
+
+        Map<LocalDate, List<DiaryAnalysisCardResponse>> diaryListByDate = diaryAnalyses.stream()
+                .collect(Collectors.groupingBy(
+                        analysis -> analysis.getTargetDate().toLocalDate(),
+                        TreeMap::new,
+                        Collectors.mapping(
+                                analysis -> toDiaryAnalysisCardResponse(
+                                        analysis,
+                                        diaryKeywordsByAnalysisId.getOrDefault(analysis.getId().getId(), List.of())
+                                ),
+                                Collectors.toList()
+                        )
+                ));
+        Map<LocalDate, List<ConversationAnalysisCardResponse>> conversationListByDate = conversationAnalyses.stream()
+                .collect(Collectors.groupingBy(
+                        analysis -> analysis.getStartedAt().toLocalDate(),
+                        TreeMap::new,
+                        Collectors.mapping(
+                                analysis -> toConversationAnalysisCardResponse(
+                                        analysis,
+                                        conversationKeywordsByAnalysisId.getOrDefault(analysis.getId().getId(), List.of())
+                                ),
+                                Collectors.toList()
+                        )
+                ));
+
+        TreeSet<LocalDate> dates = new TreeSet<>();
+        dates.addAll(diaryListByDate.keySet());
+        dates.addAll(conversationListByDate.keySet());
+
+        String summary = recentTrendRepository.findLatestByUserId(childId)
+                .map(recentTrend -> recentTrend.getSummary())
+                .orElse(null);
+        EmotionFlowResponse chart = EmotionFlowResponse.builder()
+                .diaryList(diaryAnalyses.stream()
+                        .map(this::toDiaryChartPointResponse)
+                        .toList())
+                .conversationList(conversationAnalyses.stream()
+                        .map(this::toConversationChartPointResponse)
+                        .toList())
+                .build();
+
+        return AnalysisContentResponse.builder()
+                .summary(summary)
+                .chart(chart)
+                .dailyGroups(dates.stream()
+                        .map(date -> AnalysisDailyGroupResponse.builder()
+                                .date(date)
+                                .diaryList(diaryListByDate.getOrDefault(date, List.of()))
+                                .conversationList(conversationListByDate.getOrDefault(date, List.of()))
+                                .build())
+                        .toList())
+                .build();
+    }
+
+    public DiaryContentResponse getDiaryAnalysisContent(
             UUID counselorId,
             UUID childId,
             LocalDate startDate,
@@ -124,7 +198,7 @@ public class ExpressionAnalysisService {
         );
         Map<UUID, List<String>> keywordsByAnalysisId = getDiaryKeywordsByAnalysisId(childId, analyses);
 
-        List<AnalysisDailyGroupResponse> dailyGroups = analyses.stream()
+        List<DiaryDailyGroupResponse> dailyGroups = analyses.stream()
                 .collect(Collectors.groupingBy(
                         analysis -> analysis.getTargetDate().toLocalDate(),
                         TreeMap::new,
@@ -132,20 +206,18 @@ public class ExpressionAnalysisService {
                 ))
                 .entrySet()
                 .stream()
-                .map(entry -> AnalysisDailyGroupResponse.builder()
+                .map(entry -> DiaryDailyGroupResponse.builder()
                         .date(entry.getKey())
-                        .dayOfWeek(entry.getKey().getDayOfWeek().name())
-                        .diaryCards(entry.getValue().stream()
+                        .diaryList(entry.getValue().stream()
                                 .map(analysis -> toDiaryAnalysisCardResponse(
                                         analysis,
                                         keywordsByAnalysisId.getOrDefault(analysis.getId().getId(), List.of())
                                 ))
                                 .toList())
-                        .conversationCards(List.of())
                         .build())
                 .toList();
 
-        return AnalysisContentResponse.builder()
+        return DiaryContentResponse.builder()
                 .dailyGroups(dailyGroups)
                 .build();
     }
@@ -168,7 +240,7 @@ public class ExpressionAnalysisService {
                 .build();
     }
 
-    public AnalysisContentResponse getConversationAnalysisContent(
+    public ConversationContentResponse getConversationAnalysisContent(
             UUID counselorId,
             UUID childId,
             LocalDate startDate,
@@ -186,7 +258,7 @@ public class ExpressionAnalysisService {
         );
         Map<UUID, List<String>> keywordsByAnalysisId = getConversationKeywordsByAnalysisId(childId, analyses);
 
-        List<AnalysisDailyGroupResponse> dailyGroups = analyses.stream()
+        List<ConversationDailyGroupResponse> dailyGroups = analyses.stream()
                 .collect(Collectors.groupingBy(
                         analysis -> analysis.getStartedAt().toLocalDate(),
                         TreeMap::new,
@@ -194,11 +266,9 @@ public class ExpressionAnalysisService {
                 ))
                 .entrySet()
                 .stream()
-                .map(entry -> AnalysisDailyGroupResponse.builder()
+                .map(entry -> ConversationDailyGroupResponse.builder()
                         .date(entry.getKey())
-                        .dayOfWeek(entry.getKey().getDayOfWeek().name())
-                        .diaryCards(List.of())
-                        .conversationCards(entry.getValue().stream()
+                        .conversationList(entry.getValue().stream()
                                 .map(analysis -> toConversationAnalysisCardResponse(
                                         analysis,
                                         keywordsByAnalysisId.getOrDefault(analysis.getId().getId(), List.of())
@@ -207,7 +277,7 @@ public class ExpressionAnalysisService {
                         .build())
                 .toList();
 
-        return AnalysisContentResponse.builder()
+        return ConversationContentResponse.builder()
                 .dailyGroups(dailyGroups)
                 .build();
     }
@@ -258,7 +328,14 @@ public class ExpressionAnalysisService {
     }
 
     private String normalizeType(String type) {
-        return type == null ? "ALL" : type.toUpperCase();
+        String normalizedType = type == null ? "ALL" : type.toUpperCase();
+        if (!"ALL".equals(normalizedType)
+                && !"DIARY".equals(normalizedType)
+                && !"CONVERSATION".equals(normalizedType)) {
+            throw new CustomException("지원하지 않는 분석 타입입니다.", ErrorCode.INVALID_PARAMETER);
+        }
+
+        return normalizedType;
     }
 
     private boolean shouldIncludeDiary(String type) {
