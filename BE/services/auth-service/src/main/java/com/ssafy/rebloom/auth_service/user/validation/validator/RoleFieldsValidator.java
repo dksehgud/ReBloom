@@ -23,8 +23,8 @@ public class RoleFieldsValidator implements ConstraintValidator<ValidRoleFields,
 
         }
         else if (dto.role() == UserRole.COUNSELOR) {
-            if (isEmpty(dto.hospitalName()) || isEmpty(dto.hospitalAddress())) {
-                addError(context, "상담사 가입 시 병원 이름과 주소는 필수입니다.");
+            if (isEmpty(dto.hospitalName()) || isEmpty(dto.hospitalAddress()) || isEmpty(dto.hospitalAddressDetail())) {
+                addError(context, "상담사 가입 시 병원 이름과 주소, 상세주소는 필수입니다.");
                 isValid = false;
             }
         }
