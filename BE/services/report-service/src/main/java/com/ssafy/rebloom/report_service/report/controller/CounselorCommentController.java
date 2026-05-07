@@ -2,7 +2,6 @@ package com.ssafy.rebloom.report_service.report.controller;
 
 import com.ssafy.rebloom.common.dto.BaseResponse;
 import com.ssafy.rebloom.report_service.report.dto.request.CounselorCommentCreateRequestDto;
-import com.ssafy.rebloom.report_service.report.dto.response.CounselorCommentListResponseDto;
 import com.ssafy.rebloom.report_service.report.dto.response.CounselorCommentResponseDto;
 import com.ssafy.rebloom.report_service.report.service.CounselorCommentService;
 import com.ssafy.rebloom.security.annotation.LoginUserId;
@@ -52,7 +51,7 @@ public class CounselorCommentController {
 
     @GetMapping
     @PreAuthorize("hasAnyRole('PARENT', 'COUNSELOR')")
-    public ResponseEntity<CounselorCommentListResponseDto> getComments(
+    public ResponseEntity<CounselorCommentResponseDto> getComments(
         @LoginUserId UUID userId,
         @LoginUserRole String role,
         @PathVariable UUID childrenId,

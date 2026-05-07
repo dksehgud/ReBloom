@@ -36,10 +36,17 @@ public class ChildrenReport extends BaseTime {
     @Column(name = "report_date", nullable = false)
     private LocalDateTime reportDate;
 
+    @Column(name = "has_counselor_comment", nullable = false)
+    private boolean hasCounselorComment;
+
     public void update(String emotionTag, String context, LocalDateTime reportDate) {
         this.emotionTag = emotionTag;
         this.context = context;
         this.reportDate = reportDate;
+    }
+
+    public void markHasCounselorComment(boolean hasCounselorComment) {
+        this.hasCounselorComment = hasCounselorComment;
     }
 }
 
