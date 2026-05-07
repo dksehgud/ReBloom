@@ -88,7 +88,7 @@ public class UserController {
         @LoginUserId UUID userId,
         @RequestBody @Valid PasswordChangeRequestDto request
     ) {
-        userService.changePassword(userId, request.newPassword());
+        userService.changePassword(userId, request);
         return ResponseEntity.ok(BaseResponse.success("비밀번호가 변경되었습니다."));
     }
 
