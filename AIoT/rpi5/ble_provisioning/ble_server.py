@@ -288,7 +288,7 @@ class StatusCharacteristic(Characteristic):
 
 
 class DeviceInfoCharacteristic(Characteristic):
-    DEVICE_ID = "SPK-UUID-xxxx"
+    DEVICE_ID = "0000fe10-0000-1000-8000-00805f9b34fb"
 
     def __init__(self, bus, index, service):
         super().__init__(bus, index, DEVINFO_CHAR_UUID, ["read"], service)
