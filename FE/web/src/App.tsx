@@ -11,6 +11,7 @@ function App() {
   useEffect(() => {
     const shellMode = resolveShellMode(location.search)
 
+    window.__REBLOOM_SHELL_MODE__ = shellMode
     document.documentElement.dataset.shellMode = shellMode
     document.body.dataset.shellMode = shellMode
 
