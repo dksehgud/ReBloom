@@ -1,17 +1,7 @@
-package com.ssafy.rebloom.report_service.analysis.entity;
+package com.ssafy.rebloom.report_service.analysis.domain.entity;
 
-import jakarta.persistence.EmbeddedId;
-import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.JoinColumns;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import jakarta.persistence.*;
+import lombok.*;
 
 @Getter
 @Entity
@@ -26,8 +16,8 @@ public class ConversationKeyword {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumns({
-            @JoinColumn(name = "analysis_id", referencedColumnName = "id", insertable = false, updatable = false),
-            @JoinColumn(name = "user_id", referencedColumnName = "user_id", insertable = false, updatable = false)
+        @JoinColumn(name = "analysis_id", referencedColumnName = "id", insertable = false, updatable = false),
+        @JoinColumn(name = "user_id", referencedColumnName = "user_id", insertable = false, updatable = false)
     })
     private ConversationAnalysis conversationAnalysis;
 

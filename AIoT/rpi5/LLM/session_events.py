@@ -1,4 +1,5 @@
 import json
+import http.client
 import socket
 import time
 import urllib.error
@@ -80,7 +81,13 @@ class SessionEventSender:
         try:
             with urllib.request.urlopen(request, timeout=self.timeout):
                 pass
-        except (urllib.error.URLError, TimeoutError) as exc:
+        except (
+            http.client.HTTPException,
+            OSError,
+            TimeoutError,
+            urllib.error.URLError,
+            urllib.error.HTTPError,
+        ) as exc:
             self.last_error = str(exc)
             return False
 
