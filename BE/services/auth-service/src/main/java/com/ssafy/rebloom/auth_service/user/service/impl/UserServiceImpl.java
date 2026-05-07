@@ -7,16 +7,20 @@ import com.ssafy.rebloom.auth_service.user.domain.entity.Counselor;
 import com.ssafy.rebloom.auth_service.user.domain.entity.Parent;
 import com.ssafy.rebloom.auth_service.user.domain.entity.User;
 import com.ssafy.rebloom.auth_service.user.domain.enums.RelationStatus;
+import com.ssafy.rebloom.auth_service.user.domain.enums.UserRole;
 import com.ssafy.rebloom.auth_service.user.dto.request.UserCreateRequestDto;
 import com.ssafy.rebloom.auth_service.user.dto.request.UserUpdateRequestDto;
 import com.ssafy.rebloom.auth_service.user.dto.response.UserInfoResponseDto;
+import com.ssafy.rebloom.auth_service.user.dto.response.UserProfileResponseDto;
 import com.ssafy.rebloom.auth_service.user.repository.ChildrenParentRelationRepository;
 import com.ssafy.rebloom.auth_service.user.repository.ParentRepository;
 import com.ssafy.rebloom.auth_service.user.repository.UserRepository;
 import com.ssafy.rebloom.auth_service.user.service.RedisService;
 import com.ssafy.rebloom.auth_service.user.service.UserService;
+import com.ssafy.rebloom.common.dto.ListResponseDto;
 import com.ssafy.rebloom.common.exception.CustomException;
 import com.ssafy.rebloom.common.exception.ErrorCode;
+import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -104,7 +108,8 @@ public class UserServiceImpl implements UserService {
                     userCreateRequestDto.name(),
                     userCreateRequestDto.phone(),
                     userCreateRequestDto.hospitalName(),
-                    userCreateRequestDto.hospitalAddress()
+                    userCreateRequestDto.hospitalAddress(),
+                    userCreateRequestDto.hospitalAddressDetail()
                 );
                 savedUser = userRepository.save(counselor);
             }
@@ -183,6 +188,14 @@ public class UserServiceImpl implements UserService {
         if (!passwordEncoder.matches(password, user.getPassword())) {
             throw new CustomException("Password does not match.", ErrorCode.LOGIN_FAILED);
         }
+    }
+
+    @Override
+    public ListResponseDto<UserProfileResponseDto> searchProfiles(String email, String name,
+        UserRole userRole) {
+
+        List<User> profiles = userRepository.findAllByEmailAndNameAndRole(email, name, userRole);
+        return ListResponseDto.from(profiles.stream().map(UserProfileResponseDto::from).toList());
     }
 
     private User getUser(UUID userId) {
