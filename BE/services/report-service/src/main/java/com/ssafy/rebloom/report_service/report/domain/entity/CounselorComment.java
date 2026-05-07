@@ -1,21 +1,10 @@
-package com.ssafy.rebloom.report_service.report.entity;
-
-import java.util.UUID;
+package com.ssafy.rebloom.report_service.report.domain.entity;
 
 import com.ssafy.rebloom.common.entity.BaseTime;
+import jakarta.persistence.*;
+import lombok.*;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.Id;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import java.util.UUID;
 
 @Getter
 @Entity
@@ -40,5 +29,9 @@ public class CounselorComment extends BaseTime {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "parent_report_id", referencedColumnName = "id", insertable = false, updatable = false)
     private ChildrenReport childrenReport;
+
+    public boolean isWrittenBy(UUID counselorId) {
+        return userId.equals(counselorId);
+    }
 }
 

@@ -1,18 +1,13 @@
-package com.ssafy.rebloom.report_service.analysis.entity;
-
-import java.time.LocalDate;
+package com.ssafy.rebloom.report_service.analysis.domain.entity;
 
 import com.ssafy.rebloom.common.entity.BaseTime;
-
 import jakarta.persistence.Column;
 import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
+
+import java.time.LocalDateTime;
 
 @Getter
 @Entity
@@ -26,15 +21,15 @@ public class DiaryAnalysis extends BaseTime {
     private DiaryAnalysisId id;
 
     @Column(name = "target_date", nullable = false)
-    private LocalDate targetDate;
+    private LocalDateTime targetDate;
 
-    @Column(name = "sentiment_label", nullable = false)
-    private String sentimentLabel;
+    @Column(name = "emotion_icon", nullable = false)
+    private String emotionIcon;
+
+    @Column(name = "embedding_text", nullable = false)
+    private String embeddingText;
 
     @Column(nullable = false)
-    private String summary;
-
-    @Column(name = "depression_score", nullable = false)
-    private Float depressionScore;
+    private String prediction;
 }
 
