@@ -8,11 +8,17 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import time
 import wave
 from pathlib import Path
 
 
 START_SOUND_WARNING_SHOWN = False
+START_SOUND_BUSY_MARKERS = (
+    "device or resource busy",
+    "resource busy",
+    "장치나 자원이 동작 중",
+)
 
 DEFAULT_WHISPER_BIN = "/home/ssafy/whisper.cpp/build/bin/whisper-cli"
 DEFAULT_WHISPER_MODEL = "/home/ssafy/whisper.cpp/models/ggml-base.bin"
@@ -164,6 +170,31 @@ def write_tone_wav(output_path, frequency=880, duration=0.18, volume=0.25, sampl
     write_pcm_wav(output_path, [samples.tobytes()], sample_rate=sample_rate)
 
 
+def write_start_chime_wav(output_path, volume=0.25, sample_rate=16000):
+    samples = array.array("h")
+    peak = int(32767 * max(0, min(volume, 1)))
+    tones = ((880, 0.08), (0, 0.025), (1320, 0.12))
+
+    for frequency, duration in tones:
+        sample_count = max(1, int(sample_rate * duration))
+        fade_samples = max(1, int(sample_rate * 0.012))
+        for index in range(sample_count):
+            if frequency <= 0:
+                samples.append(0)
+                continue
+            envelope = 1
+            if index < fade_samples:
+                envelope = index / fade_samples
+            elif sample_count - index < fade_samples:
+                envelope = (sample_count - index) / fade_samples
+            value = int(peak * envelope * math.sin(2 * math.pi * frequency * index / sample_rate))
+            samples.append(value)
+
+    if sys.byteorder != "little":
+        samples.byteswap()
+    write_pcm_wav(output_path, [samples.tobytes()], sample_rate=sample_rate)
+
+
 def play_start_sound(args):
     global START_SOUND_WARNING_SHOWN
 
@@ -189,15 +220,34 @@ def play_start_sound(args):
 
     with tempfile.TemporaryDirectory(prefix="rebloom_start_sound_") as temp_dir:
         wav_path = Path(temp_dir) / "start.wav"
-        write_tone_wav(wav_path)
+        write_start_chime_wav(wav_path)
         command.append(str(wav_path))
-        result = subprocess.run(command, text=True, capture_output=True)
+        result = None
+        for attempt in range(3):
+            result = subprocess.run(command, text=True, capture_output=True)
+            detail = (result.stderr or result.stdout).strip()
+            if result.returncode == 0:
+                return
+            if not is_audio_busy_detail(detail):
+                break
+            if attempt < 2:
+                time.sleep(0.2)
+
+        if result is None:
+            return
         if result.returncode != 0:
             detail = (result.stderr or result.stdout).strip()
+            if is_audio_busy_detail(detail):
+                return
             if not START_SOUND_WARNING_SHOWN:
                 print(f"[sound] 시작 알림음 재생을 건너뜁니다: {detail}", file=sys.stderr)
                 print("[sound] 끄려면 `--start-sound off`, 출력 장치를 지정하려면 `--start-sound-device DEVICE`를 사용하세요.", file=sys.stderr)
                 START_SOUND_WARNING_SHOWN = True
+
+
+def is_audio_busy_detail(detail):
+    lower_detail = detail.lower()
+    return any(marker in lower_detail for marker in START_SOUND_BUSY_MARKERS)
 
 
 def record_wav_until_silence(
