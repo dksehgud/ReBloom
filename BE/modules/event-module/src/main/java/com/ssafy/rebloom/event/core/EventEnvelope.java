@@ -1,6 +1,6 @@
 package com.ssafy.rebloom.event.core;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
 
 public record EventEnvelope<T>(
     String eventId,
@@ -9,7 +9,7 @@ public record EventEnvelope<T>(
     String producer,
     String correlationId,
     String idempotencyKey,
-    Instant occurredAt,
+    LocalDateTime occurredAt,
     T payload
 ) {
 }
