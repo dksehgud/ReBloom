@@ -9,7 +9,7 @@ Raspberry Pi 5에서 실행하기 위한 스크립트입니다.
 사용법:
     python test_wake_word.py                             # 기본 테스트
     python test_wake_word.py --model models/hi_blooming.onnx
-    python test_wake_word.py --threshold 0.7            # 감지 임계값 조정
+    python test_wake_word.py --threshold 0.3            # 감지 임계값 조정
     python test_wake_word.py --debug                    # 프레임별 점수 출력
     python test_wake_word.py --device auto              # 마이크 자동 감지
     python test_wake_word.py --list-devices             # 장치 목록
@@ -25,6 +25,8 @@ import subprocess
 import sys
 import time
 import warnings
+import queue
+import shutil
 from pathlib import Path
 
 import numpy as np
@@ -251,11 +253,36 @@ def test_with_file(args: argparse.Namespace) -> None:
 # ── 실시간 마이크 테스트 ──────────────────────────────────────────────────────
 
 def run_live_detection(args: argparse.Namespace) -> None:
-    """arecord로 마이크 스트림 읽어 실시간 감지."""
+    """arecord 또는 sounddevice로 마이크 스트림 읽어 실시간 감지."""
     model_path = Path(args.model)
     session = load_onnx_model(model_path)
     embedder = AudioEmbedder(N_FRAMES)
 
+    print()
+    print("━" * 60)
+    print(f" hi blooming 실시간 감지 시작")
+    print(f" 모델:    {model_path.name}")
+    print(f" 임계값:  {args.threshold}")
+    print(f" 종료:    Ctrl+C")
+    print("━" * 60)
+    print()
+
+    has_arecord = False
+    if shutil.which("arecord") is not None:
+        try:
+            res = subprocess.run(["arecord", "-l"], capture_output=True, text=True)
+            if "no soundcards found" not in res.stderr.lower() and "no soundcards found" not in res.stdout.lower():
+                has_arecord = True
+        except Exception:
+            pass
+
+    if getattr(args, "use_sd", False) or not has_arecord:
+        print("[test] PC 환경(또는 사용 가능한 마이크 없음) - sounddevice를 사용합니다.")
+        _run_live_detection_sd(args, session, embedder)
+    else:
+        _run_live_detection_arecord(args, session, embedder)
+
+def _run_live_detection_arecord(args: argparse.Namespace, session, embedder: AudioEmbedder) -> None:
     # 장치 선택
     device = args.device
     if device == "auto":
@@ -271,20 +298,12 @@ def run_live_detection(args: argparse.Namespace) -> None:
     if device:
         cmd.extend(["-D", device])
 
-    print()
-    print("━" * 60)
-    print(f" hi blooming 실시간 감지 시작")
-    print(f" 모델:    {model_path.name}")
-    print(f" 임계값:  {args.threshold}")
-    print(f" 종료:    Ctrl+C")
-    print("━" * 60)
-    print()
-
     detect_count = 0
     frame_count = 0
     start_time = time.monotonic()
     last_detect_time = 0.0
     suppress_seconds = 2.0
+    proc = None
 
     try:
         proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -323,13 +342,81 @@ def run_live_detection(args: argparse.Namespace) -> None:
     except KeyboardInterrupt:
         print("\n\n[test] 종료")
     finally:
-        if proc.poll() is None:
+        if proc is not None and proc.poll() is None:
             proc.terminate()
             try:
                 proc.wait(timeout=2)
             except subprocess.TimeoutExpired:
                 proc.kill()
 
+    elapsed = time.monotonic() - start_time
+    print()
+    print("━" * 60)
+    print(f" 결과: {detect_count}회 감지 / {elapsed:.0f}초 실행")
+    print("━" * 60)
+
+def _run_live_detection_sd(args: argparse.Namespace, session, embedder: AudioEmbedder) -> None:
+    try:
+        import sounddevice as sd
+    except ImportError:
+        raise RuntimeError("sounddevice 패키지가 필요합니다. `pip install sounddevice`를 실행해주세요.")
+    except OSError as e:
+        if "PortAudio" in str(e):
+            raise RuntimeError(
+                "\n[오류] PortAudio 라이브러리를 찾을 수 없습니다.\n"
+                "WSL(리눅스) 환경인 경우 다음 명령어로 설치해주세요:\n"
+                "  sudo apt-get install libportaudio2\n\n"
+                "※ 단, WSL에서는 마이크 연결이 원활하지 않을 수 있으므로 윈도우 네이티브(CMD)에서 실행하는 것을 가장 권장합니다."
+            ) from e
+        raise e
+
+    q = queue.Queue()
+
+    def callback(indata, frames, time_info, status):
+        if status:
+            print(status, file=sys.stderr)
+        q.put(indata.copy())
+
+    detect_count = 0
+    start_time = time.monotonic()
+    last_detect_time = 0.0
+    suppress_seconds = 2.0
+
+    print("[test] 🎙  대기 중 (sounddevice)... \"hi blooming\"을 말해보세요.")
+    try:
+        with sd.InputStream(samplerate=TARGET_SR, channels=1, dtype='int16', callback=callback):
+            buffer = np.array([], dtype=np.int16)
+            while True:
+                data = q.get()
+                buffer = np.concatenate((buffer, data.flatten()))
+                
+                while len(buffer) >= FRAME_SAMPLES:
+                    frame = buffer[:FRAME_SAMPLES]
+                    buffer = buffer[FRAME_SAMPLES:]
+                    
+                    feat = embedder.process_frame(frame)
+                    if feat is None:
+                        continue
+                        
+                    score = predict_score(session, feat)
+
+                    if args.debug:
+                        elapsed = time.monotonic() - start_time
+                        print(f"\r  [{elapsed:6.1f}s] score={score:.4f}  ", end="", flush=True)
+
+                    now = time.monotonic()
+                    if score >= args.threshold:
+                        if now - last_detect_time < suppress_seconds:
+                            continue   # 억제 기간 중
+                        
+                        detect_count += 1
+                        last_detect_time = now
+                        elapsed = now - start_time
+                        print(f"\n  ★ 감지! [{elapsed:.1f}s] score={score:.4f}  (총 {detect_count}회)")
+                        embedder.reset()
+    except KeyboardInterrupt:
+        print("\n\n[test] 종료")
+    
     elapsed = time.monotonic() - start_time
     print()
     print("━" * 60)
@@ -349,8 +436,8 @@ def build_parser() -> argparse.ArgumentParser:
         help=f"ONNX 모델 경로 (기본: {DEFAULT_MODEL})"
     )
     parser.add_argument(
-        "--threshold", type=float, default=0.5,
-        help="감지 임계값 0~1 (기본: 0.5)"
+        "--threshold", type=float, default=0.2,
+        help="감지 임계값 0~1 (기본: 0.2)"
     )
     parser.add_argument(
         "--device", default="auto",
@@ -367,6 +454,10 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--test-file", default=None,
         help="실시간 대신 파일로 테스트 (WAV 경로)"
+    )
+    parser.add_argument(
+        "--use-sd", action="store_true",
+        help="arecord 대신 sounddevice 모듈을 강제 사용합니다 (PC 환경용)"
     )
     return parser
 

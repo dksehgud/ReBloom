@@ -37,7 +37,8 @@ public record UserCreateRequestDto (
 
     // COUNSELOR
     String hospitalName,
-    String hospitalAddress
+    String hospitalAddress,
+    String hospitalAddressDetail
 ){
 
 }

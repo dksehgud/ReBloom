@@ -3,6 +3,11 @@ plugins {
     alias(libs.plugins.kotlin.android)
 }
 
+val webAppBaseUrl =
+    providers.gradleProperty("WEB_APP_BASE_URL")
+        .orElse("https://example.invalid")
+        .get()
+
 android {
     namespace = "com.rebloom.mobile"
     compileSdk = 36
@@ -15,6 +20,7 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        buildConfigField("String", "WEB_APP_BASE_URL", "\"$webAppBaseUrl\"")
     }
 
     buildTypes {
@@ -25,6 +31,9 @@ android {
                 "proguard-rules.pro"
             )
         }
+    }
+    buildFeatures {
+        buildConfig = true
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11

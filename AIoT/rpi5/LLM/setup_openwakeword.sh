@@ -15,4 +15,4 @@ fi
 
 echo "openWakeWord 설치 완료"
 echo "기본 모델 테스트: REBLOOM_WAKE_ENGINE=openwakeword LLM/run_voice_chat.sh"
-echo "커스텀 모델 사용: REBLOOM_OPENWAKEWORD_MODELS=/path/to/hi_blooming.tflite"
+echo "커스텀 모델 사용: REBLOOM_OPENWAKEWORD_MODELS=/path/to/hi_blooming.onnx"

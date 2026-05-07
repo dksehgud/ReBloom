@@ -2,8 +2,8 @@ package com.ssafy.rebloom.gateway_service.util;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
-import java.nio.charset.StandardCharsets;
 import javax.crypto.SecretKey;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -13,10 +13,9 @@ public class JwtUtil {
 
     private final SecretKey secretKey;
 
-    // ⭐️ 핵심: Auth 서버의 application.yml에 있는 jwt.secret 값과
-    // 게이트웨이의 application.yml에 있는 jwt.secret 값이 "완전히 동일"해야 합니다!
     public JwtUtil(@Value("${jwt.secret}") String secret) {
-        this.secretKey = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
+        byte[] keyBytes = Decoders.BASE64.decode(secret);
+        this.secretKey = Keys.hmacShaKeyFor(keyBytes);
     }
 
     /**
