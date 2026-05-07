@@ -169,6 +169,8 @@ class VoiceChatSttTests(unittest.TestCase):
                 threads=4,
                 fast=True,
             )
+            txt_path = temp_path / "user.txt"
+            self.assertFalse(txt_path.exists())
 
         self.assertEqual(text, "안녕하세요 테스트입니다")
 
@@ -181,12 +183,13 @@ class VoiceChatSttTests(unittest.TestCase):
             model_path.write_bytes(b"fake model")
             txt_path = temp_path / "user.txt"
 
-            def fake_run(command, check):
+            def fake_run(command, check, **kwargs):
                 txt_path.write_text("빠른 테스트", encoding="utf-8")
                 return subprocess.CompletedProcess(command, 0)
 
-            with mock.patch.object(voice_chat, "require_command"):
-                with mock.patch.object(voice_chat.subprocess, "run", side_effect=fake_run) as run:
+            transcribe_globals = voice_chat.transcribe_whisper_cpp.__globals__
+            with mock.patch.dict(transcribe_globals, {"require_command": mock.Mock()}):
+                with mock.patch.object(transcribe_globals["subprocess"], "run", side_effect=fake_run) as run:
                     text = voice_chat.transcribe_whisper_cpp(
                         wav_path,
                         "whisper-cli",
@@ -198,6 +201,7 @@ class VoiceChatSttTests(unittest.TestCase):
 
         command = run.call_args.args[0]
         self.assertEqual(text, "빠른 테스트")
+        self.assertFalse(txt_path.exists())
         self.assertEqual(command[command.index("-t") + 1], "6")
         self.assertIn("--no-timestamps", command)
         self.assertEqual(command[command.index("--beam-size") + 1], "1")
@@ -303,6 +307,28 @@ class VoiceChatSttTests(unittest.TestCase):
         self.assertEqual(text, "안녕하세요")
         play_start_sound.assert_called_once_with(args)
         record_wav.assert_called_once()
+
+    def test_listen_once_resolves_auto_audio_device(self):
+        args = argparse.Namespace(
+            stt_only=False,
+            listen_mode="fixed",
+            record_seconds=5,
+            audio_device="auto",
+            whisper_bin="whisper-cli",
+            whisper_model="/models/ggml-base.bin",
+            language="ko",
+            whisper_threads=4,
+            whisper_fast=False,
+        )
+
+        with mock.patch.object(voice_chat, "choose_alsa_device", return_value="plughw:2,0"):
+            with mock.patch.object(voice_chat, "play_start_sound"):
+                with mock.patch.object(voice_chat, "record_wav") as record_wav:
+                    with mock.patch.object(voice_chat, "transcribe_whisper_cpp", return_value="안녕하세요"):
+                        text = voice_chat.listen_once(args)
+
+        self.assertEqual(text, "안녕하세요")
+        self.assertEqual(record_wav.call_args.args[2], "plughw:2,0")
 
     def test_listen_once_skips_stt_when_vad_detects_no_speech(self):
         args = argparse.Namespace(

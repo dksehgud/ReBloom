@@ -77,9 +77,21 @@ def choose_alsa_device(command_name):
     if result.returncode != 0:
         return ""
 
-    match = re.search(r"^card\s+(\d+):.*device\s+(\d+):", result.stdout, re.MULTILINE)
-    if not match:
+    matches = list(re.finditer(r"^card\s+(\d+):.*device\s+(\d+):.*$", result.stdout, re.MULTILINE))
+    if not matches:
         return ""
+
+    if command_name == "aplay":
+        for match in matches:
+            line = match.group(0).lower()
+            if "usb" in line or "k66" in line:
+                return f"plughw:{match.group(1)},{match.group(2)}"
+        for match in matches:
+            line = match.group(0).lower()
+            if "hdmi" not in line and "vc4" not in line:
+                return f"plughw:{match.group(1)},{match.group(2)}"
+
+    match = matches[0]
     return f"plughw:{match.group(1)},{match.group(2)}"
 
 
@@ -313,11 +325,13 @@ def transcribe_whisper_cpp(wav_path, whisper_bin, whisper_model, language, threa
     ]
     if fast:
         command.extend(["--no-timestamps", "--beam-size", "1", "--best-of", "1"])
-    subprocess.run(command, check=True)
+    subprocess.run(command, check=True, text=True, capture_output=True)
 
     if not txt_path.exists():
         raise RuntimeError(f"STT 결과 파일을 찾을 수 없습니다: {txt_path}")
-    return txt_path.read_text(encoding="utf-8").strip()
+    transcript = txt_path.read_text(encoding="utf-8").strip()
+    txt_path.unlink(missing_ok=True)
+    return transcript
 
 
 def speak_espeak(text, voice):

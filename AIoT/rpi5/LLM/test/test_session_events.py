@@ -1,4 +1,5 @@
 import io
+import http.client
 import json
 import sys
 import unittest
@@ -47,6 +48,24 @@ class SessionEventSenderTests(unittest.TestCase):
                 ],
             },
         )
+
+    def test_flush_handles_remote_disconnect_without_raising(self):
+        sender = session_events.SessionEventSender(
+            url="http://backend.test/api/v1/conversations/sessions/analysis",
+            device_id="rebloom-rpi5-test",
+        )
+        sender.append("user", "안녕")
+        sender.append("assistant", "반가워.")
+
+        with mock.patch.object(
+            session_events.urllib.request,
+            "urlopen",
+            side_effect=http.client.RemoteDisconnected("closed"),
+        ):
+            self.assertFalse(sender.flush(force=True))
+
+        self.assertIn("closed", sender.last_error)
+        self.assertEqual(sender.events, [{"child": "안녕"}, {"bot": "반가워."}])
 
 
 class _FakeResponse:
