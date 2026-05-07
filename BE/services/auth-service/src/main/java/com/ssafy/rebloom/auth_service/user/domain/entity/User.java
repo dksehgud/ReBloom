@@ -51,6 +51,7 @@ public class User extends BaseTime {
 
     @NotNull
     @Enumerated(EnumType.STRING)
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
     @Column(name = "role", nullable = false, insertable = false, updatable = false)
     private UserRole role;
 
@@ -82,5 +83,13 @@ public class User extends BaseTime {
 
     public void changePassword(String password) {
         this.password = password;
+    }
+
+    public String getCode() {
+        return switch (this) {
+            case Parent parent -> parent.getCode();
+            case Counselor counselor -> counselor.getCode();
+            default -> null;
+        };
     }
 }
