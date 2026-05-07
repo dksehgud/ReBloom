@@ -1,4 +1,4 @@
-package com.ssafy.rebloom.report_service.analysis.entity;
+package com.ssafy.rebloom.report_service.analysis.domain.entity;
 
 import java.time.LocalDateTime;
 
@@ -31,13 +31,16 @@ public class ConversationAnalysis extends BaseTime {
     @Column(name = "ended_at", nullable = false)
     private LocalDateTime endedAt;
 
-    @Column(name = "sentiment_label", nullable = false)
-    private String sentimentLabel;
+    @Column(name = "emotion_icon", nullable = false)
+    private String emotionIcon;
+
+    @Column(name = "embedding_text", nullable = false)
+    private String embeddingText;
 
     @Column(nullable = false)
-    private String summary;
+    private String prediction;
 
-    @Column(name = "depression_score", nullable = false)
-    private Float depressionScore;
+    @Column(name = "is_ai_initiated", nullable = false)
+    private boolean aiInitiated;
 }
 

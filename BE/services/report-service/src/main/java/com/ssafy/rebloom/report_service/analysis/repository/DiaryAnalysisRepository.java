@@ -1,29 +1,36 @@
 package com.ssafy.rebloom.report_service.analysis.repository;
 
-import java.time.LocalDate;
-import java.util.List;
-import java.util.UUID;
-
+import com.ssafy.rebloom.report_service.analysis.domain.entity.DiaryAnalysis;
+import com.ssafy.rebloom.report_service.analysis.domain.entity.DiaryAnalysisId;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-import com.ssafy.rebloom.report_service.analysis.entity.DiaryAnalysis;
-import com.ssafy.rebloom.report_service.analysis.entity.DiaryAnalysisId;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.UUID;
+
 
 public interface DiaryAnalysisRepository extends JpaRepository<DiaryAnalysis, DiaryAnalysisId> {
 
-    @Query("""
-            SELECT da
-            FROM DiaryAnalysis da
-            WHERE da.id.userId = :userId
-              AND da.targetDate BETWEEN :startDate AND :endDate
-            ORDER BY da.targetDate ASC
-            """)
+    @Query(value = """
+        SELECT id,
+               user_id,
+               target_date,
+               emotion_icon,
+               embedding_text,
+               prediction,
+               created_at,
+               modified_at
+        FROM diary_analysis
+        WHERE user_id = :userId
+          AND target_date BETWEEN :startDate AND :endDate
+        ORDER BY target_date ASC
+        """, nativeQuery = true)
     List<DiaryAnalysis> findByPeriod(
-            @Param("userId") UUID userId,
-            @Param("startDate") LocalDate startDate,
-            @Param("endDate") LocalDate endDate
+        @Param("userId") UUID userId,
+        @Param("startDate") LocalDateTime startDate,
+        @Param("endDate") LocalDateTime endDate
     );
 }
 

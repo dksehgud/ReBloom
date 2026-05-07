@@ -20,5 +20,7 @@ server:
   port: ${SERVER_PORT:8084}
 
 rebloom:
+  client:
+    auth-service-url: ${AUTH_SERVICE_URL:http://localhost:8081}
   security:
     permit-all: /api/v1/analyses/conversations
