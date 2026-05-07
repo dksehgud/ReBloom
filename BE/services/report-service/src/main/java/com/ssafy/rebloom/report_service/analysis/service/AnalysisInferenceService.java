@@ -6,17 +6,12 @@ import com.ssafy.rebloom.common.exception.ErrorCode;
 import com.ssafy.rebloom.report_service.analysis.dto.request.ConversationSessionCreateRequestDto;
 import com.ssafy.rebloom.report_service.analysis.dto.request.DiaryAnalysisInferenceRequestDto;
 import com.ssafy.rebloom.report_service.analysis.dto.request.RecentInsightInferenceRequestDto;
-import java.nio.charset.StandardCharsets;
 import java.sql.Timestamp;
 import java.time.LocalDate;
-import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -24,7 +19,6 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
@@ -36,9 +30,35 @@ public class AnalysisInferenceService {
 
     private static final String RUNPOD_COMPLETED_STATUS = "COMPLETED";
 
+    /*
+     * RestClient.Builder
+     * - Spring이 제공하는 HTTP 클라이언트 생성기입니다.
+     * - 이 서비스에서는 외부 HTTP API를 두 군데 호출합니다.
+     *   1. RunPod: 일기/대화 우울 단계 추론
+     *   2. Recent Insight API: 최근 7일 추이 한 문장 요약
+     */
     private final RestClient.Builder restClientBuilder;
+
+    /*
+     * JdbcTemplate
+     * - SQL을 직접 실행하게 해주는 Spring 도구입니다.
+     * - 여기서 Repository 대신 JdbcTemplate을 쓰는 이유:
+     *   develop 브랜치의 migration은 컬럼명을 emotion_icon, embedding_text,
+     *   prediction으로 바꿨지만, 일부 Entity 클래스는 아직 이전 컬럼명을
+     *   보고 있습니다.
+     * - 현재 이 서비스는 분석 결과를 DB에 INSERT하지 않습니다.
+     * - generateRecentInsight에서 최근 7일 요약을 만들 때만 기존 분석 결과를
+     *   SELECT하기 위해 사용합니다.
+     */
     private final JdbcTemplate jdbcTemplate;
 
+    /*
+     * @Value("${...}")
+     * - application.yaml 또는 .env.local 환경변수에서 값을 읽어옵니다.
+     * - 지금은 default 값을 넣지 않았습니다.
+     * - 따라서 .env.local에 값이 없으면 애플리케이션이 시작할 때 바로 실패합니다.
+     *   잘못된 endpoint로 조용히 요청하는 것보다 빨리 실패하는 편이 안전합니다.
+     */
     @Value("${RUNPOD_API_KEY}")
     private String runpodApiKey;
 
@@ -57,8 +77,27 @@ public class AnalysisInferenceService {
     @Value("${RECENT_INSIGHT_API_KEY}")
     private String recentInsightApiKey;
 
-    @Transactional
     public void analyzeConversation(ConversationSessionCreateRequestDto request) {
+        /*
+         * 이 메서드는 IoT 기기에서 대화 세션이 끝난 뒤 호출됩니다.
+         *
+         * request 예시:
+         * {
+         *   "session_id": "...",
+         *   "raspberrypi_id": "...",
+         *   "started_at": "...",
+         *   "ended_at": "...",
+         *   "events": [
+         *     { "child": "..." },
+         *     { "bot": "..." }
+         *   ]
+         * }
+         *
+         * 전체 흐름:
+         * 1. events를 RunPod가 원하는 text 형식으로 바꾼다.
+         * 2. RunPod에 text를 보내 prediction을 받는다.
+         * 3. 지금 단계에서는 DB에 저장하지 않고 결과를 로그로만 확인한다.
+         */
         log.info(
             "conversation analysis requested. sessionId={}, raspberrypiId={}, startedAt={}, endedAt={}, eventCount={}",
             request.sessionId(),
@@ -67,25 +106,6 @@ public class AnalysisInferenceService {
             request.endedAt(),
             request.events().size()
         );
-
-        /*
-         * IoT devices currently send only raspberrypi_id, not child/user_id.
-         *
-         * The correct long-term implementation is:
-         *   1. Authenticate the device request with a device token.
-         *   2. Ask auth-service which child is paired with request.raspberrypiId().
-         *   3. Save the analysis using that child id as conversation_analysis.user_id.
-         *
-         * There is no auth-service internal endpoint for that lookup in the current
-         * codebase, and the report-service datasource points at the report database,
-         * so this file cannot safely join auth-service.devices directly. To keep the
-         * ingestion pipeline usable in the meantime, we derive a stable temporary UUID
-         * from raspberrypi_id. This is deterministic: the same raspberrypi_id always
-         * maps to the same UUID, so daily aggregation still works for IoT test data.
-         * Replace this method with an auth-service lookup as soon as the endpoint is
-         * available.
-         */
-        UUID userId = resolveTemporaryUserIdByRaspberrypiId(request.raspberrypiId());
 
         /*
          * RunPod receives only one "text" field. Conversation events are flattened in
@@ -101,21 +121,27 @@ public class AnalysisInferenceService {
         String text = buildConversationText(request.events());
         JsonNode output = requestRunpod(text);
 
-        UUID analysisId = UUID.randomUUID();
-        saveConversationAnalysis(analysisId, userId, request, output);
-        saveKeywords("conversation_keywords", analysisId, userId, output);
-
         log.info(
-            "conversation analysis saved. sessionId={}, raspberrypiId={}, userId={}, prediction={}",
+            "conversation analysis completed. sessionId={}, raspberrypiId={}, prediction={}, output={}",
             request.sessionId(),
             request.raspberrypiId(),
-            userId,
-            readRequiredText(output, "prediction")
+            readRequiredText(output, "prediction"),
+            output
         );
     }
 
-    @Transactional
     public void analyzeDiary(DiaryAnalysisInferenceRequestDto request) {
+        /*
+         * 이 메서드는 일기 분석 요청이 들어왔을 때 호출됩니다.
+         *
+         * 대화와 달리 일기 DTO에는 user_id가 이미 들어있습니다.
+         * 그래서 raspberrypi_id -> userId 변환 과정이 필요 없습니다.
+         *
+         * 전체 흐름:
+         * 1. request.content()를 RunPod input.text로 보낸다.
+         * 2. RunPod output에서 embedding_text, prediction, keywords를 읽는다.
+         * 3. 지금 단계에서는 DB에 저장하지 않고 결과를 로그로만 확인한다.
+         */
         log.info(
             "diary analysis requested. diaryId={}, userId={}, targetDate={}",
             request.diaryId(),
@@ -129,20 +155,32 @@ public class AnalysisInferenceService {
          */
         JsonNode output = requestRunpod(request.content());
 
-        UUID analysisId = UUID.randomUUID();
-        saveDiaryAnalysis(analysisId, request, output);
-        saveKeywords("diary_keywords", analysisId, request.userId(), output);
-
         log.info(
-            "diary analysis saved. diaryId={}, userId={}, prediction={}",
+            "diary analysis completed. diaryId={}, userId={}, prediction={}, output={}",
             request.diaryId(),
             request.userId(),
-            readRequiredText(output, "prediction")
+            readRequiredText(output, "prediction"),
+            output
         );
     }
 
-    @Transactional
     public void generateRecentInsight(RecentInsightInferenceRequestDto request) {
+        /*
+         * 이 메서드는 최근 우울 단계 추이를 한 문장으로 요약할 때 호출됩니다.
+         *
+         * 주의:
+         * - 이 메서드는 RunPod를 호출하지 않습니다.
+         * - RunPod는 일기/대화 각각의 prediction을 만드는 모델 추론용입니다.
+         * - 최근 7일 요약은 별도의 RECENT_INSIGHT_API_URL API를 호출합니다.
+         *
+         * 전체 흐름:
+         * 1. 요청 날짜 범위가 올바른지 확인한다.
+         * 2. 최근 최대 7일 동안 저장된 diary_analysis / conversation_analysis를 읽는다.
+         * 3. 대화는 하루에 여러 세션이 있을 수 있으므로 날짜별 가장 높은 단계만 고른다.
+         * 4. 일기 단계와 대화 단계 중에서도 날짜별 최대 단계를 계산한다.
+         * 5. 이 데이터를 text prompt로 만들어 Recent Insight API에 보낸다.
+         * 6. 지금 단계에서는 DB에 저장하지 않고 summary를 로그로만 확인한다.
+         */
         validateDateRange(request);
         log.info(
             "recent insight requested. userId={}, startDate={}, endDate={}",
@@ -174,14 +212,13 @@ public class AnalysisInferenceService {
         String insightPrompt = buildRecentInsightPrompt(request, summaries);
         JsonNode output = requestRecentInsightApi(insightPrompt);
 
-        saveRecentTrend(request.userId(), output);
-
         log.info(
-            "recent insight saved. userId={}, startDate={}, endDate={}, dayCount={}",
+            "recent insight completed. userId={}, startDate={}, endDate={}, dayCount={}, summary={}",
             request.userId(),
             request.startDate(),
             request.endDate(),
-            summaries.size()
+            summaries.size(),
+            readInsightText(output)
         );
     }
 
@@ -195,6 +232,18 @@ public class AnalysisInferenceService {
         validateRunpodText(text);
 
         try {
+            /*
+             * RunPod 요청 body는 반드시 아래 형태여야 합니다.
+             *
+             * {
+             *   "input": {
+             *     "text": "분석할 텍스트"
+             *   }
+             * }
+             *
+             * response 전체에는 status, output 등이 들어옵니다.
+             * 이 서비스는 status가 COMPLETED인지 확인한 뒤 output만 반환합니다.
+             */
             JsonNode response = restClientBuilder
                 .baseUrl(runpodBaseUrl)
                 .build()
@@ -232,6 +281,21 @@ public class AnalysisInferenceService {
         validateRecentInsightText(text);
 
         try {
+            /*
+             * 최근 추이 API 요청 body는 RunPod와 다릅니다.
+             *
+             * request:
+             * {
+             *   "text": "최근 7일 우울 단계 데이터와 지시문"
+             * }
+             *
+             * response:
+             * {
+             *   "summary": "최근 우울 단계 추이를 설명하는 한 문장"
+             * }
+             *
+             * 그래서 이 메서드는 response.summary가 있는지 검사합니다.
+             */
             JsonNode response = restClientBuilder
                 .build()
                 .post()
@@ -283,6 +347,21 @@ public class AnalysisInferenceService {
     }
 
     private String buildConversationText(List<ConversationSessionCreateRequestDto.ConversationEventDto> events) {
+        /*
+         * IoT에서 받은 events 배열을 RunPod 모델이 이해하는 한 덩어리 text로 바꿉니다.
+         *
+         * 입력 events:
+         * [
+         *   { "child": "안녕" },
+         *   { "bot": "응, 안녕" }
+         * ]
+         *
+         * 변환 결과:
+         * User: 안녕
+         * Bot: 응, 안녕
+         *
+         * child는 User, bot은 Bot으로 표시합니다.
+         */
         List<String> lines = new ArrayList<>();
         for (ConversationSessionCreateRequestDto.ConversationEventDto event : events) {
             if (StringUtils.hasText(event.child())) {
@@ -312,118 +391,18 @@ public class AnalysisInferenceService {
         return normalized;
     }
 
-    private UUID resolveTemporaryUserIdByRaspberrypiId(String raspberrypiId) {
-        return UUID.nameUUIDFromBytes(("raspberrypi:" + raspberrypiId).getBytes(StandardCharsets.UTF_8));
-    }
-
-    private void saveConversationAnalysis(
-        UUID analysisId,
-        UUID userId,
-        ConversationSessionCreateRequestDto request,
-        JsonNode output
-    ) {
-        jdbcTemplate.update(
-            """
-            INSERT INTO conversation_analysis (
-                id,
-                user_id,
-                started_at,
-                ended_at,
-                emotion_icon,
-                embedding_text,
-                prediction
-            )
-            VALUES (?, ?, ?, ?, ?, ?, ?)
-            """,
-            analysisId,
-            userId,
-            toTimestamp(request.startedAt()),
-            toTimestamp(request.endedAt()),
-            readText(output, "emotion_icon", "UNKNOWN"),
-            readRequiredText(output, "embedding_text"),
-            readPrediction(output)
-        );
-    }
-
-    private void saveDiaryAnalysis(UUID analysisId, DiaryAnalysisInferenceRequestDto request, JsonNode output) {
-        jdbcTemplate.update(
-            """
-            INSERT INTO diary_analysis (
-                id,
-                user_id,
-                target_date,
-                emotion_icon,
-                embedding_text,
-                prediction
-            )
-            VALUES (?, ?, ?, ?, ?, ?)
-            """,
-            analysisId,
-            request.userId(),
-            request.targetDate(),
-            readText(output, "emotion_icon", "UNKNOWN"),
-            readRequiredText(output, "embedding_text"),
-            readPrediction(output)
-        );
-    }
-
-    private void saveKeywords(String relationTableName, UUID analysisId, UUID userId, JsonNode output) {
-        /*
-         * RunPod returns output.keywords as an array of strings. The schema stores
-         * keywords once in analysis_keywords and connects them through either
-         * conversation_keywords or diary_keywords. Because analysis_keywords.keyword
-         * has no unique constraint in the current migration, this method first reuses
-         * an existing keyword row if one exists and otherwise creates the next integer
-         * keyword_id. If high write concurrency becomes a concern, add a unique index
-         * on keyword and replace this with an upsert.
-         */
-        JsonNode keywords = output.path("keywords");
-        if (!keywords.isArray()) {
-            return;
-        }
-
-        Set<String> uniqueKeywords = new LinkedHashSet<>();
-        for (JsonNode keywordNode : keywords) {
-            String keyword = keywordNode.asText(null);
-            if (StringUtils.hasText(keyword)) {
-                uniqueKeywords.add(keyword.trim());
-            }
-        }
-
-        for (String keyword : uniqueKeywords) {
-            Integer keywordId = findOrCreateKeyword(keyword);
-            jdbcTemplate.update(
-                "INSERT INTO " + relationTableName + " (keyword_id, analysis_id, user_id) VALUES (?, ?, ?)",
-                keywordId,
-                analysisId,
-                userId
-            );
-        }
-    }
-
-    private Integer findOrCreateKeyword(String keyword) {
-        List<Integer> ids = jdbcTemplate.queryForList(
-            "SELECT keyword_id FROM analysis_keywords WHERE keyword = ? ORDER BY keyword_id LIMIT 1",
-            Integer.class,
-            keyword
-        );
-        if (!ids.isEmpty()) {
-            return ids.get(0);
-        }
-
-        Integer nextId = jdbcTemplate.queryForObject(
-            "SELECT COALESCE(MAX(keyword_id), 0) + 1 FROM analysis_keywords",
-            Integer.class
-        );
-        jdbcTemplate.update(
-            "INSERT INTO analysis_keywords (keyword_id, keyword) VALUES (?, ?)",
-            nextId,
-            keyword
-        );
-        return nextId;
-    }
-
     private List<DailyPredictionSummary> loadDailyPredictionSummaries(RecentInsightInferenceRequestDto request) {
+        /*
+         * 최근 추이 요약에 필요한 데이터를 DB에서 읽습니다.
+         *
+         * 사용 범위:
+         * - request.endDate 기준 최대 7일
+         * - request.startDate가 더 늦으면 startDate부터 endDate까지만 사용
+         *
+         * 예:
+         * - startDate=2026-05-01, endDate=2026-05-10 -> 실제 사용: 2026-05-04 ~ 2026-05-10
+         * - startDate=2026-05-08, endDate=2026-05-10 -> 실제 사용: 2026-05-08 ~ 2026-05-10
+         */
         Map<LocalDate, DailyPredictionSummary> summaries = new LinkedHashMap<>();
         LocalDate startDate = recentSevenDayStartDate(request);
 
@@ -474,6 +453,14 @@ public class AnalysisInferenceService {
         RecentInsightInferenceRequestDto request,
         List<DailyPredictionSummary> summaries
     ) {
+        /*
+         * Recent Insight API로 보낼 text를 만듭니다.
+         *
+         * API에는 JSON으로 { "text": prompt }가 전송됩니다.
+         * prompt 안에는 날짜별 우울 단계 데이터가 들어갑니다.
+         *
+         * daily_max는 diary와 conversation_daily_max 중 더 심한 단계를 의미합니다.
+         */
         LocalDate startDate = recentSevenDayStartDate(request);
         StringBuilder prompt = new StringBuilder();
         prompt.append("Summarize the recent depression-stage trend in exactly one Korean sentence.\n");
@@ -513,36 +500,6 @@ public class AnalysisInferenceService {
         return sevenDayStartDate;
     }
 
-    private void saveRecentTrend(UUID userId, JsonNode output) {
-        jdbcTemplate.update(
-            """
-            INSERT INTO recent_trend (
-                id,
-                user_id,
-                report_date,
-                summary
-            )
-            VALUES (?, ?, ?, ?)
-            """,
-            UUID.randomUUID(),
-            userId,
-            LocalDate.now(),
-            readInsightText(output)
-        );
-    }
-
-    private Timestamp toTimestamp(OffsetDateTime dateTime) {
-        return Timestamp.valueOf(dateTime.toLocalDateTime());
-    }
-
-    private String readPrediction(JsonNode output) {
-        String prediction = readRequiredText(output, "prediction");
-        if (!DepressionStage.isValid(prediction)) {
-            throw new CustomException("RunPod prediction is not supported: " + prediction, ErrorCode.INVALID_FORMAT);
-        }
-        return prediction;
-    }
-
     private String readInsightText(JsonNode output) {
         for (String fieldName : List.of("summary", "embedding_text", "insight", "text")) {
             String value = readText(output, fieldName, null);
@@ -570,6 +527,17 @@ public class AnalysisInferenceService {
     }
 
     private enum DepressionStage {
+        /*
+         * RunPod prediction으로 올 수 있는 값입니다.
+         *
+         * rank는 심각도 비교용 숫자입니다.
+         * minimal  = 0
+         * mild     = 1
+         * moderate = 2
+         * severe   = 3
+         *
+         * 숫자가 클수록 더 높은 우울 단계입니다.
+         */
         MINIMAL("minimal", 0),
         MILD("mild", 1),
         MODERATE("moderate", 2),
