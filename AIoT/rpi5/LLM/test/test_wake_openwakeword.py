@@ -12,6 +12,45 @@ import wake_openwakeword
 
 
 class WakeOpenWakeWordTests(unittest.TestCase):
+    def test_successful_conversation_returns_to_wake_wait(self):
+        args = argparse.Namespace(
+            audio_device="auto",
+            model_paths=[],
+            python_bin=sys.executable,
+            output_device="",
+            aplay_bin="aplay",
+            ack_sound="off",
+            ack_delay_seconds=0,
+            debug=False,
+            threshold=0.5,
+            rearm_seconds=0,
+            no_speech_suppress_seconds=15,
+        )
+        frame = b"\0" * wake_openwakeword.FRAME_BYTES
+        fake_model = mock.Mock()
+        fake_model.predict.side_effect = [
+            {"alexa": 0.9},
+            KeyboardInterrupt,
+        ]
+        success = subprocess.CompletedProcess(args=[], returncode=0)
+
+        with mock.patch.object(wake_openwakeword, "require_command"):
+            with mock.patch.object(wake_openwakeword, "resolve_audio_device", return_value="plughw:3,0"):
+                with mock.patch.object(wake_openwakeword, "load_model", return_value=fake_model):
+                    with mock.patch.object(wake_openwakeword, "play_wake_ack"):
+                        with mock.patch.object(wake_openwakeword.subprocess, "run", return_value=success) as run:
+                            with mock.patch.object(
+                                wake_openwakeword.subprocess,
+                                "Popen",
+                                side_effect=[_FakeProcess(frame), _FakeProcess(frame)],
+                            ) as popen:
+                                with self.assertRaises(KeyboardInterrupt):
+                                    wake_openwakeword.run_detector(args, [])
+
+        run.assert_called_once()
+        self.assertEqual(popen.call_count, 2)
+        fake_model.reset.assert_called_once_with()
+
     def test_no_recognized_speech_returns_to_wake_wait(self):
         args = argparse.Namespace(
             audio_device="auto",
@@ -20,6 +59,7 @@ class WakeOpenWakeWordTests(unittest.TestCase):
             output_device="",
             aplay_bin="aplay",
             ack_sound="off",
+            ack_delay_seconds=0,
             debug=False,
             threshold=0.5,
             rearm_seconds=2,
@@ -57,6 +97,7 @@ class WakeOpenWakeWordTests(unittest.TestCase):
             output_device="",
             aplay_bin="aplay",
             ack_sound="off",
+            ack_delay_seconds=0,
             debug=False,
             threshold=0.5,
             rearm_seconds=0,

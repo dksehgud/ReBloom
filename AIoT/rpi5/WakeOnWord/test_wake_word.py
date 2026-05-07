@@ -9,7 +9,7 @@ Raspberry Pi 5에서 실행하기 위한 스크립트입니다.
 사용법:
     python test_wake_word.py                             # 기본 테스트
     python test_wake_word.py --model models/hi_blooming.onnx
-    python test_wake_word.py --threshold 0.7            # 감지 임계값 조정
+    python test_wake_word.py --threshold 0.3            # 감지 임계값 조정
     python test_wake_word.py --debug                    # 프레임별 점수 출력
     python test_wake_word.py --device auto              # 마이크 자동 감지
     python test_wake_word.py --list-devices             # 장치 목록
@@ -349,8 +349,8 @@ def build_parser() -> argparse.ArgumentParser:
         help=f"ONNX 모델 경로 (기본: {DEFAULT_MODEL})"
     )
     parser.add_argument(
-        "--threshold", type=float, default=0.5,
-        help="감지 임계값 0~1 (기본: 0.5)"
+        "--threshold", type=float, default=0.2,
+        help="감지 임계값 0~1 (기본: 0.2)"
     )
     parser.add_argument(
         "--device", default="auto",

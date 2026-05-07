@@ -2,68 +2,17 @@ import { useState } from 'react'
 
 import AuthInput from '../../../components/auth/AuthInput'
 import CommonModalLayout from '../../../components/organisms/Modal/CommonModalLayout'
+import {
+  formatChildAddress,
+  type ChildAddress,
+} from '../../../shared/types/childAddress'
+import { openDaumPostcodePopup } from '../../../shared/utils/daumPostcode'
 
 type ChildProfileAddressModalProps = {
   profileName: string
-  address: string
+  address: ChildAddress
   onClose: () => void
-  onSave: (address: string) => void
-}
-
-type DaumPostcodeData = {
-  address: string
-  roadAddress: string
-  jibunAddress: string
-  zonecode: string
-}
-
-declare global {
-  interface Window {
-    daum?: {
-      Postcode: new (options: {
-        oncomplete: (data: DaumPostcodeData) => void
-      }) => {
-        open: (options?: { popupTitle?: string }) => void
-      }
-    }
-  }
-}
-
-const DAUM_POSTCODE_SCRIPT_SRC =
-  'https://t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js'
-
-function loadDaumPostcodeScript() {
-  if (typeof window === 'undefined') {
-    return Promise.reject(new Error('window is not defined'))
-  }
-
-  if (window.daum?.Postcode) {
-    return Promise.resolve()
-  }
-
-  const existingScript = document.querySelector<HTMLScriptElement>(
-    `script[src="${DAUM_POSTCODE_SCRIPT_SRC}"]`,
-  )
-
-  if (existingScript) {
-    return new Promise<void>((resolve, reject) => {
-      existingScript.addEventListener('load', () => resolve(), { once: true })
-      existingScript.addEventListener(
-        'error',
-        () => reject(new Error('postcode script failed to load')),
-        { once: true },
-      )
-    })
-  }
-
-  return new Promise<void>((resolve, reject) => {
-    const script = document.createElement('script')
-    script.src = DAUM_POSTCODE_SCRIPT_SRC
-    script.async = true
-    script.onload = () => resolve()
-    script.onerror = () => reject(new Error('postcode script failed to load'))
-    document.body.appendChild(script)
-  })
+  onSave: (address: ChildAddress) => void
 }
 
 function ChildProfileAddressModal({
@@ -72,7 +21,7 @@ function ChildProfileAddressModal({
   onClose,
   onSave,
 }: ChildProfileAddressModalProps) {
-  const [draftAddress, setDraftAddress] = useState('')
+  const [draftAddress, setDraftAddress] = useState<ChildAddress>(address)
   const [isLoadingScript, setIsLoadingScript] = useState(false)
   const [scriptError, setScriptError] = useState<string | null>(null)
 
@@ -80,24 +29,28 @@ function ChildProfileAddressModal({
     try {
       setIsLoadingScript(true)
       setScriptError(null)
-      await loadDaumPostcodeScript()
 
-      const postcode = new window.daum!.Postcode({
-        oncomplete: (data) => {
+      await openDaumPostcodePopup(
+        (data) => {
           const nextAddress = data.roadAddress || data.address || data.jibunAddress
-          setDraftAddress(nextAddress)
+          setDraftAddress((prev) => ({
+            ...prev,
+            baseAddress: nextAddress,
+          }))
         },
-      })
-
-      postcode.open({ popupTitle: '주소 검색' })
+        '프로필 주소 검색',
+      )
     } catch {
-      setScriptError('주소 검색창을 여는 데 실패했어요. 다시 시도해주세요.')
+      setScriptError('주소 검색창을 여는 데 실패했어요. 기본 주소를 직접 입력해 주세요.')
     } finally {
       setIsLoadingScript(false)
     }
   }
 
-  const nextAddress = draftAddress.trim()
+  const currentAddress = formatChildAddress(address)
+  const nextAddress = formatChildAddress(draftAddress)
+  const isSaveDisabled =
+    !draftAddress.baseAddress.trim() || !draftAddress.detailAddress.trim()
 
   return (
     <CommonModalLayout
@@ -114,8 +67,8 @@ function ChildProfileAddressModal({
           <button
             type="button"
             className={`auth-button ${nextAddress ? 'is-primary' : 'is-neutral'}`}
-            disabled={!nextAddress}
-            onClick={() => onSave(nextAddress)}
+            disabled={isSaveDisabled}
+            onClick={() => onSave(draftAddress)}
           >
             저장
           </button>
@@ -135,21 +88,21 @@ function ChildProfileAddressModal({
             </div>
             <div className="child-profile-address-modal__address-box">
               <p className="child-profile-address-modal__address-text">
-                {address || '등록된 주소가 없습니다.'}
+                {currentAddress || '등록된 주소가 없습니다.'}
               </p>
             </div>
           </div>
 
           <div className="child-profile-address-modal__field child-profile-address-modal__field--change">
-            <div className="field-label-row">
-              <span className="field-label">주소 변경하기</span>
+            <div className="field-label-row child-profile-address-modal__section-label-row">
+              <span className="field-label">주소 변경</span>
             </div>
+
             <AuthInput
-              label=""
-              id="child-profile-next-address"
-              readOnly
+              label="기본 주소"
+              id="child-profile-next-base-address"
               placeholder="주소 검색"
-              value={draftAddress}
+              value={draftAddress.baseAddress}
               action={
                 <button
                   type="button"
@@ -163,10 +116,32 @@ function ChildProfileAddressModal({
                 </button>
               }
               error={scriptError ?? undefined}
+              help={
+                !draftAddress.baseAddress && !scriptError
+                  ? '기본 주소는 필수 입력 값이에요.'
+                  : undefined
+              }
+              onChange={(event) =>
+                setDraftAddress((prev) => ({
+                  ...prev,
+                  baseAddress: event.target.value,
+                }))
+              }
             />
-            <p className="child-profile-address-modal__field-help">
-              {scriptError ? scriptError : '검색한 새 주소가 입력창에 표시돼요.'}
-            </p>
+
+            <AuthInput
+              label="상세 주소"
+              id="child-profile-next-detail-address"
+              placeholder="상세 주소"
+              value={draftAddress.detailAddress}
+              help={!draftAddress.detailAddress ? '상세 주소는 필수 입력 값이에요.' : undefined}
+              onChange={(event) =>
+                setDraftAddress((prev) => ({
+                  ...prev,
+                  detailAddress: event.target.value,
+                }))
+              }
+            />
           </div>
         </div>
       </div>

@@ -1,5 +1,7 @@
 import argparse
 import contextlib
+import inspect
+import json
 import os
 import shutil
 import subprocess
@@ -22,6 +24,7 @@ FRAME_MS = 80
 FRAME_SAMPLES = int(SAMPLE_RATE * FRAME_MS / 1000)
 FRAME_BYTES = FRAME_SAMPLES * 2
 NO_RECOGNIZED_SPEECH_EXIT_CODE = 20
+DEFAULT_WAKE_LABEL = "hi_blooming"
 
 
 def require_command(command):
@@ -32,6 +35,10 @@ def require_command(command):
 
 def split_csv(value):
     return [item.strip() for item in value.split(",") if item.strip()]
+
+
+def default_model_paths():
+    return split_csv(os.getenv("REBLOOM_OPENWAKEWORD_MODELS", ""))
 
 
 @contextlib.contextmanager
@@ -106,19 +113,27 @@ def load_model(model_paths):
             "`python3 -m pip install openwakeword` 후 다시 실행하세요."
         ) from exc
 
-    if os.getenv("REBLOOM_OPENWAKEWORD_DEBUG", "0") == "1":
-        if model_paths:
+    def create_model():
+        if not model_paths:
+            return Model()
+
+        parameters = inspect.signature(Model.__init__).parameters
+        try:
+            if "wakeword_model_paths" in parameters:
+                return Model(wakeword_model_paths=model_paths)
             return Model(wakeword_models=model_paths)
-        return Model()
+        except (IndexError, TypeError):
+            return load_wakeonword_model(model_paths)
+
+    if os.getenv("REBLOOM_OPENWAKEWORD_DEBUG", "0") == "1":
+        return create_model()
 
     with suppress_stderr_fd():
         with open(os.devnull, "w", encoding="utf-8") as devnull:
             with contextlib.redirect_stderr(devnull):
                 with warnings.catch_warnings():
                     warnings.simplefilter("ignore")
-                    if model_paths:
-                        return Model(wakeword_models=model_paths)
-                    return Model()
+                    return create_model()
 
 
 def prediction_score(prediction):
@@ -132,6 +147,117 @@ def reset_wake_model(model):
     reset = getattr(model, "reset", None)
     if callable(reset):
         reset()
+
+
+def wake_label_from_meta(model_path):
+    meta_path = Path(model_path).with_name(f"{Path(model_path).stem}_meta.json")
+    if not meta_path.exists():
+        return DEFAULT_WAKE_LABEL
+
+    try:
+        meta = json.loads(meta_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return DEFAULT_WAKE_LABEL
+
+    wake_word = str(meta.get("wake_word", "")).strip()
+    if not wake_word:
+        return DEFAULT_WAKE_LABEL
+    return wake_word.replace(" ", "_")
+
+
+class WakeOnWordModel:
+    def __init__(self, model_path):
+        import onnxruntime as ort
+
+        self.model_path = str(model_path)
+        self.label = wake_label_from_meta(model_path)
+        self.session = ort.InferenceSession(self.model_path, providers=["CPUExecutionProvider"])
+        self.input_name = self.session.get_inputs()[0].name
+        input_shape = self.session.get_inputs()[0].shape
+        self.window_frames = int(input_shape[1]) if len(input_shape) >= 3 and isinstance(input_shape[1], int) else 16
+        self.feature_dim = int(input_shape[2]) if len(input_shape) >= 3 and isinstance(input_shape[2], int) else 40
+        self.embedder = None
+        self.mel_filters = self._build_mel_filters()
+        if self.feature_dim != 40:
+            with suppress_stderr_fd():
+                with open(os.devnull, "w", encoding="utf-8") as devnull:
+                    with contextlib.redirect_stderr(devnull):
+                        from openwakeword.utils import AudioFeatures
+            self.embedder = AudioFeatures()
+        self.buffer = []
+
+    def reset(self):
+        self.buffer.clear()
+
+    def predict(self, frame_int16):
+        embedding = self._embedding(frame_int16)
+        if embedding is None:
+            return {}
+
+        self.buffer.append(embedding)
+        if len(self.buffer) > self.window_frames:
+            self.buffer.pop(0)
+        if len(self.buffer) < self.window_frames:
+            return {self.label: 0.0}
+
+        features = np.array(self.buffer, dtype=np.float32)
+        if self.feature_dim == 40:
+            features = self._power_to_db(features)
+        features = features[np.newaxis]
+        output = self.session.run(None, {self.input_name: features})[0]
+        return {self.label: float(output.flatten()[0])}
+
+    def _embedding(self, frame_int16):
+        if self.feature_dim == 40:
+            return self._mel_embedding(frame_int16)
+
+        try:
+            model = getattr(self.embedder, "embed_model", None) or getattr(self.embedder, "embedding_model", None)
+            embedding = model.predict(frame_int16) if model else None
+        except Exception:
+            return None
+        if embedding is None:
+            return None
+        return embedding.flatten()
+
+    def _mel_embedding(self, frame_int16):
+        audio = frame_int16.astype(np.float32) / 32767.0
+        windowed = audio * np.hanning(len(audio)).astype(np.float32)
+        spectrum = np.abs(np.fft.rfft(windowed)) ** 2
+        mel_energy = self.mel_filters @ spectrum
+        return mel_energy.astype(np.float32)
+
+    def _power_to_db(self, mel_energy):
+        reference = float(np.max(mel_energy))
+        if reference <= 1e-10:
+            return np.full_like(mel_energy, -80.0, dtype=np.float32)
+
+        db = 10.0 * np.log10(np.maximum(mel_energy, 1e-10) / reference)
+        return np.maximum(db, -80.0).astype(np.float32)
+
+    def _build_mel_filters(self):
+        fft_bins = FRAME_SAMPLES // 2 + 1
+        frequencies = np.linspace(0, SAMPLE_RATE / 2, fft_bins)
+        mel_min = 2595 * np.log10(1 + 20 / 700)
+        mel_max = 2595 * np.log10(1 + (SAMPLE_RATE / 2) / 700)
+        mel_points = np.linspace(mel_min, mel_max, self.feature_dim + 2)
+        hz_points = 700 * (10 ** (mel_points / 2595) - 1)
+
+        filters = np.zeros((self.feature_dim, fft_bins), dtype=np.float32)
+        for index in range(self.feature_dim):
+            left, center, right = hz_points[index:index + 3]
+            up = (frequencies - left) / max(center - left, 1e-6)
+            down = (right - frequencies) / max(right - center, 1e-6)
+            filters[index] = np.maximum(0, np.minimum(up, down))
+
+        row_sums = filters.sum(axis=1, keepdims=True)
+        return filters / np.maximum(row_sums, 1e-6)
+
+
+def load_wakeonword_model(model_paths):
+    if len(model_paths) != 1:
+        raise RuntimeError("WakeOnWord 모델은 한 번에 하나만 지정할 수 있습니다.")
+    return WakeOnWordModel(model_paths[0])
 
 
 def run_detector(args, extra_voice_args):
@@ -174,7 +300,7 @@ def run_detector(args, extra_voice_args):
                 prediction = model.predict(audio)
                 wake_name, score = prediction_score(prediction)
                 if args.debug and wake_name:
-                    print(f"[wake-debug] {wake_name}={score:.3f}", flush=True)
+                    print(f"[wake-debug] {wake_name}={score:.6f}", flush=True)
                 if score >= args.threshold:
                     now = time.monotonic()
                     if wake_name == suppressed_wake_name and now < suppress_until:
@@ -187,16 +313,21 @@ def run_detector(args, extra_voice_args):
                         process.wait(timeout=1)
                     except subprocess.TimeoutExpired:
                         process.kill()
+                    reset_wake_model(model)
+                    if args.ack_delay_seconds > 0:
+                        time.sleep(args.ack_delay_seconds)
                     play_wake_ack(args)
                     result = subprocess.run(voice_command, check=False)
-                    reset_wake_model(model)
                     if result.returncode == NO_RECOGNIZED_SPEECH_EXIT_CODE:
                         print("[wake] 인식된 문장이 없어 다시 호출어 대기 상태로 돌아갑니다.", flush=True)
                         if args.no_speech_suppress_seconds > 0:
                             suppressed_wake_name = wake_name
                             suppress_until = time.monotonic() + args.no_speech_suppress_seconds
+                    elif result.returncode != 0:
+                        print(f"[wake] 대화 프로세스가 오류로 끝났습니다: exit={result.returncode}", flush=True)
                     if args.rearm_seconds > 0:
                         time.sleep(args.rearm_seconds)
+                    print("[wake] 호출어 대기 상태로 돌아갑니다.", flush=True)
                     break
         finally:
             if process.poll() is None:
@@ -212,9 +343,9 @@ def build_parser():
     parser.add_argument("--audio-device", default=os.getenv("REBLOOM_AUDIO_DEVICE", "auto"))
     parser.add_argument(
         "--model-paths",
-        default=split_csv(os.getenv("REBLOOM_OPENWAKEWORD_MODELS", "")),
+        default=default_model_paths(),
         nargs="*",
-        help="openWakeWord .tflite 모델 경로 목록입니다. 없으면 기본 모델을 사용합니다.",
+        help="openWakeWord .onnx/.tflite 모델 경로 목록입니다. 없으면 openWakeWord 기본 모델을 사용합니다.",
     )
     parser.add_argument("--threshold", type=float, default=float(os.getenv("REBLOOM_OPENWAKEWORD_THRESHOLD", "0.5")))
     parser.add_argument(
@@ -232,6 +363,12 @@ def build_parser():
     parser.add_argument("--python-bin", default=os.getenv("REBLOOM_PYTHON", ""))
     parser.add_argument("--output-device", default=os.getenv("REBLOOM_OUTPUT_DEVICE", "auto"))
     parser.add_argument("--aplay-bin", default=os.getenv("REBLOOM_APLAY_BIN", "aplay"))
+    parser.add_argument(
+        "--ack-delay-seconds",
+        type=float,
+        default=float(os.getenv("REBLOOM_OPENWAKEWORD_ACK_DELAY_SECONDS", "1")),
+        help="호출어 감지 후 비프음을 재생하기 전 대기 시간입니다.",
+    )
     parser.add_argument(
         "--ack-sound",
         choices=["on", "off"],

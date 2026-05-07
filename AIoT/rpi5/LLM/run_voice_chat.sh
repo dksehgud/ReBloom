@@ -7,7 +7,7 @@ PROJECT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 PYTHON_BIN="${REBLOOM_PYTHON:-$PROJECT_DIR/venv/bin/python}"
 OLLAMA_HOST_URL="${REBLOOM_OLLAMA_HEALTH_URL:-http://127.0.0.1:11434/api/tags}"
 OLLAMA_CHAT_URL="${REBLOOM_OLLAMA_CHAT_URL:-http://127.0.0.1:11434/api/chat}"
-OLLAMA_MODEL="${REBLOOM_MODEL:-rebloom-gemma4}"
+OLLAMA_MODEL="${REBLOOM_MODEL:-qwen2.5:1.5b}"
 OLLAMA_KEEP_ALIVE="${REBLOOM_OLLAMA_KEEP_ALIVE:-30m}"
 
 if [ -f "$SCRIPT_DIR/.env" ]; then
@@ -15,6 +15,10 @@ if [ -f "$SCRIPT_DIR/.env" ]; then
     # shellcheck disable=SC1091
     . "$SCRIPT_DIR/.env"
     set +a
+fi
+
+if [ -z "${REBLOOM_WAKE_ENGINE:-}" ]; then
+    export REBLOOM_WAKE_ENGINE="openwakeword"
 fi
 
 if [ -z "${REBLOOM_WHISPER_BIN:-}" ] && [ -x "$HOME/whisper.cpp/build/bin/whisper-cli" ]; then
@@ -126,7 +130,16 @@ wait_for_ollama
 warm_up_ollama
 wait_for_audio_input
 
-if [ "${REBLOOM_WAKE_ENGINE:-whisper}" = "openwakeword" ]; then
+USE_WAKE_ENGINE=1
+for arg in "$@"; do
+    case "$arg" in
+        --text|--text=*|--tts-text|--tts-text=*|--stt-only|--list-edge-voices|--wake-mode=off)
+            USE_WAKE_ENGINE=0
+            ;;
+    esac
+done
+
+if [ "${REBLOOM_WAKE_ENGINE:-whisper}" = "openwakeword" ] && [ "$USE_WAKE_ENGINE" = "1" ]; then
     exec "$PYTHON_BIN" "$SCRIPT_DIR/wake_openwakeword.py" "$@"
 fi
 

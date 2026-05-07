@@ -95,19 +95,43 @@ def load_default_env_files():
     _load_default_env_files(__file__)
 
 
+def should_start_wake_listener(args):
+    if args.wake_mode != "on":
+        return False
+    return not (args.once or args.text or args.stt_only or args.tts_text or args.list_edge_voices)
+
+
+def start_wake_listener(args):
+    wake_script = SCRIPT_DIR / "wake_openwakeword.py"
+    command = [sys.executable, str(wake_script)]
+    if args.audio_device:
+        command.extend(["--audio-device", args.audio_device])
+    if args.aplay_bin:
+        command.extend(["--aplay-bin", args.aplay_bin])
+    subprocess.run(command, check=True)
+
+
+def resolve_record_device(device):
+    if device != "auto":
+        return device
+    selected = choose_alsa_device("arecord")
+    if not selected:
+        raise RuntimeError("자동 선택 가능한 마이크 입력 장치를 찾지 못했습니다.")
+    return selected
+
+
 def listen_once(args):
     with tempfile.TemporaryDirectory(prefix="rebloom_voice_") as temp_dir:
         wav_path = Path(temp_dir) / "user.wav"
+        audio_device = resolve_record_device(args.audio_device)
         if not args.stt_only:
             play_start_sound(args)
-            if args.listen_mode == "vad":
-                print("\n[record] 말씀하시면 듣고, 조용해지면 자동으로 답변할게요...")
-            else:
+            if args.listen_mode == "fixed":
                 print(f"\n[record] {args.record_seconds}초 동안 말해주세요...")
         if args.listen_mode == "vad":
             speech_detected = record_wav_until_silence(
                 wav_path,
-                args.audio_device,
+                audio_device,
                 args.max_record_seconds,
                 args.silence_seconds,
                 args.start_timeout,
@@ -116,9 +140,7 @@ def listen_once(args):
             if not speech_detected:
                 return ""
         else:
-            record_wav(wav_path, args.record_seconds, args.audio_device)
-        if not args.stt_only:
-            print("[stt] 음성을 텍스트로 변환 중...")
+            record_wav(wav_path, args.record_seconds, audio_device)
         transcript = transcribe_whisper_cpp(
             wav_path,
             args.whisper_bin,
@@ -230,6 +252,11 @@ def build_parser():
 
 def main():
     args = build_parser().parse_args()
+
+    if should_start_wake_listener(args):
+        start_wake_listener(args)
+        return
+
     messages = [{"role": "system", "content": SYSTEM_PROMPT}]
     session_sender = SessionEventSender(
         url=args.session_events_url,
