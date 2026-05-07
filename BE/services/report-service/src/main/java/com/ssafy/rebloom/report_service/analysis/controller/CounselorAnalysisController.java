@@ -1,15 +1,18 @@
 package com.ssafy.rebloom.report_service.analysis.controller;
 
-import com.ssafy.rebloom.common.dto.BaseResponse;
-import com.ssafy.rebloom.report_service.analysis.dto.response.EmotionFlowResponse;
 import com.ssafy.rebloom.report_service.analysis.dto.response.AnalysisContentResponse;
-import com.ssafy.rebloom.report_service.analysis.dto.response.ChartResponse;
-import com.ssafy.rebloom.report_service.analysis.dto.response.ExpressionAnalysisInsightResponse;
+import com.ssafy.rebloom.report_service.analysis.dto.response.ConversationChartResponse;
+import com.ssafy.rebloom.report_service.analysis.dto.response.ConversationChartPointResponse;
+import com.ssafy.rebloom.report_service.analysis.dto.response.DiaryChartResponse;
+import com.ssafy.rebloom.report_service.analysis.dto.response.DiaryChartPointResponse;
+import com.ssafy.rebloom.report_service.analysis.dto.response.EmotionFlowResponse;
 import com.ssafy.rebloom.report_service.analysis.dto.response.ExpressionAnalysisResponse;
 import com.ssafy.rebloom.report_service.analysis.service.ExpressionAnalysisService;
+import com.ssafy.rebloom.security.annotation.LoginUserId;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
@@ -18,43 +21,27 @@ import java.util.UUID;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/v1/counselors/analyses")
+@PreAuthorize("hasRole('COUNSELOR')")
 public class CounselorAnalysisController {
 
     private final ExpressionAnalysisService expressionAnalysisService;
 
     @GetMapping("/expressions")
-    public ResponseEntity<BaseResponse<ExpressionAnalysisResponse>> getExpressionAnalysis(
-        @RequestHeader("X-User-Id") UUID counselorId,
-        @RequestParam UUID childId,
-        @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate baseDate,
-        @RequestParam(defaultValue = "ALL") String type
-    ) {
-        ExpressionAnalysisResponse response = expressionAnalysisService.getExpressionAnalysis(
-            counselorId,
-            childId,
-            baseDate,
-            type
-        );
-
-        return ResponseEntity.ok(BaseResponse.success("expression analysis retrieved", response));
-    }
-
-    @PostMapping("/expressions/insight")
-    public ResponseEntity<BaseResponse<ExpressionAnalysisInsightResponse>> generateExpressionAnalysisInsight(
-        @RequestHeader("X-User-Id") UUID counselorId,
+    public ResponseEntity<ExpressionAnalysisResponse> getExpressionAnalysis(
+        @LoginUserId UUID counselorId,
         @RequestParam UUID childId
     ) {
-        ExpressionAnalysisInsightResponse response = expressionAnalysisService.generateExpressionAnalysisInsight(
+        ExpressionAnalysisResponse response = expressionAnalysisService.getExpressionAnalysis(
             counselorId,
             childId
         );
 
-        return ResponseEntity.ok(BaseResponse.success("expression insight generated", response));
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/emotion-flow")
-    public ResponseEntity<BaseResponse<EmotionFlowResponse>> getEmotionFlow(
-        @RequestHeader("X-User-Id") UUID counselorId,
+    public ResponseEntity<EmotionFlowResponse> getEmotionFlow(
+        @LoginUserId UUID counselorId,
         @RequestParam UUID childId,
         @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate baseDate,
         @RequestParam String period,
@@ -68,29 +55,29 @@ public class CounselorAnalysisController {
             type
         );
 
-        return ResponseEntity.ok(BaseResponse.success("emotion flow retrieved", response));
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/diaries/charts")
-    public ResponseEntity<BaseResponse<ChartResponse>> getDiaryAnalysisChart(
-            @RequestHeader("X-User-Id") UUID counselorId,
+    public ResponseEntity<DiaryChartResponse> getDiaryAnalysisChart(
+            @LoginUserId UUID counselorId,
             @RequestParam UUID childId,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate
     ) {
-        ChartResponse response = expressionAnalysisService.getDiaryAnalysisChart(
+        DiaryChartResponse response = expressionAnalysisService.getDiaryAnalysisChart(
                 counselorId,
                 childId,
                 startDate,
                 endDate
         );
 
-        return ResponseEntity.ok(BaseResponse.success("diary chart retrieved", response));
+        return ResponseEntity.ok(response);
     }
 
-    @GetMapping("/diaries/contetns")
-    public ResponseEntity<BaseResponse<AnalysisContentResponse>> getDiaryAnalysisContent(
-            @RequestHeader("X-User-Id") UUID counselorId,
+    @GetMapping("/diaries/contents")
+    public ResponseEntity<AnalysisContentResponse> getDiaryAnalysisContent(
+            @LoginUserId UUID counselorId,
             @RequestParam UUID childId,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate
@@ -102,29 +89,29 @@ public class CounselorAnalysisController {
                 endDate
         );
 
-        return ResponseEntity.ok(BaseResponse.success("diary content retrieved", response));
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/conversations/charts")
-    public ResponseEntity<BaseResponse<ChartResponse>> getConversationAnalysisChart(
-            @RequestHeader("X-User-Id") UUID counselorId,
+    public ResponseEntity<ConversationChartResponse> getConversationAnalysisChart(
+            @LoginUserId UUID counselorId,
             @RequestParam UUID childId,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate
     ) {
-        ChartResponse response = expressionAnalysisService.getConversationAnalysisChart(
+        ConversationChartResponse response = expressionAnalysisService.getConversationAnalysisChart(
                 counselorId,
                 childId,
                 startDate,
                 endDate
         );
 
-        return ResponseEntity.ok(BaseResponse.success("conversation chart retrieved", response));
+        return ResponseEntity.ok(response);
     }
 
-    @GetMapping("/conversations/contetns")
-    public ResponseEntity<BaseResponse<AnalysisContentResponse>> getConversationAnalysisContent(
-            @RequestHeader("X-User-Id") UUID counselorId,
+    @GetMapping("/conversations/contents")
+    public ResponseEntity<AnalysisContentResponse> getConversationAnalysisContent(
+            @LoginUserId UUID counselorId,
             @RequestParam UUID childId,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate
@@ -136,7 +123,7 @@ public class CounselorAnalysisController {
                 endDate
         );
 
-        return ResponseEntity.ok(BaseResponse.success("conversation content retrieved", response));
+        return ResponseEntity.ok(response);
     }
 }
 

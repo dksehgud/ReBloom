@@ -1,19 +1,14 @@
-package com.ssafy.rebloom.report_service.report.entity;
-
-import java.time.LocalDateTime;
-import java.util.UUID;
+package com.ssafy.rebloom.report_service.report.domain.entity;
 
 import com.ssafy.rebloom.common.entity.BaseTime;
-
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
+
+import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Getter
 @Entity
@@ -40,5 +35,11 @@ public class ChildrenReport extends BaseTime {
 
     @Column(name = "report_date", nullable = false)
     private LocalDateTime reportDate;
+
+    public void update(String emotionTag, String context, LocalDateTime reportDate) {
+        this.emotionTag = emotionTag;
+        this.context = context;
+        this.reportDate = reportDate;
+    }
 }
 

@@ -1,15 +1,11 @@
-package com.ssafy.rebloom.report_service.report.entity;
-
-import java.io.Serializable;
-import java.util.UUID;
+package com.ssafy.rebloom.report_service.report.domain.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
+
+import java.io.Serializable;
+import java.util.UUID;
 
 @Getter
 @Embeddable

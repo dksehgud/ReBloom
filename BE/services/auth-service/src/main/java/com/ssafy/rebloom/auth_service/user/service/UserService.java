@@ -20,7 +20,7 @@ public interface UserService {
 
     UserInfoResponseDto updateMyInfo(UUID userId, UserUpdateRequestDto request);
 
-    void changePassword(UUID userId, String newPassword);
+    void changePassword(UUID userId, PasswordChangeRequestDto request);
 
     void verifyPassword(UUID userId, String password);
 
