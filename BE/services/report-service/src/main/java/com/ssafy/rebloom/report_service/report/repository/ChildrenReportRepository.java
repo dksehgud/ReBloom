@@ -11,6 +11,7 @@ import java.util.UUID;
 
 public interface ChildrenReportRepository extends JpaRepository<ChildrenReport, UUID> {
 
+    
     @Query(value = """
         SELECT id,
                children_id,
