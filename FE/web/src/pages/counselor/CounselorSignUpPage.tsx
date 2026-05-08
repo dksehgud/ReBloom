@@ -392,7 +392,7 @@ function CounselorSignUpPage() {
                   aria-label={isPasswordVisible ? '비밀번호 숨기기' : '비밀번호 보기'}
                   onClick={() => setIsPasswordVisible((prev) => !prev)}
                 >
-                  {isPasswordVisible ? <FiEyeOff /> : <FiEye />}
+                  {isPasswordVisible ? <FiEye /> : <FiEyeOff />}
                 </button>
               }
             />
@@ -428,7 +428,7 @@ function CounselorSignUpPage() {
                   }
                   onClick={() => setIsPasswordConfirmVisible((prev) => !prev)}
                 >
-                  {isPasswordConfirmVisible ? <FiEyeOff /> : <FiEye />}
+                  {isPasswordConfirmVisible ? <FiEye /> : <FiEyeOff />}
                 </button>
               }
               error={
