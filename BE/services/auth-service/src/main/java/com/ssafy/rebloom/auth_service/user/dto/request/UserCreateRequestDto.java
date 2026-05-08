@@ -19,9 +19,6 @@ public record UserCreateRequestDto (
     @NotBlank
     String name,
 
-    @NotBlank
-    String phone,
-
     @NotNull
     UserRole role,
 
@@ -38,7 +35,9 @@ public record UserCreateRequestDto (
     // COUNSELOR
     String hospitalName,
     String hospitalAddress,
-    String hospitalAddressDetail
-){
+    String hospitalAddressDetail,
+    String phone
+
+    ){
 
 }
