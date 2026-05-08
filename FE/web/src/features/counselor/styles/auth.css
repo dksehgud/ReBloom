@@ -156,6 +156,185 @@
   line-height: 1.7;
 }
 
+.counselor-login {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  width: 100%;
+}
+
+.counselor-login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  width: 100%;
+}
+
+.counselor-login .field-group {
+  width: 100%;
+}
+
+.counselor-login .field-label {
+  color: #324052;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.counselor-login .field-input-wrap {
+  min-height: 56px;
+}
+
+.counselor-login .field-input {
+  min-height: 56px;
+  padding: 16px 18px;
+  border-radius: 16px;
+  border-color: #d7dfeb;
+  font-size: 15px;
+}
+
+.counselor-login .field-input:focus {
+  border-color: #344966;
+  box-shadow: 0 0 0 4px rgba(52, 73, 102, 0.08);
+  outline: none;
+}
+
+.counselor-password-toggle {
+  align-items: center;
+  align-self: stretch;
+  background: transparent;
+  border: 0;
+  color: #7a8799;
+  cursor: pointer;
+  display: inline-flex;
+  justify-content: center;
+  padding: 0 16px;
+}
+
+.counselor-password-toggle svg {
+  width: 20px;
+  height: 20px;
+}
+
+.counselor-login-links {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: -2px;
+}
+
+.counselor-auth-link {
+  color: #5e7aa2;
+  font-family: 'Inter', 'Noto Sans KR', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.5;
+  text-decoration: none;
+}
+
+.counselor-auth-link:hover {
+  color: #344966;
+}
+
+.counselor-auth-button {
+  align-items: center;
+  border: 1px solid transparent;
+  border-radius: 18px;
+  cursor: pointer;
+  display: inline-flex;
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  justify-content: center;
+  min-height: 56px;
+  padding: 16px 20px;
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.18s ease,
+    background-color 0.18s ease;
+  width: 100%;
+}
+
+.counselor-auth-button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 14px 24px rgba(52, 73, 102, 0.16);
+}
+
+.counselor-auth-button:disabled {
+  cursor: default;
+  opacity: 0.45;
+}
+
+.counselor-auth-button--primary {
+  background: #344966;
+  color: #ffffff;
+}
+
+.counselor-social-divider {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+}
+
+.counselor-social-divider span {
+  flex: 1;
+  height: 1px;
+  background: #dbe3ef;
+}
+
+.counselor-social-divider p {
+  margin: 0;
+  color: #8a97aa;
+  font-family: 'Inter', 'Noto Sans KR', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.counselor-social-button {
+  align-items: center;
+  background: #ffffff;
+  border: 1px solid #d7dfeb;
+  border-radius: 18px;
+  cursor: pointer;
+  display: inline-flex;
+  gap: 12px;
+  justify-content: center;
+  min-height: 56px;
+  padding: 16px 20px;
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.18s ease,
+    border-color 0.18s ease;
+  width: 100%;
+}
+
+.counselor-social-button:hover {
+  border-color: #b9c6d9;
+  box-shadow: 0 10px 18px rgba(95, 114, 139, 0.1);
+  transform: translateY(-1px);
+}
+
+.counselor-social-button img {
+  width: 20px;
+  height: 20px;
+}
+
+.counselor-social-button span {
+  color: #324052;
+  font-family: 'Inter', 'Noto Sans KR', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.counselor-auth-inline-copy {
+  margin: 0;
+  color: #7a8799;
+  font-family: 'Inter', 'Noto Sans KR', sans-serif;
+  font-size: 14px;
+  line-height: 1.6;
+  text-align: center;
+}
+
 @media (max-width: 1200px) {
   .counselor-auth-frame {
     grid-template-columns: minmax(280px, 360px) minmax(420px, 1fr);
@@ -195,6 +374,10 @@
     min-height: 0;
     width: 100%;
     padding: 32px 24px;
+  }
+
+  .counselor-login {
+    gap: 20px;
   }
 }
 

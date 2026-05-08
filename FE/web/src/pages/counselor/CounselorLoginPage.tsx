@@ -1,20 +1,85 @@
+import type { FormEvent } from 'react'
+import { useState } from 'react'
+import { FiEye, FiEyeOff } from 'react-icons/fi'
+import { Link } from 'react-router-dom'
+
+import googleLogo from '../../assets/google-logo.svg'
+import AuthInput from '../../components/auth/AuthInput'
 import CounselorAuthLayout from '../../components/templates/CounselorAuthLayout/CounselorAuthLayout'
 
 function CounselorLoginPage() {
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [isPasswordVisible, setIsPasswordVisible] = useState(false)
+
+  const isSubmitEnabled = email.trim().length > 0 && password.trim().length > 0
+
+  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+  }
+
   return (
-    <CounselorAuthLayout
-      title="상담사 로그인"
-      description="상담사 계정으로 로그인해 리블룸 대시보드에 접속하세요."
-      footer={
-        <p className="counselor-auth-placeholder-caption">
-          다음 커밋에서 실제 로그인 폼을 연결합니다.
-        </p>
-      }
-    >
-      <div className="counselor-auth-placeholder">
-        <p className="counselor-auth-placeholder-title">로그인 화면 준비 완료</p>
-        <p className="counselor-auth-placeholder-copy">
-          이 경로에 상담사 전용 로그인 폼이 연결될 예정입니다.
+    <CounselorAuthLayout title="로그인" description="Sign in">
+      <div className="counselor-login">
+        <form className="counselor-login-form" onSubmit={handleSubmit}>
+          <AuthInput
+            label="이메일"
+            type="email"
+            placeholder="이메일"
+            autoComplete="email"
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
+          />
+          <AuthInput
+            label="비밀번호"
+            type={isPasswordVisible ? 'text' : 'password'}
+            placeholder="비밀번호"
+            autoComplete="current-password"
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+            action={
+              <button
+                type="button"
+                className="counselor-password-toggle"
+                aria-label={isPasswordVisible ? '비밀번호 숨기기' : '비밀번호 보기'}
+                onClick={() => setIsPasswordVisible((prev) => !prev)}
+              >
+                {isPasswordVisible ? <FiEyeOff /> : <FiEye />}
+              </button>
+            }
+          />
+
+          <div className="counselor-login-links">
+            <Link to="/counselor/find-password" className="counselor-auth-link">
+              비밀번호 찾기
+            </Link>
+          </div>
+
+          <button
+            type="submit"
+            className="counselor-auth-button counselor-auth-button--primary"
+            disabled={!isSubmitEnabled}
+          >
+            로그인
+          </button>
+        </form>
+
+        <div className="counselor-social-divider" aria-hidden="true">
+          <span />
+          <p>Or with</p>
+          <span />
+        </div>
+
+        <button type="button" className="counselor-social-button">
+          <img src={googleLogo} alt="" aria-hidden="true" />
+          <span>Continue with Google</span>
+        </button>
+
+        <p className="counselor-auth-inline-copy">
+          계정이 없으신가요?{' '}
+          <Link to="/counselor/signup" className="counselor-auth-link">
+            회원가입
+          </Link>
         </p>
       </div>
     </CounselorAuthLayout>
