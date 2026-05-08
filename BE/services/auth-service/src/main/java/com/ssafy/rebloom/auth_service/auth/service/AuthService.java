@@ -19,4 +19,6 @@ public interface AuthService {
     void sendVerificationEmail(String email);
 
     boolean verifyEmailCode(String email, String code);
+
+    void resetPassword(String email);
 }

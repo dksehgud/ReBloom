@@ -2,3 +2,6 @@ rootProject.name = 'auth-service'
 
 include 'modules:common-module'
 project(':modules:common-module').projectDir = file('../../modules/common-module')
+
+include 'modules:security-module'
+project(':modules:security-module').projectDir = file('../../modules/security-module')

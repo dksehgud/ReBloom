@@ -6,6 +6,7 @@ import com.ssafy.rebloom.auth_service.auth.dto.request.EmailDuplicateRequestDto;
 import com.ssafy.rebloom.auth_service.auth.dto.request.EmailVerificationCodeRequestDto;
 import com.ssafy.rebloom.auth_service.auth.dto.request.EmailVerificationRequestDto;
 import com.ssafy.rebloom.auth_service.auth.dto.request.LoginRequestDto;
+import com.ssafy.rebloom.auth_service.auth.dto.request.PasswordResetRequestDto;
 import com.ssafy.rebloom.auth_service.auth.dto.response.EmailDuplicateResponseDto;
 import com.ssafy.rebloom.auth_service.auth.dto.response.EmailVerificationResponseDto;
 import com.ssafy.rebloom.auth_service.auth.dto.response.LoginResponseDto;
@@ -101,6 +102,14 @@ public class AuthController {
         return isVerified ?
             ResponseEntity.ok(BaseResponse.success("이메일 검증 코드 인증 성공", emailVerificationResponseDto))
             : ResponseEntity.ok(BaseResponse.success("이메일 인증 코드 불일치 실패", emailVerificationResponseDto));
+    }
+
+    @PostMapping("/passwords/resets")
+    public ResponseEntity<BaseResponse<Void>> resetPassword(
+        @RequestBody @Valid PasswordResetRequestDto request
+    ) {
+        authService.resetPassword(request.email());
+        return ResponseEntity.ok(BaseResponse.success("임시 비밀번호가 발급되었습니다."));
     }
 
     private ResponseEntity<BaseResponse<LoginResponseDto>> sendTokenResponse(
