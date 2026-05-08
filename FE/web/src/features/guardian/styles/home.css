@@ -395,6 +395,30 @@
   background: rgba(168, 178, 188, 0.45);
 }
 
+body[data-shell-mode='webview'] .parent-bottom-nav {
+  gap: 6px;
+  padding:
+    10px
+    calc(20px + var(--app-safe-area-right))
+    calc(6px + var(--app-safe-area-bottom))
+    calc(20px + var(--app-safe-area-left));
+}
+
+body[data-shell-mode='webview'] .parent-bottom-nav__item {
+  min-height: 44px;
+  gap: 4px;
+}
+
+body[data-shell-mode='webview'] .parent-bottom-nav__label {
+  font-size: 10px;
+  line-height: 14px;
+}
+
+body[data-shell-mode='webview'] .parent-bottom-nav__indicator {
+  width: 112px;
+  height: 4px;
+}
+
 .parent-home-page__placeholder-card {
   display: flex;
   flex-direction: column;

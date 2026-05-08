@@ -1,13 +1,32 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
+    <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
 
+    <!-- Samsung Health SDK -->
+    <queries>
+        <package android:name="com.sec.android.app.shealth" />
+    </queries>
+
     <application
+        android:name=".base.RebloomApplication"
         android:allowBackup="true"
-        android:label="rebloom-app"
+        android:label="Re:Bloom"
         android:supportsRtl="true"
-        android:theme="@android:style/Theme.DeviceDefault">
+        android:theme="@style/Theme.ReBloom.WebView">
+
+        <activity
+            android:name=".webview.MainActivity"
+            android:exported="true"
+            android:launchMode="singleTask"
+            android:windowSoftInputMode="adjustResize">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
 
         <service
             android:name=".wear.WearDataListenerService"
@@ -20,6 +39,15 @@
                     android:scheme="wear" />
             </intent-filter>
         </service>
+
+        <activity
+            android:name=".permission.SleepPermissionActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
 
     </application>
 

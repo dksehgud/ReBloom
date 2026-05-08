@@ -206,11 +206,20 @@
   flex-direction: column;
   justify-content: flex-start;
   min-height: 0;
-  padding-bottom: 120px;
+  padding-bottom: 88px;
+}
+
+body[data-shell-mode='webview'] .child-diary-list-page__body {
+  padding-bottom: calc(88px + var(--app-safe-area-bottom));
 }
 
 .child-diary-list-page .mobile-page-surface {
   height: min(844px, 100svh - 48px);
+}
+
+body[data-shell-mode='webview'] .child-diary-list-page .mobile-page-surface {
+  height: var(--app-viewport-height);
+  min-height: var(--app-viewport-height);
 }
 
 .child-diary-list-page__content--calendar,
@@ -225,7 +234,11 @@
 
 .child-diary-list-page__body--list {
   overflow: hidden;
-  padding-bottom: 104px;
+  padding-bottom: 76px;
+}
+
+body[data-shell-mode='webview'] .child-diary-list-page__body--list {
+  padding-bottom: calc(76px + var(--app-safe-area-bottom));
 }
 
 .child-diary-list-page__body--write {
