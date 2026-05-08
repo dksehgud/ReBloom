@@ -196,7 +196,7 @@ function CounselorSignUpPage() {
       )
     } catch {
       setHospitalAddressError(
-        '주소 검색창을 여는 데 실패했어요. 병원 주소를 직접 입력해 주세요.',
+        '주소 검색창을 여는 데 실패했어요. 다시 시도해 주세요.',
       )
     } finally {
       setIsLoadingAddressSearch(false)
@@ -340,6 +340,7 @@ function CounselorSignUpPage() {
                 label="병원주소"
                 placeholder="주소"
                 value={hospitalAddress}
+                readOnly
                 action={
                   <button
                     type="button"
@@ -355,15 +356,11 @@ function CounselorSignUpPage() {
                 error={hospitalAddressError}
                 help={
                   hospitalAddressError
-                    ? '검색이 안 되면 병원 주소를 직접 입력해도 됩니다.'
+                    ? '주소 검색을 다시 시도해 주세요.'
                     : !hospitalAddress
-                      ? '병원 기본 주소를 검색하거나 직접 입력해 주세요.'
-                      : '검색한 주소는 직접 수정할 수 있어요.'
+                      ? '병원 기본 주소는 주소 검색으로 입력해 주세요.'
+                      : '검색한 병원 주소가 입력되었습니다.'
                 }
-                onChange={(event) => {
-                  setHospitalAddress(event.target.value)
-                  setHospitalAddressError(undefined)
-                }}
               />
               <AuthInput
                 label="상세 주소"
