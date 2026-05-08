@@ -31,9 +31,11 @@ dependencies {
 
 	// security module
 	implementation project(':modules:security-module')
-
 	// event module
 	implementation project(':modules:event-module')
+	// common module
+	implementation project(':modules:common-module')
+
 }
 
 dependencyManagement {
