@@ -44,8 +44,7 @@
   justify-content: center;
   min-width: 0;
   padding: 48px;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.96) 0%, rgba(250, 252, 249, 0.96) 100%);
+  background: #ffffff;
   overflow-y: auto;
 }
 
