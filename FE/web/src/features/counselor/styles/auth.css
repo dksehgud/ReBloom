@@ -404,6 +404,15 @@
   padding-right: 108px;
 }
 
+.counselor-signup .field-input-wrap:has(.field-input-action) .field-input {
+  padding-right: 112px;
+}
+
+.counselor-signup .field-input-action {
+  height: 31px;
+  right: 14px;
+}
+
 .counselor-signup .field-input:focus {
   border-color: #344966;
   box-shadow: 0 0 0 4px rgba(52, 73, 102, 0.08);

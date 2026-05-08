@@ -4,6 +4,7 @@ import { FiEye, FiEyeOff } from 'react-icons/fi'
 
 import AuthInput from '../../components/auth/AuthInput'
 import CounselorAuthLayout from '../../components/templates/CounselorAuthLayout/CounselorAuthLayout'
+import { openDaumPostcodePopup } from '../../shared/utils/daumPostcode'
 
 type SignUpStep = 'email' | 'verification' | 'profile'
 type EmailStatus = 'idle' | 'success' | 'error'
@@ -33,6 +34,10 @@ function CounselorSignUpPage() {
   const [hospitalName, setHospitalName] = useState('')
   const [hospitalAddress, setHospitalAddress] = useState('')
   const [hospitalAddressDetail, setHospitalAddressDetail] = useState('')
+  const [hospitalAddressError, setHospitalAddressError] = useState<
+    string | undefined
+  >()
+  const [isLoadingAddressSearch, setIsLoadingAddressSearch] = useState(false)
   const [password, setPassword] = useState('')
   const [passwordConfirm, setPasswordConfirm] = useState('')
   const [isPasswordVisible, setIsPasswordVisible] = useState(false)
@@ -176,6 +181,28 @@ function CounselorSignUpPage() {
     verificationInputRefs.current[0]?.focus()
   }
 
+  const handleSearchHospitalAddress = async () => {
+    try {
+      setIsLoadingAddressSearch(true)
+      setHospitalAddressError(undefined)
+
+      await openDaumPostcodePopup(
+        (data) => {
+          const nextAddress = data.roadAddress || data.address || data.jibunAddress
+          setHospitalAddress(nextAddress)
+          setHospitalAddressError(undefined)
+        },
+        '병원 주소 검색',
+      )
+    } catch {
+      setHospitalAddressError(
+        '주소 검색창을 여는 데 실패했어요. 병원 주소를 직접 입력해 주세요.',
+      )
+    } finally {
+      setIsLoadingAddressSearch(false)
+    }
+  }
+
   const handleProfileSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
   }
@@ -313,7 +340,30 @@ function CounselorSignUpPage() {
                 label="병원주소"
                 placeholder="주소"
                 value={hospitalAddress}
-                onChange={(event) => setHospitalAddress(event.target.value)}
+                action={
+                  <button
+                    type="button"
+                    className={`field-input-action counselor-address-search-button ${
+                      isLoadingAddressSearch ? 'is-disabled' : 'is-active'
+                    }`}
+                    disabled={isLoadingAddressSearch}
+                    onClick={handleSearchHospitalAddress}
+                  >
+                    {isLoadingAddressSearch ? '불러오는 중' : '주소 검색'}
+                  </button>
+                }
+                error={hospitalAddressError}
+                help={
+                  hospitalAddressError
+                    ? '검색이 안 되면 병원 주소를 직접 입력해도 됩니다.'
+                    : !hospitalAddress
+                      ? '병원 기본 주소를 검색하거나 직접 입력해 주세요.'
+                      : '검색한 주소는 직접 수정할 수 있어요.'
+                }
+                onChange={(event) => {
+                  setHospitalAddress(event.target.value)
+                  setHospitalAddressError(undefined)
+                }}
               />
               <AuthInput
                 label="상세 주소"
