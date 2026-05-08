@@ -1,0 +1,228 @@
+.counselor-auth-shell {
+  min-height: 100svh;
+  background:
+    radial-gradient(circle at top left, rgba(173, 203, 255, 0.22), transparent 36%),
+    linear-gradient(135deg, #f4f7fb 0%, #eef3fb 54%, #f9fbff 100%);
+  padding: 32px;
+  box-sizing: border-box;
+}
+
+.counselor-auth-frame {
+  display: grid;
+  grid-template-columns: minmax(320px, 480px) minmax(460px, 1fr);
+  min-height: calc(100svh - 64px);
+  background: rgba(255, 255, 255, 0.82);
+  border: 1px solid rgba(198, 210, 229, 0.6);
+  border-radius: 32px;
+  box-shadow:
+    0 28px 60px rgba(31, 52, 83, 0.1),
+    0 10px 24px rgba(52, 73, 102, 0.08);
+  overflow: hidden;
+}
+
+.counselor-auth-brand-panel {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 48px;
+  background: linear-gradient(160deg, #344966 0%, #283a53 100%);
+  color: #ffffff;
+  padding: 40px;
+}
+
+.counselor-auth-brand-logo {
+  width: 184px;
+  height: auto;
+}
+
+.counselor-auth-brand-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  max-width: 320px;
+}
+
+.counselor-auth-brand-eyebrow {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.74);
+  font-family: 'Inter', 'Noto Sans KR', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  line-height: 1.4;
+  text-transform: uppercase;
+}
+
+.counselor-auth-brand-title {
+  margin: 0;
+  font-family: 'Poppins', 'Noto Sans KR', sans-serif;
+  font-size: clamp(34px, 3vw, 44px);
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: -0.03em;
+}
+
+.counselor-auth-brand-description {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.72);
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 15px;
+  line-height: 1.75;
+}
+
+.counselor-auth-content-panel {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  background: rgba(255, 255, 255, 0.74);
+}
+
+.counselor-auth-card {
+  display: flex;
+  flex-direction: column;
+  width: min(100%, 580px);
+  min-height: 640px;
+  padding: 44px;
+  background: #ffffff;
+  border-radius: 28px;
+  box-shadow: 0 24px 44px rgba(76, 100, 134, 0.12);
+}
+
+.counselor-auth-card-header {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.counselor-auth-card-title {
+  margin: 0;
+  color: #243447;
+  font-family: 'Poppins', 'Noto Sans KR', sans-serif;
+  font-size: 30px;
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: -0.03em;
+}
+
+.counselor-auth-card-description {
+  margin: 0;
+  color: #6b7a90;
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 15px;
+  line-height: 1.7;
+}
+
+.counselor-auth-card-body {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  padding: 28px 0;
+}
+
+.counselor-auth-card-footer {
+  padding-top: 12px;
+}
+
+.counselor-auth-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 40px 28px;
+  border: 1px dashed #cdd7e6;
+  border-radius: 24px;
+  background: linear-gradient(180deg, #fbfcff 0%, #f4f7fb 100%);
+  text-align: center;
+}
+
+.counselor-auth-placeholder-title {
+  margin: 0;
+  color: #344966;
+  font-family: 'Poppins', 'Noto Sans KR', sans-serif;
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.counselor-auth-placeholder-copy,
+.counselor-auth-placeholder-caption {
+  margin: 0;
+  color: #73839a;
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+@media (max-width: 1200px) {
+  .counselor-auth-frame {
+    grid-template-columns: minmax(280px, 360px) minmax(420px, 1fr);
+  }
+
+  .counselor-auth-brand-panel,
+  .counselor-auth-content-panel {
+    padding: 32px;
+  }
+
+  .counselor-auth-card {
+    min-height: 600px;
+    padding: 36px;
+  }
+}
+
+@media (max-width: 920px) {
+  .counselor-auth-shell {
+    padding: 20px;
+  }
+
+  .counselor-auth-frame {
+    grid-template-columns: 1fr;
+    min-height: auto;
+  }
+
+  .counselor-auth-brand-panel {
+    gap: 24px;
+    padding: 28px;
+  }
+
+  .counselor-auth-content-panel {
+    padding: 24px;
+  }
+
+  .counselor-auth-card {
+    min-height: 0;
+    width: 100%;
+    padding: 32px 24px;
+  }
+}
+
+@media (max-width: 600px) {
+  .counselor-auth-shell {
+    padding: 0;
+  }
+
+  .counselor-auth-frame {
+    border-radius: 0;
+    border: 0;
+    min-height: 100svh;
+  }
+
+  .counselor-auth-brand-panel {
+    padding: 24px 20px;
+  }
+
+  .counselor-auth-content-panel {
+    padding: 20px;
+  }
+
+  .counselor-auth-card {
+    padding: 28px 20px;
+    border-radius: 24px;
+  }
+
+  .counselor-auth-card-title {
+    font-size: 26px;
+  }
+}
