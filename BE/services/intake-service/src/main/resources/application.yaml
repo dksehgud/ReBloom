@@ -24,4 +24,3 @@ rebloom:
       group-id: intake-service
       retry-interval-ms: 1000
       retry-max-attempts: 3
-      event-dlt: rebloom.event.dlt.v1
