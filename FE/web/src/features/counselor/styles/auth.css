@@ -551,7 +551,7 @@
 .counselor-password-rules {
   display: flex;
   flex-wrap: wrap;
-  gap: 14px;
+  gap: 10px 14px;
   margin-top: -8px;
   color: #d65f5f;
   font-size: 11px;
@@ -560,19 +560,53 @@
 }
 
 .counselor-password-rules span {
+  align-items: center;
+  display: inline-flex;
+  gap: 6px;
+  position: relative;
   transition:
     color 0.18s ease,
     font-weight 0.18s ease;
 }
 
 .counselor-password-rules span::before {
-  content: '\2022';
-  margin-right: 4px;
+  content: '';
+  width: 14px;
+  height: 14px;
+  border: 1.5px solid currentColor;
+  border-radius: 999px;
+  box-sizing: border-box;
+  flex: 0 0 14px;
+  transition:
+    background-color 0.18s ease,
+    border-color 0.18s ease;
+}
+
+.counselor-password-rules span::after {
+  content: '';
+  position: absolute;
+  left: 5px;
+  top: 50%;
+  width: 4px;
+  height: 7px;
+  border-right: 1.7px solid currentColor;
+  border-bottom: 1.7px solid currentColor;
+  transform: translateY(-58%) rotate(45deg);
+  transition: border-color 0.18s ease;
 }
 
 .counselor-password-rules span.is-valid {
   color: #344966;
   font-weight: 700;
+}
+
+.counselor-password-rules span.is-valid::before {
+  background: #344966;
+  border-color: #344966;
+}
+
+.counselor-password-rules span.is-valid::after {
+  border-color: #ffffff;
 }
 
 .counselor-find-password {
