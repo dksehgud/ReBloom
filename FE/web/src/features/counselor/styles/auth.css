@@ -335,6 +335,185 @@
   text-align: center;
 }
 
+.counselor-signup {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.counselor-signup-form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  width: 100%;
+}
+
+.counselor-signup .field-group {
+  width: 100%;
+}
+
+.counselor-signup .field-label {
+  color: #324052;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.counselor-signup .field-input-wrap {
+  min-height: 56px;
+}
+
+.counselor-signup .field-input {
+  min-height: 56px;
+  padding: 16px 18px;
+  border-radius: 16px;
+  border-color: #d7dfeb;
+  font-size: 15px;
+}
+
+.counselor-signup .field-input:focus {
+  border-color: #344966;
+  box-shadow: 0 0 0 4px rgba(52, 73, 102, 0.08);
+  outline: none;
+}
+
+.counselor-inline-action {
+  align-items: center;
+  align-self: center;
+  background: #344966;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  color: #f8fafc;
+  cursor: pointer;
+  display: inline-flex;
+  font-family: 'Inter', 'Noto Sans KR', sans-serif;
+  font-size: 10px;
+  font-weight: 600;
+  justify-content: center;
+  min-height: 32px;
+  min-width: 76px;
+  margin-right: 10px;
+  padding: 6px 12px;
+}
+
+.counselor-inline-action.is-success {
+  background: #ffffff;
+  border-color: #344966;
+  color: #344966;
+}
+
+.counselor-signup-form--verification {
+  gap: 22px;
+}
+
+.counselor-code-header {
+  align-items: center;
+  display: flex;
+  gap: 16px;
+}
+
+.counselor-code-label {
+  margin: 0;
+  color: #28384c;
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 1.5;
+}
+
+.counselor-code-timer {
+  align-items: center;
+  color: #c2bab5;
+  display: inline-flex;
+  gap: 8px;
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.counselor-code-timer-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: #1a6dff;
+}
+
+.counselor-code-inputs {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.counselor-code-input {
+  width: 100%;
+  height: 62px;
+  border: 1px solid #344966;
+  border-radius: 0;
+  color: #111111;
+  font-family: 'Noto Sans KR', sans-serif;
+  font-size: 36px;
+  font-weight: 600;
+  line-height: 1;
+  text-align: center;
+}
+
+.counselor-code-inputs.is-error .counselor-code-input {
+  border-color: #fb2c36;
+}
+
+.counselor-code-input:focus {
+  border-color: #344966;
+  box-shadow: 0 0 0 4px rgba(52, 73, 102, 0.08);
+  outline: none;
+}
+
+.counselor-code-actions {
+  align-items: center;
+  display: flex;
+  gap: 4px;
+}
+
+.counselor-code-helper {
+  margin: 0;
+  color: #a5a5a5;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.counselor-code-resend {
+  font-size: 13px;
+}
+
+.counselor-code-error {
+  margin: -4px 0 0;
+  color: #fb2c36;
+  font-size: 12px;
+  line-height: 1.5;
+  text-align: center;
+}
+
+.counselor-address-group {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.counselor-password-rules {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-top: -8px;
+  color: #a4a4a4;
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+.counselor-password-rules span::before {
+  content: '•';
+  margin-right: 4px;
+}
+
+.counselor-password-rules span.is-valid {
+  color: #344966;
+}
+
 @media (max-width: 1200px) {
   .counselor-auth-frame {
     grid-template-columns: minmax(280px, 360px) minmax(420px, 1fr);
@@ -379,6 +558,15 @@
   .counselor-login {
     gap: 20px;
   }
+
+  .counselor-code-inputs {
+    gap: 10px;
+  }
+
+  .counselor-code-input {
+    height: 58px;
+    font-size: 32px;
+  }
 }
 
 @media (max-width: 600px) {
@@ -407,5 +595,20 @@
 
   .counselor-auth-card-title {
     font-size: 26px;
+  }
+
+  .counselor-code-header {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .counselor-code-inputs {
+    gap: 8px;
+  }
+
+  .counselor-code-input {
+    height: 52px;
+    font-size: 28px;
   }
 }
