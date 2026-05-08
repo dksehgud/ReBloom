@@ -268,6 +268,10 @@
   color: #ffffff;
 }
 
+.counselor-auth-button-link {
+  text-decoration: none;
+}
+
 .counselor-social-divider {
   align-items: center;
   display: flex;
@@ -512,6 +516,61 @@
 
 .counselor-password-rules span.is-valid {
   color: #344966;
+}
+
+.counselor-find-password {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  width: 100%;
+}
+
+.counselor-find-password-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  width: 100%;
+}
+
+.counselor-find-password .field-group {
+  width: 100%;
+}
+
+.counselor-find-password .field-label {
+  color: #324052;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.counselor-find-password .field-input-wrap {
+  min-height: 56px;
+}
+
+.counselor-find-password .field-input {
+  min-height: 56px;
+  padding: 16px 18px;
+  border-radius: 16px;
+  border-color: #d7dfeb;
+  font-size: 15px;
+}
+
+.counselor-find-password .field-input:focus {
+  border-color: #344966;
+  box-shadow: 0 0 0 4px rgba(52, 73, 102, 0.08);
+  outline: none;
+}
+
+.counselor-find-password-meta {
+  align-items: center;
+  display: flex;
+  gap: 4px;
+}
+
+.counselor-find-password-helper {
+  margin: 0;
+  color: #a5a5a5;
+  font-size: 13px;
+  line-height: 1.5;
 }
 
 @media (max-width: 1200px) {
