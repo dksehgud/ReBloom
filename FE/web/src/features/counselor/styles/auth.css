@@ -51,6 +51,8 @@
   padding: 48px;
   background: #ffffff;
   border-left: 1px solid #d8dadc;
+  border-radius: 0 34px 34px 0;
+  overflow-x: hidden;
   overflow-y: auto;
   scrollbar-color: rgba(52, 73, 102, 0.28) transparent;
   scrollbar-gutter: stable;
@@ -63,7 +65,7 @@
 
 .counselor-auth-content-panel::-webkit-scrollbar-track {
   background: transparent;
-  margin: 24px 0;
+  margin: 34px 0;
 }
 
 .counselor-auth-content-panel::-webkit-scrollbar-thumb {
@@ -657,6 +659,7 @@
 
   .counselor-auth-content-panel {
     border-left: 0;
+    border-radius: 0 0 34px 34px;
     border-top: 1px solid #d8dadc;
   }
 
@@ -712,7 +715,12 @@
   }
 
   .counselor-auth-content-panel {
+    border-radius: 0;
     padding: 20px 20px 40px;
+  }
+
+  .counselor-auth-content-panel::-webkit-scrollbar-track {
+    margin: 18px 0;
   }
 
   .counselor-auth-content-panel::-webkit-scrollbar {
