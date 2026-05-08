@@ -68,6 +68,16 @@ spring:
           filters: *secured-filters
 
         # ==========================================
+        # INTAKE SERVICE - Secured
+        # 생체 raw 이벤트 수집
+        # ==========================================
+        - id: intake-service
+          uri: ${INTAKE_SERVICE_URI:http://localhost:8082}
+          predicates:
+            - Path=/intake/**
+          filters: *secured-filters
+
+        # ==========================================
         # BIOMETRIC SERVICE - Secured
         # ==========================================
         - id: biometric-service
@@ -94,37 +104,8 @@ spring:
             - Path=/notification/**
           filters: *secured-filters
 
-        # ==========================================
-        # EMOTION INFERENCE SERVICE - Secured
-        # ==========================================
-        - id: emotion-inference-service
-          uri: ${EMOTION_INFERENCE_SERVICE_URI:http://localhost:8003}
-          predicates:
-            - Path=/emotion-inference/**
-          filters: *secured-filters
-
-        # ==========================================
-        # AIOT AI SERVICE - Secured
-        # ==========================================
-        - id: aiot-ai-service
-          uri: ${AIOT_AI_SERVICE_URI:http://localhost:8001}
-          predicates:
-            - Path=/aiot-ai/**
-          filters: *secured-filters
-
-        # ==========================================
-        # BIO ML SERVICE - Secured
-        # ==========================================
-        - id: bio-ml-service
-          uri: ${BIO_ML_SERVICE_URI:http://localhost:8002}
-          predicates:
-            - Path=/bio-ml/**
-          filters: *secured-filters
-
-
 jwt:
   secret: ${JWT_SECRET}
-
 
 server:
   port: ${SERVER_PORT:8080}

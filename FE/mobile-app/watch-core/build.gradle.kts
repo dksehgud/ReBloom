@@ -37,4 +37,5 @@ dependencies {
     implementation(libs.play.services.wearable)
     implementation(group = "", name = "samsung-health-sensor-api-1.4.1", ext = "aar")
     implementation(libs.androidx.core.ktx)
+    implementation("org.apache.commons:commons-math3:3.6.1")
 }

@@ -45,9 +45,6 @@ public class User extends BaseTime {
     @Column(nullable = false)
     private String name;
 
-    @NotNull
-    @Column(nullable = false)
-    private String phone;
 
     @NotNull
     @Enumerated(EnumType.STRING)
@@ -62,11 +59,10 @@ public class User extends BaseTime {
     private UserStatus status;
 
 
-    protected User(String email, String password, String name, String phone, UserRole role) {
+    protected User(String email, String password, String name, UserRole role) {
         this.email = email;
         this.password = password;
         this.name = name;
-        this.phone = phone;
         this.role = role;
         this.status = UserStatus.ACTIVE;
     }
@@ -75,10 +71,9 @@ public class User extends BaseTime {
         this.status = UserStatus.WITHDRAW;
     }
 
-    public void updateProfile(String email, String name, String phone) {
+    public void updateProfile(String email, String name) {
         this.email = email;
         this.name = name;
-        this.phone = phone;
     }
 
     public void changePassword(String password) {

@@ -4,6 +4,7 @@ import com.ssafy.rebloom.auth_service.user.domain.entity.ChildrenCounselorRelati
 import com.ssafy.rebloom.auth_service.user.domain.enums.RelationStatus;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -26,5 +27,25 @@ public interface ChildrenCounselorRelationRepository extends JpaRepository<Child
         @Param("childrenId") UUID childrenId,
         @Param("relationStatus") RelationStatus relationStatus,
         @Param("now") LocalDateTime now
+    );
+
+    @Query(value = """
+        SELECT c.id AS "childrenId",
+               u.name AS "name",
+               CASE
+                   WHEN ccr.ended_at IS NULL THEN 'IN_PROGRESS'
+                   ELSE 'ENDED'
+               END AS "counselingStatus"
+        FROM children_counselor_relations ccr
+        JOIN childrens c
+          ON c.id = ccr.children_id
+        JOIN users u
+          ON u.id = c.id
+        WHERE ccr.counselor_id = :counselorId
+          AND ccr.relation_status = 'ACTIVE'
+        ORDER BY u.name ASC
+        """, nativeQuery = true)
+    List<CounselorChildProjection> findChildrenByCounselorId(
+        @Param("counselorId") UUID counselorId
     );
 }
