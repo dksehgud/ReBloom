@@ -33,6 +33,7 @@ function CounselorSignUpPage() {
     useState<VerificationStatus>('idle')
   const [timeLeft, setTimeLeft] = useState(INITIAL_TIME_LEFT)
   const [name, setName] = useState('')
+  const [phone, setPhone] = useState('')
   const [hospitalName, setHospitalName] = useState('')
   const [hospitalAddress, setHospitalAddress] = useState('')
   const [hospitalAddressDetail, setHospitalAddressDetail] = useState('')
@@ -87,6 +88,7 @@ function CounselorSignUpPage() {
 
   const isProfileStepComplete =
     isNameValid &&
+    phone.trim().length > 0 &&
     hospitalName.trim().length > 0 &&
     hospitalAddress.trim().length > 0 &&
     hospitalAddressDetail.trim().length > 0 &&
@@ -341,6 +343,14 @@ function CounselorSignUpPage() {
                   ? '이름은 한글 2~10자로 입력해주세요.'
                   : undefined
               }
+            />
+            <AuthInput
+              label="전화번호"
+              type="tel"
+              placeholder="010-1234-5678"
+              autoComplete="tel"
+              value={phone}
+              onChange={(event) => setPhone(event.target.value)}
             />
             <AuthInput
               label="병원명"
