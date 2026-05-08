@@ -1,6 +1,6 @@
 package com.ssafy.rebloom.event.publisher;
 
-import com.ssafy.rebloom.event.config.KafkaCommonProperties;
+import com.ssafy.rebloom.event.config.property.KafkaCommonProperties;
 import com.ssafy.rebloom.event.core.EventEnvelope;
 import com.ssafy.rebloom.event.core.EventHeaders;
 import com.ssafy.rebloom.event.core.EventVersions;
@@ -38,11 +38,29 @@ public class KafkaEventPublisher implements EventPublisher {
 
     @Override
     public <T> void publish(String topic, String key, String eventType, T payload) {
-        publish(topic, key, eventType, null, payload);
+        publish(topic, key, eventType, null, null, payload);
     }
 
     @Override
-    public <T> void publish(String topic, String key, String eventType, String idempotencyKey, T payload) {
+    public <T> void publish(
+        String topic,
+        String key,
+        String eventType,
+        String idempotencyKey,
+        T payload
+    ) {
+        publish(topic, key, eventType, null, idempotencyKey, payload);
+    }
+
+    @Override
+    public <T> void publish(
+        String topic,
+        String key,
+        String eventType,
+        String correlationId,
+        String idempotencyKey,
+        T payload
+    ) {
         String eventId = eventIdGenerator.generate();
         String producer = properties.getProducerName();
 
@@ -51,7 +69,7 @@ public class KafkaEventPublisher implements EventPublisher {
             eventType,
             EventVersions.V1,
             producer,
-            null,
+            correlationId,
             idempotencyKey,
             eventTimeProvider.now(),
             payload
@@ -62,11 +80,19 @@ public class KafkaEventPublisher implements EventPublisher {
         addHeader(record, EventHeaders.EVENT_TYPE, eventType);
         addHeader(record, EventHeaders.EVENT_VERSION, EventVersions.V1);
         addHeader(record, EventHeaders.PRODUCER, producer);
+        addHeader(record, EventHeaders.CORRELATION_ID, correlationId);
         addHeader(record, EventHeaders.IDEMPOTENCY_KEY, idempotencyKey);
 
         try {
             kafkaTemplate.send(record).get();
-            log.info("Published event. topic={}, key={}, eventType={}, eventId={}", topic, key, eventType, eventId);
+            log.info(
+                "Published event. topic={}, key={}, eventType={}, eventId={}, correlationId={}",
+                topic,
+                key,
+                eventType,
+                eventId,
+                correlationId
+            );
         } catch (Exception e) {
             throw new EventPublishException(topic, key, eventType, e);
         }
