@@ -404,7 +404,7 @@ function CounselorSignUpPage() {
               <span
                 className={passwordRuleStates.allowedCharacters ? 'is-valid' : ''}
               >
-                영문/숫자/특수문자만
+                영문, 숫자, 기호 사용 가능
               </span>
             </div>
             <AuthInput
