@@ -52,6 +52,28 @@
   background: #ffffff;
   border-left: 1px solid #d8dadc;
   overflow-y: auto;
+  scrollbar-color: rgba(52, 73, 102, 0.28) transparent;
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+}
+
+.counselor-auth-content-panel::-webkit-scrollbar {
+  width: 10px;
+}
+
+.counselor-auth-content-panel::-webkit-scrollbar-track {
+  background: transparent;
+  margin: 24px 0;
+}
+
+.counselor-auth-content-panel::-webkit-scrollbar-thumb {
+  background: rgba(52, 73, 102, 0.18);
+  border: 3px solid #ffffff;
+  border-radius: 999px;
+}
+
+.counselor-auth-content-panel:hover::-webkit-scrollbar-thumb {
+  background: rgba(52, 73, 102, 0.34);
 }
 
 .counselor-auth-card {
@@ -674,6 +696,14 @@
 
   .counselor-auth-content-panel {
     padding: 20px 20px 40px;
+  }
+
+  .counselor-auth-content-panel::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .counselor-auth-content-panel::-webkit-scrollbar-thumb {
+    border-width: 2px;
   }
 
   .counselor-auth-card-body {
