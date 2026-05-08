@@ -359,7 +359,7 @@ function CounselorSignUpPage() {
                     ? '주소 검색을 다시 시도해 주세요.'
                     : !hospitalAddress
                       ? '병원 기본 주소는 주소 검색으로 입력해 주세요.'
-                      : '검색한 병원 주소가 입력되었습니다.'
+                      : undefined
                 }
               />
               <AuthInput
