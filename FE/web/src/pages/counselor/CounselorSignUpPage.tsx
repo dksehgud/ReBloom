@@ -12,6 +12,7 @@ type VerificationStatus = 'idle' | 'error'
 
 const INITIAL_CODE_LENGTH = 6
 const INITIAL_TIME_LEFT = 4 * 60 + 58
+const KOREAN_NAME_PATTERN = /^[가-힣]{2,10}$/
 const PASSWORD_ALLOWED_PATTERN = /^[!-~]+$/
 
 function formatTimeLeft(timeLeft: number) {
@@ -82,8 +83,10 @@ function CounselorSignUpPage() {
     [password],
   )
 
+  const isNameValid = KOREAN_NAME_PATTERN.test(name)
+
   const isProfileStepComplete =
-    name.trim().length > 0 &&
+    isNameValid &&
     hospitalName.trim().length > 0 &&
     hospitalAddress.trim().length > 0 &&
     hospitalAddressDetail.trim().length > 0 &&
@@ -330,8 +333,14 @@ function CounselorSignUpPage() {
             <AuthInput
               label="이름"
               placeholder="이름"
+              maxLength={10}
               value={name}
               onChange={(event) => setName(event.target.value)}
+              error={
+                name.length > 0 && !isNameValid
+                  ? '이름은 한글 2~10자로 입력해주세요.'
+                  : undefined
+              }
             />
             <AuthInput
               label="병원명"
