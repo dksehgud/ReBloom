@@ -1,0 +1,8 @@
+spring:
+  application:
+    name: intake-service
+  jackson:
+    time-zone: Asia/Seoul
+
+server:
+  port: ${SERVER_PORT:8082}

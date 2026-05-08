@@ -63,24 +63,24 @@ build-gateway-service:
       - BE/services/gateway-service/build/libs/*.jar
     expire_in: 1 hour
 
-build-ai-service:
+build-intake-service:
   image: eclipse-temurin:21-jdk-alpine
   stage: build
   tags:
     - rebloom-dev
   rules:
     - changes:
-        - "BE/services/ai-service/**/*"
+        - "BE/services/intake-service/**/*"
         - "BE/modules/**/*"
         - "BE/*"
   script:
-    - echo "----- AI Service 빌드 시작 -----"
+    - echo "----- Intake Service 빌드 시작 -----"
     - cd BE
     - chmod +x ./gradlew
-    - ./gradlew :services:ai-service:build -x test
+    - ./gradlew :services:intake-service:build -x test
   artifacts:
     paths:
-      - BE/services/ai-service/build/libs/*.jar
+      - BE/services/intake-service/build/libs/*.jar
     expire_in: 1 hour
 
 build-biometric-service:
@@ -185,24 +185,24 @@ push-gateway-service:
     - docker push $DOCKER_NAMESPACE/rebloom-gateway:$IMAGE_TAG
     - docker push $DOCKER_NAMESPACE/rebloom-gateway:latest
 
-# AI Service
-push-ai-service:
+# Intake Service
+push-intake-service:
   stage: docker-push
   tags:
     - rebloom-dev
-  needs: [build-ai-service]
+  needs: [build-intake-service]
   rules:
     - changes:
-        - "BE/services/ai-service/**/*"
+        - "BE/services/intake-service/**/*"
         - "BE/modules/**/*"
         - "BE/*"
   before_script:
     - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
   script:
     - cd BE
-    - docker build -t $DOCKER_NAMESPACE/rebloom-ai:$IMAGE_TAG -t $DOCKER_NAMESPACE/rebloom-ai:latest -f services/ai-service/Dockerfile .
-    - docker push $DOCKER_NAMESPACE/rebloom-ai:$IMAGE_TAG
-    - docker push $DOCKER_NAMESPACE/rebloom-ai:latest
+    - docker build -t $DOCKER_NAMESPACE/rebloom-intake:$IMAGE_TAG -t $DOCKER_NAMESPACE/rebloom-intake:latest -f services/intake-service/Dockerfile .
+    - docker push $DOCKER_NAMESPACE/rebloom-intake:$IMAGE_TAG
+    - docker push $DOCKER_NAMESPACE/rebloom-intake:latest
 
 # Biometric Service
 push-biometric-service:
