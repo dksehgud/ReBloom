@@ -70,8 +70,7 @@ public class UserServiceImpl implements UserService {
                 Parent parent = Parent.createParent(
                     userCreateRequestDto.email(),
                     encryptedPassword,
-                    userCreateRequestDto.name(),
-                    userCreateRequestDto.phone()
+                    userCreateRequestDto.name()
                 );
                 userRepository.save(parent);
             }
@@ -83,7 +82,6 @@ public class UserServiceImpl implements UserService {
                     userCreateRequestDto.email(),
                     encryptedPassword,
                     userCreateRequestDto.name(),
-                    userCreateRequestDto.phone(),
                     userCreateRequestDto.birth(),
                     userCreateRequestDto.gender(),
                     userCreateRequestDto.address(),
@@ -313,7 +311,6 @@ public class UserServiceImpl implements UserService {
                     .userId(parent.getId())
                     .email(parent.getEmail())
                     .name(parent.getName())
-                    .phone(parent.getPhone())
                     .role(parent.getRole())
                     .status(parent.getStatus())
                     .parentCode(parent.getCode())
@@ -325,7 +322,6 @@ public class UserServiceImpl implements UserService {
                     .userId(children.getId())
                     .email(children.getEmail())
                     .name(children.getName())
-                    .phone(children.getPhone())
                     .role(children.getRole())
                     .status(children.getStatus())
                     .birth(children.getBirth())

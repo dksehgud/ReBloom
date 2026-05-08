@@ -24,18 +24,17 @@ public class Parent extends User {
     private String code;
 
     @Builder(access = AccessLevel.PRIVATE)
-    private Parent(String email, String password, String name, String phone) {
-        super(email, password, name, phone, UserRole.PARENT);
+    private Parent(String email, String password, String name) {
+        super(email, password, name, UserRole.PARENT);
         // 부모 코드는 8자 Random UUID
         this.code = UUID.randomUUID().toString().substring(0, 8).toUpperCase();
     }
 
-    public static Parent createParent(String email, String password, String name, String phone) {
+    public static Parent createParent(String email, String password, String name) {
         return Parent.builder()
             .email(email)
             .password(password)
             .name(name)
-            .phone(phone)
             .build();
     }
 }

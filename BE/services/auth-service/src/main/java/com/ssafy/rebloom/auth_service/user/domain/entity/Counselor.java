@@ -32,16 +32,20 @@ public class Counselor extends User {
     private String hospitalAddressDetail;
 
     @NotNull
+    @Column(nullable = false)
+    private String phone;
+
+    @NotNull
     @Column(name = "code", nullable = false)
     private String code;
 
     @Builder(access = AccessLevel.PRIVATE)
     private Counselor(String email, String password, String name, String phone, String hospitalName, String hospitalAddress, String hospitalAddressDetail) {
-        super(email, password, name, phone, UserRole.COUNSELOR);
+        super(email, password, name, UserRole.COUNSELOR);
         this.hospitalName = hospitalName;
         this.hospitalAddress = hospitalAddress;
         this.hospitalAddressDetail = hospitalAddressDetail;
-
+        this.phone = phone;
         this.code = UUID.randomUUID().toString().substring(0, 8).toUpperCase();
     }
 
@@ -64,8 +68,9 @@ public class Counselor extends User {
         String hospitalName,
         String hospitalAddress
     ) {
-        updateProfile(email, name, phone);
+        updateProfile(email, name);
         this.hospitalName = hospitalName;
         this.hospitalAddress = hospitalAddress;
+        this.phone = phone;
     }
 }
