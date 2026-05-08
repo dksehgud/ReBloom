@@ -45,6 +45,7 @@
   min-width: 0;
   padding: 48px;
   background: #ffffff;
+  border-left: 1px solid #d8dadc;
   overflow-y: auto;
 }
 
@@ -159,6 +160,11 @@
   font-size: 15px;
 }
 
+.counselor-login .field-input-wrap:has(.counselor-password-toggle) .field-input,
+.counselor-signup .field-input-wrap:has(.counselor-password-toggle) .field-input {
+  padding-right: 56px;
+}
+
 .counselor-login .field-input:focus {
   border-color: #344966;
   box-shadow: 0 0 0 4px rgba(52, 73, 102, 0.08);
@@ -167,14 +173,19 @@
 
 .counselor-password-toggle {
   align-items: center;
-  align-self: stretch;
   background: transparent;
   border: 0;
   color: #7a8799;
   cursor: pointer;
   display: inline-flex;
+  height: 32px;
   justify-content: center;
-  padding: 0 16px;
+  padding: 0;
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 32px;
 }
 
 .counselor-password-toggle svg {
@@ -189,11 +200,15 @@
 }
 
 .counselor-auth-link {
+  background: transparent;
+  border: 0;
   color: #5e7aa2;
+  cursor: pointer;
   font-family: 'Inter', 'Noto Sans KR', sans-serif;
   font-size: 14px;
   font-weight: 600;
   line-height: 1.5;
+  padding: 0;
   text-decoration: none;
 }
 
@@ -341,6 +356,10 @@
   font-size: 15px;
 }
 
+.counselor-signup .field-input-wrap:has(.counselor-inline-action) .field-input {
+  padding-right: 108px;
+}
+
 .counselor-signup .field-input:focus {
   border-color: #344966;
   box-shadow: 0 0 0 4px rgba(52, 73, 102, 0.08);
@@ -349,7 +368,6 @@
 
 .counselor-inline-action {
   align-items: center;
-  align-self: center;
   background: #344966;
   border: 1px solid transparent;
   border-radius: 999px;
@@ -359,11 +377,15 @@
   font-family: 'Inter', 'Noto Sans KR', sans-serif;
   font-size: 10px;
   font-weight: 600;
+  height: 31px;
   justify-content: center;
-  min-height: 32px;
-  min-width: 76px;
-  margin-right: 10px;
-  padding: 6px 12px;
+  min-width: 74px;
+  padding: 0 12px;
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 1;
 }
 
 .counselor-inline-action.is-success {
@@ -449,7 +471,12 @@
 }
 
 .counselor-code-resend {
+  background: transparent;
+  border: 0;
+  color: #1a6dff;
+  cursor: pointer;
   font-size: 13px;
+  padding: 0;
 }
 
 .counselor-code-error {
@@ -542,7 +569,7 @@
 
 @media (max-width: 1200px) {
   .counselor-auth-frame {
-    grid-template-columns: minmax(300px, 0.95fr) minmax(400px, 1.05fr);
+    grid-template-columns: minmax(280px, 0.78fr) minmax(400px, 1.22fr);
   }
 
   .counselor-auth-brand-panel,
@@ -563,6 +590,11 @@
   .counselor-auth-frame {
     grid-template-columns: 1fr;
     min-height: auto;
+  }
+
+  .counselor-auth-content-panel {
+    border-left: 0;
+    border-top: 1px solid #d8dadc;
   }
 
   .counselor-auth-brand-panel {
