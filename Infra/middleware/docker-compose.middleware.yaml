@@ -62,6 +62,67 @@ services:
       - rebloom-network
     restart: unless-stopped
 
+  kafka-init-topics:
+    image: bitnami/kafka:3.6
+    container_name: kafka-init-topics
+    depends_on:
+      - kafka-1
+      - kafka-2
+      - kafka-3
+    networks:
+      - rebloom-network
+    restart: "no"
+    entrypoint:
+      - /bin/bash
+      - -c
+      - |
+        set -e
+
+        echo "Waiting for Kafka brokers..."
+        until kafka-topics.sh --bootstrap-server kafka-1:9092 --list >/dev/null 2>&1; do
+          sleep 2
+        done
+
+        echo "Creating Rebloom Kafka topics..."
+
+        kafka-topics.sh --bootstrap-server kafka-1:9092 --create --if-not-exists \
+          --topic rebloom.biometric.raw.v1 \
+          --partitions 3 \
+          --replication-factor 3
+
+        kafka-topics.sh --bootstrap-server kafka-1:9092 --create --if-not-exists \
+          --topic rebloom.sleep.raw.v1 \
+          --partitions 3 \
+          --replication-factor 3
+
+        kafka-topics.sh --bootstrap-server kafka-1:9092 --create --if-not-exists \
+          --topic rebloom.biometric.analysis.v1 \
+          --partitions 3 \
+          --replication-factor 3
+
+        kafka-topics.sh --bootstrap-server kafka-1:9092 --create --if-not-exists \
+          --topic rebloom.anomaly.verified.v1 \
+          --partitions 3 \
+          --replication-factor 3
+
+        kafka-topics.sh --bootstrap-server kafka-1:9092 --create --if-not-exists \
+          --topic rebloom.conversation.initiate.v1 \
+          --partitions 1 \
+          --replication-factor 3
+
+        kafka-topics.sh --bootstrap-server kafka-1:9092 --create --if-not-exists \
+          --topic rebloom.analysis.report-completed.v1 \
+          --partitions 3 \
+          --replication-factor 3
+
+        kafka-topics.sh --bootstrap-server kafka-1:9092 --create --if-not-exists \
+          --topic rebloom.event.dlt.v1 \
+          --partitions 1 \
+          --replication-factor 3
+
+        echo "Kafka topics:"
+        kafka-topics.sh --bootstrap-server kafka-1:9092 --list
+
 volumes:
   kafka_1_data:
   kafka_2_data:
