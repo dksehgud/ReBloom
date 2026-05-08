@@ -15,6 +15,8 @@ function CounselorAuthLayout({
   children,
   footer,
 }: CounselorAuthLayoutProps) {
+  const isDescriptionPlaceholder = description === 'Sign in'
+
   return (
     <main className="counselor-auth-shell">
       <section className="counselor-auth-frame">
@@ -30,7 +32,17 @@ function CounselorAuthLayout({
           <div className="counselor-auth-card">
             <header className="counselor-auth-card-header">
               <h2 className="counselor-auth-card-title">{title}</h2>
-              <p className="counselor-auth-card-description">{description}</p>
+              <p
+                className="counselor-auth-card-description"
+                aria-hidden={isDescriptionPlaceholder || undefined}
+                style={
+                  isDescriptionPlaceholder
+                    ? { visibility: 'hidden' }
+                    : undefined
+                }
+              >
+                {description}
+              </p>
             </header>
             <div className="counselor-auth-card-body">{children}</div>
             {footer ? (
