@@ -78,6 +78,7 @@ function CounselorLoginPage() {
             aria-label="카카오 로그인"
           >
             <img src={kakaoLogo} alt="" aria-hidden="true" />
+            <span>카카오</span>
           </button>
           <button
             type="button"
@@ -85,6 +86,7 @@ function CounselorLoginPage() {
             aria-label="구글 로그인"
           >
             <img src={googleLogo} alt="" aria-hidden="true" />
+            <span>Google</span>
           </button>
         </div>
 

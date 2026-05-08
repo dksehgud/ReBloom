@@ -276,9 +276,9 @@
 }
 
 .counselor-social-buttons {
-  display: flex;
-  justify-content: center;
+  display: grid;
   gap: 12px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   width: 100%;
 }
 
@@ -286,17 +286,18 @@
   align-items: center;
   background: #ffffff;
   border: 1px solid #d7dfeb;
-  border-radius: 999px;
+  border-radius: 14px;
   cursor: pointer;
   display: inline-flex;
-  height: 52px;
+  gap: 10px;
+  min-height: 52px;
   justify-content: center;
   padding: 0;
   transition:
     transform 0.18s ease,
     box-shadow 0.18s ease,
     border-color 0.18s ease;
-  width: 52px;
+  width: 100%;
 }
 
 .counselor-social-icon-button:hover {
@@ -308,6 +309,14 @@
 .counselor-social-icon-button img {
   width: 20px;
   height: 20px;
+}
+
+.counselor-social-icon-button span {
+  color: #344966;
+  font-family: 'Inter', 'Noto Sans KR', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.25;
 }
 
 .counselor-social-icon-button--kakao {
