@@ -9,9 +9,8 @@ data class BiometricRecord(
     val accXAvg: Float,
     val accYAvg: Float,
     val accZAvg: Float,
-    val sdnn: Float,
-    val sdsd: Float,
+    val accMag: Float,
     val rmssd: Float,
-    val pnn20: Float,
-    val pnn50: Float
+    val pnn50: Float,
+    val lfHf: Float,
 )

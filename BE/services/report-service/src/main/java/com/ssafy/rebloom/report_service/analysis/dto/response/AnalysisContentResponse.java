@@ -1,11 +1,13 @@
 package com.ssafy.rebloom.report_service.analysis.dto.response;
 
-import java.util.List;
-
 import lombok.Builder;
+
+import java.util.List;
 
 @Builder
 public record AnalysisContentResponse(
-    List<AnalysisDailyGroupResponse> dailyGroups
+        String summary,
+        EmotionFlowResponse chart,
+        List<AnalysisDailyGroupResponse> dailyGroups
 ) {
 }

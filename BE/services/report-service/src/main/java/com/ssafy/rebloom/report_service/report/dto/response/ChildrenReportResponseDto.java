@@ -11,6 +11,7 @@ public record ChildrenReportResponseDto(
     UUID parentId,
     String emotionTag,
     String context,
-    LocalDateTime reportDate
+    LocalDateTime reportDate,
+    boolean hasCounselorComment
 ) {
 }

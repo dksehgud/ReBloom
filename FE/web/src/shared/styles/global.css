@@ -166,6 +166,11 @@
   display: flex;
 }
 
+.phone-shell--auth {
+  display: flex;
+  flex-direction: column;
+}
+
 .phone-shell--signup {
   height: 844px;
 }
@@ -173,24 +178,53 @@
 body[data-shell-mode='webview'] .app-shell {
   align-items: stretch;
   justify-content: stretch;
+  min-height: var(--app-viewport-height);
   padding: 0;
 }
 
 body[data-shell-mode='webview'] .phone-shell {
   width: 100%;
-  height: 100svh;
+  height: var(--app-viewport-height);
+  min-height: var(--app-viewport-height);
   border-radius: 0;
   box-shadow: none;
 }
 
+body[data-shell-mode='webview'] .phone-shell--auth {
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
 body[data-shell-mode='webview'] .mobile-page-surface {
-  height: 100svh;
-  min-height: 100svh;
+  height: var(--app-viewport-height);
+  min-height: var(--app-viewport-height);
   border-radius: 0;
 }
 
 body[data-shell-mode='webview'] .phone-shell--signup {
-  height: 100svh;
+  height: var(--app-viewport-height);
+  min-height: var(--app-viewport-height);
+}
+
+body[data-shell-mode='webview'] .mobile-page-header-slot {
+  padding-top: var(--app-safe-area-top);
+}
+
+body[data-shell-mode='webview'] .child-header-inner {
+  min-height: calc(74px + var(--app-safe-area-top));
+  padding:
+    calc(20px + var(--app-safe-area-top))
+    20px
+    12px;
+}
+
+body[data-shell-mode='webview'] .mobile-page-bottom-slot {
+  padding-bottom: 0;
+}
+
+body[data-shell-mode='webview'] .child-floating-action-button {
+  bottom: calc(20px + var(--app-safe-area-bottom));
 }
 
 .primary-button {

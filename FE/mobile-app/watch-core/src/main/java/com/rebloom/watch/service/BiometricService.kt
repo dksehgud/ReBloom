@@ -45,7 +45,7 @@ class BiometricService : Service() {
         }
 
         repository.onRecordReady = { record ->
-            val dataMap = com.google.android.gms.wearable.PutDataMapRequest.create("/biometric/${record.tsStart}").apply {  // ← 수정
+            val dataMap = com.google.android.gms.wearable.PutDataMapRequest.create("/biometric/${record.tsStart}").apply {
                 dataMap.putLong("tsStart", record.tsStart)
                 dataMap.putLong("tsEnd", record.tsEnd)
                 dataMap.putFloat("hr", record.hr)
@@ -53,11 +53,10 @@ class BiometricService : Service() {
                 dataMap.putFloat("accXAvg", record.accXAvg)
                 dataMap.putFloat("accYAvg", record.accYAvg)
                 dataMap.putFloat("accZAvg", record.accZAvg)
-                dataMap.putFloat("sdnn", record.sdnn)
-                dataMap.putFloat("sdsd", record.sdsd)
+                dataMap.putFloat("accMag", record.accMag)
                 dataMap.putFloat("rmssd", record.rmssd)
-                dataMap.putFloat("pnn20", record.pnn20)
                 dataMap.putFloat("pnn50", record.pnn50)
+                dataMap.putFloat("lfHf", record.lfHf)
                 dataMap.putFloat("missingnessScore", record.missingnessScore)
             }.asPutDataRequest()
 
