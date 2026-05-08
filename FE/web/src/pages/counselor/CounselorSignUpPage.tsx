@@ -12,6 +12,7 @@ type VerificationStatus = 'idle' | 'error'
 
 const INITIAL_CODE_LENGTH = 6
 const INITIAL_TIME_LEFT = 4 * 60 + 58
+const PASSWORD_ALLOWED_PATTERN = /^[!-~]+$/
 
 function formatTimeLeft(timeLeft: number) {
   const minutes = Math.floor(timeLeft / 60)
@@ -73,8 +74,10 @@ function CounselorSignUpPage() {
   const passwordRuleStates = useMemo(
     () => ({
       length: password.length >= 8 && password.length <= 20,
+      letter: /[A-Za-z]/.test(password),
       number: /\d/.test(password),
-      special: /[^A-Za-z0-9]/.test(password),
+      allowedCharacters:
+        password.length > 0 && PASSWORD_ALLOWED_PATTERN.test(password),
     }),
     [password],
   )
@@ -85,8 +88,9 @@ function CounselorSignUpPage() {
     hospitalAddress.trim().length > 0 &&
     hospitalAddressDetail.trim().length > 0 &&
     passwordRuleStates.length &&
+    passwordRuleStates.letter &&
     passwordRuleStates.number &&
-    passwordRuleStates.special &&
+    passwordRuleStates.allowedCharacters &&
     passwordConfirm.length > 0 &&
     password === passwordConfirm
 
@@ -389,13 +393,18 @@ function CounselorSignUpPage() {
             />
             <div className="counselor-password-rules">
               <span className={passwordRuleStates.length ? 'is-valid' : ''}>
-                8-20자 사용
+                8-20자
+              </span>
+              <span className={passwordRuleStates.letter ? 'is-valid' : ''}>
+                영문 포함
               </span>
               <span className={passwordRuleStates.number ? 'is-valid' : ''}>
-                숫자 사용
+                숫자 포함
               </span>
-              <span className={passwordRuleStates.special ? 'is-valid' : ''}>
-                특수문자 사용
+              <span
+                className={passwordRuleStates.allowedCharacters ? 'is-valid' : ''}
+              >
+                영문/숫자/특수문자만
               </span>
             </div>
             <AuthInput
