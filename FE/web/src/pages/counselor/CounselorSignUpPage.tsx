@@ -380,6 +380,11 @@ function CounselorSignUpPage() {
               autoComplete="new-password"
               value={password}
               onChange={(event) => setPassword(event.target.value)}
+              error={
+                password.length > 0 && !passwordRuleStates.allowedCharacters
+                  ? '공백이나 한글은 사용할 수 없어요.'
+                  : undefined
+              }
               action={
                 <button
                   type="button"
@@ -392,19 +397,17 @@ function CounselorSignUpPage() {
               }
             />
             <div className="counselor-password-rules">
+              <span className={passwordRuleStates.letter ? 'is-valid' : ''}>
+                영문
+              </span>
+              <span className={passwordRuleStates.number ? 'is-valid' : ''}>
+                숫자
+              </span>
               <span className={passwordRuleStates.length ? 'is-valid' : ''}>
                 8-20자
               </span>
-              <span className={passwordRuleStates.letter ? 'is-valid' : ''}>
-                영문 포함
-              </span>
-              <span className={passwordRuleStates.number ? 'is-valid' : ''}>
-                숫자 포함
-              </span>
-              <span
-                className={passwordRuleStates.allowedCharacters ? 'is-valid' : ''}
-              >
-                영문, 숫자, 기호 사용 가능
+              <span className="is-optional">
+                특수문자 가능
               </span>
             </div>
             <AuthInput
