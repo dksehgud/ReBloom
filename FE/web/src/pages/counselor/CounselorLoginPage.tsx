@@ -4,6 +4,7 @@ import { FiEye, FiEyeOff } from 'react-icons/fi'
 import { Link } from 'react-router-dom'
 
 import googleLogo from '../../assets/google-logo.svg'
+import kakaoLogo from '../../assets/kakao-logo.svg'
 import AuthInput from '../../components/auth/AuthInput'
 import CounselorAuthLayout from '../../components/templates/CounselorAuthLayout/CounselorAuthLayout'
 
@@ -44,7 +45,7 @@ function CounselorLoginPage() {
                 aria-label={isPasswordVisible ? '비밀번호 숨기기' : '비밀번호 보기'}
                 onClick={() => setIsPasswordVisible((prev) => !prev)}
               >
-                {isPasswordVisible ? <FiEyeOff /> : <FiEye />}
+                {isPasswordVisible ? <FiEye /> : <FiEyeOff />}
               </button>
             }
           />
@@ -70,10 +71,22 @@ function CounselorLoginPage() {
           <span />
         </div>
 
-        <button type="button" className="counselor-social-button">
-          <img src={googleLogo} alt="" aria-hidden="true" />
-          <span>Continue with Google</span>
-        </button>
+        <div className="counselor-social-buttons">
+          <button
+            type="button"
+            className="counselor-social-icon-button counselor-social-icon-button--kakao"
+            aria-label="카카오 로그인"
+          >
+            <img src={kakaoLogo} alt="" aria-hidden="true" />
+          </button>
+          <button
+            type="button"
+            className="counselor-social-icon-button counselor-social-icon-button--google"
+            aria-label="구글 로그인"
+          >
+            <img src={googleLogo} alt="" aria-hidden="true" />
+          </button>
+        </div>
 
         <p className="counselor-auth-inline-copy">
           계정이 없으신가요?{' '}
