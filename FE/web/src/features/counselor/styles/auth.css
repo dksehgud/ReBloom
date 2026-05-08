@@ -1,4 +1,7 @@
 .counselor-auth-shell {
+  align-items: center;
+  display: flex;
+  justify-content: center;
   min-height: 100svh;
   background:
     radial-gradient(circle at 18% 22%, rgba(202, 230, 156, 0.24), transparent 30%),
@@ -12,7 +15,8 @@
   display: grid;
   grid-template-columns: minmax(320px, 0.78fr) minmax(460px, 1.22fr);
   width: min(100%, 1120px);
-  min-height: calc(100svh - 64px);
+  height: calc(100svh - 64px);
+  min-height: 0;
   margin: 0 auto;
   background: rgba(255, 255, 255, 0.92);
   border: 1px solid rgba(214, 223, 211, 0.74);
@@ -40,9 +44,10 @@
 
 .counselor-auth-content-panel {
   display: flex;
-  align-items: center;
+  align-items: stretch;
   justify-content: center;
   min-width: 0;
+  min-height: 0;
   padding: 48px;
   background: #ffffff;
   border-left: 1px solid #d8dadc;
@@ -53,6 +58,7 @@
   display: flex;
   flex-direction: column;
   width: min(100%, 448px);
+  margin: auto 0;
   padding: 40px 0;
   background: transparent;
 }
@@ -605,7 +611,9 @@
 
   .counselor-auth-frame {
     grid-template-columns: 1fr;
-    min-height: auto;
+    grid-template-rows: auto minmax(0, 1fr);
+    height: calc(100svh - 40px);
+    min-height: 0;
   }
 
   .counselor-auth-content-panel {
@@ -655,7 +663,8 @@
   .counselor-auth-frame {
     border-radius: 0;
     border: 0;
-    min-height: 100svh;
+    height: 100svh;
+    min-height: 0;
     box-shadow: none;
   }
 
