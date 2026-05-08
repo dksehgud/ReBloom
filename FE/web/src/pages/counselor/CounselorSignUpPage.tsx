@@ -13,6 +13,7 @@ type VerificationStatus = 'idle' | 'error'
 const INITIAL_CODE_LENGTH = 6
 const INITIAL_TIME_LEFT = 4 * 60 + 58
 const KOREAN_NAME_PATTERN = /^[가-힣]{2,10}$/
+const PHONE_NUMBER_PATTERN = /^010-\d{4}-\d{4}$/
 const PASSWORD_ALLOWED_PATTERN = /^[!-~]+$/
 
 function formatTimeLeft(timeLeft: number) {
@@ -20,6 +21,20 @@ function formatTimeLeft(timeLeft: number) {
   const seconds = timeLeft % 60
 
   return `${minutes}:${seconds.toString().padStart(2, '0')}`
+}
+
+function formatPhoneNumber(value: string) {
+  const digits = value.replace(/\D/g, '').slice(0, 11)
+
+  if (digits.length <= 3) {
+    return digits
+  }
+
+  if (digits.length <= 7) {
+    return `${digits.slice(0, 3)}-${digits.slice(3)}`
+  }
+
+  return `${digits.slice(0, 3)}-${digits.slice(3, 7)}-${digits.slice(7)}`
 }
 
 function CounselorSignUpPage() {
@@ -85,10 +100,11 @@ function CounselorSignUpPage() {
   )
 
   const isNameValid = KOREAN_NAME_PATTERN.test(name)
+  const isPhoneValid = PHONE_NUMBER_PATTERN.test(phone)
 
   const isProfileStepComplete =
     isNameValid &&
-    phone.trim().length > 0 &&
+    isPhoneValid &&
     hospitalName.trim().length > 0 &&
     hospitalAddress.trim().length > 0 &&
     hospitalAddressDetail.trim().length > 0 &&
@@ -345,12 +361,19 @@ function CounselorSignUpPage() {
               }
             />
             <AuthInput
-              label="전화번호"
+              label="핸드폰 번호"
               type="tel"
               placeholder="010-1234-5678"
               autoComplete="tel"
+              inputMode="numeric"
+              maxLength={13}
               value={phone}
-              onChange={(event) => setPhone(event.target.value)}
+              onChange={(event) => setPhone(formatPhoneNumber(event.target.value))}
+              error={
+                phone.length > 0 && !isPhoneValid
+                  ? '핸드폰 번호는 010-1234-5678 형식으로 입력해주세요.'
+                  : undefined
+              }
             />
             <AuthInput
               label="병원명"
