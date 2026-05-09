@@ -6,6 +6,7 @@
   --dashboard-primary: #344966;
   --dashboard-blue: #88b5c4;
   display: flex;
+  width: 100%;
   min-height: 100svh;
   background: var(--dashboard-bg);
   color: var(--dashboard-text);
@@ -21,12 +22,22 @@
   top: 0;
   display: flex;
   flex-direction: column;
-  width: 240px;
+  width: 260px;
   height: 100svh;
-  flex: 0 0 240px;
-  background: #ffffff;
-  border-right: 1px solid rgba(168, 178, 188, 0.15);
-  overflow-y: auto;
+  flex: 0 0 260px;
+  background: var(--dashboard-bg);
+  border-right: 1px solid rgba(168, 178, 188, 0.18);
+  overflow: hidden;
+  transition:
+    width 180ms ease,
+    flex-basis 180ms ease;
+}
+
+.counselor-dashboard.is-sidebar-collapsed .counselor-dashboard-sidebar {
+  width: 56px;
+  flex-basis: 56px;
+  border-right-color: transparent;
+  overflow-x: hidden;
 }
 
 .counselor-dashboard-brand {
@@ -34,8 +45,19 @@
   align-items: flex-start;
   justify-content: space-between;
   gap: 16px;
-  padding: 20px;
-  border-bottom: 1px solid rgba(168, 178, 188, 0.15);
+  padding: 22px 18px 14px;
+  border-bottom: 1px solid rgba(168, 178, 188, 0.1);
+}
+
+.counselor-dashboard.is-sidebar-collapsed .counselor-dashboard-brand {
+  align-items: center;
+  justify-content: center;
+  padding: 18px 10px;
+  border-bottom: 0;
+}
+
+.counselor-dashboard.is-sidebar-collapsed .counselor-dashboard-brand div {
+  display: none;
 }
 
 .counselor-dashboard-brand h1 {
@@ -54,12 +76,12 @@
   line-height: 1.5;
 }
 
-.counselor-dashboard-brand button {
+.counselor-sidebar-toggle {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
+  width: 32px;
+  height: 32px;
   padding: 0;
   color: #7a8aa0;
   background: transparent;
@@ -68,7 +90,7 @@
   cursor: pointer;
 }
 
-.counselor-dashboard-brand button:hover {
+.counselor-sidebar-toggle:hover {
   background: rgba(136, 181, 196, 0.12);
   color: var(--dashboard-primary);
 }
@@ -76,6 +98,11 @@
 .counselor-child-list {
   display: flex;
   flex-direction: column;
+  flex: 1;
+  gap: 4px;
+  min-height: 0;
+  padding: 8px 10px 16px;
+  overflow-y: auto;
 }
 
 .counselor-child-list button {
@@ -86,18 +113,49 @@
   min-height: 63px;
   padding: 12px;
   text-align: left;
-  background: #ffffff;
-  border: 0;
-  border-bottom: 1px solid rgba(168, 178, 188, 0.08);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 10px;
   cursor: pointer;
+}
+
+.counselor-dashboard:not(.is-sidebar-collapsed) .counselor-child-list button {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.counselor-dashboard.is-sidebar-collapsed .counselor-child-list button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 60px;
+  padding: 10px 0;
+}
+
+.counselor-dashboard.is-sidebar-collapsed .counselor-child-list {
+  display: none;
 }
 
 .counselor-child-list button:hover,
 .counselor-child-list button.is-selected {
-  background: rgba(107, 154, 196, 0.08);
+  background: #ffffff;
+  border-color: rgba(136, 181, 196, 0.12);
+  box-shadow: 0 8px 20px rgba(38, 55, 76, 0.035);
 }
 
-.counselor-child-list span {
+.counselor-child-avatar {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  color: var(--dashboard-primary);
+  background: rgba(136, 181, 196, 0.14);
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.counselor-child-summary {
   display: flex;
   align-items: baseline;
   gap: 6px;
@@ -120,11 +178,17 @@
   white-space: nowrap;
 }
 
-.counselor-child-list small {
+.counselor-child-subtext {
   grid-column: 1;
   color: var(--dashboard-muted);
   font-size: 11px;
   line-height: 1.5;
+}
+
+.counselor-dashboard.is-sidebar-collapsed .counselor-child-summary,
+.counselor-dashboard.is-sidebar-collapsed .counselor-child-subtext,
+.counselor-dashboard.is-sidebar-collapsed .counselor-dashboard-status {
+  display: none;
 }
 
 .counselor-dashboard-status {
@@ -149,23 +213,35 @@
 }
 
 .counselor-dashboard-main {
-  flex: 1;
+  flex: 1 1 0;
+  align-self: stretch;
+  width: 100%;
   min-width: 0;
-  max-width: 1200px;
-  padding: 24px;
+  max-width: none;
+  min-height: 100svh;
+  padding: clamp(32px, 4vw, 56px);
+}
+
+.counselor-dashboard-content {
+  width: min(100%, 1160px);
+  margin: 0 auto;
+}
+
+.counselor-dashboard.is-sidebar-collapsed .counselor-dashboard-content {
+  width: min(100%, 1240px);
 }
 
 .counselor-dashboard-hero {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 20px;
-  margin-bottom: 24px;
-  padding: 20px 22px;
+  gap: 24px;
+  margin-bottom: 28px;
+  padding: 24px 28px;
   background: var(--dashboard-card);
   border: 1px solid rgba(139, 181, 196, 0.12);
-  border-radius: 16px;
-  box-shadow: 0 4px 16px rgba(38, 55, 76, 0.06);
+  border-radius: 14px;
+  box-shadow: 0 8px 22px rgba(38, 55, 76, 0.035);
 }
 
 .counselor-dashboard-hero h2 {
@@ -196,22 +272,22 @@
 .counselor-biometric-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 20px;
+  gap: 24px;
 }
 
 .counselor-dashboard-column {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 24px;
   min-width: 0;
 }
 
 .counselor-dashboard-card {
-  padding: 20px;
+  padding: 24px;
   background: var(--dashboard-card);
   border: 1px solid rgba(139, 181, 196, 0.12);
-  border-radius: 16px;
-  box-shadow: 0 4px 16px rgba(38, 55, 76, 0.06);
+  border-radius: 14px;
+  box-shadow: 0 8px 22px rgba(38, 55, 76, 0.035);
 }
 
 .counselor-dashboard-card h3 {
@@ -319,9 +395,9 @@
   display: flex;
   align-items: flex-end;
   justify-content: center;
-  gap: clamp(18px, 4vw, 34px);
-  min-height: 210px;
-  padding: 14px 4px 0;
+  gap: clamp(16px, 3.4vw, 30px);
+  min-height: 184px;
+  padding: 8px 4px 0;
 }
 
 .counselor-bar-chart-item {
@@ -334,8 +410,8 @@
 .counselor-bar-track {
   display: flex;
   align-items: flex-end;
-  width: 38px;
-  height: 170px;
+  width: 30px;
+  height: 148px;
 }
 
 .counselor-bar-track span {
@@ -359,7 +435,7 @@
 .counselor-line-chart {
   width: 100%;
   height: auto;
-  min-height: 180px;
+  min-height: 164px;
 }
 
 .counselor-line-chart line {
@@ -405,7 +481,7 @@
 .counselor-expression-card {
   display: flex;
   flex-direction: column;
-  min-height: 840px;
+  min-height: 780px;
 }
 
 .counselor-expression-tabs {
@@ -588,7 +664,7 @@
 }
 
 .counselor-biometric-section {
-  margin-top: 30px;
+  margin-top: 36px;
 }
 
 .counselor-section-title {
@@ -632,6 +708,7 @@
 @media (max-width: 1180px) {
   .counselor-dashboard {
     flex-direction: column;
+    gap: 16px;
   }
 
   .counselor-dashboard-sidebar {
@@ -639,12 +716,22 @@
     width: 100%;
     height: auto;
     flex: none;
-    border-right: 0;
-    border-bottom: 1px solid rgba(168, 178, 188, 0.15);
   }
 
-  .counselor-dashboard-main {
-    max-width: none;
+  .counselor-dashboard.is-sidebar-collapsed .counselor-dashboard-sidebar {
+    width: 100%;
+    flex-basis: auto;
+    height: 64px;
+  }
+
+  .counselor-dashboard.is-sidebar-collapsed .counselor-dashboard-brand {
+    align-items: center;
+    justify-content: flex-start;
+    padding: 16px 18px;
+  }
+
+  .counselor-dashboard.is-sidebar-collapsed .counselor-dashboard-brand div {
+    display: none;
   }
 
   .counselor-child-list {
@@ -654,13 +741,31 @@
 
   .counselor-child-list button {
     min-width: 210px;
-    border-right: 1px solid rgba(168, 178, 188, 0.08);
+  }
+
+  .counselor-dashboard.is-sidebar-collapsed .counselor-child-list button {
+    display: none;
+  }
+
+  .counselor-dashboard.is-sidebar-collapsed .counselor-child-avatar {
+    display: none;
+  }
+
+  .counselor-dashboard.is-sidebar-collapsed .counselor-child-list,
+  .counselor-dashboard.is-sidebar-collapsed .counselor-child-summary,
+  .counselor-dashboard.is-sidebar-collapsed .counselor-child-subtext,
+  .counselor-dashboard.is-sidebar-collapsed .counselor-dashboard-status {
+    display: none;
   }
 }
 
 @media (max-width: 900px) {
-  .counselor-dashboard-main {
+  .counselor-dashboard {
     padding: 16px;
+  }
+
+  .counselor-dashboard-main {
+    min-height: auto;
   }
 
   .counselor-dashboard-grid,
@@ -689,7 +794,7 @@
 
 @media (max-width: 560px) {
   .counselor-dashboard-card {
-    padding: 16px;
+    padding: 18px;
   }
 
   .counselor-observation-card,
@@ -707,6 +812,6 @@
   }
 
   .counselor-bar-track {
-    width: 26px;
+    width: 24px;
   }
 }

@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 import {
   FiActivity,
   FiChevronLeft,
@@ -6,9 +6,9 @@ import {
   FiFileText,
   FiHeart,
   FiInfo,
+  FiMenu,
   FiMessageSquare,
   FiMoon,
-  FiSettings,
 } from 'react-icons/fi'
 
 type ChildStatus = 'active' | 'done'
@@ -425,16 +425,32 @@ function ExpressionAnalysis() {
 }
 
 function CounselorDashboardPage() {
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
+
   return (
-    <main className="counselor-dashboard">
+    <main
+      className={`counselor-dashboard${
+        isSidebarCollapsed ? ' is-sidebar-collapsed' : ''
+      }`}
+    >
       <aside className="counselor-dashboard-sidebar">
         <header className="counselor-dashboard-brand">
           <div>
             <h1>RE:BLOOM</h1>
             <p>상담사 대시보드</p>
           </div>
-          <button type="button" aria-label="설정">
-            <FiSettings aria-hidden="true" />
+          <button
+            type="button"
+            aria-expanded={!isSidebarCollapsed}
+            aria-label={isSidebarCollapsed ? '사이드바 펼치기' : '사이드바 접기'}
+            className="counselor-sidebar-toggle"
+            onClick={() => setIsSidebarCollapsed((current) => !current)}
+          >
+            {isSidebarCollapsed ? (
+              <FiMenu aria-hidden="true" />
+            ) : (
+              <FiChevronLeft aria-hidden="true" />
+            )}
           </button>
         </header>
 
@@ -445,11 +461,14 @@ function CounselorDashboardPage() {
               className={index === 0 ? 'is-selected' : undefined}
               key={child.id}
             >
-              <span>
+              <span className="counselor-child-avatar" aria-hidden="true">
+                {child.name.slice(0, 1)}
+              </span>
+              <span className="counselor-child-summary">
                 <strong>{child.name}</strong>
                 <em>{child.meta}</em>
               </span>
-              <small>{child.subText}</small>
+              <small className="counselor-child-subtext">{child.subText}</small>
               <StatusBadge status={child.status} />
             </button>
           ))}
@@ -457,79 +476,81 @@ function CounselorDashboardPage() {
       </aside>
 
       <section className="counselor-dashboard-main">
-        <header className="counselor-dashboard-hero">
-          <div>
-            <h2>김주연 님의 관찰 일지</h2>
-            <p>
-              <span>4차 회기 6회</span>
-              <span>다음 일정: 12주 3일 21시</span>
-            </p>
-          </div>
-          <time dateTime="2023-11-17">2023년 11월 17일 작성됨</time>
-        </header>
-
-        <div className="counselor-dashboard-grid">
-          <div className="counselor-dashboard-column" aria-label="대시보드 주요 정보">
-            <DashboardCard title="아이 관찰 기록">
-              <ObservationList />
-            </DashboardCard>
-
-            <DashboardCard title="수면 점수 추이">
-              <BarChart />
-            </DashboardCard>
-
-            <DashboardCard title="수면 효율 추이">
-              <LineChart data={sleepEfficiency} color="#f2a57d" />
-              <p className="counselor-card-note">
-                수면 추세 시간 중 실제로 잠든 시간의 비율을 의미합니다.
+        <div className="counselor-dashboard-content">
+          <header className="counselor-dashboard-hero">
+            <div>
+              <h2>김주연 님의 관찰 일지</h2>
+              <p>
+                <span>4차 회기 6회</span>
+                <span>다음 일정: 12주 3일 21시</span>
               </p>
-            </DashboardCard>
+            </div>
+            <time dateTime="2023-11-17">2023년 11월 17일 작성됨</time>
+          </header>
+
+          <div className="counselor-dashboard-grid">
+            <div className="counselor-dashboard-column" aria-label="대시보드 주요 정보">
+              <DashboardCard title="아이 관찰 기록">
+                <ObservationList />
+              </DashboardCard>
+
+              <DashboardCard title="수면 점수 추이">
+                <BarChart />
+              </DashboardCard>
+
+              <DashboardCard title="수면 효율 추이">
+                <LineChart data={sleepEfficiency} color="#f2a57d" />
+                <p className="counselor-card-note">
+                  수면 추세 시간 중 실제로 잠든 시간의 비율을 의미합니다.
+                </p>
+              </DashboardCard>
+            </div>
+            <div className="counselor-dashboard-column" aria-label="대시보드 분석 정보">
+              <ExpressionAnalysis />
+            </div>
           </div>
-          <div className="counselor-dashboard-column" aria-label="대시보드 분석 정보">
-            <ExpressionAnalysis />
-          </div>
+
+          <section className="counselor-biometric-section">
+            <div className="counselor-section-title">
+              <h3>생체 데이터</h3>
+              <button type="button" aria-label="생체 데이터 안내">
+                <FiInfo aria-hidden="true" />
+              </button>
+            </div>
+            <div className="counselor-biometric-grid">
+              <DashboardCard title="비율 (HR + ACC)">
+                <LineChart data={biometricRatio} color="#f2a57d" />
+                <p className="counselor-card-note">
+                  주간 활동 및 행동 패턴의 변화를 보여줍니다. 수요일 활동량
+                  감소에 주목해주세요.
+                </p>
+              </DashboardCard>
+
+              <DashboardCard title="자율신경 (HRV)">
+                <LineChart data={hrvTrend} color="#9b78f0" />
+                <p className="counselor-card-note">
+                  주간 활동 및 행동 패턴의 변화를 보여줍니다. 수요일 활동량
+                  감소에 주목해주세요.
+                </p>
+              </DashboardCard>
+            </div>
+          </section>
+
+          <section className="counselor-dashboard-floating-summary" aria-label="요약 지표">
+            <span>
+              <FiFileText aria-hidden="true" /> 관찰 3건
+            </span>
+            <span>
+              <FiMoon aria-hidden="true" /> 수면 주의
+            </span>
+            <span>
+              <FiActivity aria-hidden="true" /> 활동 감소
+            </span>
+            <span>
+              <FiHeart aria-hidden="true" /> 정서 안정 관찰
+            </span>
+          </section>
         </div>
-
-        <section className="counselor-biometric-section">
-          <div className="counselor-section-title">
-            <h3>생체 데이터</h3>
-            <button type="button" aria-label="생체 데이터 안내">
-              <FiInfo aria-hidden="true" />
-            </button>
-          </div>
-          <div className="counselor-biometric-grid">
-            <DashboardCard title="비율 (HR + ACC)">
-              <LineChart data={biometricRatio} color="#f2a57d" />
-              <p className="counselor-card-note">
-                주간 활동 및 행동 패턴의 변화를 보여줍니다. 수요일 활동량
-                감소에 주목해주세요.
-              </p>
-            </DashboardCard>
-
-            <DashboardCard title="자율신경 (HRV)">
-              <LineChart data={hrvTrend} color="#9b78f0" />
-              <p className="counselor-card-note">
-                주간 활동 및 행동 패턴의 변화를 보여줍니다. 수요일 활동량
-                감소에 주목해주세요.
-              </p>
-            </DashboardCard>
-          </div>
-        </section>
-
-        <section className="counselor-dashboard-floating-summary" aria-label="요약 지표">
-          <span>
-            <FiFileText aria-hidden="true" /> 관찰 3건
-          </span>
-          <span>
-            <FiMoon aria-hidden="true" /> 수면 주의
-          </span>
-          <span>
-            <FiActivity aria-hidden="true" /> 활동 감소
-          </span>
-          <span>
-            <FiHeart aria-hidden="true" /> 정서 안정 관찰
-          </span>
-        </section>
       </section>
     </main>
   )
