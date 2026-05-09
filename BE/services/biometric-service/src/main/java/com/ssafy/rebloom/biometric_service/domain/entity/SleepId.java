@@ -1,10 +1,8 @@
 package com.ssafy.rebloom.biometric_service.domain.entity;
 
-import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
-import jakarta.validation.constraints.NotNull;
 import java.io.Serializable;
-import java.time.OffsetDateTime;
+import java.time.LocalDate;
 import java.util.UUID;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -18,14 +16,8 @@ import lombok.NoArgsConstructor;
 @Builder
 @EqualsAndHashCode
 @AllArgsConstructor(access = AccessLevel.PROTECTED)
-@NoArgsConstructor(access = AccessLevel.PRIVATE)
-public class MinutelyHealthLogId implements Serializable {
-
-    @NotNull
-    @Column(name = "measured_at", nullable = false)
-    private OffsetDateTime measuredAt;
-
-    @NotNull
-    @Column(name = "user_id", nullable = false)
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+public class SleepId implements Serializable {
     private UUID userId;
+    private LocalDate date;
 }
