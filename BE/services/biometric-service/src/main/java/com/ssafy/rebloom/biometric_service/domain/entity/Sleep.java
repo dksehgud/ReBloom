@@ -22,8 +22,8 @@ public class Sleep {
     @EmbeddedId
     private SleepId id;
 
+    @Column(nullable = false)
     private LocalDateTime asleep;
-    private LocalDateTime wakeup;
 
     @Column(name = "sleep_duration")
     private Double sleepDuration;
@@ -36,4 +36,6 @@ public class Sleep {
     @Column(name = "sleep_efficiency")
     private Double sleepEfficiency;
 
+    @Column(name = "is_main_sleep")
+    private Boolean isMainSleep;
 }

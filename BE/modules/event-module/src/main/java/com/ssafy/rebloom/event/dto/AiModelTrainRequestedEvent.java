@@ -10,7 +10,7 @@ public record AiModelTrainRequestedEvent(
     String reason,
     Long requiredCount,
     LocalDateTime requestedAt,
-    List<BiometricDataEvent> records
+    List<BiometricDataEvent> biometrics
 ) {
 
 }

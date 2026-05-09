@@ -19,4 +19,5 @@ public interface BiometricRepository extends JpaRepository<Biometric, BiometricI
         @Param("userId") UUID userId,
         @Param("from") LocalDateTime from,
         @Param("to") LocalDateTime to
-    );}
+    );
+}

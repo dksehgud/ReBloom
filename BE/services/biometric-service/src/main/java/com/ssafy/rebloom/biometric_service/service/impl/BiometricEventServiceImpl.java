@@ -50,7 +50,7 @@ public class BiometricEventServiceImpl implements BiometricEventService {
         LocalDateTime from = to.minusDays(14);
 
         // 모델 훈련용 생체 데이터 조회
-        List<BiometricDataEvent> records = biometricRepository
+        List<BiometricDataEvent> biometrics = biometricRepository
             .findBiometricsInRange(userId, from, to)
             .stream()
             .map(Biometric::toEvent)
@@ -63,7 +63,7 @@ public class BiometricEventServiceImpl implements BiometricEventService {
             Constants.REASON_BIOMETRIC_COUNT_REACHED,
             Constants.TRAINING_COUNT,
             LocalDateTime.now(),
-            records
+            biometrics
         );
         
         // 이벤트 키 생성

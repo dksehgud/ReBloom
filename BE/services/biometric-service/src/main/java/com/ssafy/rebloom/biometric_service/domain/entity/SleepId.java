@@ -1,8 +1,9 @@
 package com.ssafy.rebloom.biometric_service.domain.entity;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
 import java.io.Serializable;
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.UUID;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -19,5 +20,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class SleepId implements Serializable {
     private UUID userId;
-    private LocalDate date;
+
+    @Column(name = "wakeup", nullable = false)
+    private LocalDateTime wakeup;
 }
