@@ -1,6 +1,8 @@
 import type { ReactNode } from 'react'
 import {
   FiActivity,
+  FiChevronLeft,
+  FiChevronRight,
   FiFileText,
   FiHeart,
   FiInfo,
@@ -26,6 +28,21 @@ type ObservationRecord = {
   mood: string
   text: string
   commentCount?: number
+}
+
+type TimelineEntry = {
+  id: number
+  type: 'diary' | 'conversation'
+  time?: string
+  emotion?: string
+  content: string
+  tags: string[]
+}
+
+type TimelineDay = {
+  id: number
+  date: string
+  entries: TimelineEntry[]
 }
 
 const childList: ChildListItem[] = [
@@ -89,6 +106,16 @@ const sleepEfficiency = [
   { label: '일', value: 40 },
 ]
 
+const expressionTrend = [
+  { label: '월', value: 42, emoji: '🙂' },
+  { label: '화', value: 66, emoji: '😊' },
+  { label: '수', value: 58, emoji: '😐' },
+  { label: '목', value: 52, emoji: '😶' },
+  { label: '금', value: 62, emoji: '🙂' },
+  { label: '토', value: 74, emoji: '😊' },
+  { label: '일', value: 68, emoji: '🙂' },
+]
+
 const biometricRatio = [
   { label: '월', value: 52 },
   { label: '화', value: 55 },
@@ -109,6 +136,75 @@ const hrvTrend = [
   { label: '일', value: 70 },
 ]
 
+const timelineDays: TimelineDay[] = [
+  {
+    id: 1,
+    date: '4월 15일 (월)',
+    entries: [
+      {
+        id: 1,
+        type: 'diary',
+        emotion: '😊',
+        content: '아빠랑 노는 일이었어요. 엄마가 커플 고양이를 사주었고, 지금 심심합니다.',
+        tags: ['짜증 스러움', '기쁨'],
+      },
+    ],
+  },
+  {
+    id: 2,
+    date: '4월 16일 (화)',
+    entries: [
+      {
+        id: 2,
+        type: 'diary',
+        emotion: '🙂',
+        content: '오늘은 엄마에서 친구랑 놀았어요. 같이 숙제도 기분이 좋았어요.',
+        tags: ['친구 공유', '공감'],
+      },
+      {
+        id: 3,
+        type: 'conversation',
+        time: '09:03 - 09:10',
+        content: '"무슨일?"',
+        tags: ['부정'],
+      },
+    ],
+  },
+  {
+    id: 3,
+    date: '4월 17일 (수)',
+    entries: [
+      {
+        id: 4,
+        type: 'diary',
+        emotion: '😐',
+        content: '수학 시간에서 친구와 싸웠어요. 왜 싸웠는지 잘 모르겠어요. 집에 와서는 기분이 안 좋았어요.',
+        tags: ['친구 문제', '불안'],
+      },
+      {
+        id: 5,
+        type: 'conversation',
+        time: '18:30 - 18:40',
+        content: '"다시 얘기하자 해줘"',
+        tags: ['친구 공유', '유효'],
+      },
+    ],
+  },
+  {
+    id: 4,
+    date: '4월 19일 (금)',
+    entries: [
+      {
+        id: 6,
+        type: 'diary',
+        emotion: '😰',
+        content: '어디선가 화해했어요. 집에 와서도 기분이 좋았어요.',
+        tags: ['친구 공유', '공감'],
+      },
+    ],
+  },
+]
+
 function StatusBadge({ status }: { status?: ChildStatus }) {
   if (!status) {
     return null
@@ -126,7 +222,7 @@ function MetricTag({
   tone = 'neutral',
 }: {
   children: string
-  tone?: 'green' | 'neutral'
+  tone?: 'blue' | 'green' | 'orange' | 'neutral'
 }) {
   return <span className={`counselor-dashboard-tag is-${tone}`}>{children}</span>
 }
@@ -169,9 +265,11 @@ function BarChart() {
 function LineChart({
   data,
   color,
+  showEmoji = false,
 }: {
-  data: Array<{ label: string; value: number }>
+  data: Array<{ label: string; value: number; emoji?: string }>
   color: string
+  showEmoji?: boolean
 }) {
   const width = 520
   const height = 180
@@ -211,6 +309,11 @@ function LineChart({
       {points.map((point) => (
         <g key={point.label}>
           <circle cx={point.x} cy={point.y} r={4.8} style={{ fill: color }} />
+          {showEmoji && point.emoji ? (
+            <text className="counselor-line-chart-emoji" x={point.x} y={point.y - 12}>
+              {point.emoji}
+            </text>
+          ) : null}
           <text className="counselor-line-chart-label" x={point.x} y={height - 8}>
             {point.label}
           </text>
@@ -242,6 +345,82 @@ function ObservationList() {
         </article>
       ))}
     </div>
+  )
+}
+
+function ExpressionAnalysis() {
+  return (
+    <DashboardCard title="최근 표현 분석" className="counselor-expression-card">
+      <div className="counselor-expression-tabs" aria-label="분석 범위">
+        <button type="button" className="is-active">
+          전체
+        </button>
+        <button type="button">일기</button>
+        <button type="button">대화</button>
+        <button type="button" className="counselor-expression-more">
+          감정 흐름 크게보기
+        </button>
+      </div>
+
+      <div className="counselor-expression-week">
+        <button type="button" aria-label="이전 주">
+          <FiChevronLeft aria-hidden="true" />
+        </button>
+        <strong>2026년 5월 1주차</strong>
+        <button type="button" aria-label="다음 주">
+          <FiChevronRight aria-hidden="true" />
+        </button>
+      </div>
+
+      <div className="counselor-ai-summary">
+        <span>AI 분석 인사이트</span>
+        <p>
+          최근 3일간 부모와의 갈등을 바탕으로 다음과 같은 제안을 하고 있습니다.
+          부모님은 자녀가 약간 섭섭해 보일 때 가벼운 공감 질문을 먼저 건네는
+          것이 좋습니다.
+        </p>
+      </div>
+
+      <div className="counselor-expression-chart">
+        <LineChart data={expressionTrend} color="#88b5c4" showEmoji />
+      </div>
+
+      <div className="counselor-timeline">
+        {timelineDays.map((day) => (
+          <section className="counselor-timeline-day" key={day.id}>
+            <h4>{day.date}</h4>
+            <div className="counselor-timeline-items">
+              {day.entries.map((entry) => (
+                <article className="counselor-timeline-entry" key={entry.id}>
+                  <MetricTag tone={entry.type === 'diary' ? 'green' : 'blue'}>
+                    {entry.type === 'diary' ? '일기' : '대화'}
+                  </MetricTag>
+                  <div>
+                    {entry.time ? <span className="entry-time">{entry.time}</span> : null}
+                    {entry.emotion ? (
+                      <span className="entry-emotion" aria-hidden="true">
+                        {entry.emotion}
+                      </span>
+                    ) : null}
+                    <p>{entry.content}</p>
+                    <div className="entry-tags">
+                      {entry.tags.map((tag, index) => (
+                        <MetricTag
+                          key={`${entry.id}-${tag}`}
+                          tone={index === 0 ? 'orange' : 'neutral'}
+                        >
+                          {tag}
+                        </MetricTag>
+                      ))}
+                    </div>
+                  </div>
+                </article>
+              ))}
+            </div>
+          </section>
+        ))}
+      </div>
+    </DashboardCard>
   )
 }
 
@@ -306,7 +485,9 @@ function CounselorDashboardPage() {
               </p>
             </DashboardCard>
           </div>
-          <div className="counselor-dashboard-column" aria-label="대시보드 분석 정보" />
+          <div className="counselor-dashboard-column" aria-label="대시보드 분석 정보">
+            <ExpressionAnalysis />
+          </div>
         </div>
 
         <section className="counselor-biometric-section">

@@ -242,6 +242,16 @@
   background: rgba(155, 196, 168, 0.12);
 }
 
+.counselor-dashboard-tag.is-blue {
+  color: var(--dashboard-blue);
+  background: rgba(136, 181, 196, 0.2);
+}
+
+.counselor-dashboard-tag.is-orange {
+  color: #f2a57d;
+  background: rgba(242, 165, 125, 0.14);
+}
+
 .counselor-observation-list {
   display: flex;
   flex-direction: column;
@@ -380,11 +390,201 @@
   text-anchor: middle;
 }
 
+.counselor-line-chart-emoji {
+  font-size: 16px;
+  text-anchor: middle;
+}
+
 .counselor-card-note {
   margin: 8px 0 0;
   color: var(--dashboard-muted);
   font-size: 10px;
   line-height: 1.6;
+}
+
+.counselor-expression-card {
+  display: flex;
+  flex-direction: column;
+  min-height: 840px;
+}
+
+.counselor-expression-tabs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: -40px 0 18px auto;
+}
+
+.counselor-expression-tabs button {
+  height: 30px;
+  padding: 0 14px;
+  color: var(--dashboard-muted);
+  background: transparent;
+  border: 0;
+  border-radius: 999px;
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.counselor-expression-tabs button.is-active {
+  color: #ffffff;
+  background: var(--dashboard-primary);
+}
+
+.counselor-expression-tabs .counselor-expression-more {
+  margin-left: 6px;
+  padding: 0;
+  color: var(--dashboard-blue);
+  background: transparent;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.counselor-expression-week {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 12px;
+}
+
+.counselor-expression-week button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  color: var(--dashboard-blue);
+  background: transparent;
+  border: 0;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.counselor-expression-week strong {
+  color: var(--dashboard-text);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.counselor-ai-summary {
+  margin-bottom: 14px;
+  padding: 14px 16px;
+  background: rgba(136, 181, 196, 0.08);
+  border: 1px solid rgba(136, 181, 196, 0.18);
+  border-radius: 12px;
+}
+
+.counselor-ai-summary span {
+  color: var(--dashboard-primary);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.counselor-ai-summary p {
+  margin: 8px 0 0;
+  color: #4a5568;
+  font-size: 11px;
+  line-height: 1.65;
+}
+
+.counselor-expression-chart {
+  margin-bottom: 18px;
+  padding: 10px 12px 0;
+  background: #ffffff;
+  border: 1px solid rgba(168, 178, 188, 0.12);
+  border-radius: 12px;
+}
+
+.counselor-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding-right: 4px;
+}
+
+.counselor-timeline-day {
+  position: relative;
+  padding-left: 24px;
+}
+
+.counselor-timeline-day::before {
+  position: absolute;
+  top: 28px;
+  bottom: -18px;
+  left: 6px;
+  width: 2px;
+  background: rgba(136, 181, 196, 0.18);
+  content: '';
+}
+
+.counselor-timeline-day:last-child::before {
+  display: none;
+}
+
+.counselor-timeline-day h4 {
+  position: relative;
+  margin: 0 0 12px;
+  color: var(--dashboard-text);
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1.5;
+}
+
+.counselor-timeline-day h4::before {
+  position: absolute;
+  top: 8px;
+  left: -22px;
+  width: 6px;
+  height: 6px;
+  background: var(--dashboard-blue);
+  border-radius: 999px;
+  content: '';
+}
+
+.counselor-timeline-items {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.counselor-timeline-entry {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 12px;
+  padding: 13px;
+  background: rgba(136, 181, 196, 0.02);
+  border: 1px solid rgba(168, 178, 188, 0.15);
+  border-radius: 12px;
+}
+
+.entry-time {
+  display: block;
+  color: var(--dashboard-muted);
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1.5;
+}
+
+.entry-emotion {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 18px;
+  line-height: 1;
+}
+
+.counselor-timeline-entry p {
+  margin: 4px 0 10px;
+  color: #4a5568;
+  font-size: 11px;
+  line-height: 1.6;
+}
+
+.entry-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
 }
 
 .counselor-biometric-section {
@@ -476,6 +676,15 @@
     flex-direction: column;
     gap: 4px;
   }
+
+  .counselor-expression-card {
+    min-height: 0;
+  }
+
+  .counselor-expression-tabs {
+    flex-wrap: wrap;
+    margin: 0 0 18px;
+  }
 }
 
 @media (max-width: 560px) {
@@ -483,7 +692,8 @@
     padding: 16px;
   }
 
-  .counselor-observation-card {
+  .counselor-observation-card,
+  .counselor-timeline-entry {
     grid-template-columns: 1fr;
   }
 
