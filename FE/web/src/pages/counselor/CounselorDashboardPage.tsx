@@ -1,4 +1,5 @@
 import { useState, type ReactNode } from 'react'
+import { useNavigate } from 'react-router-dom'
 import {
   FiActivity,
   FiChevronLeft,
@@ -9,6 +10,7 @@ import {
   FiMenu,
   FiMessageSquare,
   FiMoon,
+  FiSettings,
 } from 'react-icons/fi'
 
 type ChildStatus = 'active' | 'done'
@@ -43,6 +45,10 @@ type TimelineDay = {
   id: number
   date: string
   entries: TimelineEntry[]
+}
+
+const counselorProfile = {
+  name: '홍길동',
 }
 
 const childList: ChildListItem[] = [
@@ -426,6 +432,7 @@ function ExpressionAnalysis() {
 
 function CounselorDashboardPage() {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
+  const navigate = useNavigate()
 
   return (
     <main
@@ -473,6 +480,23 @@ function CounselorDashboardPage() {
             </button>
           ))}
         </nav>
+
+        <footer className="counselor-dashboard-sidebar-footer">
+          <div className="counselor-dashboard-sidebar-profile">
+            <span className="counselor-dashboard-sidebar-avatar" aria-hidden="true">
+              {counselorProfile.name.slice(0, 1)}
+            </span>
+            <strong>{counselorProfile.name} 상담자님</strong>
+          </div>
+          <button
+            type="button"
+            aria-label="설정 페이지로 이동"
+            className="counselor-dashboard-sidebar-settings"
+            onClick={() => navigate('/counselor/settings')}
+          >
+            <FiSettings aria-hidden="true" />
+          </button>
+        </footer>
       </aside>
 
       <section className="counselor-dashboard-main">

@@ -18,6 +18,7 @@ import ChildSettingsPage from '../../pages/child/ChildSettingsPage'
 import CounselorDashboardPage from '../../pages/counselor/CounselorDashboardPage'
 import CounselorFindPasswordPage from '../../pages/counselor/CounselorFindPasswordPage'
 import CounselorLoginPage from '../../pages/counselor/CounselorLoginPage'
+import CounselorSettingsPage from '../../pages/counselor/CounselorSettingsPage'
 import CounselorSignUpPage from '../../pages/counselor/CounselorSignUpPage'
 import ParentHomePage from '../../pages/parent/ParentHomePage'
 import ParentNotificationsPage from '../../pages/parent/ParentNotificationsPage'
@@ -262,6 +263,7 @@ function AppRouter() {
 
       <Route element={<CounselorRouteLayout />}>
         <Route path="/counselor/dashboard" element={<CounselorDashboardPage />} />
+        <Route path="/counselor/settings" element={<CounselorSettingsPage />} />
       </Route>
 
       <Route path="/counselor/*" element={<Navigate replace to="/counselor/login" />} />
