@@ -1,5 +1,43 @@
 import { FiInfo, FiSettings } from 'react-icons/fi'
 
+type ChildStatus = 'active' | 'done'
+
+type ChildListItem = {
+  id: number
+  name: string
+  meta: string
+  subText: string
+  status?: ChildStatus
+}
+
+const childList: ChildListItem[] = [
+  {
+    id: 1,
+    name: '김주연',
+    meta: '13세(남)',
+    subText: '보호자 : 유주경',
+    status: 'active',
+  },
+  { id: 2, name: '이온준', meta: '12세', subText: '10차', status: 'done' },
+  { id: 3, name: '박민서', meta: '14세', subText: '10차' },
+  { id: 4, name: '정민지', meta: '11세', subText: '14차', status: 'active' },
+  { id: 5, name: '김나영', meta: '13세', subText: '7차', status: 'done' },
+  { id: 6, name: '이동현', meta: '15세', subText: '14차' },
+  { id: 7, name: '박지우', meta: '12세', subText: '14차' },
+]
+
+function StatusBadge({ status }: { status?: ChildStatus }) {
+  if (!status) {
+    return null
+  }
+
+  return (
+    <span className={`counselor-dashboard-status is-${status}`}>
+      {status === 'done' ? '종료' : '진행'}
+    </span>
+  )
+}
+
 function CounselorDashboardPage() {
   return (
     <main className="counselor-dashboard">
@@ -13,6 +51,23 @@ function CounselorDashboardPage() {
             <FiSettings aria-hidden="true" />
           </button>
         </header>
+
+        <nav className="counselor-child-list" aria-label="상담 아동 목록">
+          {childList.map((child, index) => (
+            <button
+              type="button"
+              className={index === 0 ? 'is-selected' : undefined}
+              key={child.id}
+            >
+              <span>
+                <strong>{child.name}</strong>
+                <em>{child.meta}</em>
+              </span>
+              <small>{child.subText}</small>
+              <StatusBadge status={child.status} />
+            </button>
+          ))}
+        </nav>
       </aside>
 
       <section className="counselor-dashboard-main">
