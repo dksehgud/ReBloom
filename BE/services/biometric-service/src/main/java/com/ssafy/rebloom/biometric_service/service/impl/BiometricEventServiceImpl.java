@@ -8,7 +8,7 @@ import com.ssafy.rebloom.biometric_service.service.BiometricEventService;
 import com.ssafy.rebloom.biometric_service.service.RedisService;
 import com.ssafy.rebloom.event.config.property.KafkaCommonProperties;
 import com.ssafy.rebloom.event.core.EventTypes;
-import com.ssafy.rebloom.event.dto.AiModelTrainRequestEvent;
+import com.ssafy.rebloom.event.dto.AiModelTrainRequestedEvent;
 import com.ssafy.rebloom.event.dto.BiometricDataEvent;
 import com.ssafy.rebloom.event.publisher.EventPublisher;
 import com.ssafy.rebloom.event.support.EventKeyGenerator;
@@ -17,8 +17,10 @@ import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
+@Transactional(readOnly = true)
 @RequiredArgsConstructor
 public class BiometricEventServiceImpl implements BiometricEventService {
 
@@ -30,6 +32,7 @@ public class BiometricEventServiceImpl implements BiometricEventService {
     private final EventPublisher eventPublisher;
 
     @Override
+    @Transactional
     public void save(BiometricDataEvent event, String correlationId) {
         BiometricId biometricId = BiometricId.create(event.userId(), event.tsStart());
         Biometric biometric = Biometric.create(biometricId, event.tsEnd(), event.hr(), event.ibi(),
@@ -42,11 +45,7 @@ public class BiometricEventServiceImpl implements BiometricEventService {
     }
     
     @Override
-    public void requestAITraining(
-        UUID userId,
-        LocalDateTime currentMeasuredAt,
-        String correlationId
-    ) {
+    public void publishAITrainingRequestedEvent(UUID userId, LocalDateTime currentMeasuredAt, String correlationId) {
         LocalDateTime to = currentMeasuredAt;
         LocalDateTime from = to.minusDays(14);
 
@@ -58,7 +57,7 @@ public class BiometricEventServiceImpl implements BiometricEventService {
             .toList();
         
         // 이벤트 생성
-        AiModelTrainRequestEvent event = new AiModelTrainRequestEvent(
+        AiModelTrainRequestedEvent event = new AiModelTrainRequestedEvent(
             userId,
             Constants.MODEL_TYPE_ISOLATION_FOREST,
             Constants.REASON_BIOMETRIC_COUNT_REACHED,
@@ -77,7 +76,7 @@ public class BiometricEventServiceImpl implements BiometricEventService {
         
         // 이벤트 발행
         eventPublisher.publish(
-            kafkaProperties.getTopics().getAiModelTrainRequest(),
+            kafkaProperties.getTopics().getAiModelTrainRequested(),
             key,
             EventTypes.AI_MODEL_TRAIN_REQUESTED,
             correlationId,
@@ -86,11 +85,7 @@ public class BiometricEventServiceImpl implements BiometricEventService {
         );
     }
 
-    private void handleInitialTrainingTrigger(
-        BiometricDataEvent event,
-        String correlationId,
-        long savedRecordCount
-    ) {
+    private void handleInitialTrainingTrigger(BiometricDataEvent event, String correlationId, long savedRecordCount) {
         UUID userId = event.userId();
         // 훈련 완료 여부 조회
         if (isTrainingAlreadyRequested(userId)) {
@@ -110,7 +105,7 @@ public class BiometricEventServiceImpl implements BiometricEventService {
 
         // 모델 훈련 이벤트 발행 및 카운트 키는 제거
         try {
-            requestAITraining(userId, event.tsStart(), correlationId);
+            publishAITrainingRequestedEvent(userId, event.tsStart(), correlationId);
             redisService.delete(countKey(userId));
         } catch (RuntimeException e) {
             redisService.delete(trainRequestedKey(userId));

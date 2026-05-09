@@ -14,5 +14,5 @@ public class KafkaTopicsProperties {
     private String conversationInitiate;
     private String analysisReportCompleted;
     private String eventDlt;
-    private String aiModelTrainRequest;
+    private String aiModelTrainRequested;
 }

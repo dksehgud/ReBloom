@@ -115,6 +115,11 @@ services:
           --partitions 3 \
           --replication-factor 3
 
+	kafka-topics.sh --bootstrap-server kafka-1:9092 --create --if-not-exists \
+  	  --topic rebloom.ai.model.train.requested.v1 \
+  	  --partitions 3 \
+  	  --replication-factor 3
+
         kafka-topics.sh --bootstrap-server kafka-1:9092 --create --if-not-exists \
           --topic rebloom.event.dlt.v1 \
           --partitions 1 \

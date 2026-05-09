@@ -7,5 +7,5 @@ import java.util.UUID;
 public interface BiometricEventService {
     void save(BiometricDataEvent event, String correlationId);
 
-    void requestAITraining(UUID userId, LocalDateTime currentMeasuredAt, String correlationId);
+    void publishAITrainingRequestedEvent(UUID userId, LocalDateTime currentMeasuredAt, String correlationId);
 }

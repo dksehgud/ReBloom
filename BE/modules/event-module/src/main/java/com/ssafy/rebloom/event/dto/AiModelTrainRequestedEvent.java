@@ -4,7 +4,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
-public record AiModelTrainRequestEvent (
+public record AiModelTrainRequestedEvent(
     UUID userId,
     String modelType,
     String reason,
