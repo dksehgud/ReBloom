@@ -1,6 +1,7 @@
 import type { ChangeEvent, FormEvent, KeyboardEvent } from 'react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { FiEye, FiEyeOff } from 'react-icons/fi'
+import { useNavigate } from 'react-router-dom'
 
 import AuthInput from '../../components/auth/AuthInput'
 import CounselorAuthLayout from '../../components/templates/CounselorAuthLayout/CounselorAuthLayout'
@@ -38,6 +39,7 @@ function formatPhoneNumber(value: string) {
 }
 
 function CounselorSignUpPage() {
+  const navigate = useNavigate()
   const [step, setStep] = useState<SignUpStep>('email')
   const [email, setEmail] = useState('')
   const [emailStatus, setEmailStatus] = useState<EmailStatus>('idle')
@@ -190,7 +192,7 @@ function CounselorSignUpPage() {
       return
     }
 
-    if (verificationCode === '555555') {
+    if (verificationCode === '123456') {
       setVerificationStatus('idle')
       setStep('profile')
       return
@@ -230,6 +232,12 @@ function CounselorSignUpPage() {
 
   const handleProfileSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
+
+    if (!isProfileStepComplete) {
+      return
+    }
+
+    navigate('/counselor/login')
   }
 
   return (

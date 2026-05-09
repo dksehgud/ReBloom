@@ -1,0 +1,225 @@
+.counselor-dashboard {
+  --dashboard-bg: #f5f8fa;
+  --dashboard-card: #ffffff;
+  --dashboard-text: #2d3748;
+  --dashboard-muted: #718096;
+  --dashboard-primary: #344966;
+  --dashboard-blue: #88b5c4;
+  display: flex;
+  min-height: 100svh;
+  background: var(--dashboard-bg);
+  color: var(--dashboard-text);
+  font-family: 'Inter', 'Noto Sans KR', sans-serif;
+}
+
+.counselor-dashboard button {
+  font: inherit;
+}
+
+.counselor-dashboard-sidebar {
+  position: sticky;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  width: 240px;
+  height: 100svh;
+  flex: 0 0 240px;
+  background: #ffffff;
+  border-right: 1px solid rgba(168, 178, 188, 0.15);
+  overflow-y: auto;
+}
+
+.counselor-dashboard-brand {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 20px;
+  border-bottom: 1px solid rgba(168, 178, 188, 0.15);
+}
+
+.counselor-dashboard-brand h1 {
+  margin: 0;
+  color: var(--dashboard-primary);
+  font-size: 16px;
+  font-weight: 800;
+  line-height: 1.5;
+  letter-spacing: -0.02em;
+}
+
+.counselor-dashboard-brand p {
+  margin: 4px 0 0;
+  color: var(--dashboard-muted);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.counselor-dashboard-brand button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  color: #7a8aa0;
+  background: transparent;
+  border: 0;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.counselor-dashboard-brand button:hover {
+  background: rgba(136, 181, 196, 0.12);
+  color: var(--dashboard-primary);
+}
+
+.counselor-dashboard-main {
+  flex: 1;
+  min-width: 0;
+  max-width: 1200px;
+  padding: 24px;
+}
+
+.counselor-dashboard-hero {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 24px;
+  padding: 20px 22px;
+  background: var(--dashboard-card);
+  border: 1px solid rgba(139, 181, 196, 0.12);
+  border-radius: 16px;
+  box-shadow: 0 4px 16px rgba(38, 55, 76, 0.06);
+}
+
+.counselor-dashboard-hero h2 {
+  margin: 0;
+  color: #1f2b3a;
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.5;
+}
+
+.counselor-dashboard-hero p {
+  display: flex;
+  gap: 28px;
+  margin: 12px 0 0;
+  color: #4a5568;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.counselor-dashboard-hero time {
+  color: var(--dashboard-muted);
+  font-size: 12px;
+  line-height: 1.5;
+  white-space: nowrap;
+}
+
+.counselor-dashboard-grid,
+.counselor-biometric-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+}
+
+.counselor-dashboard-column {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  min-width: 0;
+}
+
+.counselor-dashboard-card {
+  padding: 20px;
+  background: var(--dashboard-card);
+  border: 1px solid rgba(139, 181, 196, 0.12);
+  border-radius: 16px;
+  box-shadow: 0 4px 16px rgba(38, 55, 76, 0.06);
+}
+
+.counselor-dashboard-card h3 {
+  margin: 0 0 18px;
+  color: var(--dashboard-text);
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.5;
+}
+
+.counselor-biometric-section {
+  margin-top: 30px;
+}
+
+.counselor-section-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+
+.counselor-section-title h3 {
+  margin: 0;
+  color: var(--dashboard-text);
+  font-size: 20px;
+  font-weight: 800;
+  line-height: 1.35;
+}
+
+.counselor-section-title button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  color: var(--dashboard-blue);
+  background: transparent;
+  border: 1px solid var(--dashboard-blue);
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.counselor-section-title svg {
+  width: 12px;
+  height: 12px;
+}
+
+@media (max-width: 1180px) {
+  .counselor-dashboard {
+    flex-direction: column;
+  }
+
+  .counselor-dashboard-sidebar {
+    position: static;
+    width: 100%;
+    height: auto;
+    flex: none;
+    border-right: 0;
+    border-bottom: 1px solid rgba(168, 178, 188, 0.15);
+  }
+
+  .counselor-dashboard-main {
+    max-width: none;
+  }
+}
+
+@media (max-width: 900px) {
+  .counselor-dashboard-main {
+    padding: 16px;
+  }
+
+  .counselor-dashboard-grid,
+  .counselor-biometric-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .counselor-dashboard-hero {
+    flex-direction: column;
+  }
+
+  .counselor-dashboard-hero p {
+    flex-direction: column;
+    gap: 4px;
+  }
+}

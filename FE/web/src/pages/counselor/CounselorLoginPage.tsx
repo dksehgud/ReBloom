@@ -1,7 +1,7 @@
 import type { FormEvent } from 'react'
 import { useState } from 'react'
 import { FiEye, FiEyeOff } from 'react-icons/fi'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 
 import googleLogo from '../../assets/google-logo.svg'
 import kakaoLogo from '../../assets/kakao-logo.svg'
@@ -9,6 +9,7 @@ import AuthInput from '../../components/auth/AuthInput'
 import CounselorAuthLayout from '../../components/templates/CounselorAuthLayout/CounselorAuthLayout'
 
 function CounselorLoginPage() {
+  const navigate = useNavigate()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [isPasswordVisible, setIsPasswordVisible] = useState(false)
@@ -17,6 +18,12 @@ function CounselorLoginPage() {
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
+
+    if (!isSubmitEnabled) {
+      return
+    }
+
+    navigate('/counselor/dashboard')
   }
 
   return (

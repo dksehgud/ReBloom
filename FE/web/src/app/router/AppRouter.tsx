@@ -15,6 +15,7 @@ import LoginPage from '../../pages/auth/LoginPage'
 import SignUpPage from '../../pages/auth/SignUpPage'
 import ChildDiaryListPage from '../../pages/child/ChildDiaryListPage'
 import ChildSettingsPage from '../../pages/child/ChildSettingsPage'
+import CounselorDashboardPage from '../../pages/counselor/CounselorDashboardPage'
 import CounselorFindPasswordPage from '../../pages/counselor/CounselorFindPasswordPage'
 import CounselorLoginPage from '../../pages/counselor/CounselorLoginPage'
 import CounselorSignUpPage from '../../pages/counselor/CounselorSignUpPage'
@@ -94,6 +95,20 @@ function CounselorAuthRouteLayout() {
 
   useEffect(() => {
     setActiveRole(null)
+    clearSelectedChild()
+  }, [clearSelectedChild, setActiveRole])
+
+  return <Outlet />
+}
+
+function CounselorRouteLayout() {
+  const setActiveRole = useAppSessionStore((state) => state.setActiveRole)
+  const clearSelectedChild = useSelectedChildStore(
+    (state) => state.clearSelectedChild,
+  )
+
+  useEffect(() => {
+    setActiveRole('counselor')
     clearSelectedChild()
   }, [clearSelectedChild, setActiveRole])
 
@@ -243,11 +258,13 @@ function AppRouter() {
           path="/counselor/find-password"
           element={<CounselorFindPasswordPage />}
         />
-        <Route
-          path="/counselor/*"
-          element={<Navigate replace to="/counselor/login" />}
-        />
       </Route>
+
+      <Route element={<CounselorRouteLayout />}>
+        <Route path="/counselor/dashboard" element={<CounselorDashboardPage />} />
+      </Route>
+
+      <Route path="/counselor/*" element={<Navigate replace to="/counselor/login" />} />
 
       <Route path="/child" element={<ChildRouteLayout />}>
         <Route index element={<Navigate replace to="/child/diary" />} />
