@@ -30,6 +30,8 @@ dependencies {
     testAnnotationProcessor 'org.projectlombok:lombok'
     testImplementation 'org.junit.jupiter:junit-jupiter'
 
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+
     api 'org.springframework.boot:spring-boot-starter-security'
 
     compileOnly 'jakarta.servlet:jakarta.servlet-api'

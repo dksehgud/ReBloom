@@ -2,4 +2,16 @@ debug: true
 
 logging:
   level:
-    root: DEBUG
+    root: INFO
+    com.ssafy.rebloom: DEBUG
+    org.springframework.kafka: DEBUG
+    io.lettuce.core: DEBUG
+
+spring:
+  kafka:
+    bootstrap-servers: localhost:29092,localhost:29093,localhost:29094
+
+  devtools:
+    restart:
+      enabled: false
+

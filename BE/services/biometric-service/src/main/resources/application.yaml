@@ -12,10 +12,32 @@ spring:
       ddl-auto: ${HIBERNATE_DDL_AUTO:none}
     properties:
       hibernate.jdbc.time_zone: Asia/Seoul
-
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
   flyway:
     enabled: true
     locations: classpath:db/migration
 
 server:
   port: ${SERVER_PORT:8083}
+
+rebloom:
+  kafka:
+    producer-name: biometric-service
+    topics:
+      biometric-raw: ${KAFKA_TOPIC_BIOMETRIC_RAW:rebloom.biometric.raw.v1}
+      sleep-raw: ${KAFKA_TOPIC_SLEEP_RAW:rebloom.sleep.raw.v1}
+      ai-model-train-request: ${KAFKA_TOPIC_AI_MODEL_TRAIN_REQUESTED:rebloom.ai.model.train.requested.v1}
+      event-dlt: ${KAFKA_TOPIC_EVENT_DLT:rebloom.event.dlt.v1}
+    producer:
+      retries: 3
+      retry-backoff-ms: 300
+      request-timeout-ms: 5000
+      delivery-timeout-ms: 15000
+      compression-type: snappy
+    consumer:
+      group-id: biometric-service
+      retry-interval-ms: 1000
+      retry-max-attempts: 3
