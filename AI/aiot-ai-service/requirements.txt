@@ -11,6 +11,9 @@ pydantic-settings==2.10.1
 # 비동기 HTTP 클라이언트 (vLLM API 호출)
 httpx==0.28.1
 
+# MQTT client
+paho-mqtt==2.1.0
+
 # SSE streaming (sse-starlette은 선택적 — FastAPI StreamingResponse로 대체 가능)
 # sse-starlette==2.1.3
 

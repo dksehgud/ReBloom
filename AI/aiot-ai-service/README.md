@@ -85,7 +85,7 @@ cp .env.example .env
 ```bash
 # .env에서 USE_MOCK_LLM=True 설정 후
 cd AI/aiot-ai-service
-uvicorn app.main:app --host 0.0.0.0 --port 8001 --reload
+uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
 또는 환경변수를 직접 지정:
@@ -111,12 +111,12 @@ RTX 5070 12GB 서버에서 아래 명령어로 vLLM을 먼저 실행해야 한�
 ```bash
 # Qwen3-8B-Instruct AWQ(4bit) 모델 예시
 python -m vllm.entrypoints.openai.api_server \
-    --model Qwen/Qwen3-8B-Instruct-AWQ \
+    --model Qwen/Qwen3-8B-AWQ  \
     --served-model-name qwen3-8b-instruct \
     --host 0.0.0.0 \
-    --port 8000 \
+    --port 8001 \
     --max-model-len 4096 \
-    --gpu-memory-utilization 0.9
+    --gpu-memory-utilization 0.85
 ```
 
 vLLM이 준비되면 `.env`에서 `USE_MOCK_LLM=False`로 설정하고 LLM 서버를 재시작한다.
