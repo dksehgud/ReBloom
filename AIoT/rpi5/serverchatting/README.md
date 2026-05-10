@@ -11,6 +11,8 @@ Raspberry Pi 5 기반 AIoT 스마트 스피커에서 LLM 서버와 WebSocket str
 - `LLM/voice_chat.py`의 로컬 STT/TTS 런타임 재사용
 - 대화 내역을 서버로 주기 전송
 - WebSocket 연결 실패 시 재시도
+- 평상시 wake word 대기, `alexa`/`알렉사` 호출 시 대화 시작
+- GET `/api/v1/analyses/conversations` 수신 시 먼저 인사 TTS 후 대화 시작
 
 ## 프로젝트 구조
 
@@ -80,6 +82,24 @@ APLAY_BIN=aplay
 SESSION_EVENTS_URL=
 SESSION_WINDOW_SECONDS=300
 SESSION_SEND_TIMEOUT=5
+
+WAKE_WORDS=alexa,알렉사
+WAKE_WORD_ENGINE=openwakeword
+OPENWAKEWORD_MODEL_PATHS=
+OPENWAKEWORD_THRESHOLD=0.5
+OPENWAKEWORD_DEBUG=false
+TRIGGER_API_HOST=0.0.0.0
+TRIGGER_API_PORT=8085
+TRIGGER_API_PATH=/api/v1/analyses/conversations
+TRIGGER_GREETING=안녕! 무슨 일이 있니?
+```
+
+실행하자마자 MQTT나 wake word 없이 바로 대화만 하려면:
+
+```env
+START_CONVERSATION_ON_BOOT=true
+WAKE_WORD_ENABLED=false
+MQTT_ENABLED=false
 ```
 
 ## 실행 방법
@@ -93,9 +113,55 @@ python -m rpi_client.main
 
 `USE_MOCK_STT=true`, `USE_MOCK_TTS=true` 상태로 실행하면 콘솔 입력과 콘솔 출력만으로 테스트할 수 있습니다.
 
-- `사용자>` 프롬프트에 문장을 입력하면 LLM 서버로 전송됩니다.
+- 평상시에는 `사용자>` 프롬프트에 `alexa` 또는 `알렉사`를 입력하면 대화 모드로 들어갑니다.
+- `alexa 오늘 기분이 좋아`처럼 wake word 뒤에 문장을 붙이면 그 문장을 바로 LLM 서버로 전송합니다.
+- 대화 모드에서 `사용자>` 프롬프트에 문장을 입력하면 LLM 서버로 전송됩니다.
 - 서버에서 `sentence` 메시지를 보내면 `[TTS] 문장` 형태로 출력됩니다.
-- `exit`, `quit`, `종료`를 입력하면 앱이 종료됩니다.
+- 대화 모드에서 `exit`, `quit`, `종료`를 입력하면 대화를 끝내고 대기 상태로 돌아갑니다.
+- 대기 상태에서 `exit`, `quit`, `종료`를 입력하면 앱이 종료됩니다.
+
+## 외부 GET 요청으로 대화 시작
+
+앱 실행 시 라즈베리파이 내부에 트리거용 HTTP 서버가 같이 뜹니다.
+
+```bash
+curl http://라즈베리파이IP:8085/api/v1/analyses/conversations
+```
+
+이 GET 요청을 받으면 스피커가 먼저 `안녕! 무슨 일이 있니?`라고 말한 뒤 기존 대화 로직을 실행합니다. 이미 대화 중이면 `409 busy`를 반환합니다.
+
+## MQTT 메시지로 대화 시작
+
+MQTT는 대화 전체가 아니라 "대화 시작 신호와 첫 TTS 문장"만 받는 용도로 사용합니다. 실제 사용자 발화와 LLM 응답은 기존 WebSocket 대화 로직을 그대로 사용합니다.
+
+MQTT로 대화를 깨울 때는 마이크를 wake-word 대기 루프와 대화 루프가 동시에 사용하지 않도록 아래 설정을 권장합니다.
+
+```env
+WAKE_WORD_ENABLED=false
+```
+
+```env
+MQTT_ENABLED=true
+MQTT_HOST=브로커주소
+MQTT_PORT=1883
+MQTT_USERNAME=0000fe10-0000-1000-8000-00805f9b34fb
+MQTT_PASSWORD=0000fe10-0000-1000-8000-00805f9b34fb
+MQTT_CLIENT_ID=0000fe10-0000-1000-8000-00805f9b34fb
+MQTT_CONVERSATION_START_TOPIC=devices/0000fe10-0000-1000-8000-00805f9b34fb/conversation/start
+```
+
+테스트 publish 예시:
+
+```bash
+mosquitto_pub \
+  -h MQTT_HOST \
+  -p 1883 \
+  -u 0000fe10-0000-1000-8000-00805f9b34fb \
+  -P 0000fe10-0000-1000-8000-00805f9b34fb \
+  -t 'devices/0000fe10-0000-1000-8000-00805f9b34fb/conversation/start' \
+  -q 1 \
+  -m '{"type":"conversation_start","device_id":"0000fe10-0000-1000-8000-00805f9b34fb","greeting":"안녕! 무슨 일이 있니?","request_id":"test-001","created_at":"2026-05-08T13:00:00+09:00"}'
+```
 
 ## LLM 서버 실행 조건
 
@@ -172,6 +238,8 @@ USE_MOCK_TTS=false
 ```env
 LISTEN_MODE=vad
 AUDIO_DEVICE=auto
+START_TIMEOUT=8
+WAKE_WORD_START_TIMEOUT=2
 WHISPER_BIN=/home/ssafy/whisper.cpp/build/bin/whisper-cli
 WHISPER_MODEL=/home/ssafy/whisper.cpp/models/ggml-base.bin
 WHISPER_THREADS=4
@@ -193,6 +261,22 @@ APLAY_BIN=aplay
 ```
 
 `TTS_ENGINE=auto`는 Edge TTS, Piper, espeak-ng 순서로 사용 가능한 엔진을 찾습니다.
+
+## 상시 대기 운영 모드
+
+wake word와 MQTT 둘 다 대기하다가 먼저 들어온 트리거로 대화를 시작하려면:
+
+```env
+START_CONVERSATION_ON_BOOT=false
+WAKE_WORD_ENABLED=true
+MQTT_ENABLED=true
+REPROMPT_ON_EMPTY=false
+CONVERSATION_EMPTY_TURNS_TO_END=1
+```
+
+이 모드에서는 대화 중 사용자의 의미 있는 입력이 한 번 없으면 대화를 종료하고 다시 wake word/MQTT 대기 상태로 돌아갑니다.
+`WAKE_WORD_START_TIMEOUT`은 wake word 대기 중 한 번에 음성 시작을 기다리는 시간이고, `START_TIMEOUT`은 실제 대화 중 사용자 입력을 기다리는 시간입니다.
+`WAKE_WORD_ENGINE=openwakeword`이면 wake word는 Whisper STT가 아니라 openWakeWord 모델로 감지하고, 감지 후에만 STT를 시작합니다.
 
 ## 대화 내역 서버 전송
 

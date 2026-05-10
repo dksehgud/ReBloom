@@ -3,9 +3,12 @@ import logging
 
 from rpi_client.core.config import get_settings
 from rpi_client.services.conversation_manager import ConversationManager
+from rpi_client.services.mqtt_conversation_subscriber import MQTTConversationSubscriber
 from rpi_client.services.session_event_sender import SessionEventSender
 from rpi_client.services.stt_service import LocalSTTService, MockSTTService
 from rpi_client.services.tts_service import LocalTTSService, MockTTSService
+from rpi_client.services.trigger_http_server import ConversationTriggerHTTPServer
+from rpi_client.services.wake_word_detector import OpenWakeWordDetector
 from rpi_client.services.websocket_client import LLMWebSocketClient
 from rpi_client.utils.logger import setup_logger
 
@@ -29,15 +32,33 @@ async def async_main() -> None:
         window_seconds=config.session_window_seconds,
         timeout=config.session_send_timeout,
     )
-    conversation_manager = ConversationManager(config, stt, tts, websocket_client, session_sender)
+    wake_word_detector = (
+        OpenWakeWordDetector(config)
+        if config.wake_word_enabled and config.wake_word_engine == "openwakeword" and not config.use_mock_stt
+        else None
+    )
+    conversation_manager = ConversationManager(
+        config,
+        stt,
+        tts,
+        websocket_client,
+        session_sender,
+        wake_word_detector,
+    )
+    trigger_http_server = ConversationTriggerHTTPServer(config, conversation_manager)
+    mqtt_subscriber = MQTTConversationSubscriber(config, conversation_manager)
 
     tts.start_worker()
+    await trigger_http_server.start()
+    await mqtt_subscriber.start()
 
     try:
         await conversation_manager.run()
     except KeyboardInterrupt:
         logger.info("키보드 인터럽트 수신")
     finally:
+        await mqtt_subscriber.stop()
+        await trigger_http_server.stop()
         await session_sender.flush(force=True)
         await websocket_client.close()
         await tts.stop()

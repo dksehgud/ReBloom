@@ -11,6 +11,7 @@ public final class EventTypes {
 
     public static final String AI_MODEL_TRAIN_REQUESTED = "AI_MODEL_TRAIN_REQUESTED";
 
+    public static final String PHQ_RESULT_PREDICTED = "PHQ_RESULT_PREDICTED";
     private EventTypes() {
     }
 }

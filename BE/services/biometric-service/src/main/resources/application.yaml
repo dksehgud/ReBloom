@@ -30,6 +30,7 @@ rebloom:
       biometric-raw: ${KAFKA_TOPIC_BIOMETRIC_RAW:rebloom.biometric.raw.v1}
       sleep-raw: ${KAFKA_TOPIC_SLEEP_RAW:rebloom.sleep.raw.v1}
       ai-model-train-request: ${KAFKA_TOPIC_AI_MODEL_TRAIN_REQUESTED:rebloom.ai.model.train.requested.v1}
+      phq-result: ${KAFKA_TOPIC_PHQ_RESULT:rebloom.phq.result.v1}
       event-dlt: ${KAFKA_TOPIC_EVENT_DLT:rebloom.event.dlt.v1}
     producer:
       retries: 3

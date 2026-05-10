@@ -1,7 +1,7 @@
 package com.ssafy.rebloom.biometric_service.consumer;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.ssafy.rebloom.biometric_service.service.BiometricEventService;
+import com.ssafy.rebloom.biometric_service.service.BiometricService;
 import com.ssafy.rebloom.event.core.EventEnvelope;
 import com.ssafy.rebloom.event.core.EventTypes;
 import com.ssafy.rebloom.event.dto.BiometricDataEvent;
@@ -18,7 +18,7 @@ import org.springframework.stereotype.Component;
 public class BiometricRawEventConsumer {
 
     private final ObjectMapper objectMapper;
-    private final BiometricEventService biometricEventService;
+    private final BiometricService biometricService;
 
     @KafkaListener(
         topics = "${rebloom.kafka.topics.biometric-raw}",
@@ -39,7 +39,7 @@ public class BiometricRawEventConsumer {
                 BiometricDataEvent.class
             );
 
-            biometricEventService.saveBiometric(payload, envelope.correlationId());
+            biometricService.save(payload, envelope.correlationId());
         } finally {
             MDC.remove("correlationId");
         }
