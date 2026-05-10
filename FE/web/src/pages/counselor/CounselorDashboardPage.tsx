@@ -47,6 +47,22 @@ type TimelineDay = {
   entries: TimelineEntry[]
 }
 
+type ExpressionFilter = 'all' | 'diary' | 'conversation'
+
+type ExpressionTrendPoint = {
+  label: string
+  value: number
+  emotionKey?: DiaryEmotionKey
+}
+
+type ExpressionWeek = {
+  id: string
+  label: string
+  insight: string
+  trend: Record<ExpressionFilter, ExpressionTrendPoint[]>
+  days: TimelineDay[]
+}
+
 const dashboardInfoMessages = {
   observation:
     '보호자가 기록한 아이의 일상 상태와 상담사 코멘트를 함께 확인하는 영역입니다.',
@@ -143,6 +159,14 @@ const expressionTrend: Array<{ label: string; value: number; emotionKey: DiaryEm
   { label: '일', value: 68, emotionKey: 'happy' },
 ]
 
+const expressionTabs: Array<{ key: ExpressionFilter; label: string }> = [
+  { key: 'all', label: '전체' },
+  { key: 'diary', label: '일기' },
+  { key: 'conversation', label: '대화' },
+]
+
+const DEFAULT_EXPRESSION_WEEK_INDEX = 1
+
 const biometricRatio = [
   { label: '월', value: 52 },
   { label: '화', value: 55 },
@@ -231,6 +255,190 @@ const timelineDays: TimelineDay[] = [
     ],
   },
 ]
+
+const expressionWeeks: ExpressionWeek[] = [
+  {
+    id: '2026-04-week-4',
+    label: '2026년 4월 4주차',
+    insight:
+      '지난 주에는 대화에서 부정 표현이 먼저 나타난 뒤 일기에서 불안 표현이 이어졌습니다. 주말에는 회복 표현이 함께 관찰됩니다.',
+    trend: {
+      all: [
+        { label: '월', value: 36, emotionKey: 'tired' },
+        { label: '화', value: 52, emotionKey: 'calm' },
+        { label: '수', value: 49, emotionKey: 'sad' },
+        { label: '목', value: 61, emotionKey: 'happy' },
+        { label: '금', value: 54, emotionKey: 'calm' },
+        { label: '토', value: 70, emotionKey: 'excited' },
+        { label: '일', value: 64, emotionKey: 'happy' },
+      ],
+      diary: [
+        { label: '월', value: 38, emotionKey: 'tired' },
+        { label: '화', value: 48, emotionKey: 'calm' },
+        { label: '수', value: 44, emotionKey: 'sad' },
+        { label: '목', value: 58, emotionKey: 'happy' },
+        { label: '금', value: 55, emotionKey: 'calm' },
+        { label: '토', value: 68, emotionKey: 'excited' },
+        { label: '일', value: 63, emotionKey: 'happy' },
+      ],
+      conversation: [
+        { label: '월', value: 30 },
+        { label: '화', value: 44 },
+        { label: '수', value: 58 },
+        { label: '목', value: 54 },
+        { label: '금', value: 47 },
+        { label: '토', value: 62 },
+        { label: '일', value: 59 },
+      ],
+    },
+    days: [
+      {
+        id: 11,
+        date: '4월 22일 (수)',
+        entries: [
+          {
+            id: 11,
+            type: 'diary',
+            emotionKey: 'sad',
+            content: '수업 시간에 집중이 잘 안 되었고, 집에 와서도 조금 멍한 느낌이 이어졌어요.',
+            tags: ['집중 저하', '무기력'],
+          },
+          {
+            id: 12,
+            type: 'conversation',
+            time: '20:12 - 20:18',
+            content: '"그냥 혼자 있고 싶어"',
+            tags: ['회피', '피로'],
+          },
+        ],
+      },
+      {
+        id: 12,
+        date: '4월 25일 (토)',
+        entries: [
+          {
+            id: 13,
+            type: 'diary',
+            emotionKey: 'excited',
+            content: '오랜만에 밖에 나가서 산책했어요. 바람이 시원해서 기분이 조금 좋아졌어요.',
+            tags: ['활동 증가', '회복'],
+          },
+        ],
+      },
+    ],
+  },
+  {
+    id: '2026-05-week-1',
+    label: '2026년 5월 1주차',
+    insight:
+      '최근 3일간 부모와의 갈등을 바탕으로 다음과 같은 제안을 하고 있습니다. 부모님은 자녀가 약간 섬세한 감정 표현을 할 때 바로 질문하기보다 가볍게 함께할 수 있는 활동을 제안하는 편이 좋습니다.',
+    trend: {
+      all: expressionTrend,
+      diary: [
+        { label: '월', value: 44, emotionKey: 'calm' },
+        { label: '화', value: 62, emotionKey: 'happy' },
+        { label: '수', value: 55, emotionKey: 'angry' },
+        { label: '목', value: 50, emotionKey: 'tired' },
+        { label: '금', value: 60, emotionKey: 'calm' },
+        { label: '토', value: 72, emotionKey: 'excited' },
+        { label: '일', value: 66, emotionKey: 'happy' },
+      ],
+      conversation: [
+        { label: '월', value: 38 },
+        { label: '화', value: 52 },
+        { label: '수', value: 64 },
+        { label: '목', value: 48 },
+        { label: '금', value: 55 },
+        { label: '토', value: 60 },
+        { label: '일', value: 58 },
+      ],
+    },
+    days: timelineDays,
+  },
+  {
+    id: '2026-05-week-2',
+    label: '2026년 5월 2주차',
+    insight:
+      '이번 주에는 일기에서 긍정 표현이 늘었고, 대화에서는 보호자에게 확인을 요청하는 문장이 반복되었습니다.',
+    trend: {
+      all: [
+        { label: '월', value: 56, emotionKey: 'calm' },
+        { label: '화', value: 61, emotionKey: 'happy' },
+        { label: '수', value: 63, emotionKey: 'calm' },
+        { label: '목', value: 67, emotionKey: 'happy' },
+        { label: '금', value: 59, emotionKey: 'tired' },
+        { label: '토', value: 73, emotionKey: 'excited' },
+        { label: '일', value: 76, emotionKey: 'happy' },
+      ],
+      diary: [
+        { label: '월', value: 58, emotionKey: 'calm' },
+        { label: '화', value: 64, emotionKey: 'happy' },
+        { label: '수', value: 66, emotionKey: 'calm' },
+        { label: '목', value: 70, emotionKey: 'happy' },
+        { label: '금', value: 61, emotionKey: 'tired' },
+        { label: '토', value: 76, emotionKey: 'excited' },
+        { label: '일', value: 78, emotionKey: 'happy' },
+      ],
+      conversation: [
+        { label: '월', value: 42 },
+        { label: '화', value: 46 },
+        { label: '수', value: 50 },
+        { label: '목', value: 55 },
+        { label: '금', value: 48 },
+        { label: '토', value: 60 },
+        { label: '일', value: 62 },
+      ],
+    },
+    days: [
+      {
+        id: 21,
+        date: '5월 6일 (수)',
+        entries: [
+          {
+            id: 21,
+            type: 'diary',
+            emotionKey: 'calm',
+            content: '숙제를 일찍 끝내고 좋아하는 음악을 들었어요. 마음이 조금 차분해졌어요.',
+            tags: ['차분함', '자기 조절'],
+          },
+          {
+            id: 22,
+            type: 'conversation',
+            time: '19:40 - 19:44',
+            content: '"나 오늘 잘한 거 맞지?"',
+            tags: ['확인 요청', '칭찬 욕구'],
+          },
+        ],
+      },
+      {
+        id: 22,
+        date: '5월 9일 (토)',
+        entries: [
+          {
+            id: 23,
+            type: 'diary',
+            emotionKey: 'excited',
+            content: '가족이랑 같이 게임을 했어요. 많이 웃어서 기분이 좋았어요.',
+            tags: ['가족 활동', '긍정 표현'],
+          },
+        ],
+      },
+    ],
+  },
+]
+
+function isTimelineEntryVisible(entry: TimelineEntry, filter: ExpressionFilter) {
+  return filter === 'all' || entry.type === filter
+}
+
+function getFilteredTimelineDays(days: TimelineDay[], filter: ExpressionFilter) {
+  return days
+    .map((day) => ({
+      ...day,
+      entries: day.entries.filter((entry) => isTimelineEntryVisible(entry, filter)),
+    }))
+    .filter((day) => day.entries.length > 0)
+}
 
 function MetricTag({
   children,
@@ -412,6 +620,14 @@ function ObservationList() {
 }
 
 function ExpressionAnalysis({ maxHeight }: { maxHeight?: number }) {
+  const [activeFilter, setActiveFilter] = useState<ExpressionFilter>('all')
+  const [activeWeekIndex, setActiveWeekIndex] = useState(DEFAULT_EXPRESSION_WEEK_INDEX)
+  const currentWeek = expressionWeeks[activeWeekIndex]
+  const currentTrend = currentWeek.trend[activeFilter]
+  const visibleTimelineDays = getFilteredTimelineDays(currentWeek.days, activeFilter)
+  const isFirstWeek = activeWeekIndex === 0
+  const isLastWeek = activeWeekIndex === expressionWeeks.length - 1
+
   return (
     <DashboardCard
       title="최근 표현 분석"
@@ -420,75 +636,99 @@ function ExpressionAnalysis({ maxHeight }: { maxHeight?: number }) {
       style={maxHeight ? { height: maxHeight, maxHeight } : undefined}
     >
       <div className="counselor-expression-tabs" aria-label="분석 범위">
-        <button type="button" className="is-active">
-          전체
-        </button>
-        <button type="button">일기</button>
-        <button type="button">대화</button>
+        <div className="counselor-expression-tab-group">
+          {expressionTabs.map((tab) => (
+            <button
+              type="button"
+              key={tab.key}
+              className={activeFilter === tab.key ? 'is-active' : undefined}
+              aria-pressed={activeFilter === tab.key}
+              onClick={() => setActiveFilter(tab.key)}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
         <button type="button" className="counselor-expression-more">
           감정 흐름 크게보기
         </button>
       </div>
 
       <div className="counselor-expression-week">
-        <button type="button" aria-label="이전 주">
+        <button
+          type="button"
+          aria-label="이전 주"
+          disabled={isFirstWeek}
+          onClick={() => setActiveWeekIndex((current) => Math.max(0, current - 1))}
+        >
           <FiChevronLeft aria-hidden="true" />
         </button>
-        <strong>2026년 5월 1주차</strong>
-        <button type="button" aria-label="다음 주">
+        <strong>{currentWeek.label}</strong>
+        <button
+          type="button"
+          aria-label="다음 주"
+          disabled={isLastWeek}
+          onClick={() =>
+            setActiveWeekIndex((current) => Math.min(expressionWeeks.length - 1, current + 1))
+          }
+        >
           <FiChevronRight aria-hidden="true" />
         </button>
       </div>
 
       <div className="counselor-ai-summary">
         <span>AI 분석 인사이트</span>
-        <p>
-          최근 3일간 부모와의 갈등을 바탕으로 다음과 같은 제안을 하고 있습니다.
-          부모님은 자녀가 약간 섭섭해 보일 때 가벼운 공감 질문을 먼저 건네는
-          것이 좋습니다.
-        </p>
+        <p>{currentWeek.insight}</p>
       </div>
 
       <div className="counselor-expression-chart">
-        <LineChart data={expressionTrend} color="#88b5c4" showEmoji />
+        <LineChart
+          data={currentTrend}
+          color="#88b5c4"
+          showEmoji={activeFilter !== 'conversation'}
+        />
       </div>
 
       <div className="counselor-timeline">
-        {timelineDays.map((day) => (
-          <section className="counselor-timeline-day" key={day.id}>
-            <h4>{day.date}</h4>
-            <div className="counselor-timeline-items">
-              {day.entries.map((entry) => (
-                <article className="counselor-timeline-entry" key={entry.id}>
-                  <MetricTag tone={entry.type === 'diary' ? 'green' : 'blue'}>
-                    {entry.type === 'diary' ? '일기' : '대화'}
-                  </MetricTag>
-                  <div>
-                    {entry.time ? <span className="entry-time">{entry.time}</span> : null}
-                    {entry.emotionKey ? (
-                      <DiaryEmotionIcon
-                        emotionKey={entry.emotionKey}
-                        size={24}
-                        className="entry-emotion"
-                      />
-                    ) : null}
-                    <p>{entry.content}</p>
-                    <div className="entry-tags">
-                      {entry.tags.map((tag, index) => (
-                        <MetricTag
-                          key={`${entry.id}-${tag}`}
-                          tone={index === 0 ? 'orange' : 'neutral'}
-                        >
-                          {tag}
-                        </MetricTag>
-                      ))}
+        {visibleTimelineDays.length > 0 ? (
+          visibleTimelineDays.map((day) => (
+            <section className="counselor-timeline-day" key={day.id}>
+              <h4>{day.date}</h4>
+              <div className="counselor-timeline-items">
+                {day.entries.map((entry) => (
+                  <article className="counselor-timeline-entry" key={entry.id}>
+                    <MetricTag tone={entry.type === 'diary' ? 'green' : 'blue'}>
+                      {entry.type === 'diary' ? '일기' : '대화'}
+                    </MetricTag>
+                    <div>
+                      {entry.time ? <span className="entry-time">{entry.time}</span> : null}
+                      {entry.emotionKey ? (
+                        <DiaryEmotionIcon
+                          emotionKey={entry.emotionKey}
+                          size={24}
+                          className="entry-emotion"
+                        />
+                      ) : null}
+                      <p>{entry.content}</p>
+                      <div className="entry-tags">
+                        {entry.tags.map((tag, index) => (
+                          <MetricTag
+                            key={`${entry.id}-${tag}`}
+                            tone={index === 0 ? 'orange' : 'neutral'}
+                          >
+                            {tag}
+                          </MetricTag>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                </article>
-              ))}
-            </div>
-          </section>
-        ))}
+                  </article>
+                ))}
+              </div>
+            </section>
+          ))
+        ) : (
+          <p className="counselor-timeline-empty">해당 주차에 표시할 표현 기록이 없습니다.</p>
+        )}
       </div>
     </DashboardCard>
   )
