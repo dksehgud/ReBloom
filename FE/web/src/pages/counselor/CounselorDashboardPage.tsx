@@ -685,7 +685,7 @@ function ExpressionAnalysis({ maxHeight }: { maxHeight?: number }) {
         <LineChart
           data={currentTrend}
           color="#88b5c4"
-          showEmoji={activeFilter !== 'conversation'}
+          showEmoji={activeFilter === 'diary'}
         />
       </div>
 
