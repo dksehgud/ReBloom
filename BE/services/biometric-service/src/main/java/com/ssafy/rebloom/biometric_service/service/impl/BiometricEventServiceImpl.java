@@ -33,7 +33,7 @@ public class BiometricEventServiceImpl implements BiometricEventService {
 
     @Override
     @Transactional
-    public void save(BiometricDataEvent event, String correlationId) {
+    public void saveBiometric(BiometricDataEvent event, String correlationId) {
         BiometricId biometricId = BiometricId.create(event.userId(), event.tsStart());
         Biometric biometric = Biometric.create(biometricId, event.tsEnd(), event.hr(), event.ibi(),
             event.rmssd(), event.pnn50(), event.lfHf(), event.accXAvg(), event.accYAvg(),

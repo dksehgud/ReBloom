@@ -23,4 +23,8 @@ public class SleepId implements Serializable {
 
     @Column(name = "wakeup", nullable = false)
     private LocalDateTime wakeup;
+
+    public static SleepId create(UUID userId, LocalDateTime wakeup) {
+        return SleepId.builder().userId(userId).wakeup(wakeup).build();
+    }
 }
