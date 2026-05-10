@@ -24,3 +24,10 @@ AIoT/rpi5/LLM/rebloom-voice.env.example
 AIoT/rpi5/LLM/rebloom-voice.service
 AIoT/rpi5/LLM/rebloom-voice.env.example
 AIoT/rpi5/.agents/rules/code-rpi.md
+AI/aiot-ai-service/MQTT/mosquitto/config/passwordfile
+AI/aiot-ai-service/MQTT/mosquitto/data/mosquitto.db
+AI/aiot-ai-service/MQTT/mosquitto/config/mosquitto.conf
+AI/aiot-ai-service/MQTT/mqtt_server_publish_only.md
+AI/aiot-ai-service/MQTT/mqtt_use_guide.md
+.gitignore
+AI/aiot-ai-service/MQTT/mqtt.md
