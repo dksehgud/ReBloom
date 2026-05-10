@@ -1,6 +1,7 @@
 import json
 import logging
 import threading
+from datetime import datetime, timezone
 
 import redis
 from confluent_kafka import Consumer, KafkaError, KafkaException
@@ -15,7 +16,7 @@ from app.config.settings import (
     REDIS_PORT,
 )
 from app.service import anomaly, if_model, phq
-from app.kafka.producer import publish_anomaly_verified
+from app.kafka.producer import publish_anomaly_verified, publish_phq_result
 
 logger = logging.getLogger(__name__)
 
@@ -144,29 +145,59 @@ def _handle_ai_train(payload: dict) -> None:
 
 def _handle_ai_analyze(payload: dict) -> None:
     """
-    rebloom.ai.analyze.v1 처리
+    rebloom.ai.analyze.requested.v1 처리
 
-    Biometric Service → 수면 데이터 PATCH 후 PHQ 예측 + IF 재학습 요청
-    payload 예시:
+    payload:
         {
-          "userId"  : "uuid",
-          "features": { "sleep_duration_std": 1.2, ... }
+          "userId"    : "string",
+          "age"       : int | null,
+          "biometrics": [ ... ],
+          "sleeps"    : [ ... 14일치 or [] ]
         }
-    """
-    user_id  = payload["userId"]
-    features = payload.get("features", {})
 
-    if not features:
-        logger.warning("[ai.analyze] features 없음 | userId=%s", user_id)
+    sleeps 있으면 → PHQ 예측 + IF 재학습 → rebloom.phq.result.v1 발행
+    sleeps 없으면 → IF 재학습만
+    """
+    user_id    = payload.get("userId")
+    age        = payload.get("age")        # ← 추가
+    biometrics = payload.get("biometrics", [])
+    sleeps     = payload.get("sleeps", [])
+
+    if not biometrics:
+        logger.warning("[ai.analyze] biometrics 없음 | userId=%s", user_id)
         return
 
-    logger.info("[ai.analyze] PHQ 예측 + IF 재학습 시작 | userId=%s", user_id)
+    if sleeps:
+        # ── PHQ 예측 + IF 재학습 ────────────────────────────
+        logger.info("[ai.analyze] PHQ 예측 + IF 재학습 시작 | userId=%s", user_id)
 
-    # PHQ 예측 + contamination에 따른 IF 재학습 (phq.py 내부에서 처리)
-    result = phq.predict_phq_and_retrain(user_id=user_id, features=features)
+        result = phq.analyze_and_retrain(
+            user_id    = user_id,
+            age        = age,              # ← 추가
+            sleeps     = sleeps,
+            biometrics = biometrics,
+        )
 
-    logger.info("[ai.analyze] 완료 | userId=%s phq_result=%s phq_score=%s",
-                user_id, result.get("phq_result"), result.get("phq_score"))
+        publish_phq_result(
+            user_id      = user_id,
+            date         = datetime.now(timezone.utc).strftime("%Y-%m-%d"),
+            result       = result["phq_result"],
+            score        = result["phq_score"],
+            predicted_at = datetime.now(timezone.utc).isoformat(),
+        )
+        logger.info("[ai.analyze] PHQ 예측 완료 | userId=%s result=%s score=%s",
+                    user_id, result["phq_result"], result["phq_score"])
+
+    else:
+        # ── IF 재학습만 ────────────────────────────────────
+        logger.info("[ai.analyze] IF 재학습만 시작 | userId=%s", user_id)
+
+        if_model.train_if_model(
+            user_id      = user_id,
+            records      = biometrics,
+            contamination= 0.01,
+        )
+        logger.info("[ai.analyze] IF 재학습 완료 | userId=%s", user_id)
 
 
 # ──────────────────────────────────────────────

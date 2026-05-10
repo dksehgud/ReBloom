@@ -5,6 +5,7 @@ from confluent_kafka import Producer
 from app.config.settings import (
     KAFKA_BOOTSTRAP_SERVERS,
     KAFKA_TOPIC_ANOMALY_VERIFIED,
+    KAFKA_TOPIC_PHQ_RESULT,
 )
 
 logger = logging.getLogger(__name__)
@@ -57,8 +58,37 @@ def publish_anomaly_verified(user_id: str, ts_start: str, anomaly_features: list
         value    = json.dumps(payload),
         callback = _delivery_report,
     )
-    producer.poll(0)  # 콜백 즉시 처리 (논블로킹)
+    producer.poll(0)
     logger.info("[Kafka] anomaly.verified 발행 | userId=%s features=%s", user_id, anomaly_features)
+
+
+def publish_phq_result(user_id: str, date: str, result: int, score: float, predicted_at: str) -> None:
+    """
+    rebloom.phq.result.v1 발행
+
+    Args:
+        user_id     : 유저 UUID
+        date        : 예측 기준 날짜 (YYYY-MM-DD)
+        result      : PHQ 예측 결과 (0: 정상, 1: 위험)
+        score       : PHQ 예측 확률 (0.0 ~ 1.0)
+        predicted_at: 예측 시각 (ISO 8601)
+    """
+    payload = {
+        "userId"     : user_id,
+        "date"       : date,
+        "result"     : result,
+        "score"      : score,
+        "predictedAt": predicted_at,
+    }
+    producer = get_producer()
+    producer.produce(
+        topic    = KAFKA_TOPIC_PHQ_RESULT,
+        key      = user_id,
+        value    = json.dumps(payload),
+        callback = _delivery_report,
+    )
+    producer.poll(0)
+    logger.info("[Kafka] phq.result 발행 | userId=%s result=%s score=%s", user_id, result, score)
 
 
 def flush() -> None:
