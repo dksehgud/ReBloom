@@ -20,6 +20,7 @@ import androidx.activity.ComponentActivity
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import com.rebloom.mobile.BuildConfig
+import com.rebloom.mobile.network.TokenBridge
 
 class MainActivity : ComponentActivity() {
 
@@ -53,6 +54,7 @@ class MainActivity : ComponentActivity() {
             settings.useWideViewPort = false
             settings.loadWithOverviewMode = false
             settings.mixedContentMode = WebSettings.MIXED_CONTENT_NEVER_ALLOW
+            addJavascriptInterface(TokenBridge(this@MainActivity), "Android")
             webChromeClient = WebChromeClient()
             webViewClient = ReBloomWebViewClient()
             loadUrl(launchUrl)
