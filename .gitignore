@@ -24,3 +24,8 @@ AIoT/rpi5/LLM/rebloom-voice.env.example
 AIoT/rpi5/LLM/rebloom-voice.service
 AIoT/rpi5/LLM/rebloom-voice.env.example
 AIoT/rpi5/.agents/rules/code-rpi.md
+
+# Bio-ML Service
+bio-ml-service/research/data/
+**/__pycache__/
+.ipynb_checkpoints/

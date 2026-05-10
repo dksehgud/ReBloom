@@ -8,6 +8,9 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY app ./app
 COPY model_test ./model_test
 
-EXPOSE 8000
+# 모델 저장 디렉토리 생성
+RUN mkdir -p /app/model
+
+EXPOSE 8002
 
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
