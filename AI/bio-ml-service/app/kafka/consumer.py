@@ -3,6 +3,8 @@ import logging
 import threading
 from datetime import datetime, timezone
 
+from app.config.settings import IF_READY_THRESHOLD
+
 import redis
 from confluent_kafka import Consumer, KafkaError, KafkaException
 
@@ -19,9 +21,6 @@ from app.service import anomaly, if_model, phq
 from app.kafka.producer import publish_anomaly_verified, publish_phq_result
 
 logger = logging.getLogger(__name__)
-
-# 임계치 기반 → IF 전환 기준 건수
-IF_READY_THRESHOLD = 288
 
 # ──────────────────────────────────────────────
 # Redis 클라이언트 (biometric_count 조회용)

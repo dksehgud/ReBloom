@@ -25,3 +25,4 @@ REDIS_PORT = int(os.getenv("REDIS_PORT", 6379))
 
 # Model
 MODEL_DIR = os.getenv("MODEL_DIR", "./app/model")
+IF_READY_THRESHOLD = int(os.getenv("IF_READY_THRESHOLD", 288))
