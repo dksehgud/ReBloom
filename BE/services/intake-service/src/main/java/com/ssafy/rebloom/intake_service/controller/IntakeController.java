@@ -2,6 +2,7 @@ package com.ssafy.rebloom.intake_service.controller;
 
 import com.ssafy.rebloom.common.dto.BaseResponse;
 import com.ssafy.rebloom.intake_service.dto.request.BiometricRawDataRequest;
+import com.ssafy.rebloom.intake_service.dto.request.SleepRawDataRequest;
 import com.ssafy.rebloom.intake_service.service.IntakeService;
 import com.ssafy.rebloom.security.annotation.LoginUserId;
 import com.ssafy.rebloom.security.annotation.RequestId;
@@ -33,5 +34,18 @@ public class IntakeController {
         return ResponseEntity
             .accepted()
             .body(BaseResponse.success("생체 데이터 전송 성공"));
+    }
+
+    @PostMapping("/sleeps/raw")
+    @PreAuthorize("hasRole('CHILDREN')")
+    public ResponseEntity<BaseResponse<Void>> ingestSleep(
+        @RequestId String requestId,
+        @LoginUserId UUID loginUserId,
+        @Valid @RequestBody SleepRawDataRequest sleepRawDataRequest
+    ) {
+        intakeService.ingestSleepDataEvent(requestId, loginUserId, sleepRawDataRequest);
+        return ResponseEntity
+            .accepted()
+            .body(BaseResponse.success("수면 데이터 전송 성공"));
     }
 }
