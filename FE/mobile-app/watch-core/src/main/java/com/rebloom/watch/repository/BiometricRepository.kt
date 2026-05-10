@@ -67,6 +67,7 @@ class BiometricRepository {
         val rmssd = calcRmssd(allIbi)
         val pnn50 = calcPnn(allIbi, 50.0)
         val lfHf = calcLfHf(allIbi)
+        val hrAccRatio = if (accMag > 0f) hrAvg / accMag else 0f  // ← 추가
 
         return BiometricRecord(
             tsStart = tsStart,
@@ -81,6 +82,7 @@ class BiometricRepository {
             rmssd = rmssd,
             pnn50 = pnn50,
             lfHf = lfHf,
+            hrAccRatio = hrAccRatio
         )
     }
 
