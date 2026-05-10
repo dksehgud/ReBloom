@@ -15,4 +15,5 @@ public class KafkaTopicsProperties {
     private String analysisReportCompleted;
     private String eventDlt;
     private String aiModelTrainRequested;
+    private String phqResult;
 }

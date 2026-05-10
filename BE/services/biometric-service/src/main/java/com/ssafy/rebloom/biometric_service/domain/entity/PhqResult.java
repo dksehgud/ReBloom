@@ -34,12 +34,28 @@ public class PhqResult {
     private LocalDate date;
 
     @Column(nullable = false)
-    private Short result;
+    private Integer result;
 
     @Column(nullable = false)
     private Double score;
 
     @Column(name = "predicted_at", nullable = false)
     private LocalDateTime predictedAt;
+
+    public static PhqResult create(
+        UUID userId,
+        LocalDate date,
+        Integer result,
+        Double score,
+        LocalDateTime predictedAt
+    ) {
+        return PhqResult.builder()
+            .userId(userId)
+            .date(date)
+            .result(result)
+            .score(score)
+            .predictedAt(predictedAt)
+            .build();
+    }
 
 }
