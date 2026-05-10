@@ -1,10 +1,10 @@
 package com.ssafy.rebloom.biometric_service.consumer;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.ssafy.rebloom.biometric_service.service.BiometricEventService;
+import com.ssafy.rebloom.biometric_service.service.SleepEventService;
 import com.ssafy.rebloom.event.core.EventEnvelope;
 import com.ssafy.rebloom.event.core.EventTypes;
-import com.ssafy.rebloom.event.dto.BiometricDataEvent;
+import com.ssafy.rebloom.event.dto.SleepDataEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.MDC;
@@ -15,13 +15,13 @@ import org.springframework.stereotype.Component;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class BiometricRawEventConsumer {
+public class SleepRawEventConsumer {
 
     private final ObjectMapper objectMapper;
-    private final BiometricEventService biometricEventService;
+    private final SleepEventService sleepEventService;
 
     @KafkaListener(
-        topics = "${rebloom.kafka.topics.biometric-raw}",
+        topics = "${rebloom.kafka.topics.sleep-raw}",
         groupId = "${rebloom.kafka.consumer.group-id}",
         containerFactory = "rebloomKafkaListenerContainerFactory"
     )
@@ -29,17 +29,17 @@ public class BiometricRawEventConsumer {
         try {
             MDC.put("correlationId", envelope.correlationId());
 
-            if (!EventTypes.BIOMETRIC_DATA_RECEIVED.equals(envelope.eventType())) {
+            if (!EventTypes.SLEEP_DATA_RECEIVED.equals(envelope.eventType())) {
                 log.warn("Unexpected eventType. eventType={}, eventId={}", envelope.eventType(), envelope.eventId());
                 return;
             }
 
-            BiometricDataEvent payload = objectMapper.convertValue(
+            SleepDataEvent payload = objectMapper.convertValue(
                 envelope.payload(),
-                BiometricDataEvent.class
+                SleepDataEvent.class
             );
 
-            biometricEventService.saveBiometric(payload, envelope.correlationId());
+            sleepEventService.saveSleepRawEvent(payload, envelope.correlationId());
         } finally {
             MDC.remove("correlationId");
         }

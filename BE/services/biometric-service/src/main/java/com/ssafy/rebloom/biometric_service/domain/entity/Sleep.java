@@ -38,4 +38,23 @@ public class Sleep {
 
     @Column(name = "is_main_sleep")
     private Boolean isMainSleep;
+
+    public static Sleep create(
+        SleepId id,
+        LocalDateTime asleep,
+        Double sleepDuration,
+        Double waso,
+        Double sleepScore,
+        Double sleepEfficiency
+    ) {
+        return Sleep.builder()
+            .id(id)
+            .asleep(asleep)
+            .sleepDuration(sleepDuration)
+            .waso(waso)
+            .sleepScore(sleepScore)
+            .sleepEfficiency(sleepEfficiency)
+            .isMainSleep(null)
+            .build();
+    }
 }
