@@ -1,0 +1,14 @@
+# 로컬 테스트용 Kafka compose
+docker-compose.kafka-local.yaml
+create-topics.sh
+
+# 환경변수
+.env.local
+
+# 모델 파일
+app/model/*.pkl
+
+# Python
+__pycache__/
+*.pyc
+.venv/
