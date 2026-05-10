@@ -88,20 +88,22 @@ def _handle_biometric_raw(payload: dict) -> None:
                 acc_mag=acc_mag,
                 hr_acc_ratio=hr_acc_ratio,
             )
-            logger.debug("[Phase1] userId=%s is_anomaly=%s", user_id, result["is_anomaly"])
+            logger.info("[Phase1] userId=%s is_anomaly=%s", user_id, result["is_anomaly"])
 
         else:
             # ── Phase 2: IF 모델 탐지 ──────────────────────
-            result = if_model.predict_if(
-                user_id=user_id,
-                hr=hr,
-                rmssd=rmssd,
-                pnn50=pnn50,
-                lf_hf=lf_hf,
-                acc_mag=acc_mag,
-                hr_acc_ratio=hr_acc_ratio,
+            result = if_model.predict_if_model(
+                user_id  = user_id,
+                biometric = {
+                    "hr"          : hr,
+                    "rmssd"       : rmssd,
+                    "pnn50"       : pnn50,
+                    "lf_hf"       : lf_hf,
+                    "acc_mag"     : acc_mag,
+                    "hr_acc_ratio": hr_acc_ratio,
+                }
             )
-            logger.debug("[Phase2] userId=%s is_anomaly=%s", user_id, result["is_anomaly"])
+            logger.info("[Phase2] userId=%s is_anomaly=%s", user_id, result["is_anomaly"])
 
         # ── 이상치 확정 시 Kafka 발행 ──────────────────────
         if result["is_anomaly"]:
@@ -114,31 +116,28 @@ def _handle_biometric_raw(payload: dict) -> None:
 
 def _handle_ai_train(payload: dict) -> None:
     """
-    rebloom.ai.train.requested.v1 처리
+    rebloom.ai.model.train.requested.v1 처리
 
-    Biometric Service → 288건 달성 시 최초 IF 학습 요청
-    payload 예시:
+    payload:
         {
-          "userId"       : "uuid",
-          "contamination": 0.01,
-          "records"      : [ {hr, rmssd, pnn50, lfHf, accMag, hrAccRatio}, ... ]
+          "userId"    : "uuid",
+          "biometrics": [ {hr, rmssd, pnn50, lfHf, accMag, hrAccRatio}, ... ]
         }
     """
-    user_id       = payload["userId"]
-    contamination = payload.get("contamination", 0.01)
-    records       = payload.get("records", [])
+    user_id    = payload.get("userId")
+    biometrics = payload.get("biometrics", [])
 
-    if not records:
-        logger.warning("[ai.train] records 없음 | userId=%s", user_id)
+    if not biometrics:
+        logger.warning("[ai.train] biometrics 없음 | userId=%s", user_id)
         return
 
-    logger.info("[ai.train] IF 최초 학습 시작 | userId=%s records=%d contamination=%s",
-                user_id, len(records), contamination)
+    logger.info("[ai.train] IF 최초 학습 시작 | userId=%s biometrics=%d",
+                user_id, len(biometrics))
 
     if_model.train_if_model(
-        user_id=user_id,
-        records=records,
-        contamination=contamination,
+        user_id      = user_id,
+        biometrics      = biometrics,
+        contamination= payload.get("contamination", 0.01),
     )
     logger.info("[ai.train] IF 최초 학습 완료 | userId=%s", user_id)
 
@@ -194,7 +193,7 @@ def _handle_ai_analyze(payload: dict) -> None:
 
         if_model.train_if_model(
             user_id      = user_id,
-            records      = biometrics,
+            biometrics      = biometrics,
             contamination= 0.01,
         )
         logger.info("[ai.analyze] IF 재학습 완료 | userId=%s", user_id)

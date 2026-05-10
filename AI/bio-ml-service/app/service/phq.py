@@ -98,6 +98,29 @@ def analyze_and_retrain(
 # 피처 집계 (14일치 데이터 → PHQ 모델 입력값)
 # =====================================================================
 
+def _time_to_minutes(t: str | float) -> float:
+    """
+    시간 문자열 → 분 단위 변환
+    
+    ISO 형식 ("2026-05-01T23:00:00Z") 또는 HH:MM 형식을 분 단위로 변환
+    새벽 시간(00:00~06:00)은 +1440 보정 (일일 24시간 순환 처리)
+    """
+    if not t or isinstance(t, (int, float)):
+        return 0.0
+    try:
+        time_str = str(t)
+        # ISO 형식이면 T 뒤의 시간만 추출
+        if "T" in time_str:
+            time_str = time_str.split("T")[1].split(".")[0]
+        
+        parts = time_str.split(":")
+        m = int(parts[0]) * 60 + int(parts[1])
+        # 새벽 시간(00:00~06:00 = 0~360분)은 +1440 보정
+        return float(m + 1440 if m < 600 else m)
+    except Exception:
+        return 0.0
+
+
 def _aggregate_features(age: int | None, sleeps: list[dict], biometrics: list[dict]) -> dict:
     """
     14일치 수면/생체 데이터를 PHQ 모델 입력 피처로 집계
@@ -109,32 +132,32 @@ def _aggregate_features(age: int | None, sleeps: list[dict], biometrics: list[di
 
     PHQ 모델 학습 시 사용한 피처와 동일한 방식으로 집계
     """
-    def mean(values):
-        return float(np.mean(values)) if values else 0.0
+    def median(values):
+        return float(np.median(values)) if values else 0.0
 
     def std(values):
         return float(np.std(values)) if values else 0.0
 
-    hrs      = [b["hr"]      for b in biometrics]
-    rmssds   = [b["rmssd"]   for b in biometrics]
-    pnn50s   = [b["pnn50"]   for b in biometrics]
-    lf_hfs   = [b["lf_hf"]   for b in biometrics]
-    acc_mags = [b["acc_mag"] for b in biometrics]
+    hrs         = [b["hr"]      for b in biometrics]
+    rmssds      = [b["rmssd"]   for b in biometrics]
+    lf_hfs      = [b["lf_hf"]   for b in biometrics]
+    acc_mags    = [b["acc_mag"] for b in biometrics]
 
-    sleep_durations = [s["sleep_duration"]     for s in sleeps]
-    asleeps         = [s["asleep"]             for s in sleeps]
-    wasos           = [s["waso"]               for s in sleeps]
-    rmssd_nights    = [s.get("rmssd_night", 0) for s in sleeps]
+    sleep_durations = [s["sleep_duration"]       for s in sleeps]
+    asleeps         = [_time_to_minutes(s["asleep"]) for s in sleeps]
+    wasos           = [s["waso"]                 for s in sleeps]
+    rmssd_nights    = [s.get("rmssd_night", 0)  for s in sleeps]
+    pnn50_nights    = [s.get("pnn50_night", 0)  for s in sleeps]
 
     return {
-        "hr_std"             : std(hrs),
-        "rmssd_std"          : std(rmssds),
-        "pnn50_std"          : std(pnn50s),
-        "lf/hf_median"       : mean(lf_hfs),
-        "acc_mag_median"     : mean(acc_mags),
         "sleep_duration_std" : std(sleep_durations),
         "asleep_std"         : std(asleeps),
-        "waso_std"           : std(wasos),
-        "rmssd_night_std"    : std(rmssd_nights),
         "age"                : float(age) if age is not None else 0.0,
+        "hr_std"             : std(hrs),
+        "rmssd_night_std"    : std(rmssd_nights),
+        "waso_std"           : std(wasos),
+        "rmssd_std"          : std(rmssds),
+        "lf/hf_median"       : median(lf_hfs),
+        "acc_mag_median"     : median(acc_mags),
+        "pnn50_night_std"    : std(pnn50_nights)
     }

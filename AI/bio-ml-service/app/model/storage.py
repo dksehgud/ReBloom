@@ -5,7 +5,7 @@ from app.config.settings import MODEL_DIR
 
 def get_if_model_path(user_id: str) -> Path:
     """유저별 IF 모델 파일 경로 반환"""
-    return Path(MODEL_DIR) / f"if_model_{user_id}.pkl"
+    return Path(MODEL_DIR) / "if_model" / user_id / "if_model.pkl"
 
 
 def get_phq_model_path() -> Path:
