@@ -6,9 +6,9 @@ import java.util.UUID;
 
 public record SleepDataEvent(
     UUID userId,
-    LocalDate date,
-    LocalDateTime asleep,
     LocalDateTime wakeup,
+    LocalDateTime asleep,
+    LocalDate date,
     Double sleepDuration,
     Double waso,
     Double sleepScore,

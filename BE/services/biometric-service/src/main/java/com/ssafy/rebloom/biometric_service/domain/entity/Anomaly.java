@@ -1,14 +1,12 @@
 package com.ssafy.rebloom.biometric_service.domain.entity;
 
-import com.ssafy.rebloom.common.entity.BaseTime;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
-import jakarta.validation.constraints.NotNull;
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.UUID;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -19,30 +17,37 @@ import lombok.NoArgsConstructor;
 @Entity
 @Getter
 @Builder
-@Table(name = "stress_score")
+@Table(name = "anomalies")
 @AllArgsConstructor(access = AccessLevel.PROTECTED)
-@NoArgsConstructor(access = AccessLevel.PRIVATE)
-public class StressScore extends BaseTime {
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+public class Anomaly {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @NotNull
     @Column(name = "user_id", nullable = false)
     private UUID userId;
 
-    @NotNull
-    @Column(name = "target_date", nullable = false)
-    private LocalDate targetDate;
+    @Column(name = "ts_start", nullable = false)
+    private LocalDateTime tsStart;
 
-    @Column(name = "stress_min")
-    private Double stressMin;
+    @Column(name = "ts_end", nullable = false)
+    private LocalDateTime tsEnd;
 
-    @Column(name = "stress_max")
-    private Double stressMax;
+    private Double hr;
+    private Double rmssd;
+    private Double pnn50;
 
-    @Column(name = "stress_avg")
-    private Double stressAvg;
+    @Column(name = "lf_hf")
+    private Double lfHf;
 
+    @Column(name = "acc_mag")
+    private Double accMag;
+
+    @Column(name = "hr_acc_ratio")
+    private Double hrAccRatio;
+
+    @Column(name = "is_anomaly")
+    private Boolean isAnomaly;
 }

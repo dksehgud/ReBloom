@@ -9,6 +9,8 @@ public final class EventTypes {
     public static final String INITIATE_CONVERSATION = "INITIATE_CONVERSATION";
     public static final String ANALYSIS_REPORT_COMPLETED = "ANALYSIS_REPORT_COMPLETED";
 
+    public static final String AI_MODEL_TRAIN_REQUESTED = "AI_MODEL_TRAIN_REQUESTED";
+
     private EventTypes() {
     }
 }
