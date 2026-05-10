@@ -11,6 +11,7 @@ import {
   FiMessageSquare,
   FiMoon,
   FiSettings,
+  FiX,
 } from 'react-icons/fi'
 
 import DiaryEmotionIcon from '../../features/diary/components/DiaryEmotionIcon'
@@ -62,6 +63,22 @@ type ExpressionWeek = {
   trend: Record<ExpressionFilter, ExpressionTrendPoint[]>
   days: TimelineDay[]
 }
+
+type EmotionFlowMode = 'monthly' | 'yearly'
+
+type EmotionFlowPoint = {
+  label: string
+  diary: number
+  conversation: number
+}
+
+type EmotionFlowPeriod = {
+  id: string
+  label: string
+  points: EmotionFlowPoint[]
+}
+
+type EmotionFlowSeries = 'diary' | 'conversation'
 
 const dashboardInfoMessages = {
   observation:
@@ -427,6 +444,66 @@ const expressionWeeks: ExpressionWeek[] = [
   },
 ]
 
+const emotionFlowModeTabs: Array<{ key: EmotionFlowMode; label: string }> = [
+  { key: 'monthly', label: '월간 보기' },
+  { key: 'yearly', label: '연간 보기' },
+]
+
+const emotionFlowPeriods: Record<EmotionFlowMode, EmotionFlowPeriod[]> = {
+  monthly: [
+    {
+      id: '2025-04-week-3',
+      label: '2025년 4월 3주',
+      points: [
+        { label: '3월 4주', diary: 7, conversation: 5 },
+        { label: '4월 1주', diary: 11, conversation: 8 },
+        { label: '4월 2주', diary: 13, conversation: 6 },
+        { label: '4월 3주', diary: 10, conversation: 12 },
+      ],
+    },
+    {
+      id: '2025-05-week-1',
+      label: '2025년 5월 1주',
+      points: [
+        { label: '4월 2주', diary: 10, conversation: 8 },
+        { label: '4월 3주', diary: 12, conversation: 10 },
+        { label: '4월 4주', diary: 9, conversation: 13 },
+        { label: '5월 1주', diary: 15, conversation: 11 },
+      ],
+    },
+  ],
+  yearly: [
+    {
+      id: '2025',
+      label: '2025년',
+      points: [
+        { label: '2025.02', diary: 8, conversation: 6 },
+        { label: '2025.03', diary: 6, conversation: 5 },
+        { label: '2025.04', diary: 10, conversation: 6 },
+        { label: '2025.05', diary: 13, conversation: 8 },
+        { label: '2025.06', diary: 9, conversation: 7 },
+        { label: '2025.07', diary: 12, conversation: 9 },
+        { label: '2025.08', diary: 14, conversation: 10 },
+        { label: '2025.09', diary: 10, conversation: 7 },
+        { label: '2025.10', diary: 11, conversation: 8 },
+        { label: '2025.11', diary: 15, conversation: 11 },
+        { label: '2025.12', diary: 13, conversation: 10 },
+      ],
+    },
+    {
+      id: '2026',
+      label: '2026년',
+      points: [
+        { label: '2026.01', diary: 9, conversation: 7 },
+        { label: '2026.02', diary: 11, conversation: 8 },
+        { label: '2026.03', diary: 12, conversation: 10 },
+        { label: '2026.04', diary: 16, conversation: 12 },
+        { label: '2026.05', diary: 14, conversation: 13 },
+      ],
+    },
+  ],
+}
+
 function isTimelineEntryVisible(entry: TimelineEntry, filter: ExpressionFilter) {
   return filter === 'all' || entry.type === filter
 }
@@ -594,6 +671,82 @@ function LineChart({
   )
 }
 
+function EmotionFlowLineChart({ data }: { data: EmotionFlowPoint[] }) {
+  const width = 590
+  const height = 246
+  const paddingLeft = 56
+  const paddingRight = 26
+  const paddingTop = 22
+  const paddingBottom = 38
+  const maxValue = 27
+  const chartWidth = width - paddingLeft - paddingRight
+  const chartHeight = height - paddingTop - paddingBottom
+  const horizontalGap = data.length > 1 ? chartWidth / (data.length - 1) : 0
+  const ticks = [27, 18, 9, 0]
+  const seriesColors: Record<EmotionFlowSeries, string> = {
+    diary: '#344966',
+    conversation: '#88b5c4',
+  }
+
+  const getX = (index: number) =>
+    data.length > 1 ? paddingLeft + horizontalGap * index : paddingLeft + chartWidth / 2
+  const getY = (value: number) => paddingTop + chartHeight - (value / maxValue) * chartHeight
+  const buildPath = (series: EmotionFlowSeries) =>
+    data
+      .map((item, index) => {
+        const command = index === 0 ? 'M' : 'L'
+        return `${command} ${getX(index)} ${getY(item[series])}`
+      })
+      .join(' ')
+
+  return (
+    <svg
+      className="counselor-emotion-flow-chart"
+      viewBox={`0 0 ${width} ${height}`}
+      role="img"
+      aria-label="일기와 대화 감정 흐름 선 그래프"
+    >
+      {ticks.map((tick) => {
+        const y = getY(tick)
+        return (
+          <g key={tick}>
+            <line
+              className="counselor-emotion-flow-grid"
+              x1={paddingLeft}
+              x2={width - paddingRight}
+              y1={y}
+              y2={y}
+            />
+            <text className="counselor-emotion-flow-axis" x={paddingLeft - 12} y={y + 4}>
+              {tick}
+            </text>
+          </g>
+        )
+      })}
+      <path
+        className="counselor-emotion-flow-line is-diary"
+        d={buildPath('diary')}
+        style={{ stroke: seriesColors.diary }}
+      />
+      <path
+        className="counselor-emotion-flow-line is-conversation"
+        d={buildPath('conversation')}
+        style={{ stroke: seriesColors.conversation }}
+      />
+      {data.map((item, index) => (
+        <text
+          className="counselor-emotion-flow-label"
+          key={item.label}
+          x={getX(index)}
+          y={height - 10}
+        >
+          {item.label}
+        </text>
+      ))}
+    </svg>
+  )
+}
+
 function ObservationList() {
   return (
     <div className="counselor-observation-list">
@@ -619,9 +772,119 @@ function ObservationList() {
   )
 }
 
+function EmotionFlowModal({ onClose }: { onClose: () => void }) {
+  const [mode, setMode] = useState<EmotionFlowMode>('monthly')
+  const [periodIndex, setPeriodIndex] = useState(0)
+  const periods = emotionFlowPeriods[mode]
+  const currentPeriod = periods[periodIndex] ?? periods[0]
+  const isFirstPeriod = periodIndex === 0
+  const isLastPeriod = periodIndex === periods.length - 1
+
+  useEffect(() => {
+    const originalOverflow = document.body.style.overflow
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        onClose()
+      }
+    }
+
+    document.body.style.overflow = 'hidden'
+    window.addEventListener('keydown', handleKeyDown)
+
+    return () => {
+      document.body.style.overflow = originalOverflow
+      window.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [onClose])
+
+  const handleModeChange = (nextMode: EmotionFlowMode) => {
+    setMode(nextMode)
+    setPeriodIndex(0)
+  }
+
+  return (
+    <div className="counselor-emotion-flow-overlay" role="presentation" onMouseDown={onClose}>
+      <section
+        className="counselor-emotion-flow-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="counselor-emotion-flow-title"
+        onMouseDown={(event) => event.stopPropagation()}
+      >
+        <header className="counselor-emotion-flow-header">
+          <div className="counselor-emotion-flow-topbar">
+            <h2 id="counselor-emotion-flow-title">감정 흐름 크게보기</h2>
+            <button
+              type="button"
+              className="counselor-emotion-flow-close"
+              aria-label="감정 흐름 크게보기 닫기"
+              onClick={onClose}
+            >
+              <FiX aria-hidden="true" />
+            </button>
+          </div>
+
+          <div className="counselor-emotion-flow-tabs" role="tablist" aria-label="감정 흐름 기간">
+            {emotionFlowModeTabs.map((tab) => (
+              <button
+                type="button"
+                role="tab"
+                key={tab.key}
+                aria-selected={mode === tab.key}
+                className={mode === tab.key ? 'is-active' : undefined}
+                onClick={() => handleModeChange(tab.key)}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+        </header>
+
+        <div className="counselor-emotion-flow-body">
+          <div className="counselor-emotion-flow-period">
+            <button
+              type="button"
+              aria-label="이전 기간"
+              disabled={isFirstPeriod}
+              onClick={() => setPeriodIndex((current) => Math.max(0, current - 1))}
+            >
+              <FiChevronLeft aria-hidden="true" />
+            </button>
+            <strong>{currentPeriod.label}</strong>
+            <button
+              type="button"
+              aria-label="다음 기간"
+              disabled={isLastPeriod}
+              onClick={() => setPeriodIndex((current) => Math.min(periods.length - 1, current + 1))}
+            >
+              <FiChevronRight aria-hidden="true" />
+            </button>
+          </div>
+
+          <div className="counselor-emotion-flow-legend" aria-label="그래프 범례">
+            <span>
+              <i className="is-diary" aria-hidden="true" />
+              일기
+            </span>
+            <span>
+              <i className="is-conversation" aria-hidden="true" />
+              대화
+            </span>
+          </div>
+
+          <div className="counselor-emotion-flow-chart-panel">
+            <EmotionFlowLineChart data={currentPeriod.points} />
+          </div>
+        </div>
+      </section>
+    </div>
+  )
+}
+
 function ExpressionAnalysis({ maxHeight }: { maxHeight?: number }) {
   const [activeFilter, setActiveFilter] = useState<ExpressionFilter>('all')
   const [activeWeekIndex, setActiveWeekIndex] = useState(DEFAULT_EXPRESSION_WEEK_INDEX)
+  const [isEmotionFlowOpen, setIsEmotionFlowOpen] = useState(false)
   const currentWeek = expressionWeeks[activeWeekIndex]
   const currentTrend = currentWeek.trend[activeFilter]
   const visibleTimelineDays = getFilteredTimelineDays(currentWeek.days, activeFilter)
@@ -649,7 +912,11 @@ function ExpressionAnalysis({ maxHeight }: { maxHeight?: number }) {
             </button>
           ))}
         </div>
-        <button type="button" className="counselor-expression-more">
+        <button
+          type="button"
+          className="counselor-expression-more"
+          onClick={() => setIsEmotionFlowOpen(true)}
+        >
           감정 흐름 크게보기
         </button>
       </div>
@@ -730,6 +997,7 @@ function ExpressionAnalysis({ maxHeight }: { maxHeight?: number }) {
           <p className="counselor-timeline-empty">해당 주차에 표시할 표현 기록이 없습니다.</p>
         )}
       </div>
+      {isEmotionFlowOpen ? <EmotionFlowModal onClose={() => setIsEmotionFlowOpen(false)} /> : null}
     </DashboardCard>
   )
 }
