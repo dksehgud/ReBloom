@@ -38,6 +38,7 @@ public class KafkaProducerConfig {
         props.put(ProducerConfig.REQUEST_TIMEOUT_MS_CONFIG, properties.getProducer().getRequestTimeoutMs());
         props.put(ProducerConfig.DELIVERY_TIMEOUT_MS_CONFIG, properties.getProducer().getDeliveryTimeoutMs());
         props.put(JsonSerializer.ADD_TYPE_INFO_HEADERS, false);
+        props.put(ProducerConfig.COMPRESSION_TYPE_CONFIG, properties.getProducer().getCompressionType());
         return new DefaultKafkaProducerFactory<>(props);
     }
 
