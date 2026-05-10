@@ -20,4 +20,4 @@ CREATE TABLE anomalies (
          PRIMARY KEY (id)
 );
 
-CREATE INDEX idx_anomaly_children_ts ON anomaly(children_id, ts_start DESC);
+CREATE INDEX idx_anomaly_children_ts ON anomalies (user_id, ts_start DESC);

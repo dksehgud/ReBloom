@@ -12,3 +12,16 @@ server:
 rebloom:
   kafka:
     producer-name: intake-service
+    topics:
+      biometric-raw: ${KAFKA_TOPIC_BIOMETRIC_RAW:rebloom.biometric.raw.v1}
+      event-dlt: ${KAFKA_TOPIC_EVENT_DLT:rebloom.event.dlt.v1}
+    producer:
+      retries: 3
+      retry-backoff-ms: 300
+      request-timeout-ms: 5000
+      delivery-timeout-ms: 15000
+      compression-type: snappy
+    consumer:
+      group-id: intake-service
+      retry-interval-ms: 1000
+      retry-max-attempts: 3

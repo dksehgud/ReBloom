@@ -11,4 +11,5 @@ public class KafkaProducerProperties {
     private Integer retryBackoffMs;
     private Integer requestTimeoutMs;
     private Integer deliveryTimeoutMs;
+    private String compressionType;
 }

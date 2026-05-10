@@ -1,3 +1,6 @@
 spring:
   application:
     name: intake-service
+
+  kafka:
+    bootstrap-servers: localhost:29092,localhost:29093,localhost:29094
