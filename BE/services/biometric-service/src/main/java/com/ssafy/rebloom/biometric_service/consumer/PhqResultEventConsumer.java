@@ -1,10 +1,10 @@
 package com.ssafy.rebloom.biometric_service.consumer;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.ssafy.rebloom.biometric_service.service.SleepService;
+import com.ssafy.rebloom.biometric_service.service.PhqResultService;
 import com.ssafy.rebloom.event.core.EventEnvelope;
 import com.ssafy.rebloom.event.core.EventTypes;
-import com.ssafy.rebloom.event.dto.SleepDataEvent;
+import com.ssafy.rebloom.event.dto.PhqResultEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.MDC;
@@ -15,13 +15,13 @@ import org.springframework.stereotype.Component;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class SleepRawEventConsumer {
+public class PhqResultEventConsumer {
 
     private final ObjectMapper objectMapper;
-    private final SleepService sleepService;
+    private final PhqResultService phqResultService;
 
     @KafkaListener(
-        topics = "${rebloom.kafka.topics.sleep-raw}",
+        topics = "${rebloom.kafka.topics.phq-result}",
         groupId = "${rebloom.kafka.consumer.group-id}",
         containerFactory = "rebloomKafkaListenerContainerFactory"
     )
@@ -29,17 +29,17 @@ public class SleepRawEventConsumer {
         try {
             MDC.put("correlationId", envelope.correlationId());
 
-            if (!EventTypes.SLEEP_DATA_RECEIVED.equals(envelope.eventType())) {
+            if (!EventTypes.PHQ_RESULT_PREDICTED.equals(envelope.eventType())) {
                 log.warn("Unexpected eventType. eventType={}, eventId={}", envelope.eventType(), envelope.eventId());
                 return;
             }
 
-            SleepDataEvent payload = objectMapper.convertValue(
+            PhqResultEvent payload = objectMapper.convertValue(
                 envelope.payload(),
-                SleepDataEvent.class
+                PhqResultEvent.class
             );
 
-            sleepService.saveSleepRawEvent(payload, envelope.correlationId());
+            phqResultService.save(payload, envelope.correlationId());
         } finally {
             MDC.remove("correlationId");
         }

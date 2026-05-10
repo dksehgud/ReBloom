@@ -93,6 +93,7 @@ services:
         /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka-1:9092 --create --if-not-exists --topic rebloom.conversation.initiate.v1 --partitions 1 --replication-factor 3
         /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka-1:9092 --create --if-not-exists --topic rebloom.analysis.report-completed.v1 --partitions 3 --replication-factor 3
         /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka-1:9092 --create --if-not-exists --topic rebloom.ai.model.train.requested.v1 --partitions 3 --replication-factor 3
+        /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka-1:9092 --create --if-not-exists --topic rebloom.phq.result.v1 --partitions 3 --replication-factor 3
         /opt/kafka/bin/kafka-topics.sh --bootstrap-server kafka-1:9092 --create --if-not-exists --topic rebloom.event.dlt.v1 --partitions 1 --replication-factor 3
         echo "Kafka topics created successfully."
 
