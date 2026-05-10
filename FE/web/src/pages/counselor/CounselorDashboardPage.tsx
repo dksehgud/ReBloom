@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   FiActivity,
@@ -13,14 +13,14 @@ import {
   FiSettings,
 } from 'react-icons/fi'
 
-type ChildStatus = 'active' | 'done'
+import DiaryEmotionIcon from '../../features/diary/components/DiaryEmotionIcon'
+import type { DiaryEmotionKey } from '../../features/diary/constants/diaryEmotions'
 
 type ChildListItem = {
   id: number
   name: string
   meta: string
   subText: string
-  status?: ChildStatus
 }
 
 type ObservationRecord = {
@@ -36,7 +36,7 @@ type TimelineEntry = {
   id: number
   type: 'diary' | 'conversation'
   time?: string
-  emotion?: string
+  emotionKey?: DiaryEmotionKey
   content: string
   tags: string[]
 }
@@ -47,8 +47,30 @@ type TimelineDay = {
   entries: TimelineEntry[]
 }
 
+const dashboardInfoMessages = {
+  observation:
+    '보호자가 기록한 아이의 일상 상태와 상담사 코멘트를 함께 확인하는 영역입니다.',
+  sleepScore:
+    '수면 시간, 규칙성, 회복 상태를 바탕으로 계산한 주간 수면 점수 추이입니다.',
+  sleepEfficiency:
+    '침대에 머문 시간 중 실제로 잠든 시간의 비율입니다. 낮을수록 수면의 질 저하를 의심할 수 있습니다.',
+  expression:
+    '최근 일기와 대화에서 반복적으로 나타난 감정 표현과 주요 문장을 모아 보여줍니다.',
+  biometricRatio:
+    '행동 활성은 신체 움직임 대비 심박 효율(ACC/HR+1)을 통해 정신운동 지체 유무를 나타내는 지표입니다.',
+  autonomic:
+    '자율 신경 안정도는 RMSSD를 산출하여 정서적 복원력 및 부교감 신경의 활성 상태를 반영하는 지표입니다.',
+} as const
+
 const counselorProfile = {
   name: '홍길동',
+}
+
+const selectedChildProfile = {
+  name: '김주연',
+  age: '13세',
+  gender: '남',
+  guardianName: '유주경',
 }
 
 const childList: ChildListItem[] = [
@@ -57,14 +79,13 @@ const childList: ChildListItem[] = [
     name: '김주연',
     meta: '13세(남)',
     subText: '보호자 : 유주경',
-    status: 'active',
   },
-  { id: 2, name: '이온준', meta: '12세', subText: '10차', status: 'done' },
-  { id: 3, name: '박민서', meta: '14세', subText: '10차' },
-  { id: 4, name: '정민지', meta: '11세', subText: '14차', status: 'active' },
-  { id: 5, name: '김나영', meta: '13세', subText: '7차', status: 'done' },
-  { id: 6, name: '이동현', meta: '15세', subText: '14차' },
-  { id: 7, name: '박지우', meta: '12세', subText: '14차' },
+  { id: 2, name: '이온준', meta: '12세(남)', subText: '보호자 : 한서윤' },
+  { id: 3, name: '박민서', meta: '14세(여)', subText: '보호자 : 박지현' },
+  { id: 4, name: '정민지', meta: '11세(여)', subText: '보호자 : 정하늘' },
+  { id: 5, name: '김나영', meta: '13세(여)', subText: '보호자 : 김도윤' },
+  { id: 6, name: '이동현', meta: '15세(남)', subText: '보호자 : 이서진' },
+  { id: 7, name: '박지우', meta: '12세(여)', subText: '보호자 : 박민정' },
 ]
 
 const observationRecords: ObservationRecord[] = [
@@ -112,14 +133,14 @@ const sleepEfficiency = [
   { label: '일', value: 40 },
 ]
 
-const expressionTrend = [
-  { label: '월', value: 42, emoji: '🙂' },
-  { label: '화', value: 66, emoji: '😊' },
-  { label: '수', value: 58, emoji: '😐' },
-  { label: '목', value: 52, emoji: '😶' },
-  { label: '금', value: 62, emoji: '🙂' },
-  { label: '토', value: 74, emoji: '😊' },
-  { label: '일', value: 68, emoji: '🙂' },
+const expressionTrend: Array<{ label: string; value: number; emotionKey: DiaryEmotionKey }> = [
+  { label: '월', value: 42, emotionKey: 'calm' },
+  { label: '화', value: 66, emotionKey: 'happy' },
+  { label: '수', value: 58, emotionKey: 'angry' },
+  { label: '목', value: 52, emotionKey: 'tired' },
+  { label: '금', value: 62, emotionKey: 'calm' },
+  { label: '토', value: 74, emotionKey: 'excited' },
+  { label: '일', value: 68, emotionKey: 'happy' },
 ]
 
 const biometricRatio = [
@@ -150,7 +171,7 @@ const timelineDays: TimelineDay[] = [
       {
         id: 1,
         type: 'diary',
-        emotion: '😊',
+        emotionKey: 'happy',
         content: '아빠랑 노는 일이었어요. 엄마가 커플 고양이를 사주었고, 지금 심심합니다.',
         tags: ['짜증 스러움', '기쁨'],
       },
@@ -163,7 +184,7 @@ const timelineDays: TimelineDay[] = [
       {
         id: 2,
         type: 'diary',
-        emotion: '🙂',
+        emotionKey: 'calm',
         content: '오늘은 엄마에서 친구랑 놀았어요. 같이 숙제도 기분이 좋았어요.',
         tags: ['친구 공유', '공감'],
       },
@@ -183,7 +204,7 @@ const timelineDays: TimelineDay[] = [
       {
         id: 4,
         type: 'diary',
-        emotion: '😐',
+        emotionKey: 'angry',
         content: '수학 시간에서 친구와 싸웠어요. 왜 싸웠는지 잘 모르겠어요. 집에 와서는 기분이 안 좋았어요.',
         tags: ['친구 문제', '불안'],
       },
@@ -203,25 +224,13 @@ const timelineDays: TimelineDay[] = [
       {
         id: 6,
         type: 'diary',
-        emotion: '😰',
+        emotionKey: 'happy',
         content: '어디선가 화해했어요. 집에 와서도 기분이 좋았어요.',
         tags: ['친구 공유', '공감'],
       },
     ],
   },
 ]
-
-function StatusBadge({ status }: { status?: ChildStatus }) {
-  if (!status) {
-    return null
-  }
-
-  return (
-    <span className={`counselor-dashboard-status is-${status}`}>
-      {status === 'done' ? '종료' : '진행'}
-    </span>
-  )
-}
 
 function MetricTag({
   children,
@@ -237,14 +246,52 @@ function DashboardCard({
   title,
   children,
   className,
+  info,
+  style,
 }: {
   title: string
   children: ReactNode
   className?: string
+  info?: string
+  style?: CSSProperties
 }) {
+  const [isInfoOpen, setIsInfoOpen] = useState(false)
+
   return (
-    <section className={`counselor-dashboard-card${className ? ` ${className}` : ''}`}>
-      <h3>{title}</h3>
+    <section
+      className={`counselor-dashboard-card${className ? ` ${className}` : ''}`}
+      style={style}
+    >
+      <div className="counselor-dashboard-card-title">
+        <h3>{title}</h3>
+        {info ? (
+          <span className="counselor-dashboard-info-wrap">
+            <button
+              type="button"
+              className="counselor-dashboard-info-button"
+              aria-label={`${title} 설명 보기`}
+              aria-expanded={isInfoOpen}
+              onClick={(event) => {
+                event.stopPropagation()
+                setIsInfoOpen((current) => !current)
+              }}
+            >
+              <FiInfo aria-hidden="true" />
+            </button>
+            {isInfoOpen ? (
+              <span
+                className="counselor-dashboard-tooltip-row"
+                onClick={(event) => event.stopPropagation()}
+                onMouseDown={(event) => event.stopPropagation()}
+              >
+                <span className="counselor-dashboard-tooltip" role="note">
+                  {info}
+                </span>
+              </span>
+            ) : null}
+          </span>
+        ) : null}
+      </div>
       {children}
     </section>
   )
@@ -273,7 +320,7 @@ function LineChart({
   color,
   showEmoji = false,
 }: {
-  data: Array<{ label: string; value: number; emoji?: string }>
+  data: Array<{ label: string; value: number; emotionKey?: DiaryEmotionKey }>
   color: string
   showEmoji?: boolean
 }) {
@@ -315,10 +362,20 @@ function LineChart({
       {points.map((point) => (
         <g key={point.label}>
           <circle cx={point.x} cy={point.y} r={4.8} style={{ fill: color }} />
-          {showEmoji && point.emoji ? (
-            <text className="counselor-line-chart-emoji" x={point.x} y={point.y - 12}>
-              {point.emoji}
-            </text>
+          {showEmoji && point.emotionKey ? (
+            <foreignObject
+              className="counselor-line-chart-emotion"
+              x={point.x - 11}
+              y={point.y - 34}
+              width="22"
+              height="22"
+            >
+              <DiaryEmotionIcon
+                emotionKey={point.emotionKey}
+                size={22}
+                className="counselor-line-chart-emotion-icon"
+              />
+            </foreignObject>
           ) : null}
           <text className="counselor-line-chart-label" x={point.x} y={height - 8}>
             {point.label}
@@ -354,9 +411,14 @@ function ObservationList() {
   )
 }
 
-function ExpressionAnalysis() {
+function ExpressionAnalysis({ maxHeight }: { maxHeight?: number }) {
   return (
-    <DashboardCard title="최근 표현 분석" className="counselor-expression-card">
+    <DashboardCard
+      title="최근 표현 분석"
+      className="counselor-expression-card"
+      info={dashboardInfoMessages.expression}
+      style={maxHeight ? { height: maxHeight, maxHeight } : undefined}
+    >
       <div className="counselor-expression-tabs" aria-label="분석 범위">
         <button type="button" className="is-active">
           전체
@@ -403,10 +465,12 @@ function ExpressionAnalysis() {
                   </MetricTag>
                   <div>
                     {entry.time ? <span className="entry-time">{entry.time}</span> : null}
-                    {entry.emotion ? (
-                      <span className="entry-emotion" aria-hidden="true">
-                        {entry.emotion}
-                      </span>
+                    {entry.emotionKey ? (
+                      <DiaryEmotionIcon
+                        emotionKey={entry.emotionKey}
+                        size={24}
+                        className="entry-emotion"
+                      />
                     ) : null}
                     <p>{entry.content}</p>
                     <div className="entry-tags">
@@ -432,7 +496,37 @@ function ExpressionAnalysis() {
 
 function CounselorDashboardPage() {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
+  const [analysisCardHeight, setAnalysisCardHeight] = useState<number>()
+  const mainColumnRef = useRef<HTMLDivElement | null>(null)
   const navigate = useNavigate()
+
+  useEffect(() => {
+    const columnElement = mainColumnRef.current
+
+    if (!columnElement) return undefined
+
+    const updateAnalysisHeight = () => {
+      const shouldMatchColumns = window.matchMedia('(min-width: 901px)').matches
+
+      if (!shouldMatchColumns) {
+        setAnalysisCardHeight(undefined)
+        return
+      }
+
+      setAnalysisCardHeight(Math.round(columnElement.getBoundingClientRect().height))
+    }
+
+    updateAnalysisHeight()
+
+    const resizeObserver = new ResizeObserver(updateAnalysisHeight)
+    resizeObserver.observe(columnElement)
+    window.addEventListener('resize', updateAnalysisHeight)
+
+    return () => {
+      resizeObserver.disconnect()
+      window.removeEventListener('resize', updateAnalysisHeight)
+    }
+  }, [])
 
   return (
     <main
@@ -476,7 +570,6 @@ function CounselorDashboardPage() {
                 <em>{child.meta}</em>
               </span>
               <small className="counselor-child-subtext">{child.subText}</small>
-              <StatusBadge status={child.status} />
             </button>
           ))}
         </nav>
@@ -503,58 +596,71 @@ function CounselorDashboardPage() {
         <div className="counselor-dashboard-content">
           <header className="counselor-dashboard-hero">
             <div>
-              <h2>김주연 님의 관찰 일지</h2>
-              <p>
-                <span>4차 회기 6회</span>
-                <span>다음 일정: 12주 3일 21시</span>
+              <h2>{selectedChildProfile.name} 님의 관찰 일지</h2>
+              <p className="counselor-dashboard-profile-meta" aria-label="상담 아동 정보">
+                <span>{selectedChildProfile.age}</span>
+                <span>{selectedChildProfile.gender}</span>
+                <span>보호자 : {selectedChildProfile.guardianName}</span>
               </p>
             </div>
-            <time dateTime="2023-11-17">2023년 11월 17일 작성됨</time>
           </header>
 
           <div className="counselor-dashboard-grid">
-            <div className="counselor-dashboard-column" aria-label="대시보드 주요 정보">
-              <DashboardCard title="아이 관찰 기록">
+            <div
+              className="counselor-dashboard-column"
+              aria-label="대시보드 주요 정보"
+              ref={mainColumnRef}
+            >
+              <DashboardCard
+                title="아이 관찰 기록"
+                info={dashboardInfoMessages.observation}
+              >
                 <ObservationList />
               </DashboardCard>
 
-              <DashboardCard title="수면 점수 추이">
+              <DashboardCard title="수면 점수 추이" info={dashboardInfoMessages.sleepScore}>
                 <BarChart />
               </DashboardCard>
 
-              <DashboardCard title="수면 효율 추이">
+              <DashboardCard
+                title="수면 효율 추이"
+                info={dashboardInfoMessages.sleepEfficiency}
+              >
                 <LineChart data={sleepEfficiency} color="#f2a57d" />
                 <p className="counselor-card-note">
                   수면 추세 시간 중 실제로 잠든 시간의 비율을 의미합니다.
                 </p>
               </DashboardCard>
             </div>
-            <div className="counselor-dashboard-column" aria-label="대시보드 분석 정보">
-              <ExpressionAnalysis />
+            <div
+              className="counselor-dashboard-column counselor-dashboard-column--analysis"
+              aria-label="대시보드 분석 정보"
+            >
+              <ExpressionAnalysis maxHeight={analysisCardHeight} />
             </div>
           </div>
 
           <section className="counselor-biometric-section">
             <div className="counselor-section-title">
               <h3>생체 데이터</h3>
-              <button type="button" aria-label="생체 데이터 안내">
-                <FiInfo aria-hidden="true" />
-              </button>
             </div>
             <div className="counselor-biometric-grid">
-              <DashboardCard title="비율 (HR + ACC)">
+              <DashboardCard
+                title="행동 활성"
+                info={dashboardInfoMessages.biometricRatio}
+              >
                 <LineChart data={biometricRatio} color="#f2a57d" />
                 <p className="counselor-card-note">
-                  주간 활동 및 행동 패턴의 변화를 보여줍니다. 수요일 활동량
-                  감소에 주목해주세요.
+                  수요일에 행동 활성 지표가 유독 낮게 관찰되며 이후 점진적으로
+                  활력을 회복하는 추세입니다.
                 </p>
               </DashboardCard>
 
-              <DashboardCard title="자율신경 (HRV)">
+              <DashboardCard title="자율 신경 안정도" info={dashboardInfoMessages.autonomic}>
                 <LineChart data={hrvTrend} color="#9b78f0" />
                 <p className="counselor-card-note">
-                  주간 활동 및 행동 패턴의 변화를 보여줍니다. 수요일 활동량
-                  감소에 주목해주세요.
+                  주말로 갈수록 RMSSD 수치가 상승하며 자율 신경 안정도가 개선이
+                  되는 추세입니다.
                 </p>
               </DashboardCard>
             </div>
