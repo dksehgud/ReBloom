@@ -603,10 +603,12 @@ function BarChart() {
 function LineChart({
   data,
   color,
+  showLine = true,
   showEmoji = false,
 }: {
   data: Array<{ label: string; value: number; emotionKey?: DiaryEmotionKey }>
   color: string
+  showLine?: boolean
   showEmoji?: boolean
 }) {
   const width = 520
@@ -643,10 +645,10 @@ function LineChart({
           </g>
         )
       })}
-      <path d={path} style={{ stroke: color }} />
+      {showLine ? <path d={path} style={{ stroke: color }} /> : null}
       {points.map((point) => (
         <g key={point.label}>
-          <circle cx={point.x} cy={point.y} r={4.8} style={{ fill: color }} />
+          {showLine ? <circle cx={point.x} cy={point.y} r={4.8} style={{ fill: color }} /> : null}
           {showEmoji && point.emotionKey ? (
             <foreignObject
               className="counselor-line-chart-emotion"
@@ -952,7 +954,8 @@ function ExpressionAnalysis({ maxHeight }: { maxHeight?: number }) {
         <LineChart
           data={currentTrend}
           color="#88b5c4"
-          showEmoji={activeFilter === 'diary'}
+          showLine={activeFilter !== 'diary'}
+          showEmoji={activeFilter !== 'conversation'}
         />
       </div>
 
