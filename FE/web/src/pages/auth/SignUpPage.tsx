@@ -4,17 +4,21 @@ import SignUpModals from '../../components/auth/signup/SignUpModals'
 import SignUpStepDetails from '../../components/auth/signup/SignUpStepDetails'
 import SignUpStepEmail from '../../components/auth/signup/SignUpStepEmail'
 import SignUpStepRole from '../../components/auth/signup/SignUpStepRole'
+import {
+  authApi,
+  type SignupRequest,
+} from '../../features/auth/api/authApi'
 import { openDaumPostcodePopup } from '../../shared/utils/daumPostcode'
 
 type UserRole = 'child' | 'parent'
 type SignUpStep = 'role' | 'email' | 'code' | 'details'
-type ModalType = 'complete' | 'parent-confirm' | 'parent-missing' | null
+type ModalType = 'complete' | null
 type EmailStatus = 'idle' | 'available' | 'duplicate' | 'invalid'
 type CodeStatus = 'idle' | 'error' | 'expired'
 type Gender = 'male' | 'female' | null
 
 const CODE_LENGTH = 6
-const CODE_DURATION_SECONDS = 180
+const CODE_DURATION_SECONDS = 300
 
 type SignUpPageProps = {
   onBackToLogin: () => void
@@ -26,9 +30,14 @@ function SignUpPage({ onBackToLogin }: SignUpPageProps) {
 
   const [email, setEmail] = useState('')
   const [emailStatus, setEmailStatus] = useState<EmailStatus>('idle')
+  const [emailError, setEmailError] = useState<string | undefined>()
+  const [isCheckingEmail, setIsCheckingEmail] = useState(false)
+  const [isSendingCode, setIsSendingCode] = useState(false)
 
   const [codeDigits, setCodeDigits] = useState(Array(CODE_LENGTH).fill(''))
   const [codeStatus, setCodeStatus] = useState<CodeStatus>('idle')
+  const [codeError, setCodeError] = useState<string | undefined>()
+  const [isVerifyingCode, setIsVerifyingCode] = useState(false)
   const [remainingSeconds, setRemainingSeconds] = useState(CODE_DURATION_SECONDS)
 
   const [name, setName] = useState('')
@@ -45,6 +54,8 @@ function SignUpPage({ onBackToLogin }: SignUpPageProps) {
   const [showPassword, setShowPassword] = useState(false)
   const [showPasswordConfirm, setShowPasswordConfirm] = useState(false)
   const [modal, setModal] = useState<ModalType>(null)
+  const [submitError, setSubmitError] = useState<string | undefined>()
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   const codeValue = codeDigits.join('')
   const isCodeExpired = step === 'code' && remainingSeconds === 0
@@ -72,7 +83,9 @@ function SignUpPage({ onBackToLogin }: SignUpPageProps) {
     passwordConfirm.length > 0 &&
     password === passwordConfirm
   const parentFormValid =
-    name.trim().length > 0 && hasPasswordRuleMatch && passwordsMatch
+    name.trim().length > 0 &&
+    hasPasswordRuleMatch &&
+    passwordsMatch
   const childFormValid =
     name.trim().length > 0 &&
     gender !== null &&
@@ -84,9 +97,11 @@ function SignUpPage({ onBackToLogin }: SignUpPageProps) {
     hasParentEmailValue &&
     isParentEmailValid
 
-  const handleCheckEmail = () => {
+  const handleCheckEmail = async () => {
     const normalizedEmail = email.trim().toLowerCase()
     const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+    setEmailError(undefined)
 
     if (!normalizedEmail) {
       setEmailStatus('idle')
@@ -98,22 +113,49 @@ function SignUpPage({ onBackToLogin }: SignUpPageProps) {
       return
     }
 
-    if (
-      normalizedEmail === 'exist@naver.com' ||
-      normalizedEmail === 'duplicate@naver.com'
-    ) {
-      setEmailStatus('duplicate')
+    try {
+      setIsCheckingEmail(true)
+      const isDuplicate = await authApi.checkEmailDuplicate(normalizedEmail)
+
+      setEmailStatus(isDuplicate ? 'duplicate' : 'available')
+      if (!isDuplicate) {
+        setEmail(normalizedEmail)
+      }
+    } catch (error) {
+      setEmailStatus('idle')
+      setEmailError(
+        error instanceof Error
+          ? error.message
+          : '이메일 중복 확인에 실패했습니다.',
+      )
+    } finally {
+      setIsCheckingEmail(false)
+    }
+  }
+
+  const openCodeStep = async () => {
+    if (!isEmailAvailable || isSendingCode) {
       return
     }
 
-    setEmailStatus('available')
-  }
-
-  const openCodeStep = () => {
-    setCodeDigits(Array(CODE_LENGTH).fill(''))
-    setCodeStatus('idle')
-    setRemainingSeconds(CODE_DURATION_SECONDS)
-    setStep('code')
+    try {
+      setIsSendingCode(true)
+      setEmailError(undefined)
+      setCodeError(undefined)
+      await authApi.sendEmailVerificationCode(email.trim().toLowerCase())
+      setCodeDigits(Array(CODE_LENGTH).fill(''))
+      setCodeStatus('idle')
+      setRemainingSeconds(CODE_DURATION_SECONDS)
+      setStep('code')
+    } catch (error) {
+      setEmailError(
+        error instanceof Error
+          ? error.message
+          : '인증번호 전송에 실패했습니다.',
+      )
+    } finally {
+      setIsSendingCode(false)
+    }
   }
 
   const handleCodeChange = (index: number, event: ChangeEvent<HTMLInputElement>) => {
@@ -123,6 +165,7 @@ function SignUpPage({ onBackToLogin }: SignUpPageProps) {
     nextDigits[index] = nextValue
     setCodeDigits(nextDigits)
     setCodeStatus('idle')
+    setCodeError(undefined)
 
     if (nextValue && index < CODE_LENGTH - 1) {
       const nextInput = event.currentTarget.nextElementSibling
@@ -144,25 +187,72 @@ function SignUpPage({ onBackToLogin }: SignUpPageProps) {
     }
   }
 
-  const handleResendCode = () => {
-    setCodeDigits(Array(CODE_LENGTH).fill(''))
-    setCodeStatus('idle')
-    setRemainingSeconds(CODE_DURATION_SECONDS)
+  const handleResendCode = async () => {
+    if (isSendingCode) {
+      return
+    }
+
+    try {
+      setIsSendingCode(true)
+      setCodeError(undefined)
+      await authApi.sendEmailVerificationCode(email.trim().toLowerCase())
+      setCodeDigits(Array(CODE_LENGTH).fill(''))
+      setCodeStatus('idle')
+      setRemainingSeconds(CODE_DURATION_SECONDS)
+    } catch (error) {
+      setCodeError(
+        error instanceof Error
+          ? error.message
+          : '인증번호 재전송에 실패했습니다.',
+      )
+    } finally {
+      setIsSendingCode(false)
+    }
   }
 
-  const handleVerifyCode = () => {
+  const returnToCodeStep = () => {
+    setCodeStatus('idle')
+    setCodeError(undefined)
+    setStep('code')
+  }
+
+  const handleVerifyCode = async () => {
     if (remainingSeconds === 0) {
       setCodeStatus('expired')
       return
     }
 
-    if (codeValue === '123456') {
-      setCodeStatus('idle')
-      setStep('details')
+    if (codeValue.length !== CODE_LENGTH) {
+      setCodeStatus('error')
+      setCodeError('인증코드 6자리를 모두 입력해주세요.')
       return
     }
 
-    setCodeStatus('error')
+    try {
+      setIsVerifyingCode(true)
+      setCodeError(undefined)
+      const isVerified = await authApi.verifyEmailCode(
+        email.trim().toLowerCase(),
+        codeValue,
+      )
+
+      if (isVerified) {
+        setCodeStatus('idle')
+        setStep('details')
+        return
+      }
+
+      setCodeStatus('error')
+    } catch (error) {
+      setCodeStatus('error')
+      setCodeError(
+        error instanceof Error
+          ? error.message
+          : '인증코드 확인에 실패했습니다.',
+      )
+    } finally {
+      setIsVerifyingCode(false)
+    }
   }
 
   const handleBirthDateChange = (event: ChangeEvent<HTMLInputElement>) => {
@@ -202,13 +292,74 @@ function SignUpPage({ onBackToLogin }: SignUpPageProps) {
     }
   }
 
-  const handleDetailsSubmit = () => {
+  const buildSignupRequest = (): SignupRequest | null => {
+    if (!role) {
+      return null
+    }
+
+    const common = {
+      email: email.trim().toLowerCase(),
+      password,
+      name: name.trim(),
+    }
+
+    if (role === 'parent') {
+      return {
+        ...common,
+        role: 'PARENT',
+      }
+    }
+
+    if (!gender) {
+      return null
+    }
+
+    return {
+      ...common,
+      role: 'CHILDREN',
+      parentEmail: parentEmail.trim().toLowerCase(),
+      birth: birthDate,
+      gender: gender === 'male' ? 'MALE' : 'FEMALE',
+      address: baseAddress.trim(),
+      addressDetail: detailAddress.trim(),
+    }
+  }
+
+  const submitSignup = async () => {
+    const request = buildSignupRequest()
+
+    if (!request) {
+      setSubmitError('회원가입 정보를 다시 확인해주세요.')
+      return false
+    }
+
+    try {
+      setIsSubmitting(true)
+      setSubmitError(undefined)
+      await authApi.signup(request)
+      return true
+    } catch (error) {
+      setSubmitError(
+        error instanceof Error ? error.message : '회원가입에 실패했습니다.',
+      )
+      return false
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  const handleDetailsSubmit = async () => {
+    setSubmitError(undefined)
+
     if (role === 'parent') {
       if (!parentFormValid) {
         return
       }
 
-      setModal('complete')
+      const isSuccess = await submitSignup()
+      if (isSuccess) {
+        setModal('complete')
+      }
       return
     }
 
@@ -225,16 +376,10 @@ function SignUpPage({ onBackToLogin }: SignUpPageProps) {
       return
     }
 
-    if (parentEmail.trim().toLowerCase().includes('missing')) {
-      setModal('parent-missing')
-      return
+    const isSuccess = await submitSignup()
+    if (isSuccess) {
+      setModal('complete')
     }
-
-    setModal('parent-confirm')
-  }
-
-  const handleCloseModal = () => {
-    setModal(null)
   }
 
   const handleComplete = () => {
@@ -243,8 +388,13 @@ function SignUpPage({ onBackToLogin }: SignUpPageProps) {
     setRole(null)
     setEmail('')
     setEmailStatus('idle')
+    setEmailError(undefined)
+    setIsCheckingEmail(false)
+    setIsSendingCode(false)
     setCodeDigits(Array(CODE_LENGTH).fill(''))
     setCodeStatus('idle')
+    setCodeError(undefined)
+    setIsVerifyingCode(false)
     setRemainingSeconds(CODE_DURATION_SECONDS)
     setName('')
     setGender(null)
@@ -258,16 +408,9 @@ function SignUpPage({ onBackToLogin }: SignUpPageProps) {
     setParentEmail('')
     setShowPassword(false)
     setShowPasswordConfirm(false)
+    setSubmitError(undefined)
+    setIsSubmitting(false)
     onBackToLogin()
-  }
-
-  const handleConfirmParent = () => {
-    setModal('complete')
-  }
-
-  const handleResetMissingParent = () => {
-    setModal(null)
-    setParentEmail('')
   }
 
   useEffect(() => {
@@ -303,13 +446,18 @@ function SignUpPage({ onBackToLogin }: SignUpPageProps) {
       {step === 'email' ? (
         <SignUpStepEmail
           codeDigits={codeDigits}
+          codeError={codeError}
           codeStatus={codeStatus}
           email={email}
+          emailError={emailError}
           emailStatus={emailStatus}
           formattedRemainingTime={formattedRemainingTime}
           hasEmailValue={hasEmailValue}
+          isCheckingEmail={isCheckingEmail}
           isCodeExpired={isCodeExpired}
           isEmailAvailable={isEmailAvailable}
+          isSendingCode={isSendingCode}
+          isVerifyingCode={isVerifyingCode}
           mode="email"
           onCheckEmail={handleCheckEmail}
           onCodeChange={handleCodeChange}
@@ -328,13 +476,18 @@ function SignUpPage({ onBackToLogin }: SignUpPageProps) {
       {step === 'code' ? (
         <SignUpStepEmail
           codeDigits={codeDigits}
+          codeError={codeError}
           codeStatus={codeStatus}
           email={email}
+          emailError={emailError}
           emailStatus={emailStatus}
           formattedRemainingTime={formattedRemainingTime}
           hasEmailValue={hasEmailValue}
+          isCheckingEmail={isCheckingEmail}
           isCodeExpired={isCodeExpired}
           isEmailAvailable={isEmailAvailable}
+          isSendingCode={isSendingCode}
+          isVerifyingCode={isVerifyingCode}
           mode="code"
           onCheckEmail={handleCheckEmail}
           onCodeChange={handleCodeChange}
@@ -363,6 +516,7 @@ function SignUpPage({ onBackToLogin }: SignUpPageProps) {
           hasPasswordNumberRule={hasPasswordNumberRule}
           hasPasswordSpecialRule={hasPasswordSpecialRule}
           isLoadingAddressSearch={isLoadingAddressSearch}
+          isSubmitting={isSubmitting}
           name={name}
           onBaseAddressChange={(event) => {
             setBaseAddress(event.target.value)
@@ -374,31 +528,28 @@ function SignUpPage({ onBackToLogin }: SignUpPageProps) {
           onParentEmailChange={(event) => setParentEmail(event.target.value)}
           onPasswordChange={(event) => setPassword(event.target.value)}
           onPasswordConfirmChange={(event) => setPasswordConfirm(event.target.value)}
-          onPrevious={openCodeStep}
+          onPrevious={returnToCodeStep}
           onSearchAddress={handleSearchAddress}
           onSelectGender={setGender}
           onSubmit={handleDetailsSubmit}
           onTogglePassword={() => setShowPassword((prev) => !prev)}
           onTogglePasswordConfirm={() => setShowPasswordConfirm((prev) => !prev)}
+          parentFormValid={parentFormValid}
           parentEmail={parentEmail}
           parentEmailError={parentEmailError}
-          parentFormValid={parentFormValid}
           password={password}
           passwordConfirm={passwordConfirm}
           passwordsMatch={passwordsMatch}
           role={role}
           showPassword={showPassword}
           showPasswordConfirm={showPasswordConfirm}
+          submitError={submitError}
         />
       ) : null}
 
       <SignUpModals
         modal={modal}
-        onClose={handleCloseModal}
         onComplete={handleComplete}
-        onConfirmParent={handleConfirmParent}
-        onResetMissingParent={handleResetMissingParent}
-        parentEmail={parentEmail}
         role={role}
       />
     </>

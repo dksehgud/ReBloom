@@ -6,10 +6,13 @@ import kakaoLogo from '../../assets/kakao-logo.svg'
 type LoginPageProps = {
   email: string
   password: string
+  error?: string
+  isSubmitting?: boolean
   onEmailChange: (value: string) => void
   onPasswordChange: (value: string) => void
   onForgotPasswordClick: () => void
   onSignUpClick: () => void
+  onSubmit: () => void
   onStartChildClick: () => void
   onStartParentClick: () => void
 }
@@ -17,10 +20,13 @@ type LoginPageProps = {
 function LoginPage({
   email,
   password,
+  error,
+  isSubmitting = false,
   onEmailChange,
   onPasswordChange,
   onForgotPasswordClick,
   onSignUpClick,
+  onSubmit,
   onStartChildClick,
   onStartParentClick,
 }: LoginPageProps) {
@@ -28,6 +34,7 @@ function LoginPage({
 
   const handleLoginSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
+    onSubmit()
   }
 
   return (
@@ -70,11 +77,13 @@ function LoginPage({
         <button
           type="submit"
           className="primary-button login-button"
-          disabled={!isLoginEnabled}
+          disabled={!isLoginEnabled || isSubmitting}
         >
-          로그인
+          {isSubmitting ? '로그인 중' : '로그인'}
         </button>
       </form>
+
+      {error ? <p className="field-error">{error}</p> : null}
 
       <div className="mock-entry-section" aria-label="개발용 빠른 진입">
         <p className="mock-entry-title">API 연동 전 임시 진입</p>

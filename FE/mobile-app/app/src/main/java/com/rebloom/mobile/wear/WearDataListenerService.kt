@@ -5,10 +5,19 @@ import com.google.android.gms.wearable.DataEvent
 import com.google.android.gms.wearable.DataEventBuffer
 import com.google.android.gms.wearable.DataMapItem
 import com.google.android.gms.wearable.WearableListenerService
-import java.io.File
-import java.io.FileWriter
+import com.rebloom.mobile.network.ApiClient
+import com.rebloom.mobile.network.BiometricRequest
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 class WearDataListenerService : WearableListenerService() {
+
+    private val scope = CoroutineScope(Dispatchers.IO)
+    private val dateFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault())
 
     override fun onDataChanged(dataEvents: DataEventBuffer) {
         dataEvents.forEach { event ->
@@ -28,45 +37,54 @@ class WearDataListenerService : WearableListenerService() {
                 val rmssd = dataMap.getFloat("rmssd")
                 val pnn50 = dataMap.getFloat("pnn50")
                 val lfHf = dataMap.getFloat("lfHf")
+                val hrAccRatio = dataMap.getFloat("hrAccRatio")
                 val missingnessScore = dataMap.getFloat("missingnessScore")
 
                 Log.d("WearDataListener", "데이터 수신: HR=$hr, RMSSD=$rmssd, LF/HF=$lfHf")
 
-                saveToCsv(
+                sendBiometric(
                     tsStart, tsEnd, hr, ibi,
                     accXAvg, accYAvg, accZAvg, accMag,
-                    rmssd, pnn50, lfHf, missingnessScore
+                    rmssd, pnn50, lfHf, hrAccRatio, missingnessScore
                 )
             }
         }
     }
 
-    private fun saveToCsv(
+    private fun sendBiometric(
         tsStart: Long, tsEnd: Long,
         hr: Float, ibi: Float,
         accXAvg: Float, accYAvg: Float, accZAvg: Float,
         accMag: Float,
         rmssd: Float, pnn50: Float,
-        lfHf: Float,
+        lfHf: Float, hrAccRatio: Float,
         missingnessScore: Float
     ) {
-        val file = File(getExternalFilesDir(null), "biometric.csv")
-        val isNew = !file.exists()
+        scope.launch {
+            try {
+                val request = BiometricRequest(
+                    userId = "TODO: 토큰에서 userId 추출",
+                    tsStart = dateFormat.format(Date(tsStart)),
+                    tsEnd = dateFormat.format(Date(tsEnd)),
+                    hr = hr,
+                    ibi = ibi,
+                    rmssd = rmssd,
+                    pnn50 = pnn50,
+                    lfHf = lfHf,
+                    accXAvg = accXAvg,
+                    accYAvg = accYAvg,
+                    accZAvg = accZAvg,
+                    accMag = accMag,
+                    hrAccRatio = hrAccRatio,
+                    missingnessScore = missingnessScore
+                )
 
-        FileWriter(file, true).use { writer ->
-            if (isNew) {
-                writer.append("ts_start,ts_end,hr,ibi,acc_x_avg,acc_y_avg,acc_z_avg,acc_mag,rmssd,pnn50,lf_hf,missingness_score\n")
+                val response = ApiClient.create(applicationContext).sendBiometric(request)
+                Log.d("WearDataListener", "전송 성공: ${response.message}")
+
+            } catch (e: Exception) {
+                Log.e("WearDataListener", "전송 실패: ${e.message}")
             }
-            writer.append(
-                try {
-                    "$tsStart,$tsEnd,$hr,$ibi,$accXAvg,$accYAvg,$accZAvg,$accMag,$rmssd,$pnn50,$lfHf,$missingnessScore\n"
-                } catch (e: Exception) {
-                    TODO("Not yet implemented")
-                } finally {
-                }
-            )
         }
-
-        Log.d("WearDataListener", "CSV 저장 완료: ${file.absolutePath}")
     }
 }

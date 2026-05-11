@@ -1,7 +1,7 @@
 package com.ssafy.rebloom.biometric_service.consumer;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.ssafy.rebloom.biometric_service.service.SleepEventService;
+import com.ssafy.rebloom.biometric_service.service.SleepService;
 import com.ssafy.rebloom.event.core.EventEnvelope;
 import com.ssafy.rebloom.event.core.EventTypes;
 import com.ssafy.rebloom.event.dto.SleepDataEvent;
@@ -18,10 +18,10 @@ import org.springframework.stereotype.Component;
 public class SleepRawEventConsumer {
 
     private final ObjectMapper objectMapper;
-    private final SleepEventService sleepEventService;
+    private final SleepService sleepService;
 
     @KafkaListener(
-        topics = "${rebloom.kafka.topics.sleep-raw}",
+        topics = "${rebloom.kafka.topics.sleep-received}",
         groupId = "${rebloom.kafka.consumer.group-id}",
         containerFactory = "rebloomKafkaListenerContainerFactory"
     )
@@ -29,7 +29,7 @@ public class SleepRawEventConsumer {
         try {
             MDC.put("correlationId", envelope.correlationId());
 
-            if (!EventTypes.SLEEP_DATA_RECEIVED.equals(envelope.eventType())) {
+            if (!EventTypes.SLEEP_RECEIVED.equals(envelope.eventType())) {
                 log.warn("Unexpected eventType. eventType={}, eventId={}", envelope.eventType(), envelope.eventId());
                 return;
             }
@@ -39,7 +39,7 @@ public class SleepRawEventConsumer {
                 SleepDataEvent.class
             );
 
-            sleepEventService.saveSleepRawEvent(payload, envelope.correlationId());
+            sleepService.saveSleepRawEvent(payload, envelope.correlationId());
         } finally {
             MDC.remove("correlationId");
         }

@@ -6,6 +6,7 @@ import sys
 import tempfile
 from abc import ABC, abstractmethod
 from pathlib import Path
+from typing import Optional
 
 from rpi_client.core.config import Settings
 
@@ -32,14 +33,14 @@ class BaseSTTService(ABC):
     """STT 서비스 공통 인터페이스."""
 
     @abstractmethod
-    async def listen(self) -> str:
+    async def listen(self, start_timeout: Optional[float] = None) -> str:
         """사용자 발화를 텍스트로 반환한다."""
 
 
 class MockSTTService(BaseSTTService):
     """콘솔 입력을 STT 결과처럼 사용하는 MVP용 mock STT."""
 
-    async def listen(self) -> str:
+    async def listen(self, start_timeout: Optional[float] = None) -> str:
         while True:
             text = await asyncio.to_thread(input, "사용자> ")
             text = text.strip()
@@ -56,13 +57,13 @@ class LocalSTTService(BaseSTTService):
         self.config = config
         self._voice_runtime = self._load_voice_runtime()
 
-    async def listen(self) -> str:
-        return await asyncio.to_thread(self._listen_blocking)
+    async def listen(self, start_timeout: Optional[float] = None) -> str:
+        return await asyncio.to_thread(self._listen_blocking, start_timeout)
 
-    def _listen_blocking(self) -> str:
+    def _listen_blocking(self, start_timeout: Optional[float] = None) -> str:
         with tempfile.TemporaryDirectory(prefix="rebloom_ws_stt_") as temp_dir:
             wav_path = Path(temp_dir) / "user.wav"
-            if not self._record_with_fallback(wav_path):
+            if not self._record_with_fallback(wav_path, start_timeout):
                 return ""
 
             transcript = self._voice_runtime.transcribe_whisper_cpp(
@@ -80,10 +81,18 @@ class LocalSTTService(BaseSTTService):
     def is_meaningful(self, text: str) -> bool:
         return self._voice_runtime.is_meaningful_transcript(text)
 
-    def _record_with_fallback(self, wav_path: Path) -> bool:
+    def _record_with_fallback(self, wav_path: Path, start_timeout: Optional[float] = None) -> bool:
         last_error = None
         busy_errors = []
-        for audio_device in self._record_device_candidates(self.config.audio_device):
+        candidates = self._record_device_candidates(self.config.audio_device)
+        if not candidates:
+            raise STTInputUnavailableError(
+                "캡처 가능한 마이크 입력 장치를 찾지 못했습니다. "
+                "`arecord -l`에서 USB 마이크가 보이는지 확인한 뒤 다시 시도합니다.",
+                self.config.mic_busy_retry_seconds,
+            )
+
+        for audio_device in candidates:
             try:
                 label = audio_device or "ALSA 기본 입력 장치"
                 logger.info("마이크 입력 장치 시도: %s", label)
@@ -93,7 +102,7 @@ class LocalSTTService(BaseSTTService):
                         audio_device,
                         self.config.max_record_seconds,
                         self.config.silence_seconds,
-                        self.config.start_timeout,
+                        start_timeout if start_timeout is not None else self.config.start_timeout,
                         self.config.speech_threshold,
                     )
                     if not speech_detected:
@@ -140,7 +149,9 @@ class LocalSTTService(BaseSTTService):
         if selected:
             candidates.append(selected)
         candidates.extend(self._list_arecord_capture_devices())
-        candidates.append("")
+        candidates.extend(self._list_arecord_named_capture_devices())
+        if device == "default":
+            candidates.append("")
         return self._dedupe(candidates)
 
     @staticmethod
@@ -155,9 +166,34 @@ class LocalSTTService(BaseSTTService):
             return []
 
         devices = []
-        pattern = re.compile(r"^card\s+(\d+):.*device\s+(\d+):", re.MULTILINE)
+        pattern = re.compile(r"^card\s+(\d+):\s*([^\s\[]+).*device\s+(\d+):", re.MULTILINE)
         for match in pattern.finditer(result.stdout):
-            devices.append(f"plughw:{match.group(1)},{match.group(2)}")
+            card_number = match.group(1)
+            card_name = match.group(2)
+            device_number = match.group(3)
+            devices.append(f"default:CARD={card_name}")
+            devices.append(f"sysdefault:CARD={card_name}")
+            devices.append(f"plughw:CARD={card_name},DEV={device_number}")
+            devices.append(f"plughw:{card_number},{device_number}")
+        return devices
+
+    @staticmethod
+    def _list_arecord_named_capture_devices() -> list[str]:
+        result = subprocess.run(
+            ["arecord", "-L"],
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+        if result.returncode != 0:
+            return []
+
+        devices = []
+        for line in result.stdout.splitlines():
+            name = line.strip()
+            if not name.startswith(("plughw:CARD=", "default:CARD=", "sysdefault:CARD=")):
+                continue
+            devices.append(name)
         return devices
 
     @staticmethod

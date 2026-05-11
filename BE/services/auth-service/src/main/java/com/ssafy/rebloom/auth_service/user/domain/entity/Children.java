@@ -9,6 +9,7 @@ import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotNull;
+import java.math.BigDecimal;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
@@ -41,16 +42,44 @@ public class Children extends User {
     @Column(name = "address_detail", nullable = false)
     private String addressDetail;
 
+    @Column(precision = 10, scale = 7)
+    private BigDecimal latitude;
+
+    @Column(precision = 10, scale = 7)
+    private BigDecimal longitude;
+
     @Builder(access = AccessLevel.PRIVATE)
-    private Children(String email, String password, String name, String birth, Gender gender, String address, String addressDetail) {
+    private Children(
+        String email,
+        String password,
+        String name,
+        String birth,
+        Gender gender,
+        String address,
+        String addressDetail,
+        BigDecimal latitude,
+        BigDecimal longitude
+    ) {
         super(email, password, name, UserRole.CHILDREN);
         this.birth = birth;
         this.gender = gender;
         this.address = address;
         this.addressDetail = addressDetail;
+        this.latitude = latitude;
+        this.longitude = longitude;
     }
 
-    public static Children createChildren(String email, String password, String name, String birth, Gender gender, String address, String addressDetail) {
+    public static Children createChildren(
+        String email,
+        String password,
+        String name,
+        String birth,
+        Gender gender,
+        String address,
+        String addressDetail,
+        BigDecimal latitude,
+        BigDecimal longitude
+    ) {
         return Children.builder()
             .email(email)
             .password(password)
@@ -59,6 +88,15 @@ public class Children extends User {
             .gender(gender)
             .address(address)
             .addressDetail(addressDetail)
+            .latitude(latitude)
+            .longitude(longitude)
             .build();
+    }
+
+    public void updateAddress(String address, String addressDetail, BigDecimal latitude, BigDecimal longitude) {
+        this.address = address;
+        this.addressDetail = addressDetail;
+        this.latitude = latitude;
+        this.longitude = longitude;
     }
 }

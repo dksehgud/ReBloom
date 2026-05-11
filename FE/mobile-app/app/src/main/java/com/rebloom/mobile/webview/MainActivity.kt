@@ -20,10 +20,22 @@ import androidx.activity.ComponentActivity
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import com.rebloom.mobile.BuildConfig
+import com.rebloom.mobile.diary.DiaryRepository
+import com.rebloom.mobile.diary.network.DiaryAnalysisClient
+import com.rebloom.mobile.storage.database.RebloomDatabase
+import com.rebloom.mobile.webview.bridge.DiaryJavascriptBridge
+import com.rebloom.mobile.network.TokenBridge
 
 class MainActivity : ComponentActivity() {
 
     private lateinit var webView: WebView
+    private val diaryBridge: DiaryJavascriptBridge by lazy {
+        val database = RebloomDatabase.getInstance(applicationContext)
+        DiaryJavascriptBridge(
+            diaryRepository = DiaryRepository(database.diaryDao()),
+            diaryAnalysisClient = DiaryAnalysisClient(BuildConfig.DIARY_ANALYSIS_API_URL),
+        )
+    }
 
     private val launchUrl: String
         get() = BuildConfig.WEB_APP_BASE_URL.trimEnd('/') + "/?mode=webview"
@@ -53,8 +65,10 @@ class MainActivity : ComponentActivity() {
             settings.useWideViewPort = false
             settings.loadWithOverviewMode = false
             settings.mixedContentMode = WebSettings.MIXED_CONTENT_NEVER_ALLOW
+            addJavascriptInterface(TokenBridge(this@MainActivity), "Android")
             webChromeClient = WebChromeClient()
             webViewClient = ReBloomWebViewClient()
+            addJavascriptInterface(diaryBridge, DIARY_BRIDGE_NAME)
             loadUrl(launchUrl)
         }
 
@@ -126,5 +140,6 @@ class MainActivity : ComponentActivity() {
 
     private companion object {
         private const val TAG = "ReBloomWebView"
+        private const val DIARY_BRIDGE_NAME = "RebloomDiaryBridge"
     }
 }

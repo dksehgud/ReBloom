@@ -13,4 +13,5 @@ data class BiometricRecord(
     val rmssd: Float,
     val pnn50: Float,
     val lfHf: Float,
+    val hrAccRatio: Float
 )

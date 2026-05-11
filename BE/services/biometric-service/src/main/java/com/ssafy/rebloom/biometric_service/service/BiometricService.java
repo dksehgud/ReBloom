@@ -1,5 +1,11 @@
 package com.ssafy.rebloom.biometric_service.service;
 
-public interface BiometricService {
+import com.ssafy.rebloom.event.dto.BiometricDataEvent;
+import java.time.LocalDateTime;
+import java.util.UUID;
 
+public interface BiometricService {
+    void save(BiometricDataEvent event, String correlationId);
+
+    void publishAITrainingRequestedEvent(UUID userId, LocalDateTime currentMeasuredAt, String correlationId);
 }
