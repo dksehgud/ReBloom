@@ -11,13 +11,13 @@ KAFKA_BOOTSTRAP_SERVERS = os.getenv("KAFKA_BOOTSTRAP_SERVERS", "localhost:9092")
 KAFKA_GROUP_ID = os.getenv("KAFKA_GROUP_ID", "bio-ml-service")
 
 # Kafka Topics - Consume
-KAFKA_TOPIC_BIOMETRIC_RAW = os.getenv("KAFKA_TOPIC_BIOMETRIC_RAW", "rebloom.biometric.raw.v1")
-KAFKA_TOPIC_AI_TRAIN      = os.getenv("KAFKA_TOPIC_AI_MODEL_TRAIN_REQUESTED", "rebloom.ai.model.train.requested.v1")  # ← 기본값 수정
-KAFKA_TOPIC_AI_ANALYZE    = os.getenv("KAFKA_TOPIC_AI_ANALYZE_REQUESTED", "rebloom.ai.analyze.requested.v1")
+KAFKA_TOPIC_BIOMETRIC_RAW = os.getenv("KAFKA_TOPIC_BIOMETRIC_RAW", "rebloom.biometric.received.v1")
+KAFKA_TOPIC_AI_TRAIN      = os.getenv("KAFKA_TOPIC_AI_MODEL_TRAIN_REQUESTED", "rebloom.model.training.requested.v1")
+KAFKA_TOPIC_AI_ANALYZE    = os.getenv("KAFKA_TOPIC_AI_ANALYZE_REQUESTED", "rebloom.model.retraining.requested.v1")
 
 # Kafka Topics - Produce
-KAFKA_TOPIC_ANOMALY_VERIFIED = os.getenv("KAFKA_TOPIC_ANOMALY_VERIFIED", "rebloom.anomaly.verified.v1")
-KAFKA_TOPIC_PHQ_RESULT       = os.getenv("KAFKA_TOPIC_PHQ_RESULT", "rebloom.phq.result.v1")  # ← 추가
+KAFKA_TOPIC_ANOMALY_VERIFIED = os.getenv("KAFKA_TOPIC_ANOMALY_VERIFIED", "rebloom.anomaly.analysed.v1")
+KAFKA_TOPIC_PHQ_RESULT       = os.getenv("KAFKA_TOPIC_PHQ_RESULT", "rebloom.phq.completed.v1")
 
 # Redis
 REDIS_HOST = os.getenv("REDIS_HOST", "localhost")

@@ -38,17 +38,32 @@ def _delivery_report(err, msg) -> None:
 # ──────────────────────────────────────────────
 
 def publish_anomaly_verified(
-    user_id: str,
-    ts_start: str,
-    ts_end: str,
-    hr: float,
-    rmssd: float,
-    pnn50: float,
-    lf_hf: float,
-    acc_mag: float,
-    hr_acc_ratio: float,
+    user_id         : str,
+    ts_start        : str,
+    ts_end          : str,
+    hr              : float,
+    rmssd           : float,
+    pnn50           : float,
+    lf_hf           : float,
+    acc_mag         : float,
+    hr_acc_ratio    : float,
     anomaly_features: list[str],
 ) -> None:
+    """
+    rebloom.anomaly.analysed.v1 발행
+
+    Args:
+        user_id         : 유저 UUID
+        ts_start        : 구간 시작 시각 (ISO 8601)
+        ts_end          : 구간 종료 시각 (ISO 8601)
+        hr              : 심박수
+        rmssd           : HRV rmssd
+        pnn50           : HRV pnn50
+        lf_hf           : LF/HF ratio
+        acc_mag         : 가속도 크기
+        hr_acc_ratio    : 심박수/가속도 비율
+        anomaly_features: 이상치로 판단된 변수명 목록
+    """
     payload = {
         "userId"         : user_id,
         "tsStart"        : ts_start,
@@ -70,12 +85,11 @@ def publish_anomaly_verified(
         callback = _delivery_report,
     )
     producer.poll(0)
-    logger.info("[Kafka] anomaly.verified 발행 | userId=%s features=%s",
-                user_id, anomaly_features)
+    logger.info("[Kafka] anomaly.analysed 발행 | userId=%s features=%s", user_id, anomaly_features)
 
 def publish_phq_result(user_id: str, date: str, result: int, score: float, predicted_at: str) -> None:
     """
-    rebloom.phq.result.v1 발행
+    rebloom.phq.completed.v1 발행
 
     Args:
         user_id     : 유저 UUID
@@ -99,8 +113,7 @@ def publish_phq_result(user_id: str, date: str, result: int, score: float, predi
         callback = _delivery_report,
     )
     producer.poll(0)
-    logger.info("[Kafka] phq.result 발행 | userId=%s result=%s score=%s", user_id, result, score)
-
+    logger.info("[Kafka] phq.completed 발행 | userId=%s result=%s score=%s", user_id, result, score)
 
 def flush() -> None:
     """종료 전 미전송 메시지 플러시"""
