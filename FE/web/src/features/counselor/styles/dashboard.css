@@ -1281,7 +1281,7 @@
   flex: 1 1 0;
   min-width: 0;
   min-height: 100svh;
-  padding: clamp(32px, 4vw, 56px) clamp(40px, 10vw, 184px);
+  padding: clamp(32px, 4vw, 56px);
 }
 
 .counselor-settings-content {
@@ -1289,6 +1289,7 @@
   flex-direction: column;
   gap: 24px;
   width: min(100%, 832px);
+  margin: 0 auto;
 }
 
 .counselor-settings-content h1 {
