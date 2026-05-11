@@ -50,4 +50,30 @@ public class Anomaly {
 
     @Column(name = "is_anomaly")
     private Boolean isAnomaly;
+
+    public static Anomaly create(
+        UUID userId,
+        LocalDateTime tsStart,
+        LocalDateTime tsEnd,
+        Double hr,
+        Double rmssd,
+        Double pnn50,
+        Double lfHf,
+        Double accMag,
+        Double hrAccRatio,
+        Boolean isAnomaly
+    ) {
+        return Anomaly.builder()
+            .userId(userId)
+            .tsStart(tsStart)
+            .tsEnd(tsEnd)
+            .hr(hr)
+            .rmssd(rmssd)
+            .pnn50(pnn50)
+            .lfHf(lfHf)
+            .accMag(accMag)
+            .hrAccRatio(hrAccRatio)
+            .isAnomaly(isAnomaly)
+            .build();
+    }
 }

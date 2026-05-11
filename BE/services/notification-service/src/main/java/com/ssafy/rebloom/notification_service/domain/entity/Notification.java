@@ -24,7 +24,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @Table(name = "notifications")
 @AllArgsConstructor(access = AccessLevel.PROTECTED)
-@NoArgsConstructor(access = AccessLevel.PRIVATE)
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Notification extends BaseTime {
 
     @Id
@@ -59,4 +59,22 @@ public class Notification extends BaseTime {
     @NotNull
     @Column(name = "is_read", nullable = false)
     private Boolean isRead;
+
+    public static Notification create(
+        UUID userId,
+        NotificationType notificationType,
+        DeliveryStatus deliveryStatus,
+        String externalReferenceId,
+        Boolean isRead
+    ) {
+        return Notification.builder()
+            .userId(userId)
+            .notificationType(notificationType)
+            .title("주의 필요")
+            .content(String.format("지금 한번 %s에게 관심을 표현해볼까요?"))
+            .deliveryStatus(deliveryStatus)
+            .externalReferenceId(externalReferenceId)
+            .isRead(isRead)
+            .build();
+    }
 }
