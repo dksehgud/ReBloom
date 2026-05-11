@@ -7,13 +7,12 @@ import lombok.Setter;
 @Setter
 public class KafkaTopicsProperties {
 
-    private String biometricRaw;
-    private String sleepRaw;
-    private String biometricAnalysis;
-    private String anomalyVerified;
-    private String conversationInitiate;
-    private String analysisReportCompleted;
+    private String biometricReceived;
+    private String sleepReceived;
+    private String anomalyAnalysed;
+    private String modelTrainingRequested;
+    private String modelRetrainingRequested;
+    private String phqCompleted;
+    private String conversationInitiated;
     private String eventDlt;
-    private String aiModelTrainRequested;
-    private String phqResult;
 }

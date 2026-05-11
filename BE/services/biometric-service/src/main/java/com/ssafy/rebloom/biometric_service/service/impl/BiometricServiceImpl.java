@@ -69,16 +69,16 @@ public class BiometricServiceImpl implements BiometricService {
         // 이벤트 키 생성
         String key = userId.toString();
         String idempotencyKey = eventKeyGenerator.idempotencyKey(
-            EventTypes.AI_MODEL_TRAIN_REQUESTED,
+            EventTypes.MODEL_TRAINING_REQUESTED,
             userId.toString(),
             Constants.MODEL_TYPE_ISOLATION_FOREST
         );
         
         // 이벤트 발행
         eventPublisher.publish(
-            kafkaProperties.getTopics().getAiModelTrainRequested(),
+            kafkaProperties.getTopics().getModelTrainingRequested(),
             key,
-            EventTypes.AI_MODEL_TRAIN_REQUESTED,
+            EventTypes.MODEL_TRAINING_REQUESTED,
             correlationId,
             idempotencyKey,
             event
