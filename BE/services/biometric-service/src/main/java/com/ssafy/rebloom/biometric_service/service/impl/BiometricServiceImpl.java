@@ -201,16 +201,23 @@ public class BiometricServiceImpl implements BiometricService {
 
 
     private void validateRelation(UUID userId, String role, UUID childrenId) {
-        if ("PARENT".equals(role)) {
+        String normalizedRole = normalizeRole(role);
+        if ("PARENT".equals(normalizedRole)) {
             authAccessClient.validateParentChildAccess(userId, childrenId);
             return;
         }
 
-        if ("COUNSELOR".equals(role)) {
+        if ("COUNSELOR".equals(normalizedRole)) {
             authAccessClient.validateCounselorChildAccess(userId, childrenId);
             return;
         }
 
         throw new CustomException("아이 생체 데이터 기록을 조회할 권한이 없습니다.", ErrorCode.FORBIDDEN);
+    }
+
+    private String normalizeRole(String role) {
+        return role != null && role.startsWith("ROLE_")
+            ? role.substring("ROLE_".length())
+            : role;
     }
 }

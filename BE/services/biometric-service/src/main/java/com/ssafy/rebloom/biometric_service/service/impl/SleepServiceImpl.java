@@ -22,9 +22,11 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -51,9 +53,9 @@ public class SleepServiceImpl implements SleepService {
         //권한 검증
         validateRelation(userId, role, childrenId);
 
-        LocalDate startDate = baseDate.minusDays(Constants.SLEEP_CHART_DAYS - 1);
-        LocalDateTime from = startDate.atStartOfDay();
-        LocalDateTime to = baseDate.plusDays(1).atStartOfDay(); // 다음날 00:00 전까지
+        LocalDate weekStartDate = baseDate.with(DayOfWeek.MONDAY);
+        LocalDateTime from = weekStartDate.atStartOfDay();
+        LocalDateTime to = baseDate.plusDays(1).atStartOfDay();
 
         // 리포지토리에서 수면 조회 -> Map 변환
         Map<LocalDate, Double> scoreMap = sleepRepository
@@ -67,7 +69,7 @@ public class SleepServiceImpl implements SleepService {
 
         // 차트 기간 순회하며 빈 날짜 -> null
         List<SleepChartResponseDto> responses = IntStream.range(0, Constants.SLEEP_CHART_DAYS)
-            .mapToObj(startDate::plusDays)
+            .mapToObj(weekStartDate::plusDays)
             .map(date -> {
                 return SleepChartResponseDto.from(date, scoreMap.get(date));
             })
@@ -108,12 +110,13 @@ public class SleepServiceImpl implements SleepService {
     }
 
     private void validateRelation(UUID userId, String role, UUID childrenId) {
-        if ("PARENT".equals(role)) {
+        String normalizedRole = normalizeRole(role);
+        if ("PARENT".equals(normalizedRole)) {
             authAccessClient.validateParentChildAccess(userId, childrenId);
             return;
         }
 
-        if ("COUNSELOR".equals(role)) {
+        if ("COUNSELOR".equals(normalizedRole)) {
             authAccessClient.validateCounselorChildAccess(userId, childrenId);
             return;
         }
@@ -121,4 +124,9 @@ public class SleepServiceImpl implements SleepService {
         throw new CustomException("아이 수면 기록을 조회할 권한이 없습니다.", ErrorCode.FORBIDDEN);
     }
 
+    private String normalizeRole(String role) {
+        return role != null && role.startsWith("ROLE_")
+            ? role.substring("ROLE_".length())
+            : role;
+    }
 }

@@ -22,8 +22,9 @@ public class SleepQueryRepositoryImpl implements SleepQueryRepository {
     public List<SleepScoreDto> findSleepScoresByRange(UUID childrenId, LocalDateTime from,
         LocalDateTime to) {
         return jpaQueryFactory
-            .select(Projections.constructor(SleepScoreDto.class,
-                sleep.id.wakeup.as("date"),
+            .select(Projections.constructor(
+                SleepScoreDto.class,
+                sleep.id.wakeup,
                 sleep.sleepScore
             ))
             .from(sleep)
@@ -33,6 +34,7 @@ public class SleepQueryRepositoryImpl implements SleepQueryRepository {
                 sleep.id.wakeup.lt(to),
                 sleep.isMainSleep.isTrue()
             )
+            .orderBy(sleep.id.wakeup.asc())
             .fetch();
     }
 
@@ -54,6 +56,7 @@ public class SleepQueryRepositoryImpl implements SleepQueryRepository {
                 sleep.id.wakeup.lt(to),
                 sleep.isMainSleep.isTrue()
             )
+            .orderBy(sleep.id.wakeup.asc())
             .fetch();
     }
 }

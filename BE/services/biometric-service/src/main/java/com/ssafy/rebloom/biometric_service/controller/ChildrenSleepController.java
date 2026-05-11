@@ -20,12 +20,12 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/v1/children/{childrenId}/charts")
+@RequestMapping("/api/v1/children/{childrenId}/charts/sleeps")
 public class ChildrenSleepController {
 
     private final SleepService sleepService;
 
-    @GetMapping("/sleep-scores")
+    @GetMapping("/scores")
     @PreAuthorize("hasAnyRole('PARENT', 'COUNSELOR')")
     public ResponseEntity<BaseResponse<ListResponseDto<SleepChartResponseDto>>> getSleepScores(
         @LoginUserId UUID userId,
@@ -43,7 +43,7 @@ public class ChildrenSleepController {
         return ResponseEntity.ok(BaseResponse.success("수면 점수 차트 조회 성공", response));
     }
 
-    @GetMapping("/sleep-efficiencies")
+    @GetMapping("/efficiencies")
     @PreAuthorize("hasRole('COUNSELOR')")
     public ResponseEntity<BaseResponse<ListResponseDto<SleepChartResponseDto>>> getSleepEfficiencies(
         @LoginUserId UUID userId,
