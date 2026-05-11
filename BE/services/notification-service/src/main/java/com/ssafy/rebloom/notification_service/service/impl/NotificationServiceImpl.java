@@ -12,7 +12,7 @@ import com.ssafy.rebloom.notification_service.dto.ParentReceiverInfo;
 import com.ssafy.rebloom.notification_service.dto.RealtimeNotificationMessage;
 import com.ssafy.rebloom.notification_service.repository.NotificationRepository;
 import com.ssafy.rebloom.notification_service.resolver.NotificationTypeResolver;
-import com.ssafy.rebloom.notification_service.resolver.ReceiverResolver;
+import com.ssafy.rebloom.notification_service.resolver.ReceiverResolveClient;
 import com.ssafy.rebloom.notification_service.service.FcmService;
 import com.ssafy.rebloom.notification_service.service.NotificationRealtimeService;
 import com.ssafy.rebloom.notification_service.service.NotificationService;
@@ -34,7 +34,7 @@ public class NotificationServiceImpl implements NotificationService {
     private final OnlineStatusService onlineStatusService;
     private final NotificationRealtimeService notificationRealtimeService;
     private final FcmService fcmService;
-    private final ReceiverResolver receiverResolver;
+    private final ReceiverResolveClient receiverResolveClient;
 
     @Override
     @Transactional
@@ -44,7 +44,7 @@ public class NotificationServiceImpl implements NotificationService {
         }
 
         UUID childrenId = event.userId();
-        ParentReceiverInfo receiverInfo = receiverResolver.resolveParentByChildrenId(childrenId);
+        ParentReceiverInfo receiverInfo = receiverResolveClient.resolveParentByChildrenId(childrenId);
 
         NotificationPayload payload = NotificationPayload.builder()
             .title("주의 필요")
@@ -94,7 +94,8 @@ public class NotificationServiceImpl implements NotificationService {
             return;
         }
 
-        if (command.receiverRole() == ReceiverRole.PARENT) {
+        if (command.receiverRole() == ReceiverRole.PARENT
+            || command.receiverRole() == ReceiverRole.CHILDREN) {
             if (onlineStatusService.isOnline(command.receiverId())) {
                 publishRealtime(notification, command);
             } else {

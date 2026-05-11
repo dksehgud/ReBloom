@@ -74,7 +74,7 @@ public class UserRelationController {
         return ResponseEntity.ok(BaseResponse.success("부모 연결 성공", response));
     }
 
-    @GetMapping("/children/{childrenId}}/parent-receiver")
+    @GetMapping("/children/{childrenId}/parent-receiver")
     public ResponseEntity<BaseResponse<ParentReceiverResponseDto>> getParentReceiver(
         @PathVariable UUID childrenId
     ) {
