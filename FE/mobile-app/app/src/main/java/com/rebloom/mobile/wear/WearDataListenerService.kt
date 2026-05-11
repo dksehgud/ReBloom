@@ -28,6 +28,7 @@ class WearDataListenerService : WearableListenerService() {
                 val rmssd = dataMap.getFloat("rmssd")
                 val pnn50 = dataMap.getFloat("pnn50")
                 val lfHf = dataMap.getFloat("lfHf")
+                val hrAccRatio = dataMap.getFloat("hrAccRatio")
                 val missingnessScore = dataMap.getFloat("missingnessScore")
 
                 Log.d("WearDataListener", "데이터 수신: HR=$hr, RMSSD=$rmssd, LF/HF=$lfHf")

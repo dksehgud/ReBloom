@@ -58,6 +58,7 @@ class BiometricService : Service() {
                 dataMap.putFloat("pnn50", record.pnn50)
                 dataMap.putFloat("lfHf", record.lfHf)
                 dataMap.putFloat("missingnessScore", record.missingnessScore)
+                dataMap.putFloat("hrAccRatio", record.hrAccRatio)
             }.asPutDataRequest()
 
             com.google.android.gms.wearable.Wearable.getDataClient(this)
