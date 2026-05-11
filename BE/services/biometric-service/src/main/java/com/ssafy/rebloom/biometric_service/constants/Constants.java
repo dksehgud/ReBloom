@@ -6,4 +6,8 @@ public final class Constants {
     public static final String REASON_BIOMETRIC_COUNT_REACHED = "BIOMETRIC_COUNT_REACHED";
     public static final String COUNT_KEY_PREFIX = "biometric_count:";
     public static final String TRAIN_REQUESTED_KEY_PREFIX = "biometric_train_requested:";
+
+    public static final int SLEEP_CHART_DAYS = 7;
+    public static final int BIOMETRIC_CHART_DAYS = 7;
+
 }

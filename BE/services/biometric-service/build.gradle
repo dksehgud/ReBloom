@@ -8,10 +8,17 @@ apply from: file('../../common-service.gradle')
 
 dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+	implementation 'org.springframework.cloud:spring-cloud-starter-openfeign'
+
 
 	// security module
 	implementation project(':modules:security-module')
 
 	// event module
 	implementation project(':modules:event-module')
+
+	implementation 'com.querydsl:querydsl-jpa:5.1.0:jakarta'
+	annotationProcessor "com.querydsl:querydsl-apt:5.1.0:jakarta"
+	annotationProcessor "jakarta.annotation:jakarta.annotation-api"
+	annotationProcessor "jakarta.persistence:jakarta.persistence-api"
 }

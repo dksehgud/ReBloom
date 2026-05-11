@@ -1,20 +1,31 @@
 package com.ssafy.rebloom.biometric_service.service.impl;
 
+import com.ssafy.rebloom.biometric_service.client.AuthAccessClient;
 import com.ssafy.rebloom.biometric_service.constants.Constants;
 import com.ssafy.rebloom.biometric_service.domain.entity.Biometric;
 import com.ssafy.rebloom.biometric_service.domain.entity.BiometricId;
+import com.ssafy.rebloom.biometric_service.dto.query.DailyMetric;
+import com.ssafy.rebloom.biometric_service.dto.response.BiometricChartResponseDto;
 import com.ssafy.rebloom.biometric_service.repository.BiometricRepository;
 import com.ssafy.rebloom.biometric_service.service.BiometricService;
 import com.ssafy.rebloom.biometric_service.service.RedisService;
+import com.ssafy.rebloom.common.dto.ListResponseDto;
+import com.ssafy.rebloom.common.exception.CustomException;
+import com.ssafy.rebloom.common.exception.ErrorCode;
 import com.ssafy.rebloom.event.config.property.KafkaCommonProperties;
 import com.ssafy.rebloom.event.core.EventTypes;
 import com.ssafy.rebloom.event.dto.AiModelTrainRequestedEvent;
 import com.ssafy.rebloom.event.dto.BiometricDataEvent;
 import com.ssafy.rebloom.event.publisher.EventPublisher;
 import com.ssafy.rebloom.event.support.EventKeyGenerator;
+import java.time.DayOfWeek;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,6 +41,7 @@ public class BiometricServiceImpl implements BiometricService {
     private final KafkaCommonProperties kafkaProperties;
     private final EventKeyGenerator eventKeyGenerator;
     private final EventPublisher eventPublisher;
+    private final AuthAccessClient authAccessClient;
 
     @Override
     @Transactional
@@ -39,13 +51,14 @@ public class BiometricServiceImpl implements BiometricService {
             event.rmssd(), event.pnn50(), event.lfHf(), event.accXAvg(), event.accYAvg(),
             event.accZAvg(), event.accMag(), event.hrAccRatio(), event.missingnessScore());
         biometricRepository.save(biometric);
-        
+
         // Isolation Forest Model Training 트리거
         handleInitialTrainingTrigger(event, correlationId, 1L);
     }
-    
+
     @Override
-    public void publishAITrainingRequestedEvent(UUID userId, LocalDateTime currentMeasuredAt, String correlationId) {
+    public void publishAITrainingRequestedEvent(UUID userId, LocalDateTime currentMeasuredAt,
+        String correlationId) {
         LocalDateTime to = currentMeasuredAt;
         LocalDateTime from = to.minusDays(14);
 
@@ -55,7 +68,7 @@ public class BiometricServiceImpl implements BiometricService {
             .stream()
             .map(Biometric::toEvent)
             .toList();
-        
+
         // 이벤트 생성
         AiModelTrainRequestedEvent event = new AiModelTrainRequestedEvent(
             userId,
@@ -65,7 +78,7 @@ public class BiometricServiceImpl implements BiometricService {
             LocalDateTime.now(),
             biometrics
         );
-        
+
         // 이벤트 키 생성
         String key = userId.toString();
         String idempotencyKey = eventKeyGenerator.idempotencyKey(
@@ -73,7 +86,7 @@ public class BiometricServiceImpl implements BiometricService {
             userId.toString(),
             Constants.MODEL_TYPE_ISOLATION_FOREST
         );
-        
+
         // 이벤트 발행
         eventPublisher.publish(
             kafkaProperties.getTopics().getModelTrainingRequested(),
@@ -85,7 +98,36 @@ public class BiometricServiceImpl implements BiometricService {
         );
     }
 
-    private void handleInitialTrainingTrigger(BiometricDataEvent event, String correlationId, long savedRecordCount) {
+    @Override
+    public ListResponseDto<BiometricChartResponseDto> getHrAccRatios(UUID userId, String role,
+        UUID childrenId, LocalDate baseDate) {
+        validateRelation(userId, role, childrenId);
+
+        return getWeeklyMedianChart(
+            childrenId,
+            baseDate,
+            biometricRepository::findDailyHrAccRatioMediansByRange
+        );
+    }
+
+    @Override
+    public ListResponseDto<BiometricChartResponseDto> getRmssds(
+        UUID userId,
+        String role,
+        UUID childrenId,
+        LocalDate baseDate
+    ) {
+        validateRelation(userId, role, childrenId);
+
+        return getWeeklyMedianChart(
+            childrenId,
+            baseDate,
+            biometricRepository::findDailyRmssdMediansByRange
+        );
+    }
+
+    private void handleInitialTrainingTrigger(BiometricDataEvent event, String correlationId,
+        long savedRecordCount) {
         UUID userId = event.userId();
         // 훈련 완료 여부 조회
         if (isTrainingAlreadyRequested(userId)) {
@@ -112,7 +154,7 @@ public class BiometricServiceImpl implements BiometricService {
             throw e;
         }
     }
-    
+
     private boolean isTrainingAlreadyRequested(UUID userId) {
         return redisService.exists(trainRequestedKey(userId));
     }
@@ -125,4 +167,57 @@ public class BiometricServiceImpl implements BiometricService {
         return Constants.TRAIN_REQUESTED_KEY_PREFIX + userId;
     }
 
+    private ListResponseDto<BiometricChartResponseDto> getWeeklyMedianChart(
+        UUID childrenId,
+        LocalDate baseDate,
+        BiometricMedianQuery query
+    ) {
+        // 날짜 계산
+        LocalDate weekStartDate = baseDate.with(DayOfWeek.MONDAY);
+        LocalDateTime from = weekStartDate.atStartOfDay();
+        LocalDateTime to = baseDate.plusDays(1).atStartOfDay();
+
+        // 지표 집계 및 조회 + 중복 제거
+        Map<LocalDate, Double> medianMap = query.find(childrenId, from, to)
+            .stream()
+            .collect(Collectors.toMap(
+                DailyMetric::getDate,
+                DailyMetric::getValue,
+                (existing, replacement) -> existing
+            ));
+
+        List<BiometricChartResponseDto> responses = IntStream.range(0, Constants.BIOMETRIC_CHART_DAYS)
+            .mapToObj(weekStartDate::plusDays)
+            .map(date -> BiometricChartResponseDto.from(date, medianMap.get(date)))
+            .toList();
+
+        return ListResponseDto.from(responses);
+    }
+
+    @FunctionalInterface
+    private interface BiometricMedianQuery {
+        List<DailyMetric> find(UUID childrenId, LocalDateTime from, LocalDateTime to);
+    }
+
+
+    private void validateRelation(UUID userId, String role, UUID childrenId) {
+        String normalizedRole = normalizeRole(role);
+        if ("PARENT".equals(normalizedRole)) {
+            authAccessClient.validateParentChildAccess(userId, childrenId);
+            return;
+        }
+
+        if ("COUNSELOR".equals(normalizedRole)) {
+            authAccessClient.validateCounselorChildAccess(userId, childrenId);
+            return;
+        }
+
+        throw new CustomException("아이 생체 데이터 기록을 조회할 권한이 없습니다.", ErrorCode.FORBIDDEN);
+    }
+
+    private String normalizeRole(String role) {
+        return role != null && role.startsWith("ROLE_")
+            ? role.substring("ROLE_".length())
+            : role;
+    }
 }
