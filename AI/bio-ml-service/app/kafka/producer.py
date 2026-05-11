@@ -37,18 +37,29 @@ def _delivery_report(err, msg) -> None:
 # 발행 함수
 # ──────────────────────────────────────────────
 
-def publish_anomaly_verified(user_id: str, ts_start: str, anomaly_features: list[str]) -> None:
-    """
-    rebloom.anomaly.verified.v1 발행
-
-    Args:
-        user_id         : 유저 UUID
-        ts_start        : 이상치 발생 구간 시작 시각 (ISO 8601)
-        anomaly_features: 이상치로 판단된 변수명 목록
-    """
+def publish_anomaly_verified(
+    user_id: str,
+    ts_start: str,
+    ts_end: str,
+    hr: float,
+    rmssd: float,
+    pnn50: float,
+    lf_hf: float,
+    acc_mag: float,
+    hr_acc_ratio: float,
+    anomaly_features: list[str],
+) -> None:
     payload = {
         "userId"         : user_id,
         "tsStart"        : ts_start,
+        "tsEnd"          : ts_end,
+        "hr"             : hr,
+        "rmssd"          : rmssd,
+        "pnn50"          : pnn50,
+        "lfHf"           : lf_hf,
+        "accMag"         : acc_mag,
+        "hrAccRatio"     : hr_acc_ratio,
+        "isAnomaly"      : True,
         "anomalyFeatures": anomaly_features,
     }
     producer = get_producer()
@@ -59,8 +70,8 @@ def publish_anomaly_verified(user_id: str, ts_start: str, anomaly_features: list
         callback = _delivery_report,
     )
     producer.poll(0)
-    logger.info("[Kafka] anomaly.verified 발행 | userId=%s features=%s", user_id, anomaly_features)
-
+    logger.info("[Kafka] anomaly.verified 발행 | userId=%s features=%s",
+                user_id, anomaly_features)
 
 def publish_phq_result(user_id: str, date: str, result: int, score: float, predicted_at: str) -> None:
     """

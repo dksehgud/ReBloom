@@ -4,11 +4,18 @@ import android.content.Context
 import android.util.Log
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
+import com.rebloom.mobile.network.ApiClient
+import com.rebloom.mobile.network.SleepRequest
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 class SleepSyncWorker(
     context: Context,
     params: WorkerParameters
 ) : CoroutineWorker(context, params) {
+
+    private val dateFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault())
 
     override suspend fun doWork(): Result {
         return try {
@@ -21,10 +28,9 @@ class SleepSyncWorker(
             } else {
                 records.forEach { record ->
                     if (!isAlreadySaved(record.asleep, record.wakeup)) {
-                        saveSleepRecord(record)
-                        Log.d("SleepSyncWorker", "저장 완료: ${record.date}, score=${record.sleepScore}")
+                        sendSleepRecord(record)
                     } else {
-                        Log.d("SleepSyncWorker", "이미 저장된 데이터 스킵: ${record.date}")
+                        Log.d("SleepSyncWorker", "이미 전송된 데이터 스킵: ${record.date}")
                     }
                 }
                 Result.success()
@@ -40,21 +46,28 @@ class SleepSyncWorker(
         return prefs.getBoolean("${asleep}_${wakeup}", false)
     }
 
-    private fun saveSleepRecord(record: SleepRecord) {
-        // 저장 완료 표시
-        val prefs = applicationContext.getSharedPreferences("sleep_sync", Context.MODE_PRIVATE)
-        prefs.edit().putBoolean("${record.asleep}_${record.wakeup}", true).apply()
+    private suspend fun sendSleepRecord(record: SleepRecord) {
+        try {
+            val request = SleepRequest(
+                userId = "TODO: 토큰에서 userId 추출",
+                wakeup = dateFormat.format(Date(record.wakeup)),
+                asleep = dateFormat.format(Date(record.asleep)),
+                sleepDuration = record.sleepDuration,
+                waso = record.waso,
+                sleepScore = record.sleepScore ?: 0f,
+                sleepEfficiency = record.sleepEfficiency ?: 0f
+            )
 
-        // TODO: 백엔드 전송
-        Log.d("SleepSyncWorker", """
-            수면 데이터:
-            날짜: ${record.date}
-            수면 시작: ${record.asleep}
-            기상: ${record.wakeup}
-            수면 시간: ${record.sleepDuration}분
-            WASO: ${record.waso}분
-            수면 점수: ${record.sleepScore}
-            수면 효율: ${record.sleepEfficiency}%
-        """.trimIndent())
+            val response = ApiClient.create(applicationContext).sendSleep(request)
+            Log.d("SleepSyncWorker", "전송 성공: ${response.message}")
+
+            // 전송 성공 시 중복 전송 방지 표시
+            val prefs = applicationContext.getSharedPreferences("sleep_sync", Context.MODE_PRIVATE)
+            prefs.edit().putBoolean("${record.asleep}_${record.wakeup}", true).apply()
+
+        } catch (e: Exception) {
+            Log.e("SleepSyncWorker", "전송 실패: ${e.message}")
+            throw e  // doWork에서 retry 처리하도록
+        }
     }
 }

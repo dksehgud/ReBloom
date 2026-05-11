@@ -2,6 +2,7 @@
 docker-compose.kafka-local.yaml
 create-topics.sh
 test_producer.py
+test_dummy.py
 
 # 환경변수
 .env.local
@@ -10,6 +11,6 @@ test_producer.py
 app/model/*.pkl
 
 # Python
-__pycache__/
+/__pycache__/
 *.pyc
 .venv/
