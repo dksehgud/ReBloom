@@ -15,14 +15,19 @@ import LoginPage from '../../pages/auth/LoginPage'
 import SignUpPage from '../../pages/auth/SignUpPage'
 import ChildDiaryListPage from '../../pages/child/ChildDiaryListPage'
 import ChildSettingsPage from '../../pages/child/ChildSettingsPage'
+import CounselorDashboardPage from '../../pages/counselor/CounselorDashboardPage'
+import CounselorFindPasswordPage from '../../pages/counselor/CounselorFindPasswordPage'
+import CounselorLoginPage from '../../pages/counselor/CounselorLoginPage'
+import CounselorSettingsPage from '../../pages/counselor/CounselorSettingsPage'
+import CounselorSignUpPage from '../../pages/counselor/CounselorSignUpPage'
 import ParentHomePage from '../../pages/parent/ParentHomePage'
 import ParentNotificationsPage from '../../pages/parent/ParentNotificationsPage'
 import ParentObservationsPage from '../../pages/parent/ParentObservationsPage'
 import ParentReportPage from '../../pages/parent/ParentReportPage'
 import ParentSettingsPage from '../../pages/parent/ParentSettingsPage'
+import { authApi, toAppRole } from '../../features/auth/api/authApi'
 import { useAppSessionStore } from '../../features/auth/store/useAppSessionStore'
 import { useSelectedChildStore } from '../../features/student/store/useSelectedChildStore'
-import type { AppRole } from '../../shared/types/appRole'
 import type { ChildAddress } from '../../shared/types/childAddress'
 
 type AuthRouteContextValue = {
@@ -42,16 +47,12 @@ type PhoneShellProps = {
   className?: string
 }
 
-type PlaceholderRoutePageProps = {
-  title: string
-  description: string
-  role: Exclude<AppRole, null>
-}
-
 function PhoneShell({ children, className }: PhoneShellProps) {
   return (
     <main className="app-shell">
-      <section className={`phone-shell${className ? ` ${className}` : ''}`}>{children}</section>
+      <section className={`phone-shell${className ? ` ${className}` : ''}`}>
+        {children}
+      </section>
     </main>
   )
 }
@@ -61,7 +62,9 @@ function AuthRouteLayout() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const setActiveRole = useAppSessionStore((state) => state.setActiveRole)
-  const clearSelectedChild = useSelectedChildStore((state) => state.clearSelectedChild)
+  const clearSelectedChild = useSelectedChildStore(
+    (state) => state.clearSelectedChild,
+  )
 
   const phoneShellClassName = `phone-shell--auth${
     location.pathname === '/signup' ? ' phone-shell--signup' : ''
@@ -74,25 +77,48 @@ function AuthRouteLayout() {
 
   return (
     <PhoneShell className={phoneShellClassName}>
-      <Outlet
-        context={{
-          email,
-          password,
-          setEmail,
-          setPassword,
-        }}
-      />
+      <Outlet context={{ email, password, setEmail, setPassword }} />
     </PhoneShell>
   )
 }
 
+function CounselorAuthRouteLayout() {
+  const setActiveRole = useAppSessionStore((state) => state.setActiveRole)
+  const clearSelectedChild = useSelectedChildStore(
+    (state) => state.clearSelectedChild,
+  )
+
+  useEffect(() => {
+    setActiveRole(null)
+    clearSelectedChild()
+  }, [clearSelectedChild, setActiveRole])
+
+  return <Outlet />
+}
+
+function CounselorRouteLayout() {
+  const setActiveRole = useAppSessionStore((state) => state.setActiveRole)
+  const clearSelectedChild = useSelectedChildStore(
+    (state) => state.clearSelectedChild,
+  )
+
+  useEffect(() => {
+    setActiveRole('counselor')
+    clearSelectedChild()
+  }, [clearSelectedChild, setActiveRole])
+
+  return <Outlet />
+}
+
 function ChildRouteLayout() {
   const [profileAddress, setProfileAddress] = useState<ChildAddress>({
-    baseAddress: '부산 해운대구 예시로 212',
-    detailAddress: '101동 1203호',
+    baseAddress: '',
+    detailAddress: '',
   })
   const setActiveRole = useAppSessionStore((state) => state.setActiveRole)
-  const clearSelectedChild = useSelectedChildStore((state) => state.clearSelectedChild)
+  const clearSelectedChild = useSelectedChildStore(
+    (state) => state.clearSelectedChild,
+  )
 
   useEffect(() => {
     setActiveRole('child')
@@ -104,7 +130,9 @@ function ChildRouteLayout() {
 
 function ParentRouteLayout() {
   const setActiveRole = useAppSessionStore((state) => state.setActiveRole)
-  const clearSelectedChild = useSelectedChildStore((state) => state.clearSelectedChild)
+  const clearSelectedChild = useSelectedChildStore(
+    (state) => state.clearSelectedChild,
+  )
 
   useEffect(() => {
     setActiveRole('parent')
@@ -135,15 +163,60 @@ function LandingRoute() {
 function LoginRoute() {
   const navigate = useNavigate()
   const { email, password, setEmail, setPassword } = useAuthRouteContext()
+  const setActiveRole = useAppSessionStore((state) => state.setActiveRole)
+  const setCurrentUser = useAppSessionStore((state) => state.setCurrentUser)
+  const setSessionTokens = useAppSessionStore((state) => state.setSessionTokens)
+  const [loginError, setLoginError] = useState<string | undefined>()
+  const [isLoginSubmitting, setIsLoginSubmitting] = useState(false)
+
+  const handleLoginSubmit = async () => {
+    if (isLoginSubmitting) {
+      return
+    }
+
+    try {
+      setIsLoginSubmitting(true)
+      setLoginError(undefined)
+
+      const tokens = await authApi.login(email.trim().toLowerCase(), password)
+      const myInfo = await authApi.getMyInfo(tokens.accessToken)
+      const nextRole = toAppRole(myInfo.role)
+
+      setSessionTokens(tokens)
+      setActiveRole(nextRole)
+      setCurrentUser(myInfo)
+
+      if (nextRole === 'child') {
+        navigate('/child/diary', { replace: true })
+        return
+      }
+
+      if (nextRole === 'parent') {
+        navigate('/parent/home', { replace: true })
+        return
+      }
+
+      navigate('/counselor', { replace: true })
+    } catch (error) {
+      setLoginError(
+        error instanceof Error ? error.message : '로그인 중 오류가 발생했습니다.',
+      )
+    } finally {
+      setIsLoginSubmitting(false)
+    }
+  }
 
   return (
     <LoginPage
       email={email}
+      error={loginError}
+      isSubmitting={isLoginSubmitting}
       password={password}
       onEmailChange={setEmail}
       onPasswordChange={setPassword}
       onForgotPasswordClick={() => navigate('/find-password')}
       onSignUpClick={() => navigate('/signup')}
+      onSubmit={handleLoginSubmit}
       onStartChildClick={() => navigate('/child/diary')}
       onStartParentClick={() => navigate('/parent/home')}
     />
@@ -186,53 +259,60 @@ function ChildDiaryRoute() {
 function ChildSettingsRoute() {
   const navigate = useNavigate()
   const { profileAddress, setProfileAddress } = useChildRouteContext()
+  const accessToken = useAppSessionStore((state) => state.accessToken)
   const clearSession = useAppSessionStore((state) => state.clearSession)
-  const clearSelectedChild = useSelectedChildStore((state) => state.clearSelectedChild)
+  const currentUser = useAppSessionStore((state) => state.currentUser)
+  const setCurrentUser = useAppSessionStore((state) => state.setCurrentUser)
+  const clearSelectedChild = useSelectedChildStore(
+    (state) => state.clearSelectedChild,
+  )
+
+  useEffect(() => {
+    if (!accessToken || currentUser) {
+      return
+    }
+
+    void authApi.getMyInfo(accessToken).then(setCurrentUser).catch(() => {
+      clearSession()
+      navigate('/login', { replace: true })
+    })
+  }, [accessToken, clearSession, currentUser, navigate, setCurrentUser])
+
+  const childProfileAddress: ChildAddress = {
+    baseAddress: currentUser?.address ?? profileAddress.baseAddress,
+    detailAddress: currentUser?.addressDetail ?? profileAddress.detailAddress,
+  }
 
   return (
     <PhoneShell>
       <ChildSettingsPage
-        profileAddress={profileAddress}
+        profileAddress={childProfileAddress}
+        profileEmail={currentUser?.email ?? ''}
+        profileName={currentUser?.name ?? ''}
         onBack={() => navigate('/child/diary')}
         onLogout={() => {
           clearSession()
           clearSelectedChild()
           navigate('/login', { replace: true })
         }}
-        onSaveProfileAddress={setProfileAddress}
+        onSaveProfileAddress={async (nextAddress) => {
+          setProfileAddress(nextAddress)
+
+          if (!accessToken) {
+            return
+          }
+
+          const nextUser = await authApi.updateMyInfo(
+            {
+              address: nextAddress.baseAddress,
+              addressDetail: nextAddress.detailAddress,
+            },
+            accessToken,
+          )
+          setCurrentUser(nextUser)
+        }}
       />
     </PhoneShell>
-  )
-}
-
-function PlaceholderRoutePage({ title, description, role }: PlaceholderRoutePageProps) {
-  const setActiveRole = useAppSessionStore((state) => state.setActiveRole)
-
-  useEffect(() => {
-    setActiveRole(role)
-  }, [role, setActiveRole])
-
-  return (
-    <main className="app-shell">
-      <section className="phone-shell">
-        <div
-          style={{
-            alignItems: 'center',
-            color: '#4d3e3e',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '12px',
-            justifyContent: 'center',
-            minHeight: '100svh',
-            padding: '32px',
-            textAlign: 'center',
-          }}
-        >
-          <h1 style={{ fontSize: '28px', margin: 0 }}>{title}</h1>
-          <p style={{ lineHeight: 1.6, margin: 0, maxWidth: '280px' }}>{description}</p>
-        </div>
-      </section>
-    </main>
   )
 }
 
@@ -245,6 +325,23 @@ function AppRouter() {
         <Route path="/signup" element={<SignUpRoute />} />
         <Route path="/find-password" element={<FindPasswordRoute />} />
       </Route>
+
+      <Route element={<CounselorAuthRouteLayout />}>
+        <Route path="/counselor" element={<Navigate replace to="/counselor/login" />} />
+        <Route path="/counselor/login" element={<CounselorLoginPage />} />
+        <Route path="/counselor/signup" element={<CounselorSignUpPage />} />
+        <Route
+          path="/counselor/find-password"
+          element={<CounselorFindPasswordPage />}
+        />
+      </Route>
+
+      <Route element={<CounselorRouteLayout />}>
+        <Route path="/counselor/dashboard" element={<CounselorDashboardPage />} />
+        <Route path="/counselor/settings" element={<CounselorSettingsPage />} />
+      </Route>
+
+      <Route path="/counselor/*" element={<Navigate replace to="/counselor/login" />} />
 
       <Route path="/child" element={<ChildRouteLayout />}>
         <Route index element={<Navigate replace to="/child/diary" />} />
@@ -261,17 +358,6 @@ function AppRouter() {
         <Route path="settings" element={<ParentSettingsPage />} />
         <Route path="*" element={<Navigate replace to="/parent/home" />} />
       </Route>
-
-      <Route
-        path="/counselor/*"
-        element={
-          <PlaceholderRoutePage
-            title="상담사 대시보드"
-            description="상담사 화면 구현 전에 공통 구조를 먼저 정리한 상태입니다."
-            role="counselor"
-          />
-        }
-      />
 
       <Route path="*" element={<Navigate replace to="/" />} />
     </Routes>

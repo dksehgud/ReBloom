@@ -57,6 +57,10 @@ public class AuthServiceImpl implements AuthService {
     private static final String SPECIAL_CHARACTERS = "!@#$%^&*";
     private static final String PASSWORD_CHARACTERS = LOWERCASE + UPPERCASE + DIGITS + SPECIAL_CHARACTERS;
     private static final int TEMPORARY_PASSWORD_LENGTH = 12;
+    private static final int MIN_LOWERCASE_COUNT = 3;
+    private static final int MIN_UPPERCASE_COUNT = 3;
+    private static final int MIN_DIGIT_COUNT = 3;
+    private static final int MIN_SPECIAL_CHARACTER_COUNT = 3;
 
     @Override
     public TokenDto login(LoginRequestDto loginRequestDto) {
@@ -218,10 +222,10 @@ public class AuthServiceImpl implements AuthService {
 
     private String generateTemporaryPassword() {
         List<Character> characters = new ArrayList<>();
-        characters.add(randomCharacter(LOWERCASE));
-        characters.add(randomCharacter(UPPERCASE));
-        characters.add(randomCharacter(DIGITS));
-        characters.add(randomCharacter(SPECIAL_CHARACTERS));
+        addRandomCharacters(characters, LOWERCASE, MIN_LOWERCASE_COUNT);
+        addRandomCharacters(characters, UPPERCASE, MIN_UPPERCASE_COUNT);
+        addRandomCharacters(characters, DIGITS, MIN_DIGIT_COUNT);
+        addRandomCharacters(characters, SPECIAL_CHARACTERS, MIN_SPECIAL_CHARACTER_COUNT);
 
         for (int i = characters.size(); i < TEMPORARY_PASSWORD_LENGTH; i++) {
             characters.add(randomCharacter(PASSWORD_CHARACTERS));
@@ -235,6 +239,12 @@ public class AuthServiceImpl implements AuthService {
         }
 
         return temporaryPassword.toString();
+    }
+
+    private void addRandomCharacters(List<Character> characters, String source, int count) {
+        for (int i = 0; i < count; i++) {
+            characters.add(randomCharacter(source));
+        }
     }
 
     private Character randomCharacter(String source) {

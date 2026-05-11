@@ -16,15 +16,13 @@ public class RoleFieldsValidator implements ConstraintValidator<ValidRoleFields,
         context.disableDefaultConstraintViolation();
 
         if (dto.role() == UserRole.CHILDREN) {
-            if (isEmpty(dto.parentCode()) || isEmpty(dto.birth()) || dto.gender() == null) {
-                addError(context, "자녀 가입 시 부모 코드, 생년월일, 성별은 필수입니다.");
+            if (isEmpty(dto.parentEmail()) || isEmpty(dto.birth()) || dto.gender() == null) {
+                addError(context, "아이 가입에는 부모 이메일, 생년월일, 성별이 필수입니다.");
                 isValid = false;
             }
-
-        }
-        else if (dto.role() == UserRole.COUNSELOR) {
+        } else if (dto.role() == UserRole.COUNSELOR) {
             if (isEmpty(dto.hospitalName()) || isEmpty(dto.hospitalAddress()) || isEmpty(dto.hospitalAddressDetail()) || isEmpty(dto.phone())) {
-                addError(context, "상담사 가입 시 병원 이름과 주소, 상세주소, 핸드폰번호는 필수입니다.");
+                addError(context, "상담사 가입에는 병원 이름, 주소, 상세주소, 휴대폰번호가 필수입니다.");
                 isValid = false;
             }
         }

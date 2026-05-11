@@ -1,0 +1,505 @@
+import type { ChangeEvent, FormEvent, KeyboardEvent } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { FiEye, FiEyeOff } from 'react-icons/fi'
+import { useNavigate } from 'react-router-dom'
+
+import AuthInput from '../../components/auth/AuthInput'
+import CounselorAuthLayout from '../../components/templates/CounselorAuthLayout/CounselorAuthLayout'
+import { openDaumPostcodePopup } from '../../shared/utils/daumPostcode'
+
+type SignUpStep = 'email' | 'verification' | 'profile'
+type EmailStatus = 'idle' | 'success' | 'error'
+type VerificationStatus = 'idle' | 'error'
+
+const INITIAL_CODE_LENGTH = 6
+const INITIAL_TIME_LEFT = 4 * 60 + 58
+const KOREAN_NAME_PATTERN = /^[가-힣]{2,10}$/
+const PHONE_NUMBER_PATTERN = /^010-\d{4}-\d{4}$/
+const PASSWORD_ALLOWED_PATTERN = /^[!-~]+$/
+
+function formatTimeLeft(timeLeft: number) {
+  const minutes = Math.floor(timeLeft / 60)
+  const seconds = timeLeft % 60
+
+  return `${minutes}:${seconds.toString().padStart(2, '0')}`
+}
+
+function formatPhoneNumber(value: string) {
+  const digits = value.replace(/\D/g, '').slice(0, 11)
+
+  if (digits.length <= 3) {
+    return digits
+  }
+
+  if (digits.length <= 7) {
+    return `${digits.slice(0, 3)}-${digits.slice(3)}`
+  }
+
+  return `${digits.slice(0, 3)}-${digits.slice(3, 7)}-${digits.slice(7)}`
+}
+
+function CounselorSignUpPage() {
+  const navigate = useNavigate()
+  const [step, setStep] = useState<SignUpStep>('email')
+  const [email, setEmail] = useState('')
+  const [emailStatus, setEmailStatus] = useState<EmailStatus>('idle')
+  const [verificationDigits, setVerificationDigits] = useState<string[]>(
+    Array.from({ length: INITIAL_CODE_LENGTH }, () => ''),
+  )
+  const [verificationStatus, setVerificationStatus] =
+    useState<VerificationStatus>('idle')
+  const [timeLeft, setTimeLeft] = useState(INITIAL_TIME_LEFT)
+  const [name, setName] = useState('')
+  const [phone, setPhone] = useState('')
+  const [hospitalName, setHospitalName] = useState('')
+  const [hospitalAddress, setHospitalAddress] = useState('')
+  const [hospitalAddressDetail, setHospitalAddressDetail] = useState('')
+  const [hospitalAddressError, setHospitalAddressError] = useState<
+    string | undefined
+  >()
+  const [isLoadingAddressSearch, setIsLoadingAddressSearch] = useState(false)
+  const [password, setPassword] = useState('')
+  const [passwordConfirm, setPasswordConfirm] = useState('')
+  const [isPasswordVisible, setIsPasswordVisible] = useState(false)
+  const [isPasswordConfirmVisible, setIsPasswordConfirmVisible] =
+    useState(false)
+
+  const verificationInputRefs = useRef<Array<HTMLInputElement | null>>([])
+
+  useEffect(() => {
+    if (step !== 'verification' || timeLeft <= 0) {
+      return undefined
+    }
+
+    const timer = window.setInterval(() => {
+      setTimeLeft((current) => {
+        if (current <= 1) {
+          window.clearInterval(timer)
+          return 0
+        }
+
+        return current - 1
+      })
+    }, 1000)
+
+    return () => window.clearInterval(timer)
+  }, [step, timeLeft])
+
+  const verificationCode = verificationDigits.join('')
+  const isVerificationComplete =
+    verificationCode.length === INITIAL_CODE_LENGTH &&
+    verificationDigits.every((digit) => digit.length === 1)
+
+  const passwordRuleStates = useMemo(
+    () => ({
+      length: password.length >= 8 && password.length <= 20,
+      letter: /[A-Za-z]/.test(password),
+      number: /\d/.test(password),
+      allowedCharacters:
+        password.length > 0 && PASSWORD_ALLOWED_PATTERN.test(password),
+    }),
+    [password],
+  )
+
+  const isNameValid = KOREAN_NAME_PATTERN.test(name)
+  const isPhoneValid = PHONE_NUMBER_PATTERN.test(phone)
+
+  const isProfileStepComplete =
+    isNameValid &&
+    isPhoneValid &&
+    hospitalName.trim().length > 0 &&
+    hospitalAddress.trim().length > 0 &&
+    hospitalAddressDetail.trim().length > 0 &&
+    passwordRuleStates.length &&
+    passwordRuleStates.letter &&
+    passwordRuleStates.number &&
+    passwordRuleStates.allowedCharacters &&
+    passwordConfirm.length > 0 &&
+    password === passwordConfirm
+
+  const titleMap: Record<SignUpStep, string> = {
+    email: '회원가입',
+    verification: '인증코드 입력',
+    profile: '정보 입력',
+  }
+
+  const descriptionMap: Record<SignUpStep, string> = {
+    email: 'Sign in',
+    verification: `${email || 'team@naver.com'}으로 인증코드를 전송했습니다.`,
+    profile: 'Sign in',
+  }
+
+  const handleDuplicateCheck = () => {
+    if (email.trim().length === 0) {
+      setEmailStatus('error')
+      return
+    }
+
+    if (
+      email.toLowerCase().includes('exist') ||
+      email.toLowerCase().includes('taken')
+    ) {
+      setEmailStatus('error')
+      return
+    }
+
+    setEmailStatus('success')
+  }
+
+  const handleEmailSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+
+    if (emailStatus !== 'success') {
+      return
+    }
+
+    setStep('verification')
+    setVerificationStatus('idle')
+    setVerificationDigits(Array.from({ length: INITIAL_CODE_LENGTH }, () => ''))
+    setTimeLeft(INITIAL_TIME_LEFT)
+  }
+
+  const handleVerificationChange = (
+    index: number,
+    event: ChangeEvent<HTMLInputElement>,
+  ) => {
+    const nextValue = event.target.value.replace(/\D/g, '').slice(-1)
+
+    setVerificationDigits((current) => {
+      const nextDigits = [...current]
+      nextDigits[index] = nextValue
+      return nextDigits
+    })
+
+    if (nextValue && index < INITIAL_CODE_LENGTH - 1) {
+      verificationInputRefs.current[index + 1]?.focus()
+    }
+  }
+
+  const handleVerificationKeyDown = (
+    index: number,
+    event: KeyboardEvent<HTMLInputElement>,
+  ) => {
+    if (event.key === 'Backspace' && verificationDigits[index].length === 0) {
+      verificationInputRefs.current[Math.max(index - 1, 0)]?.focus()
+    }
+  }
+
+  const handleVerificationSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+
+    if (!isVerificationComplete) {
+      return
+    }
+
+    if (verificationCode === '123456') {
+      setVerificationStatus('idle')
+      setStep('profile')
+      return
+    }
+
+    setVerificationStatus('error')
+  }
+
+  const handleResend = () => {
+    setVerificationDigits(Array.from({ length: INITIAL_CODE_LENGTH }, () => ''))
+    setVerificationStatus('idle')
+    setTimeLeft(INITIAL_TIME_LEFT)
+    verificationInputRefs.current[0]?.focus()
+  }
+
+  const handleSearchHospitalAddress = async () => {
+    try {
+      setIsLoadingAddressSearch(true)
+      setHospitalAddressError(undefined)
+
+      await openDaumPostcodePopup(
+        (data) => {
+          const nextAddress = data.roadAddress || data.address || data.jibunAddress
+          setHospitalAddress(nextAddress)
+          setHospitalAddressError(undefined)
+        },
+        '병원 주소 검색',
+      )
+    } catch {
+      setHospitalAddressError(
+        '주소 검색창을 여는 데 실패했어요. 다시 시도해 주세요.',
+      )
+    } finally {
+      setIsLoadingAddressSearch(false)
+    }
+  }
+
+  const handleProfileSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+
+    if (!isProfileStepComplete) {
+      return
+    }
+
+    navigate('/counselor/login')
+  }
+
+  return (
+    <CounselorAuthLayout
+      title={titleMap[step]}
+      description={descriptionMap[step]}
+    >
+      {step === 'email' ? (
+        <div className="counselor-signup">
+          <form className="counselor-signup-form" onSubmit={handleEmailSubmit}>
+            <AuthInput
+              label="이메일"
+              type="email"
+              placeholder="test@naver.com"
+              autoComplete="email"
+              value={email}
+              onChange={(event) => {
+                setEmail(event.target.value)
+                setEmailStatus('idle')
+              }}
+              action={
+                <button
+                  type="button"
+                  className={`counselor-inline-action${
+                    emailStatus === 'success' ? ' is-success' : ''
+                  }`}
+                  onClick={handleDuplicateCheck}
+                >
+                  {emailStatus === 'success' ? '확인 완료' : '중복 확인'}
+                </button>
+              }
+              help="* 이메일 중복 확인 후 인증번호를 전송할 수 있습니다."
+              success={
+                emailStatus === 'success' ? '사용 가능한 이메일입니다.' : undefined
+              }
+              error={
+                emailStatus === 'error'
+                  ? '이미 존재하는 이메일입니다.'
+                  : undefined
+              }
+            />
+
+            <button
+              type="submit"
+              className="counselor-auth-button counselor-auth-button--primary"
+              disabled={emailStatus !== 'success'}
+            >
+              다음 →
+            </button>
+          </form>
+        </div>
+      ) : null}
+
+      {step === 'verification' ? (
+        <div className="counselor-signup">
+          <form
+            className="counselor-signup-form counselor-signup-form--verification"
+            onSubmit={handleVerificationSubmit}
+          >
+            <div className="counselor-code-header">
+              <p className="counselor-code-label">인증 코드 입력</p>
+              <div className="counselor-code-timer">
+                <span className="counselor-code-timer-dot" />
+                <span>남은 시간: {formatTimeLeft(timeLeft)}</span>
+              </div>
+            </div>
+
+            <div
+              className={`counselor-code-inputs${
+                verificationStatus === 'error' ? ' is-error' : ''
+              }`}
+            >
+              {verificationDigits.map((digit, index) => (
+                <input
+                  key={`verification-${index}`}
+                  ref={(element) => {
+                    verificationInputRefs.current[index] = element
+                  }}
+                  className="counselor-code-input"
+                  inputMode="numeric"
+                  maxLength={1}
+                  onChange={(event) => handleVerificationChange(index, event)}
+                  onKeyDown={(event) => handleVerificationKeyDown(index, event)}
+                  value={digit}
+                />
+              ))}
+            </div>
+
+            <div className="counselor-code-actions">
+              <p className="counselor-code-helper">이메일을 받지 못하셨나요?</p>
+              <button
+                type="button"
+                className="counselor-auth-link counselor-code-resend"
+                onClick={handleResend}
+              >
+                재전송
+              </button>
+            </div>
+
+            {verificationStatus === 'error' ? (
+              <p className="counselor-code-error">인증코드가 올바르지 않습니다.</p>
+            ) : null}
+
+            <button
+              type="submit"
+              className="counselor-auth-button counselor-auth-button--primary"
+              disabled={!isVerificationComplete}
+            >
+              다음 →
+            </button>
+          </form>
+        </div>
+      ) : null}
+
+      {step === 'profile' ? (
+        <div className="counselor-signup">
+          <form className="counselor-signup-form" onSubmit={handleProfileSubmit}>
+            <AuthInput label="이메일" value={email} readOnly />
+            <AuthInput
+              label="이름"
+              placeholder="이름"
+              maxLength={10}
+              value={name}
+              onChange={(event) => setName(event.target.value)}
+              error={
+                name.length > 0 && !isNameValid
+                  ? '이름은 한글 2~10자로 입력해주세요.'
+                  : undefined
+              }
+            />
+            <AuthInput
+              label="핸드폰 번호"
+              type="tel"
+              placeholder="010-1234-5678"
+              autoComplete="tel"
+              inputMode="numeric"
+              maxLength={13}
+              value={phone}
+              onChange={(event) => setPhone(formatPhoneNumber(event.target.value))}
+              error={
+                phone.length > 0 && !isPhoneValid
+                  ? '핸드폰 번호는 010-1234-5678 형식으로 입력해주세요.'
+                  : undefined
+              }
+            />
+            <AuthInput
+              label="병원명"
+              placeholder="병원명"
+              value={hospitalName}
+              onChange={(event) => setHospitalName(event.target.value)}
+            />
+            <div className="counselor-address-group">
+              <AuthInput
+                label="병원주소"
+                placeholder="주소"
+                value={hospitalAddress}
+                readOnly
+                action={
+                  <button
+                    type="button"
+                    className={`field-input-action counselor-address-search-button ${
+                      isLoadingAddressSearch ? 'is-disabled' : 'is-active'
+                    }`}
+                    disabled={isLoadingAddressSearch}
+                    onClick={handleSearchHospitalAddress}
+                  >
+                    {isLoadingAddressSearch ? '불러오는 중' : '주소 검색'}
+                  </button>
+                }
+                error={hospitalAddressError}
+                help={
+                  hospitalAddressError
+                    ? '주소 검색을 다시 시도해 주세요.'
+                    : !hospitalAddress
+                      ? '병원 기본 주소는 주소 검색으로 입력해 주세요.'
+                      : undefined
+                }
+              />
+              <AuthInput
+                label="상세 주소"
+                placeholder="상세 주소"
+                value={hospitalAddressDetail}
+                onChange={(event) => setHospitalAddressDetail(event.target.value)}
+              />
+            </div>
+            <AuthInput
+              label="비밀번호"
+              type={isPasswordVisible ? 'text' : 'password'}
+              placeholder="비밀번호"
+              autoComplete="new-password"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              error={
+                password.length > 0 && !passwordRuleStates.allowedCharacters
+                  ? '공백이나 한글은 사용할 수 없어요.'
+                  : undefined
+              }
+              action={
+                <button
+                  type="button"
+                  className="counselor-password-toggle"
+                  aria-label={isPasswordVisible ? '비밀번호 숨기기' : '비밀번호 보기'}
+                  onClick={() => setIsPasswordVisible((prev) => !prev)}
+                >
+                  {isPasswordVisible ? <FiEye /> : <FiEyeOff />}
+                </button>
+              }
+            />
+            <div className="counselor-password-rules">
+              <span className={passwordRuleStates.letter ? 'is-valid' : ''}>
+                영문
+              </span>
+              <span className={passwordRuleStates.number ? 'is-valid' : ''}>
+                숫자
+              </span>
+              <span className={passwordRuleStates.length ? 'is-valid' : ''}>
+                8-20자
+              </span>
+              <span className="is-optional">
+                특수문자 가능
+              </span>
+            </div>
+            <AuthInput
+              label="비밀번호 확인"
+              type={isPasswordConfirmVisible ? 'text' : 'password'}
+              placeholder="비밀번호 확인"
+              autoComplete="new-password"
+              value={passwordConfirm}
+              onChange={(event) => setPasswordConfirm(event.target.value)}
+              action={
+                <button
+                  type="button"
+                  className="counselor-password-toggle"
+                  aria-label={
+                    isPasswordConfirmVisible
+                      ? '비밀번호 확인 숨기기'
+                      : '비밀번호 확인 보기'
+                  }
+                  onClick={() => setIsPasswordConfirmVisible((prev) => !prev)}
+                >
+                  {isPasswordConfirmVisible ? <FiEye /> : <FiEyeOff />}
+                </button>
+              }
+              error={
+                passwordConfirm.length > 0 && password !== passwordConfirm
+                  ? '비밀번호가 일치하지 않습니다.'
+                  : undefined
+              }
+            />
+
+            <button
+              type="submit"
+              className="counselor-auth-button counselor-auth-button--primary"
+              disabled={!isProfileStepComplete}
+            >
+              다음 →
+            </button>
+          </form>
+        </div>
+      ) : null}
+    </CounselorAuthLayout>
+  )
+}
+
+export default CounselorSignUpPage
