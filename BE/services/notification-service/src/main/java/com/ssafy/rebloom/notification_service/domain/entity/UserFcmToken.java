@@ -17,22 +17,21 @@ import lombok.NoArgsConstructor;
 @Entity
 @Getter
 @Builder
-@Table(name = "notification_settings")
+@Table(name = "user_fcm_tokens")
 @AllArgsConstructor(access = AccessLevel.PROTECTED)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class NotificationSetting extends BaseTime {
+public class UserFcmToken extends BaseTime {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(unique = true)
+    @Column(nullable = false)
     private UUID userId;
+
+    @Column(nullable = false, unique = true, length = 512)
+    private String fcmToken;
 
     @Builder.Default
     @Column(nullable = false)
-    private boolean isEnabled = true;
-
-    public void updateEnabled(boolean isEnabled) {
-        this.isEnabled = isEnabled;
-    }
+    private boolean isActive = true;
 }

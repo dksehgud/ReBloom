@@ -1,7 +1,6 @@
 package com.ssafy.rebloom.notification_service.domain.entity;
 
 import com.ssafy.rebloom.common.entity.BaseTime;
-import com.ssafy.rebloom.notification_service.domain.enums.NotificationType;
 import com.ssafy.rebloom.notification_service.domain.enums.ScheduleDay;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -14,42 +13,39 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
-import jakarta.validation.constraints.NotNull;
 import java.time.LocalTime;
+import java.util.UUID;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 @Entity
 @Getter
 @Builder
 @Table(name = "notification_schedules")
 @AllArgsConstructor(access = AccessLevel.PROTECTED)
-@NoArgsConstructor(access = AccessLevel.PRIVATE)
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class NotificationSchedule extends BaseTime {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @NotNull
-    @Enumerated(EnumType.STRING)
-    @Column(name = "notification_type", nullable = false)
+    @Column(nullable = false)
+    private UUID userId;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "notification_type_id", nullable = false)
     private NotificationType notificationType;
 
-    @NotNull
     @Enumerated(EnumType.STRING)
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
     @Column(name = "day", nullable = false)
     private ScheduleDay day;
 
-    @NotNull
-    @Column(name = "time", nullable = false)
+    @Column(nullable = false)
     private LocalTime time;
-
-    @NotNull
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "notification_setting_id", nullable = false)
-    private NotificationSetting notificationSetting;
 }

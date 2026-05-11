@@ -7,7 +7,7 @@ import com.ssafy.rebloom.event.support.EventKeyGenerator;
 import com.ssafy.rebloom.notification_service.constants.Constants;
 import com.ssafy.rebloom.notification_service.domain.entity.Notification;
 import com.ssafy.rebloom.notification_service.domain.enums.DeliveryStatus;
-import com.ssafy.rebloom.notification_service.domain.enums.NotificationType;
+import com.ssafy.rebloom.notification_service.domain.enums.NotificationCode;
 import com.ssafy.rebloom.notification_service.repository.NotificationRepository;
 import com.ssafy.rebloom.notification_service.service.NotificationService;
 import com.ssafy.rebloom.notification_service.service.RedisService;
@@ -59,7 +59,7 @@ public class NotificationServiceImpl implements NotificationService {
     private void saveRiskAlertNotification(AnomalyEvent event) {
         Notification notification = Notification.builder()
             .userId(event.userId())
-            .notificationType(NotificationType.RISK_ALERT)
+            .notificationType(NotificationCode.RISK_ALERT)
             .title("Health risk alert")
             .content("An anomaly was detected in the biometric signal.")
             .deliveryStatus(DeliveryStatus.PENDING)
@@ -69,7 +69,7 @@ public class NotificationServiceImpl implements NotificationService {
 
         Notification.create(
             event.userId(),
-            NotificationType.RISK_ALERT,
+            NotificationCode.RISK_ALERT,
 
         )
 
