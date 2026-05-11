@@ -1,11 +1,16 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
+    alias(libs.plugins.ksp)
 }
 
 val webAppBaseUrl =
     providers.gradleProperty("WEB_APP_BASE_URL")
         .orElse("https://example.invalid")
+        .get()
+val diaryAnalysisApiUrl =
+    providers.gradleProperty("DIARY_ANALYSIS_API_URL")
+        .orElse("")
         .get()
 
 android {
@@ -21,6 +26,7 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         buildConfigField("String", "WEB_APP_BASE_URL", "\"$webAppBaseUrl\"")
+        buildConfigField("String", "DIARY_ANALYSIS_API_URL", "\"$diaryAnalysisApiUrl\"")
     }
 
     buildTypes {
@@ -57,6 +63,11 @@ dependencies {
     implementation("com.google.code.gson:gson:2.11.0")
     implementation("org.jetbrains.kotlin:kotlin-parcelize-runtime:1.9.0")
     implementation("androidx.activity:activity-ktx:1.9.0")
+    implementation("androidx.webkit:webkit:1.8.0")
+    implementation(libs.androidx.room.runtime)
+    implementation(libs.androidx.room.ktx)
+    ksp(libs.androidx.room.compiler)
+
     implementation("com.squareup.retrofit2:retrofit:2.11.0")
     implementation("com.squareup.retrofit2:converter-gson:2.11.0")
     implementation("com.squareup.okhttp3:okhttp:4.12.0")

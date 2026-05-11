@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 
+import { diaryBridge, type NativeDiary } from '../bridge/diaryBridge'
 import type { DiaryCalendarEntry } from '../components/DiaryCalendar'
 import type { DiaryListItem } from '../components/DiaryListView'
 import { preloadDiaryEmotionAssets, type DiaryEmotionKey } from '../constants/diaryEmotions'
@@ -157,6 +158,30 @@ function createSummary(content: string) {
   return `${normalized.slice(0, 28)}...`
 }
 
+const DIARY_EMOTION_KEYS: DiaryEmotionKey[] = ['happy', 'calm', 'excited', 'sad', 'angry', 'tired']
+
+function normalizeEmotionKey(value: DiaryEmotionKey | null): DiaryEmotionKey {
+  return value && DIARY_EMOTION_KEYS.includes(value) ? value : 'calm'
+}
+
+function getDateText(year: number, month: number, day: number) {
+  return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+}
+
+function getDayFromDateText(diaryDate: string) {
+  return Number(diaryDate.slice(8, 10))
+}
+
+function nativeDiaryToRecord(diary: NativeDiary): DiaryRecord {
+  return {
+    id: diary.id,
+    day: getDayFromDateText(diary.diaryDate),
+    summary: createSummary(diary.content),
+    content: diary.content,
+    emotionKey: normalizeEmotionKey(diary.emotionKey),
+  }
+}
+
 function formatDateLabel(year: number, month: number, day: number) {
   return `${year}. ${month}. ${day}.`
 }
@@ -176,22 +201,21 @@ function formatWriteDateLabel(date: Date) {
 }
 
 function cloneSampleRecords() {
-  return Object.fromEntries(
-    Object.entries(SAMPLE_RECORDS_BY_MONTH).map(([monthKey, records]) => [
-      monthKey,
-      records.map((record) => ({ ...record })),
-    ]),
-  ) satisfies DiaryRecordsByMonth
+  void SAMPLE_RECORDS_BY_MONTH
+  return {} satisfies DiaryRecordsByMonth
 }
 
 function useChildDiaryPageState() {
-  const [currentDate, setCurrentDate] = useState(() => new Date(2026, 3, 1))
-  const [recordsByMonth, setRecordsByMonth] = useState<DiaryRecordsByMonth>(() => cloneSampleRecords())
+  const [currentDate, setCurrentDate] = useState(() => new Date())
+  const [recordsByMonth, setRecordsByMonth] = useState<DiaryRecordsByMonth>(() =>
+    diaryBridge.isAvailable() ? {} : cloneSampleRecords(),
+  )
   const [viewMode, setViewMode] = useState<DiaryViewMode>('calendar')
   const [previousViewMode, setPreviousViewMode] = useState<MainDiaryViewMode>('calendar')
   const [writePreviousViewMode, setWritePreviousViewMode] = useState<MainDiaryViewMode>('calendar')
   const [selectedDiaryId, setSelectedDiaryId] = useState<string | null>(null)
   const [editingDiaryId, setEditingDiaryId] = useState<string | null>(null)
+  const [draftDate, setDraftDate] = useState<Date>(() => new Date())
   const [draftEmotionKey, setDraftEmotionKey] = useState<DiaryEmotionKey | null>(null)
   const [draftContent, setDraftContent] = useState('')
   const [isEmotionModalOpen, setIsEmotionModalOpen] = useState(false)
@@ -205,10 +229,27 @@ function useChildDiaryPageState() {
 
   const currentYear = currentDate.getFullYear()
   const currentMonth = currentDate.getMonth() + 1
+  const currentMonthKey = getMonthKey(currentYear, currentMonth)
+
+  useEffect(() => {
+    if (!diaryBridge.isAvailable()) {
+      return
+    }
+
+    try {
+      const nextRecords = diaryBridge.getDiariesByMonth(currentMonthKey).map(nativeDiaryToRecord)
+      setRecordsByMonth((prev) => ({
+        ...prev,
+        [currentMonthKey]: nextRecords,
+      }))
+    } catch (error) {
+      console.error('Failed to load native diary records', error)
+    }
+  }, [currentMonthKey])
 
   const records = useMemo(
-    () => recordsByMonth[getMonthKey(currentYear, currentMonth)] ?? [],
-    [currentMonth, currentYear, recordsByMonth],
+    () => recordsByMonth[currentMonthKey] ?? [],
+    [currentMonthKey, recordsByMonth],
   )
 
   const selectedRecord = useMemo(
@@ -254,8 +295,8 @@ function useChildDiaryPageState() {
       return formatDetailDateLabel(currentYear, currentMonth, editingRecord.day)
     }
 
-    return formatWriteDateLabel(today)
-  }, [currentMonth, currentYear, editingRecord, today])
+    return formatWriteDateLabel(draftDate)
+  }, [currentMonth, currentYear, draftDate, editingRecord])
 
   const handlePreviousMonth = () => {
     setCurrentDate((prev) => new Date(prev.getFullYear(), prev.getMonth() - 1, 1))
@@ -284,6 +325,15 @@ function useChildDiaryPageState() {
     openDetail(matchedRecord.id, 'calendar')
   }
 
+  const handleCalendarDayClick = (day: number) => {
+    setWritePreviousViewMode('calendar')
+    setEditingDiaryId(null)
+    setDraftDate(new Date(currentYear, currentMonth - 1, day))
+    setDraftEmotionKey(null)
+    setDraftContent('')
+    setViewMode('write')
+  }
+
   const handleListItemClick = (item: DiaryListItem) => {
     openDetail(item.id, 'list')
   }
@@ -295,6 +345,7 @@ function useChildDiaryPageState() {
   const handleOpenWrite = () => {
     setWritePreviousViewMode(viewMode === 'list' ? 'list' : 'calendar')
     setEditingDiaryId(null)
+    setDraftDate(today)
     setDraftEmotionKey(null)
     setDraftContent('')
     setViewMode('write')
@@ -348,15 +399,25 @@ function useChildDiaryPageState() {
       return
     }
 
-    const monthKey = getMonthKey(currentYear, currentMonth)
+    if (diaryBridge.isAvailable()) {
+      try {
+        const deleted = diaryBridge.deleteDiary(selectedRecord.id)
+        if (!deleted) {
+          return
+        }
+      } catch (error) {
+        console.error('Failed to delete native diary record', error)
+        return
+      }
+    }
 
     setRecordsByMonth((prev) => {
-      const existingRecords = prev[monthKey] ?? []
+      const existingRecords = prev[currentMonthKey] ?? []
       const nextRecords = existingRecords.filter((record) => record.id !== selectedRecord.id)
 
       return {
         ...prev,
-        [monthKey]: nextRecords,
+        [currentMonthKey]: nextRecords,
       }
     })
 
@@ -371,22 +432,43 @@ function useChildDiaryPageState() {
     }
 
     const isEditing = Boolean(editingDiaryId && editingRecord)
-    const year = isEditing ? currentYear : today.getFullYear()
-    const month = isEditing ? currentMonth : today.getMonth() + 1
-    const day = isEditing && editingRecord ? editingRecord.day : today.getDate()
+    const year = isEditing ? currentYear : draftDate.getFullYear()
+    const month = isEditing ? currentMonth : draftDate.getMonth() + 1
+    const day = isEditing && editingRecord ? editingRecord.day : draftDate.getDate()
     const monthKey = getMonthKey(year, month)
-    const recordId = editingDiaryId ?? getRecordId(year, month, day)
-    const nextRecord: DiaryRecord = {
-      id: recordId,
+    const diaryDate = getDateText(year, month, day)
+    const trimmedContent = draftContent.trim()
+    let nextRecord: DiaryRecord = {
+      id: editingDiaryId ?? getRecordId(year, month, day),
       day,
-      summary: createSummary(draftContent),
-      content: draftContent.trim(),
+      summary: createSummary(trimmedContent),
+      content: trimmedContent,
       emotionKey: draftEmotionKey,
+    }
+
+    if (diaryBridge.isAvailable()) {
+      try {
+        const savedDiary = diaryBridge.saveDiary({
+          id: editingDiaryId ?? undefined,
+          diaryDate,
+          content: trimmedContent,
+          emotionKey: draftEmotionKey,
+        })
+
+        if (!savedDiary) {
+          return
+        }
+
+        nextRecord = nativeDiaryToRecord(savedDiary)
+      } catch (error) {
+        console.error('Failed to save native diary record', error)
+        return
+      }
     }
 
     setRecordsByMonth((prev) => {
       const existingRecords = prev[monthKey] ?? []
-      const filteredRecords = existingRecords.filter((record) => record.id !== recordId)
+      const filteredRecords = existingRecords.filter((record) => record.id !== nextRecord.id)
       const nextRecords = [...filteredRecords, nextRecord].sort((a, b) => a.day - b.day)
 
       return {
@@ -396,7 +478,7 @@ function useChildDiaryPageState() {
     })
 
     setCurrentDate(new Date(year, month - 1, 1))
-    setSelectedDiaryId(recordId)
+    setSelectedDiaryId(nextRecord.id)
     setEditingDiaryId(null)
     setDraftEmotionKey(null)
     setDraftContent('')
@@ -422,6 +504,7 @@ function useChildDiaryPageState() {
     handleNextMonth,
     handleToggleViewMode,
     handleCalendarEntryClick,
+    handleCalendarDayClick,
     handleListItemClick,
     handleBackFromDetail,
     handleOpenWrite,

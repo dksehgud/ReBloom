@@ -17,7 +17,7 @@ type ChildSettingsPageProps = {
   counselorName?: string | null
   counselorSubtitle?: string | null
   onBack?: () => void
-  onSaveProfileAddress?: (address: ChildAddress) => void
+  onSaveProfileAddress?: (address: ChildAddress) => void | Promise<void>
   onOpenCounselStatus?: () => void
   onLogout?: () => void
 }
@@ -232,8 +232,8 @@ function SettingsCardRow({
 }
 
 function ChildSettingsPage({
-  profileName = '이재동',
-  profileEmail = 'test@naver.com',
+  profileName = '',
+  profileEmail = '',
   profileAddress = {
     baseAddress: '',
     detailAddress: '',
@@ -302,8 +302,8 @@ function ChildSettingsPage({
           <h2 className="child-settings-page__section-title">프로필 정보</h2>
           <div className="child-settings-page__box">
             <SettingsCardRow
-              title={profileName}
-              description={profileEmail}
+              title={profileName || '이름 정보 없음'}
+              description={profileEmail || '이메일 정보 없음'}
               icon={<UserIcon />}
               onClick={() => setIsAddressModalOpen(true)}
               showChevron
@@ -328,7 +328,7 @@ function ChildSettingsPage({
               description={
                 isCounselConnected
                   ? counselorSubtitle ?? ''
-                  : '부모 계정에서 상담사를 연결해주세요.'
+                  : '부모 계정에서 상담사를 연결해 주세요.'
               }
               icon={<UserIcon />}
               onClick={onOpenCounselStatus}
@@ -356,8 +356,8 @@ function ChildSettingsPage({
           address={profileAddress}
           profileName={profileName}
           onClose={() => setIsAddressModalOpen(false)}
-          onSave={(nextAddress) => {
-            onSaveProfileAddress?.(nextAddress)
+          onSave={async (nextAddress) => {
+            await onSaveProfileAddress?.(nextAddress)
             setIsAddressModalOpen(false)
           }}
         />

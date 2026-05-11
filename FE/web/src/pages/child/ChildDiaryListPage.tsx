@@ -70,6 +70,7 @@ function ChildDiaryListPage({ onOpenSettings }: ChildDiaryListPageProps) {
     handleNextMonth,
     handleToggleViewMode,
     handleCalendarEntryClick,
+    handleCalendarDayClick,
     handleListItemClick,
     handleBackFromDetail,
     handleOpenWrite,
@@ -128,6 +129,7 @@ function ChildDiaryListPage({ onOpenSettings }: ChildDiaryListPageProps) {
               onPreviousMonth={handlePreviousMonth}
               onNextMonth={handleNextMonth}
               onEntryClick={handleCalendarEntryClick}
+              onDayClick={handleCalendarDayClick}
             />
             <ChildFloatingActionButton ariaLabel="일기 작성" onClick={handleOpenWrite} />
           </>

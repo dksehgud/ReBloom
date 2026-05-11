@@ -11,10 +11,15 @@ type SignUpStepEmailProps = {
   mode: EmailStepMode
   email: string
   emailStatus: EmailStatus
+  emailError?: string
   hasEmailValue: boolean
   isEmailAvailable: boolean
+  isCheckingEmail: boolean
+  isSendingCode: boolean
+  isVerifyingCode: boolean
   codeDigits: string[]
   codeStatus: CodeStatus
+  codeError?: string
   formattedRemainingTime: string
   isCodeExpired: boolean
   onPrevious: () => void
@@ -34,10 +39,15 @@ function SignUpStepEmail({
   mode,
   email,
   emailStatus,
+  emailError,
   hasEmailValue,
   isEmailAvailable,
+  isCheckingEmail,
+  isSendingCode,
+  isVerifyingCode,
   codeDigits,
   codeStatus,
+  codeError,
   formattedRemainingTime,
   isCodeExpired,
   onPrevious,
@@ -60,11 +70,11 @@ function SignUpStepEmail({
             </button>
             <button
               className="auth-button is-primary"
-              disabled={!isEmailAvailable}
+              disabled={!isEmailAvailable || isSendingCode}
               onClick={onNextEmail}
               type="button"
             >
-              다음
+              {isSendingCode ? '전송 중' : '다음'}
             </button>
           </>
         }
@@ -80,11 +90,11 @@ function SignUpStepEmail({
                     ? ' is-active'
                     : ' is-disabled'
               }`}
-              disabled={!hasEmailValue || isEmailAvailable}
+              disabled={!hasEmailValue || isEmailAvailable || isCheckingEmail}
               onClick={onCheckEmail}
               type="button"
             >
-              {isEmailAvailable ? '확인완료' : '중복 확인'}
+              {isEmailAvailable ? '확인완료' : isCheckingEmail ? '확인 중' : '중복 확인'}
             </button>
           }
           help="* 이메일 중복 확인 후 인증번호를 전송할 수 있습니다."
@@ -103,6 +113,7 @@ function SignUpStepEmail({
           type="email"
           value={email}
         />
+        {emailError ? <p className="field-error">{emailError}</p> : null}
         {emailStatus === 'available' ? (
           <p className="field-success">사용 가능한 이메일입니다.</p>
         ) : null}
@@ -127,11 +138,11 @@ function SignUpStepEmail({
           </button>
           <button
             className="auth-button is-primary"
-            disabled={isCodeExpired}
+            disabled={isCodeExpired || isVerifyingCode}
             onClick={onVerifyCode}
             type="button"
           >
-            다음
+            {isVerifyingCode ? '확인 중' : '다음'}
           </button>
         </>
       }
@@ -159,8 +170,8 @@ function SignUpStepEmail({
 
       <div className="code-resend">
         <span>이메일을 받지 못하셨나요?</span>
-        <button onClick={onResendCode} type="button">
-          재전송
+        <button disabled={isSendingCode} onClick={onResendCode} type="button">
+          {isSendingCode ? '전송 중' : '재전송'}
         </button>
       </div>
 
@@ -170,8 +181,10 @@ function SignUpStepEmail({
         </p>
       ) : codeStatus === 'error' ? (
         <p className="field-error code-error-message">
-          인증코드가 올바르지 않습니다.
+          {codeError ?? '인증코드가 올바르지 않습니다.'}
         </p>
+      ) : codeError ? (
+        <p className="field-error code-error-message">{codeError}</p>
       ) : null}
     </AuthShell>
   )

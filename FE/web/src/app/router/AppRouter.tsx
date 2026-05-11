@@ -20,6 +20,7 @@ import ParentNotificationsPage from '../../pages/parent/ParentNotificationsPage'
 import ParentObservationsPage from '../../pages/parent/ParentObservationsPage'
 import ParentReportPage from '../../pages/parent/ParentReportPage'
 import ParentSettingsPage from '../../pages/parent/ParentSettingsPage'
+import { authApi, toAppRole } from '../../features/auth/api/authApi'
 import { useAppSessionStore } from '../../features/auth/store/useAppSessionStore'
 import { useSelectedChildStore } from '../../features/student/store/useSelectedChildStore'
 import type { AppRole } from '../../shared/types/appRole'
@@ -74,22 +75,15 @@ function AuthRouteLayout() {
 
   return (
     <PhoneShell className={phoneShellClassName}>
-      <Outlet
-        context={{
-          email,
-          password,
-          setEmail,
-          setPassword,
-        }}
-      />
+      <Outlet context={{ email, password, setEmail, setPassword }} />
     </PhoneShell>
   )
 }
 
 function ChildRouteLayout() {
   const [profileAddress, setProfileAddress] = useState<ChildAddress>({
-    baseAddress: '부산 해운대구 예시로 212',
-    detailAddress: '101동 1203호',
+    baseAddress: '',
+    detailAddress: '',
   })
   const setActiveRole = useAppSessionStore((state) => state.setActiveRole)
   const clearSelectedChild = useSelectedChildStore((state) => state.clearSelectedChild)
@@ -135,15 +129,60 @@ function LandingRoute() {
 function LoginRoute() {
   const navigate = useNavigate()
   const { email, password, setEmail, setPassword } = useAuthRouteContext()
+  const setActiveRole = useAppSessionStore((state) => state.setActiveRole)
+  const setCurrentUser = useAppSessionStore((state) => state.setCurrentUser)
+  const setSessionTokens = useAppSessionStore((state) => state.setSessionTokens)
+  const [loginError, setLoginError] = useState<string | undefined>()
+  const [isLoginSubmitting, setIsLoginSubmitting] = useState(false)
+
+  const handleLoginSubmit = async () => {
+    if (isLoginSubmitting) {
+      return
+    }
+
+    try {
+      setIsLoginSubmitting(true)
+      setLoginError(undefined)
+
+      const tokens = await authApi.login(email.trim().toLowerCase(), password)
+      const myInfo = await authApi.getMyInfo(tokens.accessToken)
+      const nextRole = toAppRole(myInfo.role)
+
+      setSessionTokens(tokens)
+      setActiveRole(nextRole)
+      setCurrentUser(myInfo)
+
+      if (nextRole === 'child') {
+        navigate('/child/diary', { replace: true })
+        return
+      }
+
+      if (nextRole === 'parent') {
+        navigate('/parent/home', { replace: true })
+        return
+      }
+
+      navigate('/counselor', { replace: true })
+    } catch (error) {
+      setLoginError(
+        error instanceof Error ? error.message : '로그인 중 오류가 발생했습니다.',
+      )
+    } finally {
+      setIsLoginSubmitting(false)
+    }
+  }
 
   return (
     <LoginPage
       email={email}
+      error={loginError}
+      isSubmitting={isLoginSubmitting}
       password={password}
       onEmailChange={setEmail}
       onPasswordChange={setPassword}
       onForgotPasswordClick={() => navigate('/find-password')}
       onSignUpClick={() => navigate('/signup')}
+      onSubmit={handleLoginSubmit}
       onStartChildClick={() => navigate('/child/diary')}
       onStartParentClick={() => navigate('/parent/home')}
     />
@@ -186,20 +225,56 @@ function ChildDiaryRoute() {
 function ChildSettingsRoute() {
   const navigate = useNavigate()
   const { profileAddress, setProfileAddress } = useChildRouteContext()
+  const accessToken = useAppSessionStore((state) => state.accessToken)
   const clearSession = useAppSessionStore((state) => state.clearSession)
+  const currentUser = useAppSessionStore((state) => state.currentUser)
+  const setCurrentUser = useAppSessionStore((state) => state.setCurrentUser)
   const clearSelectedChild = useSelectedChildStore((state) => state.clearSelectedChild)
+
+  useEffect(() => {
+    if (!accessToken || currentUser) {
+      return
+    }
+
+    void authApi.getMyInfo(accessToken).then(setCurrentUser).catch(() => {
+      clearSession()
+      navigate('/login', { replace: true })
+    })
+  }, [accessToken, clearSession, currentUser, navigate, setCurrentUser])
+
+  const childProfileAddress: ChildAddress = {
+    baseAddress: currentUser?.address ?? profileAddress.baseAddress,
+    detailAddress: currentUser?.addressDetail ?? profileAddress.detailAddress,
+  }
 
   return (
     <PhoneShell>
       <ChildSettingsPage
-        profileAddress={profileAddress}
+        profileAddress={childProfileAddress}
+        profileEmail={currentUser?.email ?? ''}
+        profileName={currentUser?.name ?? ''}
         onBack={() => navigate('/child/diary')}
         onLogout={() => {
           clearSession()
           clearSelectedChild()
           navigate('/login', { replace: true })
         }}
-        onSaveProfileAddress={setProfileAddress}
+        onSaveProfileAddress={async (nextAddress) => {
+          setProfileAddress(nextAddress)
+
+          if (!accessToken) {
+            return
+          }
+
+          const nextUser = await authApi.updateMyInfo(
+            {
+              address: nextAddress.baseAddress,
+              addressDetail: nextAddress.detailAddress,
+            },
+            accessToken,
+          )
+          setCurrentUser(nextUser)
+        }}
       />
     </PhoneShell>
   )

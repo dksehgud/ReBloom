@@ -12,7 +12,7 @@ type ChildProfileAddressModalProps = {
   profileName: string
   address: ChildAddress
   onClose: () => void
-  onSave: (address: ChildAddress) => void
+  onSave: (address: ChildAddress) => void | Promise<void>
 }
 
 function ChildProfileAddressModal({
@@ -23,23 +23,22 @@ function ChildProfileAddressModal({
 }: ChildProfileAddressModalProps) {
   const [draftAddress, setDraftAddress] = useState<ChildAddress>(address)
   const [isLoadingScript, setIsLoadingScript] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
   const [scriptError, setScriptError] = useState<string | null>(null)
+  const [saveError, setSaveError] = useState<string | null>(null)
 
   const handleOpenPostcode = async () => {
     try {
       setIsLoadingScript(true)
       setScriptError(null)
 
-      await openDaumPostcodePopup(
-        (data) => {
-          const nextAddress = data.roadAddress || data.address || data.jibunAddress
-          setDraftAddress((prev) => ({
-            ...prev,
-            baseAddress: nextAddress,
-          }))
-        },
-        '프로필 주소 검색',
-      )
+      await openDaumPostcodePopup((data) => {
+        const nextAddress = data.roadAddress || data.address || data.jibunAddress
+        setDraftAddress((prev) => ({
+          ...prev,
+          baseAddress: nextAddress,
+        }))
+      }, '프로필 주소 검색')
     } catch {
       setScriptError('주소 검색창을 여는 데 실패했어요. 기본 주소를 직접 입력해 주세요.')
     } finally {
@@ -47,17 +46,31 @@ function ChildProfileAddressModal({
     }
   }
 
+  const handleSave = async () => {
+    try {
+      setIsSaving(true)
+      setSaveError(null)
+      await onSave(draftAddress)
+    } catch (error) {
+      setSaveError(
+        error instanceof Error ? error.message : '주소를 저장하지 못했습니다.',
+      )
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
   const currentAddress = formatChildAddress(address)
   const nextAddress = formatChildAddress(draftAddress)
   const isSaveDisabled =
-    !draftAddress.baseAddress.trim() || !draftAddress.detailAddress.trim()
+    isSaving || !draftAddress.baseAddress.trim() || !draftAddress.detailAddress.trim()
 
   return (
     <CommonModalLayout
       className="child-profile-address-modal"
       bodyClassName="child-profile-address-modal__body"
       actionsClassName="child-profile-address-modal__actions"
-      title="사용자 정보 수정"
+      title="프로필 상세"
       onClose={onClose}
       actions={
         <>
@@ -68,9 +81,9 @@ function ChildProfileAddressModal({
             type="button"
             className={`auth-button ${nextAddress ? 'is-primary' : 'is-neutral'}`}
             disabled={isSaveDisabled}
-            onClick={() => onSave(draftAddress)}
+            onClick={handleSave}
           >
-            저장
+            {isSaving ? '저장 중' : '저장'}
           </button>
         </>
       }
@@ -79,7 +92,9 @@ function ChildProfileAddressModal({
         <div className="child-profile-address-modal__summary-card">
           <div className="child-profile-address-modal__profile">
             <span className="child-profile-address-modal__label">이름</span>
-            <span className="child-profile-address-modal__value">{profileName}</span>
+            <span className="child-profile-address-modal__value">
+              {profileName || '이름 정보 없음'}
+            </span>
           </div>
 
           <div className="child-profile-address-modal__field">
@@ -99,10 +114,6 @@ function ChildProfileAddressModal({
             </div>
 
             <AuthInput
-              label="기본 주소"
-              id="child-profile-next-base-address"
-              placeholder="주소 검색"
-              value={draftAddress.baseAddress}
               action={
                 <button
                   type="button"
@@ -121,27 +132,33 @@ function ChildProfileAddressModal({
                   ? '기본 주소는 필수 입력 값이에요.'
                   : undefined
               }
+              id="child-profile-next-base-address"
+              label="기본 주소"
               onChange={(event) =>
                 setDraftAddress((prev) => ({
                   ...prev,
                   baseAddress: event.target.value,
                 }))
               }
+              placeholder="주소 검색"
+              value={draftAddress.baseAddress}
             />
 
             <AuthInput
-              label="상세 주소"
-              id="child-profile-next-detail-address"
-              placeholder="상세 주소"
-              value={draftAddress.detailAddress}
               help={!draftAddress.detailAddress ? '상세 주소는 필수 입력 값이에요.' : undefined}
+              id="child-profile-next-detail-address"
+              label="상세 주소"
               onChange={(event) =>
                 setDraftAddress((prev) => ({
                   ...prev,
                   detailAddress: event.target.value,
                 }))
               }
+              placeholder="상세 주소"
+              value={draftAddress.detailAddress}
             />
+
+            {saveError ? <p className="field-error">{saveError}</p> : null}
           </div>
         </div>
       </div>
