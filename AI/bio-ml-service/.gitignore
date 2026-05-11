@@ -2,6 +2,7 @@
 docker-compose.kafka-local.yaml
 create-topics.sh
 test_producer.py
+test_dummy.py
 
 # 환경변수
 .env.local

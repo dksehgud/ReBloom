@@ -50,67 +50,48 @@ def _get_biometric_count(user_id: str) -> int:
 # ──────────────────────────────────────────────
 
 def _handle_biometric_raw(payload: dict) -> None:
-    """
-    rebloom.biometric.raw.v1 처리
-
-    biometric_count < 288  → 임계치 기반 이상치 탐지 (anomaly.py)
-    biometric_count >= 288 → IF 모델 이상치 탐지 (if_model.py)
-    이상치 확정 시 → rebloom.anomaly.verified.v1 발행
-    """
-    user_id = payload["userId"]
-    records: list[dict] = payload.get("records", [])
-
-    if not records:
-        logger.warning("[biometric.raw] records 없음 | userId=%s", user_id)
-        return
+    user_id      = payload["userId"]
+    hr           = payload["hr"]
+    rmssd        = payload["rmssd"]
+    pnn50        = payload["pnn50"]
+    lf_hf        = payload["lfHf"]
+    acc_mag      = payload["accMag"]
+    hr_acc_ratio = payload["hrAccRatio"]
+    ts_start     = payload["tsStart"]
+    ts_end       = payload["tsEnd"]
 
     count = _get_biometric_count(user_id)
-    logger.info("[biometric.raw] userId=%s biometric_count=%d records=%d",
-                user_id, count, len(records))
+    logger.info("[biometric.raw] userId=%s biometric_count=%d", user_id, count)
 
-    for record in records:
-        hr           = record["hr"]
-        rmssd        = record["rmssd"]
-        pnn50        = record["pnn50"]
-        lf_hf        = record["lfHf"]
-        acc_mag      = record["accMag"]
-        hr_acc_ratio = record["hrAccRatio"]
-        ts_start     = record["tsStart"]
+    if count < IF_READY_THRESHOLD:
+        result = anomaly.detect_anomaly(
+            hr=hr, rmssd=rmssd, pnn50=pnn50,
+            lf_hf=lf_hf, acc_mag=acc_mag, hr_acc_ratio=hr_acc_ratio,
+        )
+        logger.info("[Phase1] userId=%s is_anomaly=%s", user_id, result["is_anomaly"])
+    else:
+        result = if_model.predict_if_model(
+            user_id=user_id,
+            biometric={
+                "hr": hr, "rmssd": rmssd, "pnn50": pnn50,
+                "lf_hf": lf_hf, "acc_mag": acc_mag, "hr_acc_ratio": hr_acc_ratio,
+            }
+        )
+        logger.info("[Phase2] userId=%s is_anomaly=%s", user_id, result["is_anomaly"])
 
-        if count < IF_READY_THRESHOLD:
-            # ── Phase 1: 임계치 기반 탐지 ──────────────────
-            result = anomaly.detect_anomaly(
-                hr=hr,
-                rmssd=rmssd,
-                pnn50=pnn50,
-                lf_hf=lf_hf,
-                acc_mag=acc_mag,
-                hr_acc_ratio=hr_acc_ratio,
-            )
-            logger.info("[Phase1] userId=%s is_anomaly=%s", user_id, result["is_anomaly"])
-
-        else:
-            # ── Phase 2: IF 모델 탐지 ──────────────────────
-            result = if_model.predict_if_model(
-                user_id  = user_id,
-                biometric = {
-                    "hr"          : hr,
-                    "rmssd"       : rmssd,
-                    "pnn50"       : pnn50,
-                    "lf_hf"       : lf_hf,
-                    "acc_mag"     : acc_mag,
-                    "hr_acc_ratio": hr_acc_ratio,
-                }
-            )
-            logger.info("[Phase2] userId=%s is_anomaly=%s", user_id, result["is_anomaly"])
-
-        # ── 이상치 확정 시 Kafka 발행 ──────────────────────
-        if result["is_anomaly"]:
-            publish_anomaly_verified(
-                user_id         = user_id,
-                ts_start        = ts_start,
-                anomaly_features= result.get("anomaly_features", []),
-            )
+    if result["is_anomaly"]:
+        publish_anomaly_verified(
+            user_id          = user_id,
+            ts_start         = ts_start,
+            ts_end           = ts_end,
+            hr               = hr,
+            rmssd            = rmssd,
+            pnn50            = pnn50,
+            lf_hf            = lf_hf,
+            acc_mag          = acc_mag,
+            hr_acc_ratio     = hr_acc_ratio,
+            anomaly_features = result.get("anomaly_features", []),
+        )
 
 
 def _handle_ai_train(payload: dict) -> None:
