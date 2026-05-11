@@ -1,0 +1,86 @@
+import { FiChevronLeft, FiMenu, FiSettings } from 'react-icons/fi'
+
+import type { ChildListItem } from '../../types/dashboard'
+
+type CounselorSidebarProps = {
+  isCollapsed: boolean
+  childItems: ChildListItem[]
+  selectedChildId: number
+  counselorName: string
+  onToggle: () => void
+  onSelectChild: (childId: number) => void
+  onOpenSettings: () => void
+}
+
+function CounselorSidebar({
+  isCollapsed,
+  childItems,
+  selectedChildId,
+  counselorName,
+  onToggle,
+  onSelectChild,
+  onOpenSettings,
+}: CounselorSidebarProps) {
+  return (
+    <aside className="counselor-dashboard-sidebar">
+      <header className="counselor-dashboard-brand">
+        <div>
+          <h1>RE:BLOOM</h1>
+          <p>상담사 대시보드</p>
+        </div>
+        <button
+          type="button"
+          aria-expanded={!isCollapsed}
+          aria-label={isCollapsed ? '사이드바 펼치기' : '사이드바 접기'}
+          className="counselor-sidebar-toggle"
+          onClick={onToggle}
+        >
+          {isCollapsed ? (
+            <FiMenu aria-hidden="true" />
+          ) : (
+            <FiChevronLeft aria-hidden="true" />
+          )}
+        </button>
+      </header>
+
+      <nav className="counselor-child-list" aria-label="상담 아동 목록">
+        {childItems.map((child) => (
+          <button
+            type="button"
+            className={child.id === selectedChildId ? 'is-selected' : undefined}
+            key={child.id}
+            onClick={() => onSelectChild(child.id)}
+          >
+            <span className="counselor-child-avatar" aria-hidden="true">
+              {child.name.slice(0, 1)}
+            </span>
+            <span className="counselor-child-summary">
+              <strong>{child.name}</strong>
+              <em>{child.meta}</em>
+            </span>
+            <small className="counselor-child-subtext">{child.subText}</small>
+          </button>
+        ))}
+      </nav>
+
+      <footer className="counselor-dashboard-sidebar-footer">
+        <div className="counselor-dashboard-sidebar-profile">
+          <span className="counselor-dashboard-sidebar-avatar" aria-hidden="true">
+            {counselorName.slice(0, 1)}
+          </span>
+          <strong>{counselorName} 상담자님</strong>
+        </div>
+        <button
+          type="button"
+          aria-label="설정 페이지로 이동"
+          className="counselor-dashboard-sidebar-settings"
+          onClick={onOpenSettings}
+        >
+          <FiSettings aria-hidden="true" />
+        </button>
+      </footer>
+    </aside>
+  )
+}
+
+export default CounselorSidebar

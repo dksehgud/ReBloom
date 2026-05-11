@@ -1,3 +1,5 @@
+import { apiRequest } from '../../../shared/api/client'
+
 export type CounselorCommentResponseDto = {
   commentId: string
   counselorId: string
@@ -26,60 +28,50 @@ const counselorCommentApiPaths = {
     `/api/v1/children/${childrenId}/reports/${reportId}/comments/${commentId}`,
 }
 
-export async function getCounselorComment({
+async function getCounselorComment({
   childrenId,
   reportId,
 }: CounselorCommentPathParams): Promise<CounselorCommentResponseDto | null> {
-  const response = await fetch(counselorCommentApiPaths.base({ childrenId, reportId }))
-
-  if (!response.ok) {
-    throw new Error('상담사 코멘트를 불러오지 못했습니다.')
-  }
-
-  const text = await response.text()
-
-  if (!text) {
-    return null
-  }
-
-  return JSON.parse(text) as CounselorCommentResponseDto | null
+  return apiRequest<CounselorCommentResponseDto | null>(
+    counselorCommentApiPaths.base({ childrenId, reportId }),
+    {
+      errorMessage: '상담사 코멘트를 불러오지 못했습니다.',
+    },
+  )
 }
 
-export async function createCounselorComment({
+async function createCounselorComment({
   childrenId,
   reportId,
   context,
 }: CreateCounselorCommentParams): Promise<CounselorCommentResponseDto> {
-  const response = await fetch(counselorCommentApiPaths.base({ childrenId, reportId }), {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
+  return apiRequest<CounselorCommentResponseDto>(
+    counselorCommentApiPaths.base({ childrenId, reportId }),
+    {
+      method: 'POST',
+      body: { context },
+      errorMessage: '상담사 코멘트를 작성하지 못했습니다.',
     },
-    body: JSON.stringify({ context }),
-  })
-
-  if (!response.ok) {
-    throw new Error('상담사 코멘트를 작성하지 못했습니다.')
-  }
-
-  return (await response.json()) as CounselorCommentResponseDto
+  )
 }
 
-export async function deleteCounselorComment({
+async function deleteCounselorComment({
   childrenId,
   reportId,
   commentId,
 }: DeleteCounselorCommentParams): Promise<void> {
-  const response = await fetch(
+  await apiRequest<void>(
     counselorCommentApiPaths.detail({ childrenId, reportId, commentId }),
     {
       method: 'DELETE',
+      errorMessage: '상담사 코멘트를 삭제하지 못했습니다.',
     },
   )
-
-  if (!response.ok) {
-    throw new Error('상담사 코멘트를 삭제하지 못했습니다.')
-  }
 }
 
-export { counselorCommentApiPaths }
+export {
+  counselorCommentApiPaths,
+  createCounselorComment,
+  deleteCounselorComment,
+  getCounselorComment,
+}

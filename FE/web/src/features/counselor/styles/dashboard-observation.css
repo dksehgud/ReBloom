@@ -1,0 +1,109 @@
+.counselor-observation-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 290px;
+  overflow-y: auto;
+  padding-right: 8px;
+}
+
+
+.counselor-observation-card {
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr);
+  gap: 10px;
+  width: 100%;
+  padding: 13px;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  background: rgba(248, 250, 252, 0.7);
+  border: 1px solid rgba(168, 178, 188, 0.1);
+  border-radius: 12px;
+  cursor: pointer;
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    transform 160ms ease;
+}
+
+.counselor-observation-card:hover,
+.counselor-observation-card:focus-visible {
+  border-color: rgba(136, 181, 196, 0.35);
+  box-shadow: 0 12px 24px rgba(52, 73, 102, 0.08);
+  transform: translateY(-1px);
+}
+
+.counselor-observation-card:focus-visible {
+  outline: 3px solid rgba(107, 154, 196, 0.18);
+  outline-offset: 3px;
+}
+
+.counselor-observation-empty {
+  margin: 0;
+  padding: 18px 14px;
+  color: #a8b2bc;
+  background: rgba(248, 250, 252, 0.7);
+  border: 1px dashed rgba(168, 178, 188, 0.24);
+  border-radius: 12px;
+  font-size: 13px;
+  text-align: center;
+}
+
+.counselor-observation-date {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  color: var(--dashboard-blue);
+}
+
+.counselor-observation-date strong {
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.counselor-observation-date span {
+  color: #9aa8b6;
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.counselor-observation-content {
+  min-width: 0;
+}
+
+.counselor-observation-content p {
+  margin: 8px 0 0;
+  color: #4a5568;
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.counselor-comment-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 12px;
+  padding: 0;
+  color: var(--dashboard-blue);
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  font-size: 11px;
+}
+
+.counselor-comment-link svg {
+  width: 13px;
+  height: 13px;
+}
+
+
+@media (max-width: 560px) {
+  .counselor-observation-card {
+    grid-template-columns: 1fr;
+  }
+
+  .counselor-observation-date {
+    align-items: flex-start;
+  }
+}

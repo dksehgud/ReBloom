@@ -2,6 +2,13 @@
 @import './features/auth/styles/auth.css';
 @import './features/counselor/styles/auth.css';
 @import './features/counselor/styles/dashboard.css';
+@import './features/counselor/styles/dashboard-sidebar.css';
+@import './features/counselor/styles/dashboard-card.css';
+@import './features/counselor/styles/dashboard-charts.css';
+@import './features/counselor/styles/dashboard-observation.css';
+@import './features/counselor/styles/dashboard-expression.css';
+@import './features/counselor/styles/dashboard-modal.css';
+@import './features/counselor/styles/settings.css';
 @import './features/guardian/styles/home.css';
 @import './features/user/styles/settings.css';
 @import './features/diary/styles/diary.css';

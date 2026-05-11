@@ -1,0 +1,230 @@
+.counselor-expression-card {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow: visible;
+}
+
+.counselor-expression-card .counselor-dashboard-tooltip-row {
+  --tooltip-arrow-offset: 90px;
+  left: calc(50% + 90px);
+}
+
+.counselor-expression-tabs {
+  position: relative;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: -40px 0 18px auto;
+}
+
+.counselor-expression-tab-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px;
+  background: rgba(136, 181, 196, 0.1);
+  border: 1px solid rgba(136, 181, 196, 0.16);
+  border-radius: 999px;
+}
+
+.counselor-expression-tabs button {
+  height: 30px;
+  padding: 0 14px;
+  color: var(--dashboard-muted);
+  background: transparent;
+  border: 0;
+  border-radius: 999px;
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.counselor-expression-tabs button:hover {
+  color: var(--dashboard-primary);
+  background: rgba(52, 73, 102, 0.06);
+}
+
+.counselor-expression-tabs button.is-active {
+  color: #ffffff;
+  background: var(--dashboard-primary);
+  box-shadow: 0 8px 18px rgba(52, 73, 102, 0.18);
+}
+
+.counselor-expression-tabs button.is-active:hover {
+  color: #ffffff;
+  background: var(--dashboard-primary);
+}
+
+.counselor-expression-tabs .counselor-expression-more {
+  margin-left: 6px;
+  padding: 0;
+  color: var(--dashboard-blue);
+  background: transparent;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.counselor-expression-tabs .counselor-expression-more:hover {
+  color: var(--dashboard-primary);
+  background: transparent;
+}
+
+
+.counselor-ai-summary {
+  margin-bottom: 14px;
+  padding: 14px 16px;
+  background: rgba(136, 181, 196, 0.08);
+  border: 1px solid rgba(136, 181, 196, 0.18);
+  border-radius: 12px;
+}
+
+.counselor-ai-summary span {
+  color: var(--dashboard-primary);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.counselor-ai-summary p {
+  margin: 8px 0 0;
+  color: #4a5568;
+  font-size: 11px;
+  line-height: 1.65;
+}
+
+.counselor-expression-chart {
+  margin-bottom: 18px;
+  padding: 10px 12px 0;
+  background: #ffffff;
+  border: 1px solid rgba(168, 178, 188, 0.12);
+  border-radius: 12px;
+}
+
+.counselor-timeline {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  gap: 16px;
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 8px;
+}
+
+.counselor-timeline-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 120px;
+  margin: 0;
+  color: var(--dashboard-muted);
+  background: rgba(136, 181, 196, 0.04);
+  border: 1px dashed rgba(136, 181, 196, 0.28);
+  border-radius: 14px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.counselor-timeline-day {
+  position: relative;
+  padding-left: 24px;
+}
+
+.counselor-timeline-day::before {
+  position: absolute;
+  top: 28px;
+  bottom: -18px;
+  left: 6px;
+  width: 2px;
+  background: rgba(136, 181, 196, 0.18);
+  content: '';
+}
+
+.counselor-timeline-day:last-child::before {
+  display: none;
+}
+
+.counselor-timeline-day h4 {
+  position: relative;
+  margin: 0 0 12px;
+  color: var(--dashboard-text);
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1.5;
+}
+
+.counselor-timeline-day h4::before {
+  position: absolute;
+  top: 8px;
+  left: -22px;
+  width: 6px;
+  height: 6px;
+  background: var(--dashboard-blue);
+  border-radius: 999px;
+  content: '';
+}
+
+.counselor-timeline-items {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.counselor-timeline-entry {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 12px;
+  padding: 13px;
+  background: rgba(136, 181, 196, 0.02);
+  border: 1px solid rgba(168, 178, 188, 0.15);
+  border-radius: 12px;
+}
+
+.entry-time {
+  display: block;
+  color: var(--dashboard-muted);
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1.5;
+}
+
+.entry-emotion {
+  display: block;
+  margin-bottom: 6px;
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+  line-height: 1;
+}
+
+.counselor-timeline-entry p {
+  margin: 4px 0 10px;
+  color: #4a5568;
+  font-size: 11px;
+  line-height: 1.6;
+}
+
+.entry-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+
+@media (max-width: 900px) {
+  .counselor-expression-card {
+    min-height: 0;
+  }
+
+  .counselor-expression-tabs {
+    flex-wrap: wrap;
+    margin: 0 0 18px;
+  }
+}
+
+@media (max-width: 560px) {
+  .counselor-timeline-entry {
+    grid-template-columns: 1fr;
+  }
+}
