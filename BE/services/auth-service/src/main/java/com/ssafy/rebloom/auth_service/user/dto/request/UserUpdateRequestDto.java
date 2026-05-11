@@ -1,6 +1,7 @@
 package com.ssafy.rebloom.auth_service.user.dto.request;
 
 import jakarta.validation.constraints.Email;
+import java.math.BigDecimal;
 
 public record UserUpdateRequestDto(
 
@@ -13,6 +14,14 @@ public record UserUpdateRequestDto(
 
     String hospitalName,
 
-    String hospitalAddress
+    String hospitalAddress,
+
+    String address,
+
+    String addressDetail,
+
+    BigDecimal latitude,
+
+    BigDecimal longitude
 ) {
 }

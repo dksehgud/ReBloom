@@ -18,7 +18,7 @@ spring:
     baseline-on-migrate: true
 
 jwt:
-  secret-key: ${JWT_SECRET:local_secret_key_32_characters_long_minimum}
+  secret-key: ${JWT_SECRET:bG9jYWwtcmVibG9vbS1qd3Qtc2VjcmV0LWtleS0zMi1ieXRlcy0xMjM0NTY=}
   access-token:
     expiration: ${JWT_ACCESS_TOKEN_TIME:60480000}
   refresh-token:

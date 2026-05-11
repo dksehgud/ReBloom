@@ -6,6 +6,7 @@ import com.ssafy.rebloom.auth_service.user.validation.ValidRoleFields;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import java.math.BigDecimal;
 
 @ValidRoleFields
 public record UserCreateRequestDto (
@@ -26,17 +27,20 @@ public record UserCreateRequestDto (
     String registerUUID,
 
     // CHILDREN
-    String parentCode,
+    @Email
+    String parentEmail,
     String birth,
     Gender gender,
     String address,
     String addressDetail,
+    BigDecimal latitude,
+    BigDecimal longitude,
 
     // COUNSELOR
+    String phone,
     String hospitalName,
     String hospitalAddress,
-    String hospitalAddressDetail,
-    String phone
+    String hospitalAddressDetail
 
     ){
 

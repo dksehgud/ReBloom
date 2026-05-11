@@ -75,8 +75,8 @@ public class UserServiceImpl implements UserService {
                 userRepository.save(parent);
             }
             case CHILDREN -> {
-                Parent parent = parentRepository.findByCode(userCreateRequestDto.parentCode())
-                    .orElseThrow(() -> new CustomException("유효하지 않은 부모 코드입니다.", ErrorCode.INVALID_PARENT_CODE));
+                Parent parent = parentRepository.findByEmail(userCreateRequestDto.parentEmail())
+                    .orElseThrow(() -> new CustomException("부모를 찾을 수 없습니다.", ErrorCode.USER_NOT_FOUND));
 
                 Children child = Children.createChildren(
                     userCreateRequestDto.email(),
@@ -85,7 +85,9 @@ public class UserServiceImpl implements UserService {
                     userCreateRequestDto.birth(),
                     userCreateRequestDto.gender(),
                     userCreateRequestDto.address(),
-                    userCreateRequestDto.addressDetail()
+                    userCreateRequestDto.addressDetail(),
+                    userCreateRequestDto.latitude(),
+                    userCreateRequestDto.longitude()
                 );
                 userRepository.save(child);
 
@@ -151,7 +153,17 @@ public class UserServiceImpl implements UserService {
                 );
                 yield toUserInfoResponse(counselor);
             }
-            case PARENT, CHILDREN -> throw new CustomException(
+            case CHILDREN -> {
+                Children children = (Children) user;
+                children.updateAddress(
+                    resolveUpdateValue(request.address(), children.getAddress()),
+                    resolveUpdateValue(request.addressDetail(), children.getAddressDetail()),
+                    request.latitude() == null ? children.getLatitude() : request.latitude(),
+                    request.longitude() == null ? children.getLongitude() : request.longitude()
+                );
+                yield toUserInfoResponse(children);
+            }
+            case PARENT -> throw new CustomException(
                 "해당 역할은 프로필 수정을 지원하지 않습니다.",
                 ErrorCode.FORBIDDEN
             );
@@ -191,18 +203,14 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public ParentSummaryResponseDto getParentByEmail(String email) {
-        Parent parent = parentRepository.findByEmail(email)
-            .orElseThrow(() -> new CustomException("부모를 찾을 수 없습니다.", ErrorCode.USER_NOT_FOUND));
-
-        return toParentSummaryResponse(parent);
+        return toParentSummaryResponse(getParentByEmailOrThrow(email));
     }
 
     @Override
     @Transactional
     public ParentSummaryResponseDto connectParent(UUID childrenId, ParentConnectRequestDto request) {
         Children children = getChildren(childrenId);
-        Parent parent = parentRepository.findByEmail(request.email())
-            .orElseThrow(() -> new CustomException("부모를 찾을 수 없습니다.", ErrorCode.USER_NOT_FOUND));
+        Parent parent = getParentByEmailOrThrow(request.email());
 
         if (!parent.getName().equals(request.name())) {
             throw new CustomException("부모 정보가 일치하지 않습니다.", ErrorCode.INVALID_PARAMETER);
@@ -258,6 +266,11 @@ public class UserServiceImpl implements UserService {
         );
     }
 
+    private Parent getParentByEmailOrThrow(String email) {
+        return parentRepository.findByEmail(email)
+            .orElseThrow(() -> new CustomException("부모를 찾을 수 없습니다.", ErrorCode.USER_NOT_FOUND));
+    }
+
     private Children getChildren(UUID childrenId) {
         User user = getUser(childrenId);
         if (!(user instanceof Children children)) {
@@ -273,6 +286,8 @@ public class UserServiceImpl implements UserService {
         validateNotBlankIfPresent(request.phone(), "phone");
         validateNotBlankIfPresent(request.hospitalName(), "hospitalName");
         validateNotBlankIfPresent(request.hospitalAddress(), "hospitalAddress");
+        validateNotBlankIfPresent(request.address(), "address");
+        validateNotBlankIfPresent(request.addressDetail(), "addressDetail");
     }
 
     private void validateNotBlankIfPresent(String value, String fieldName) {
@@ -328,6 +343,8 @@ public class UserServiceImpl implements UserService {
                     .gender(children.getGender())
                     .address(children.getAddress())
                     .addressDetail(children.getAddressDetail())
+                    .latitude(children.getLatitude())
+                    .longitude(children.getLongitude())
                     .build();
             }
             case COUNSELOR -> {

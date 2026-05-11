@@ -13,6 +13,7 @@ type DiaryCalendarProps = {
   onPreviousMonth?: () => void
   onNextMonth?: () => void
   onEntryClick?: (entry: DiaryCalendarEntry) => void
+  onDayClick?: (day: number) => void
 }
 
 const DAY_LABELS = ['일', '월', '화', '수', '목', '금', '토']
@@ -32,6 +33,7 @@ function DiaryCalendar({
   onPreviousMonth,
   onNextMonth,
   onEntryClick,
+  onDayClick,
 }: DiaryCalendarProps) {
   const firstDayOffset = getFirstDayOffset(year, month)
   const daysInMonth = getDaysInMonth(year, month)
@@ -116,25 +118,32 @@ function DiaryCalendar({
               className={`diary-calendar__cell${entry ? ' has-entry' : ''}`}
             >
               {isInMonth ? (
-                <>
+                <button
+                  type="button"
+                  className="diary-calendar__cell-button"
+                  aria-label={entry ? `${month}월 ${day}일 일기 보기` : `${month}월 ${day}일 일기 작성`}
+                  onClick={() => {
+                    if (entry) {
+                      onEntryClick?.(entry)
+                      return
+                    }
+
+                    onDayClick?.(day)
+                  }}
+                >
                   <span className="diary-calendar__day">{day}</span>
                   {entry ? (
-                    <button
-                      type="button"
-                      className={`diary-calendar__mood diary-calendar__mood--${entry.emotionKey}`}
-                      aria-label={`${month}월 ${day}일 일기 보기`}
-                      onClick={() => onEntryClick?.(entry)}
-                    >
+                    <span className={`diary-calendar__mood diary-calendar__mood--${entry.emotionKey}`}>
                       <DiaryEmotionIcon
                         emotionKey={entry.emotionKey}
                         size={18}
                         className="diary-calendar__mood-icon"
                       />
-                    </button>
+                    </span>
                   ) : (
                     <span className="diary-calendar__mood is-empty" aria-hidden="true" />
                   )}
-                </>
+                </button>
               ) : null}
             </div>
           )

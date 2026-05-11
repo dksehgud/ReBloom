@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.ssafy.rebloom.auth_service.user.domain.enums.Gender;
 import com.ssafy.rebloom.auth_service.user.domain.enums.UserRole;
 import com.ssafy.rebloom.auth_service.user.domain.enums.UserStatus;
+import java.math.BigDecimal;
 import java.util.UUID;
 import lombok.Builder;
 
@@ -26,6 +27,8 @@ public record UserInfoResponseDto(
     Gender gender,
     String address,
     String addressDetail,
+    BigDecimal latitude,
+    BigDecimal longitude,
 
     // COUNSELOR
     String hospitalName,

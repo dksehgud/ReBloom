@@ -28,6 +28,8 @@ type SignUpStepDetailsProps = {
   hasPasswordNumberRule: boolean
   hasPasswordSpecialRule: boolean
   passwordsMatch: boolean
+  submitError?: string
+  isSubmitting: boolean
   onPrevious: () => void
   onSubmit: () => void
   onNameChange: (event: ChangeEvent<HTMLInputElement>) => void
@@ -99,6 +101,8 @@ function SignUpStepDetails({
   hasPasswordNumberRule,
   hasPasswordSpecialRule,
   passwordsMatch,
+  submitError,
+  isSubmitting,
   onPrevious,
   onSubmit,
   onNameChange,
@@ -123,11 +127,13 @@ function SignUpStepDetails({
           </button>
           <button
             className="auth-button is-primary"
-            disabled={role === 'child' ? !childFormValid : !parentFormValid}
+            disabled={
+              isSubmitting || (role === 'child' ? !childFormValid : !parentFormValid)
+            }
             onClick={onSubmit}
             type="button"
           >
-            다음
+            {isSubmitting ? '처리 중' : '다음'}
           </button>
         </>
       }
@@ -168,9 +174,6 @@ function SignUpStepDetails({
           />
 
           <AuthInput
-            label="기본 주소"
-            placeholder="주소 검색"
-            value={baseAddress}
             action={
               <button
                 className={`field-input-action ${
@@ -191,15 +194,18 @@ function SignUpStepDetails({
                   ? '기본 주소는 필수 입력 값이에요.'
                   : '주소 검색이 안 되면 직접 수정할 수 있어요.'
             }
+            label="기본 주소"
             onChange={onBaseAddressChange}
+            placeholder="주소 검색"
+            value={baseAddress}
           />
 
           <AuthInput
+            help={!detailAddress ? '상세 주소는 필수 입력 값이에요.' : undefined}
             label="상세 주소"
             onChange={onDetailAddressChange}
             placeholder="상세 주소"
             value={detailAddress}
-            help={!detailAddress ? '상세 주소는 필수 입력 값이에요.' : undefined}
           />
         </>
       ) : null}
@@ -230,9 +236,7 @@ function SignUpStepDetails({
       <AuthInput
         action={
           <button
-            aria-label={
-              showPasswordConfirm ? '비밀번호 확인 숨기기' : '비밀번호 확인 보기'
-            }
+            aria-label={showPasswordConfirm ? '비밀번호 확인 숨기기' : '비밀번호 확인 보기'}
             className="field-input-icon"
             onClick={onTogglePasswordConfirm}
             type="button"
@@ -261,6 +265,8 @@ function SignUpStepDetails({
           value={parentEmail}
         />
       ) : null}
+
+      {submitError ? <p className="field-error">{submitError}</p> : null}
     </AuthShell>
   )
 }
