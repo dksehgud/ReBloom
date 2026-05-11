@@ -1,4 +1,5 @@
 import CommonModalLayout from '../../../components/organisms/Modal/CommonModalLayout'
+import DiaryEmotionIcon from './DiaryEmotionIcon'
 import {
   DIARY_EMOTION_OPTIONS,
   type DiaryEmotionKey,
@@ -44,9 +45,9 @@ function DiaryEmotionSelectModal({
                 aria-label={option.label}
                 onClick={() => onSelect?.(option.key)}
               >
-                <img
-                  src={option.imageSrc}
-                  alt=""
+                <DiaryEmotionIcon
+                  emotionKey={option.key}
+                  size={50}
                   className="diary-emotion-modal__option-image"
                 />
               </button>
