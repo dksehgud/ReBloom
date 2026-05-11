@@ -3,8 +3,6 @@ import logging
 import threading
 from datetime import datetime, timezone
 
-from app.config.settings import IF_READY_THRESHOLD
-
 import redis
 from confluent_kafka import Consumer, KafkaError, KafkaException
 
@@ -16,6 +14,7 @@ from app.config.settings import (
     KAFKA_TOPIC_AI_ANALYZE,
     REDIS_HOST,
     REDIS_PORT,
+    IF_READY_THRESHOLD,
 )
 from app.service import anomaly, if_model, phq
 from app.kafka.producer import publish_anomaly_verified, publish_phq_result
@@ -50,6 +49,14 @@ def _get_biometric_count(user_id: str) -> int:
 # ──────────────────────────────────────────────
 
 def _handle_biometric_raw(payload: dict) -> None:
+    """
+    rebloom.biometric.received.v1 처리
+
+    biometric_count < 288  → 임계치 기반 이상치 탐지 (anomaly.py)
+    biometric_count >= 288 → IF 모델 이상치 탐지 (if_model.py)
+    이상치 확정 시 → rebloom.anomaly.analysed.v1 발행
+    """
+
     user_id      = payload["userId"]
     hr           = payload["hr"]
     rmssd        = payload["rmssd"]
@@ -96,7 +103,7 @@ def _handle_biometric_raw(payload: dict) -> None:
 
 def _handle_ai_train(payload: dict) -> None:
     """
-    rebloom.ai.model.train.requested.v1 처리
+    rebloom.model.training.requested.v1 처리
 
     payload:
         {
@@ -124,7 +131,7 @@ def _handle_ai_train(payload: dict) -> None:
 
 def _handle_ai_analyze(payload: dict) -> None:
     """
-    rebloom.ai.analyze.requested.v1 처리
+    rebloom.model.retraining.requested.v1 처리
 
     payload:
         {
@@ -134,7 +141,7 @@ def _handle_ai_analyze(payload: dict) -> None:
           "sleeps"    : [ ... 14일치 or [] ]
         }
 
-    sleeps 있으면 → PHQ 예측 + IF 재학습 → rebloom.phq.result.v1 발행
+    sleeps 있으면 → PHQ 예측 + IF 재학습 → rebloom.phq.completed.v1 발행
     sleeps 없으면 → IF 재학습만
     """
     user_id    = payload.get("userId")
@@ -190,9 +197,9 @@ def _consume_loop() -> None:
     """
     Kafka Consumer 메인 루프 (별도 스레드에서 실행)
     구독 토픽:
-        - rebloom.biometric.raw.v1
-        - rebloom.ai.train.requested.v1
-        - rebloom.ai.analyze.v1
+        - rebloom.biometric.received.v1
+        - rebloom.model.training.requested.v1  
+        - rebloom.model.retraining.requested.v1
     """
     consumer = Consumer({
         "bootstrap.servers"  : KAFKA_BOOTSTRAP_SERVERS,
