@@ -9,6 +9,8 @@ import {
 import { useNavigate } from 'react-router-dom'
 import {
   FiActivity,
+  FiBell,
+  FiCheck,
   FiChevronLeft,
   FiChevronRight,
   FiFileText,
@@ -18,6 +20,7 @@ import {
   FiMessageSquare,
   FiMoon,
   FiSettings,
+  FiUserPlus,
   FiX,
 } from 'react-icons/fi'
 
@@ -30,6 +33,18 @@ type ChildListItem = {
   name: string
   meta: string
   subText: string
+  age: string
+  gender: string
+  guardianName: string
+  registeredAt: string
+}
+
+type CounselorConnectionRequest = {
+  id: number
+  parentName: string
+  parentEmail: string
+  child: ChildListItem
+  requestedAt: string
 }
 
 type ObservationRecord = {
@@ -132,13 +147,6 @@ const counselorProfile = {
   name: '홍길동',
 }
 
-const selectedChildProfile = {
-  name: '김주연',
-  age: '13세',
-  gender: '남',
-  guardianName: '유주경',
-}
-
 const MOCK_CHILDREN_ID = '22222222-2222-2222-2222-222222222222'
 const MOCK_COUNSELOR_ID = '55555555-5555-5555-5555-555555555555'
 
@@ -187,19 +195,112 @@ function formatCommentCreatedAt(createdAt: string) {
   }).format(date)
 }
 
-const childList: ChildListItem[] = [
+const initialChildList: ChildListItem[] = [
   {
     id: 1,
     name: '김주연',
     meta: '13세(남)',
     subText: '보호자 : 유주경',
+    age: '13세',
+    gender: '남',
+    guardianName: '유주경',
+    registeredAt: '2026-05-08T09:20:00',
   },
-  { id: 2, name: '이온준', meta: '12세(남)', subText: '보호자 : 한서윤' },
-  { id: 3, name: '박민서', meta: '14세(여)', subText: '보호자 : 박지현' },
-  { id: 4, name: '정민지', meta: '11세(여)', subText: '보호자 : 정하늘' },
-  { id: 5, name: '김나영', meta: '13세(여)', subText: '보호자 : 김도윤' },
-  { id: 6, name: '이동현', meta: '15세(남)', subText: '보호자 : 이서진' },
-  { id: 7, name: '박지우', meta: '12세(여)', subText: '보호자 : 박민정' },
+  {
+    id: 2,
+    name: '이온준',
+    meta: '12세(남)',
+    subText: '보호자 : 한서윤',
+    age: '12세',
+    gender: '남',
+    guardianName: '한서윤',
+    registeredAt: '2026-05-06T14:12:00',
+  },
+  {
+    id: 3,
+    name: '박민서',
+    meta: '14세(여)',
+    subText: '보호자 : 박지현',
+    age: '14세',
+    gender: '여',
+    guardianName: '박지현',
+    registeredAt: '2026-05-05T10:45:00',
+  },
+  {
+    id: 4,
+    name: '정민지',
+    meta: '11세(여)',
+    subText: '보호자 : 정하늘',
+    age: '11세',
+    gender: '여',
+    guardianName: '정하늘',
+    registeredAt: '2026-05-03T17:30:00',
+  },
+  {
+    id: 5,
+    name: '김나영',
+    meta: '13세(여)',
+    subText: '보호자 : 김도윤',
+    age: '13세',
+    gender: '여',
+    guardianName: '김도윤',
+    registeredAt: '2026-05-01T08:50:00',
+  },
+  {
+    id: 6,
+    name: '이동현',
+    meta: '15세(남)',
+    subText: '보호자 : 이서진',
+    age: '15세',
+    gender: '남',
+    guardianName: '이서진',
+    registeredAt: '2026-04-30T15:10:00',
+  },
+  {
+    id: 7,
+    name: '박지우',
+    meta: '12세(여)',
+    subText: '보호자 : 박민정',
+    age: '12세',
+    gender: '여',
+    guardianName: '박민정',
+    registeredAt: '2026-04-28T11:05:00',
+  },
+]
+
+const initialConnectionRequests: CounselorConnectionRequest[] = [
+  {
+    id: 101,
+    parentName: '최유리',
+    parentEmail: 'yuri.choi@example.com',
+    requestedAt: '2026-05-11T09:18:00',
+    child: {
+      id: 8,
+      name: '최하린',
+      meta: '10세(여)',
+      subText: '보호자 : 최유리',
+      age: '10세',
+      gender: '여',
+      guardianName: '최유리',
+      registeredAt: '2026-05-11T09:18:00',
+    },
+  },
+  {
+    id: 102,
+    parentName: '문정우',
+    parentEmail: 'jungwoo.moon@example.com',
+    requestedAt: '2026-05-10T18:42:00',
+    child: {
+      id: 9,
+      name: '문시온',
+      meta: '12세(남)',
+      subText: '보호자 : 문정우',
+      age: '12세',
+      gender: '남',
+      guardianName: '문정우',
+      registeredAt: '2026-05-10T18:42:00',
+    },
+  },
 ]
 
 const observationRecords: ObservationRecord[] = ([
@@ -777,28 +878,35 @@ function clampMetricValue(value: number) {
   return Math.max(0, Math.min(100, value))
 }
 
-function getWeekAdjustedValue(value: number, weekIndex: number, pointIndex: number) {
+function getWeekAdjustedValue(
+  value: number,
+  weekIndex: number,
+  pointIndex: number,
+  childId = 1,
+) {
   const weekDelta = (weekIndex - DEFAULT_EXPRESSION_WEEK_INDEX) * 5
   const rhythmDelta = pointIndex % 2 === 0 ? weekDelta : -Math.round(weekDelta / 2)
+  const childDelta = childId === 1 ? 0 : ((childId % 5) - 2) * 3
 
-  return clampMetricValue(value + rhythmDelta)
+  return clampMetricValue(value + rhythmDelta + childDelta)
 }
 
 function getWeekAdjustedLineData(
   data: Array<{ label: string; value: number; emotionKey?: DiaryEmotionKey }>,
   weekIndex: number,
+  childId = 1,
 ) {
   return data.map((item, index) => ({
     ...item,
-    value: getWeekAdjustedValue(item.value, weekIndex, index),
+    value: getWeekAdjustedValue(item.value, weekIndex, index, childId),
   }))
 }
 
-function BarChart({ weekIndex }: { weekIndex: number }) {
+function BarChart({ weekIndex, childId }: { weekIndex: number; childId: number }) {
   return (
     <div className="counselor-bar-chart" aria-label="수면 점수 추이">
       {sleepScoreBars.map((bar, index) => {
-        const adjustedValue = getWeekAdjustedValue(bar.value, weekIndex, index)
+        const adjustedValue = getWeekAdjustedValue(bar.value, weekIndex, index, childId)
         const isWarning = bar.variant === 'warning'
 
         return (
@@ -1240,18 +1348,24 @@ function EmotionFlowModal({ onClose }: { onClose: () => void }) {
 function ExpressionAnalysis({
   maxHeight,
   weekIndex,
+  childId,
   onPrevWeek,
   onNextWeek,
 }: {
   maxHeight?: number
   weekIndex: number
+  childId: number
   onPrevWeek: () => void
   onNextWeek: () => void
 }) {
   const [activeFilter, setActiveFilter] = useState<ExpressionFilter>('all')
   const [isEmotionFlowOpen, setIsEmotionFlowOpen] = useState(false)
   const currentWeek = expressionWeeks[weekIndex]
-  const currentTrend = currentWeek.trend[activeFilter]
+  const currentTrend = getWeekAdjustedLineData(
+    currentWeek.trend[activeFilter],
+    weekIndex,
+    childId,
+  )
   const visibleTimelineDays = getFilteredTimelineDays(currentWeek.days, activeFilter)
   const isFirstWeek = weekIndex === 0
   const isLastWeek = weekIndex === expressionWeeks.length - 1
@@ -1354,8 +1468,110 @@ function ExpressionAnalysis({
   )
 }
 
+function formatConnectionRequestedAt(requestedAt: string) {
+  const date = new Date(requestedAt)
+
+  if (Number.isNaN(date.getTime())) {
+    return requestedAt
+  }
+
+  return new Intl.DateTimeFormat('ko-KR', {
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(date)
+}
+
+type CounselorConnectionModalProps = {
+  requests: CounselorConnectionRequest[]
+  onAccept: (request: CounselorConnectionRequest) => void
+  onReject: (requestId: number) => void
+  onClose: () => void
+}
+
+function CounselorConnectionModal({
+  requests,
+  onAccept,
+  onReject,
+  onClose,
+}: CounselorConnectionModalProps) {
+  return (
+    <div className="counselor-connection-modal-overlay" role="presentation">
+      <section
+        aria-labelledby="counselor-connection-modal-title"
+        aria-modal="true"
+        className="counselor-connection-modal"
+        role="dialog"
+      >
+        <header className="counselor-connection-modal-header">
+          <div>
+            <span className="counselor-connection-modal-kicker">
+              <FiBell aria-hidden="true" /> 연결 신청
+            </span>
+            <h2 id="counselor-connection-modal-title">상담사 연결 요청</h2>
+            <p>보호자가 보낸 상담 연결 신청을 확인하고 수락 또는 거절할 수 있어요.</p>
+          </div>
+          <button
+            type="button"
+            className="counselor-connection-modal-close"
+            aria-label="연결 신청 알림 닫기"
+            onClick={onClose}
+          >
+            <FiX aria-hidden="true" />
+          </button>
+        </header>
+
+        <div className="counselor-connection-modal-body">
+          {requests.length > 0 ? (
+            requests.map((request) => (
+              <article className="counselor-connection-card" key={request.id}>
+                <div className="counselor-connection-card-icon" aria-hidden="true">
+                  <FiUserPlus />
+                </div>
+                <div className="counselor-connection-card-copy">
+                  <strong>
+                    {request.parentName} 보호자가 {request.child.name} 아동의 상담사
+                    연결을 신청했어요.
+                  </strong>
+                  <p>
+                    {request.child.meta} · 보호자 : {request.parentName}
+                  </p>
+                  <small>
+                    {request.parentEmail} · {formatConnectionRequestedAt(request.requestedAt)}
+                  </small>
+                </div>
+                <div className="counselor-connection-card-actions">
+                  <button
+                    type="button"
+                    className="is-secondary"
+                    onClick={() => onReject(request.id)}
+                  >
+                    거절
+                  </button>
+                  <button type="button" onClick={() => onAccept(request)}>
+                    <FiCheck aria-hidden="true" /> 수락
+                  </button>
+                </div>
+              </article>
+            ))
+          ) : (
+            <p className="counselor-connection-empty">
+              확인할 상담사 연결 신청이 없습니다.
+            </p>
+          )}
+        </div>
+      </section>
+    </div>
+  )
+}
+
 function CounselorDashboardPage() {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
+  const [childItems, setChildItems] = useState(initialChildList)
+  const [selectedChildId, setSelectedChildId] = useState(initialChildList[0].id)
+  const [connectionRequests, setConnectionRequests] = useState(initialConnectionRequests)
+  const [isConnectionModalOpen, setIsConnectionModalOpen] = useState(false)
   const [weekIndexes, setWeekIndexes] = useState<DashboardWeekIndexes>(
     INITIAL_DASHBOARD_WEEK_INDEXES,
   )
@@ -1397,9 +1613,41 @@ function CounselorDashboardPage() {
   const autonomicWeek = getWeekControls('autonomic')
   const currentObservationRecords =
     observationRecordsByWeek[observationWeek.currentWeek.id] ?? []
+  const selectedChildProfile =
+    childItems.find((child) => child.id === selectedChildId) ?? childItems[0]
   const selectedObservationComment = selectedObservation
     ? observationComments[selectedObservation.reportId] ?? null
     : null
+
+  const handleSelectChild = (childId: number) => {
+    setSelectedChildId(childId)
+    setSelectedObservation(null)
+    setWeekIndexes(INITIAL_DASHBOARD_WEEK_INDEXES)
+  }
+
+  const handleAcceptConnectionRequest = (request: CounselorConnectionRequest) => {
+    const acceptedChild = {
+      ...request.child,
+      registeredAt: new Date().toISOString(),
+    }
+
+    setChildItems((current) =>
+      [acceptedChild, ...current.filter((child) => child.id !== acceptedChild.id)].sort(
+        (first, second) =>
+          new Date(second.registeredAt).getTime() - new Date(first.registeredAt).getTime(),
+      ),
+    )
+    setConnectionRequests((current) =>
+      current.filter((candidate) => candidate.id !== request.id),
+    )
+    handleSelectChild(acceptedChild.id)
+  }
+
+  const handleRejectConnectionRequest = (requestId: number) => {
+    setConnectionRequests((current) =>
+      current.filter((request) => request.id !== requestId),
+    )
+  }
 
   const handleSaveObservationComment = (record: ObservationRecord, context: string) => {
     setObservationComments((current) => ({
@@ -1473,11 +1721,12 @@ function CounselorDashboardPage() {
         </header>
 
         <nav className="counselor-child-list" aria-label="상담 아동 목록">
-          {childList.map((child, index) => (
+          {childItems.map((child) => (
             <button
               type="button"
-              className={index === 0 ? 'is-selected' : undefined}
+              className={child.id === selectedChildId ? 'is-selected' : undefined}
               key={child.id}
+              onClick={() => handleSelectChild(child.id)}
             >
               <span className="counselor-child-avatar" aria-hidden="true">
                 {child.name.slice(0, 1)}
@@ -1554,7 +1803,10 @@ function CounselorDashboardPage() {
                   onPrev={sleepScoreWeek.goPrevWeek}
                   onNext={sleepScoreWeek.goNextWeek}
                 />
-                <BarChart weekIndex={sleepScoreWeek.weekIndex} />
+                <BarChart
+                  weekIndex={sleepScoreWeek.weekIndex}
+                  childId={selectedChildId}
+                />
               </DashboardCard>
 
               <DashboardCard
@@ -1569,7 +1821,11 @@ function CounselorDashboardPage() {
                   onNext={sleepEfficiencyWeek.goNextWeek}
                 />
                 <LineChart
-                  data={getWeekAdjustedLineData(sleepEfficiency, sleepEfficiencyWeek.weekIndex)}
+                  data={getWeekAdjustedLineData(
+                    sleepEfficiency,
+                    sleepEfficiencyWeek.weekIndex,
+                    selectedChildId,
+                  )}
                   color="#f2a57d"
                 />
                 <p className="counselor-card-note">
@@ -1584,6 +1840,7 @@ function CounselorDashboardPage() {
               <ExpressionAnalysis
                 maxHeight={analysisCardHeight}
                 weekIndex={expressionWeek.weekIndex}
+                childId={selectedChildId}
                 onPrevWeek={expressionWeek.goPrevWeek}
                 onNextWeek={expressionWeek.goNextWeek}
               />
@@ -1607,7 +1864,11 @@ function CounselorDashboardPage() {
                   onNext={biometricRatioWeek.goNextWeek}
                 />
                 <LineChart
-                  data={getWeekAdjustedLineData(biometricRatio, biometricRatioWeek.weekIndex)}
+                  data={getWeekAdjustedLineData(
+                    biometricRatio,
+                    biometricRatioWeek.weekIndex,
+                    selectedChildId,
+                  )}
                   color="#6B9AC4"
                 />
                 <p className="counselor-card-note">
@@ -1625,7 +1886,11 @@ function CounselorDashboardPage() {
                   onNext={autonomicWeek.goNextWeek}
                 />
                 <LineChart
-                  data={getWeekAdjustedLineData(hrvTrend, autonomicWeek.weekIndex)}
+                  data={getWeekAdjustedLineData(
+                    hrvTrend,
+                    autonomicWeek.weekIndex,
+                    selectedChildId,
+                  )}
                   color="#9b78f0"
                 />
                 <p className="counselor-card-note">
@@ -1660,6 +1925,27 @@ function CounselorDashboardPage() {
           onClose={() => setSelectedObservation(null)}
           onSave={handleSaveObservationComment}
           onDelete={handleDeleteObservationComment}
+        />
+      ) : null}
+
+      <button
+        type="button"
+        className="counselor-connection-floating-button"
+        aria-label="상담사 연결 신청 알림 열기"
+        onClick={() => setIsConnectionModalOpen(true)}
+      >
+        <FiBell aria-hidden="true" />
+        {connectionRequests.length > 0 ? (
+          <span>{connectionRequests.length}</span>
+        ) : null}
+      </button>
+
+      {isConnectionModalOpen ? (
+        <CounselorConnectionModal
+          requests={connectionRequests}
+          onAccept={handleAcceptConnectionRequest}
+          onReject={handleRejectConnectionRequest}
+          onClose={() => setIsConnectionModalOpen(false)}
         />
       ) : null}
     </main>

@@ -730,6 +730,231 @@
   line-height: 1.62;
 }
 
+.counselor-connection-floating-button {
+  position: fixed;
+  right: 32px;
+  bottom: 32px;
+  z-index: 100;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 58px;
+  height: 58px;
+  color: #ffffff;
+  background: var(--dashboard-primary);
+  border: 0;
+  border-radius: 999px;
+  box-shadow: 0 18px 36px rgba(52, 73, 102, 0.26);
+  cursor: pointer;
+}
+
+.counselor-connection-floating-button:hover {
+  background: #283a52;
+  transform: translateY(-1px);
+}
+
+.counselor-connection-floating-button svg {
+  width: 22px;
+  height: 22px;
+}
+
+.counselor-connection-floating-button span {
+  position: absolute;
+  right: -2px;
+  top: -4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  color: #ffffff;
+  background: #d97745;
+  border: 2px solid #ffffff;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.counselor-connection-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 140;
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+  padding: 32px;
+  pointer-events: none;
+}
+
+.counselor-connection-modal {
+  display: flex;
+  flex-direction: column;
+  width: min(480px, calc(100vw - 32px));
+  max-height: min(720px, calc(100svh - 64px));
+  overflow: hidden;
+  background: #ffffff;
+  border: 1px solid rgba(136, 181, 196, 0.14);
+  border-radius: 24px;
+  box-shadow: 0 25px 50px rgba(15, 23, 42, 0.22);
+  pointer-events: auto;
+}
+
+.counselor-connection-modal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 24px 24px 20px;
+  border-bottom: 1px solid rgba(168, 178, 188, 0.14);
+}
+
+.counselor-connection-modal-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 10px;
+  color: var(--dashboard-blue);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.counselor-connection-modal-kicker svg {
+  width: 14px;
+  height: 14px;
+}
+
+.counselor-connection-modal-header h2 {
+  margin: 0;
+  color: var(--dashboard-text);
+  font-size: 20px;
+  font-weight: 800;
+  line-height: 1.35;
+}
+
+.counselor-connection-modal-header p {
+  margin: 8px 0 0;
+  color: var(--dashboard-muted);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.counselor-connection-modal-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  flex: 0 0 34px;
+  color: #4a5565;
+  background: #f3f4f6;
+  border: 0;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.counselor-connection-modal-close:hover {
+  color: var(--dashboard-primary);
+  background: rgba(136, 181, 196, 0.16);
+}
+
+.counselor-connection-modal-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow-y: auto;
+  padding: 18px;
+}
+
+.counselor-connection-card {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr);
+  gap: 12px;
+  padding: 16px;
+  background: linear-gradient(145deg, #f8fbfc 0%, #ffffff 72%);
+  border: 1px solid rgba(136, 181, 196, 0.18);
+  border-radius: 18px;
+}
+
+.counselor-connection-card-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  color: var(--dashboard-primary);
+  background: rgba(136, 181, 196, 0.16);
+  border-radius: 14px;
+}
+
+.counselor-connection-card-icon svg {
+  width: 20px;
+  height: 20px;
+}
+
+.counselor-connection-card-copy strong {
+  display: block;
+  color: var(--dashboard-text);
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1.55;
+}
+
+.counselor-connection-card-copy p,
+.counselor-connection-card-copy small {
+  display: block;
+  margin: 6px 0 0;
+  color: var(--dashboard-muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.counselor-connection-card-actions {
+  grid-column: 2;
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.counselor-connection-card-actions button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  min-width: 72px;
+  height: 34px;
+  padding: 0 14px;
+  color: #ffffff;
+  background: var(--dashboard-primary);
+  border: 0;
+  border-radius: 999px;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.counselor-connection-card-actions button.is-secondary {
+  color: #d97745;
+  background: rgba(217, 119, 69, 0.1);
+}
+
+.counselor-connection-card-actions button:hover {
+  filter: brightness(0.96);
+}
+
+.counselor-connection-empty {
+  margin: 0;
+  padding: 28px 18px;
+  color: var(--dashboard-muted);
+  background: rgba(136, 181, 196, 0.06);
+  border: 1px dashed rgba(136, 181, 196, 0.22);
+  border-radius: 16px;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 700;
+}
+
 .counselor-observation-comment-panel {
   display: flex;
   flex-direction: column;
@@ -1633,6 +1858,11 @@
   line-height: 1.5;
 }
 
+.counselor-settings-input-wrap {
+  position: relative;
+  width: 100%;
+}
+
 .counselor-settings-field input {
   width: 100%;
   height: 47px;
@@ -1646,6 +1876,15 @@
   line-height: 1.5;
 }
 
+.counselor-settings-field.has-action input {
+  padding-right: 92px;
+}
+
+.counselor-settings-field input[readonly] {
+  color: #4a5568;
+  background: #fafbfc;
+}
+
 .counselor-settings-field input:focus {
   border-color: var(--dashboard-primary);
   box-shadow: 0 0 0 3px rgba(52, 73, 102, 0.1);
@@ -1653,6 +1892,48 @@
 
 .counselor-settings-field input::placeholder {
   color: #a8b2bc;
+}
+
+.counselor-settings-page .counselor-settings-address-button {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  min-width: 62px;
+  height: 24px;
+  padding: 0 8px;
+  color: #ffffff;
+  background: var(--dashboard-primary);
+  border: 0;
+  border-radius: 999px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1.2;
+  transform: translateY(-50%);
+}
+
+.counselor-settings-page .counselor-settings-address-button:hover {
+  background: #283a52;
+}
+
+.counselor-settings-page .counselor-settings-address-button:disabled {
+  cursor: not-allowed;
+  background: #d1d5dc;
+}
+
+.counselor-settings-field__error,
+.counselor-settings-field__help {
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.counselor-settings-field__error {
+  color: #d97745;
+}
+
+.counselor-settings-field__help {
+  color: #718096;
 }
 
 .counselor-settings-actions {
@@ -1676,6 +1957,73 @@
 
 .counselor-settings-actions button:hover {
   background: #283a52;
+}
+
+.counselor-settings-actions button:disabled {
+  cursor: not-allowed;
+  background: #d1d5dc;
+}
+
+.counselor-settings-actions button:disabled:hover {
+  background: #d1d5dc;
+}
+
+.counselor-settings-feedback-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 150;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(15, 23, 42, 0.18);
+  backdrop-filter: blur(2px);
+}
+
+.counselor-settings-feedback {
+  width: min(420px, calc(100vw - 32px));
+  padding: 28px;
+  background: #ffffff;
+  border: 1px solid rgba(136, 181, 196, 0.16);
+  border-radius: 24px;
+  box-shadow: 0 25px 50px rgba(15, 23, 42, 0.22);
+  text-align: center;
+}
+
+.counselor-settings-feedback h2 {
+  margin: 0;
+  color: var(--dashboard-text);
+  font-size: 20px;
+  font-weight: 800;
+  line-height: 1.4;
+}
+
+.counselor-settings-feedback p {
+  margin: 12px 0 22px;
+  color: var(--dashboard-muted);
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+.counselor-settings-feedback button {
+  min-width: 108px;
+  min-height: 42px;
+  padding: 0 20px;
+  color: #ffffff;
+  background: var(--dashboard-primary);
+  border: 0;
+  border-radius: 999px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.counselor-settings-feedback.is-error {
+  border-color: rgba(217, 119, 69, 0.24);
+}
+
+.counselor-settings-feedback.is-error button {
+  background: #d97745;
 }
 
 @media (max-width: 1180px) {
@@ -1805,6 +2153,32 @@
   .counselor-dashboard-card,
   .counselor-settings-card {
     padding: 18px;
+  }
+
+  .counselor-connection-floating-button {
+    right: 18px;
+    bottom: 18px;
+    width: 52px;
+    height: 52px;
+  }
+
+  .counselor-connection-modal-overlay {
+    align-items: flex-end;
+    padding: 14px;
+  }
+
+  .counselor-connection-modal {
+    width: 100%;
+    max-height: calc(100svh - 28px);
+    border-radius: 20px;
+  }
+
+  .counselor-connection-card {
+    grid-template-columns: 1fr;
+  }
+
+  .counselor-connection-card-actions {
+    grid-column: 1;
   }
 
   .counselor-emotion-flow-overlay {
