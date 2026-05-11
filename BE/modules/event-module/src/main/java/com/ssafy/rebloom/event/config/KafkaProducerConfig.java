@@ -1,7 +1,9 @@
 package com.ssafy.rebloom.event.config;
 
+import com.ssafy.rebloom.event.config.property.KafkaCommonProperties;
 import java.util.HashMap;
 import java.util.Map;
+import lombok.RequiredArgsConstructor;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.springframework.beans.factory.annotation.Value;
@@ -14,11 +16,14 @@ import org.springframework.kafka.core.ProducerFactory;
 import org.springframework.kafka.support.serializer.JsonSerializer;
 
 @Configuration
+@RequiredArgsConstructor
 @EnableConfigurationProperties(KafkaCommonProperties.class)
 public class KafkaProducerConfig {
 
     @Value("${spring.kafka.bootstrap-servers:localhost:9092}")
     private String bootstrapServers;
+
+    private final KafkaCommonProperties properties;
 
     @Bean
     public ProducerFactory<String, Object> rebloomProducerFactory() {
@@ -28,10 +33,12 @@ public class KafkaProducerConfig {
         props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonSerializer.class);
         props.put(ProducerConfig.ACKS_CONFIG, "all");
         props.put(ProducerConfig.ENABLE_IDEMPOTENCE_CONFIG, true);
-        props.put(ProducerConfig.RETRIES_CONFIG, 10);
-        props.put(ProducerConfig.DELIVERY_TIMEOUT_MS_CONFIG, 120000);
-        props.put(ProducerConfig.REQUEST_TIMEOUT_MS_CONFIG, 30000);
+        props.put(ProducerConfig.RETRIES_CONFIG, properties.getProducer().getRetries());
+        props.put(ProducerConfig.RETRY_BACKOFF_MS_CONFIG, properties.getProducer().getRetryBackoffMs());
+        props.put(ProducerConfig.REQUEST_TIMEOUT_MS_CONFIG, properties.getProducer().getRequestTimeoutMs());
+        props.put(ProducerConfig.DELIVERY_TIMEOUT_MS_CONFIG, properties.getProducer().getDeliveryTimeoutMs());
         props.put(JsonSerializer.ADD_TYPE_INFO_HEADERS, false);
+        props.put(ProducerConfig.COMPRESSION_TYPE_CONFIG, properties.getProducer().getCompressionType());
         return new DefaultKafkaProducerFactory<>(props);
     }
 

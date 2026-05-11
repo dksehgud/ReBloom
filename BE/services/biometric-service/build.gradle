@@ -7,9 +7,11 @@ plugins {
 apply from: file('../../common-service.gradle')
 
 dependencies {
-	implementation 'org.springframework.kafka:spring-kafka'
-	testImplementation 'org.springframework.kafka:spring-kafka-test'
+	implementation 'org.springframework.boot:spring-boot-starter-data-redis'
 
 	// security module
 	implementation project(':modules:security-module')
+
+	// event module
+	implementation project(':modules:event-module')
 }

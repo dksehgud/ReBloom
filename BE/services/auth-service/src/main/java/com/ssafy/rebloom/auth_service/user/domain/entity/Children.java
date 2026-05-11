@@ -42,20 +42,19 @@ public class Children extends User {
     private String addressDetail;
 
     @Builder(access = AccessLevel.PRIVATE)
-    private Children(String email, String password, String name, String phone, String birth, Gender gender, String address, String addressDetail) {
-        super(email, password, name, phone, UserRole.CHILDREN);
+    private Children(String email, String password, String name, String birth, Gender gender, String address, String addressDetail) {
+        super(email, password, name, UserRole.CHILDREN);
         this.birth = birth;
         this.gender = gender;
         this.address = address;
         this.addressDetail = addressDetail;
     }
 
-    public static Children createChildren(String email, String password, String name, String phone, String birth, Gender gender, String address, String addressDetail) {
+    public static Children createChildren(String email, String password, String name, String birth, Gender gender, String address, String addressDetail) {
         return Children.builder()
             .email(email)
             .password(password)
             .name(name)
-            .phone(phone)
             .birth(birth)
             .gender(gender)
             .address(address)

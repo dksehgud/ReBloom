@@ -14,6 +14,7 @@
         android:allowBackup="true"
         android:label="Re:Bloom"
         android:supportsRtl="true"
+        android:usesCleartextTraffic="true"
         android:theme="@style/Theme.ReBloom.WebView">
 
         <activity
@@ -42,12 +43,7 @@
 
         <activity
             android:name=".permission.SleepPermissionActivity"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity>
+            android:exported="false" />
 
     </application>
 

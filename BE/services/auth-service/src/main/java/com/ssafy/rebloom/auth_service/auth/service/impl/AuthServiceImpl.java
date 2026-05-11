@@ -16,6 +16,9 @@ import com.ssafy.rebloom.common.exception.CustomException;
 import com.ssafy.rebloom.common.exception.ErrorCode;
 import jakarta.mail.internet.MimeMessage;
 import java.security.SecureRandom;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import lombok.RequiredArgsConstructor;
@@ -28,6 +31,7 @@ import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -45,7 +49,14 @@ public class AuthServiceImpl implements AuthService {
 
     private final AuthenticationManager authenticationManager;
     private final JavaMailSender mailSender;
+    private final PasswordEncoder passwordEncoder;
     private static final SecureRandom secureRandom = new SecureRandom();
+    private static final String LOWERCASE = "abcdefghijklmnopqrstuvwxyz";
+    private static final String UPPERCASE = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    private static final String DIGITS = "0123456789";
+    private static final String SPECIAL_CHARACTERS = "!@#$%^&*";
+    private static final String PASSWORD_CHARACTERS = LOWERCASE + UPPERCASE + DIGITS + SPECIAL_CHARACTERS;
+    private static final int TEMPORARY_PASSWORD_LENGTH = 12;
 
     @Override
     public TokenDto login(LoginRequestDto loginRequestDto) {
@@ -186,6 +197,65 @@ public class AuthServiceImpl implements AuthService {
         }
 
         return false;
+    }
+
+    @Override
+    @Transactional
+    public void resetPassword(String email) {
+        User user = userRepository.findByEmail(email)
+            .orElseThrow(() -> new CustomException("사용자를 찾을 수 없습니다.", ErrorCode.USER_NOT_FOUND));
+
+        if (user.getStatus() == UserStatus.WITHDRAW) {
+            throw new CustomException("탈퇴한 사용자입니다.", ErrorCode.USER_WITHDRAW);
+        }
+
+        String temporaryPassword = generateTemporaryPassword();
+
+        user.changePassword(passwordEncoder.encode(temporaryPassword));
+        refreshTokenService.delete(user.getId());
+        sendTemporaryPasswordEmail(email, temporaryPassword);
+    }
+
+    private String generateTemporaryPassword() {
+        List<Character> characters = new ArrayList<>();
+        characters.add(randomCharacter(LOWERCASE));
+        characters.add(randomCharacter(UPPERCASE));
+        characters.add(randomCharacter(DIGITS));
+        characters.add(randomCharacter(SPECIAL_CHARACTERS));
+
+        for (int i = characters.size(); i < TEMPORARY_PASSWORD_LENGTH; i++) {
+            characters.add(randomCharacter(PASSWORD_CHARACTERS));
+        }
+
+        Collections.shuffle(characters, secureRandom);
+
+        StringBuilder temporaryPassword = new StringBuilder(TEMPORARY_PASSWORD_LENGTH);
+        for (Character character : characters) {
+            temporaryPassword.append(character);
+        }
+
+        return temporaryPassword.toString();
+    }
+
+    private Character randomCharacter(String source) {
+        return source.charAt(secureRandom.nextInt(source.length()));
+    }
+
+    private void sendTemporaryPasswordEmail(String email, String temporaryPassword) {
+        try {
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+            helper.setTo(email);
+            helper.setSubject("[Re:Bloom] 임시 비밀번호 안내");
+            helper.setText("""
+                <p>안녕하세요. Re:Bloom 임시 비밀번호가 발급되었습니다.</p>
+                <p>임시 비밀번호: <b>%s</b></p>
+                <p>로그인 후 비밀번호를 변경해 주세요.</p>
+                """.formatted(temporaryPassword), true);
+            mailSender.send(message);
+        } catch (Exception e) {
+            throw new CustomException("임시 비밀번호 메일 발송에 실패했습니다.", ErrorCode.INTERNAL_SERVER_ERROR);
+        }
     }
 
 

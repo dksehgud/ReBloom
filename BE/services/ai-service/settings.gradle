@@ -1,4 +1,0 @@
-rootProject.name = 'ai-service'
-
-include 'modules:common-module'
-project(':modules:common-module').projectDir = file('../../modules/common-module')

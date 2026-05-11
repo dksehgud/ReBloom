@@ -53,6 +53,20 @@ class Settings(BaseSettings):
     # ---------- 연결/타임아웃 ----------
     LLM_TIMEOUT: float = Field(default=30.0, description="LLM API 호출 타임아웃 (초)")
 
+    # ---------- MQTT 브로커 설정 ----------
+    MQTT_HOST: str = Field(default="localhost", description="MQTT broker host")
+    MQTT_PORT: int = Field(default=7000, description="MQTT broker external port")
+    MQTT_USERNAME: str = Field(default="backend-api", description="MQTT username")
+    MQTT_PASSWORD: str = Field(default="", description="MQTT password")
+    MQTT_CLIENT_ID: str = Field(default="rebloom-llm-server", description="MQTT client id")
+    MQTT_KEEPALIVE: int = Field(default=60, description="MQTT keepalive seconds")
+    MQTT_QOS: int = Field(default=1, description="MQTT publish QoS")
+    MQTT_RETAIN: bool = Field(default=False, description="MQTT retain flag")
+    MQTT_TOPIC_CONVERSATION_START: str = Field(
+        default="devices/{device_id}/conversation/start",
+        description="대화 시작 명령용 topic template",
+    )
+
 
 # 싱글턴처럼 사용
 settings = Settings()

@@ -1,6 +1,6 @@
 package com.ssafy.rebloom.event.config;
 
-import com.ssafy.rebloom.event.core.EventTopics;
+import com.ssafy.rebloom.event.config.property.KafkaCommonProperties;
 import org.apache.kafka.common.TopicPartition;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -20,12 +20,12 @@ public class KafkaErrorHandlerConfig {
     ) {
         DeadLetterPublishingRecoverer recoverer = new DeadLetterPublishingRecoverer(
             rebloomKafkaTemplate,
-            (record, exception) -> new TopicPartition(EventTopics.EVENT_DLT, 0)
+            (record, exception) -> new TopicPartition(properties.getTopics().getEventDlt(), 0)
         );
 
         FixedBackOff backOff = new FixedBackOff(
-            properties.getRetry().getIntervalMillis(),
-            properties.getRetry().getMaxAttempts()
+            properties.getConsumer().getRetryIntervalMs(),
+            properties.getConsumer().getRetryMaxAttempts()
         );
 
         return new DefaultErrorHandler(recoverer, backOff);
