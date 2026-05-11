@@ -1,130 +1,28 @@
 import { useState } from 'react'
-import type { FormEvent, ReactNode } from 'react'
+import type { FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { FiChevronLeft, FiLogOut } from 'react-icons/fi'
 
+import SettingsFeedbackModal from '../../features/counselor/components/settings/SettingsFeedbackModal'
+import SettingsInput from '../../features/counselor/components/settings/SettingsInput'
+import {
+  MOCK_CURRENT_PASSWORD,
+  accountFields,
+  initialPasswordForm,
+  initialProfileForm,
+  profileFields,
+} from '../../features/counselor/mocks/settingsMockData'
+import type {
+  PasswordForm,
+  ProfileForm,
+  SettingsFeedback,
+  SettingsSection,
+} from '../../features/counselor/types/settings'
+import {
+  isValidNewPassword,
+  normalizeFormValue,
+} from '../../features/counselor/utils/settingsValidation'
 import { openDaumPostcodePopup } from '../../shared/utils/daumPostcode'
-
-type SettingsSection = 'profile' | 'account'
-
-type SettingsField = {
-  id: string
-  label: string
-  type?: string
-  value: string
-}
-
-type ProfileForm = {
-  name: string
-  email: string
-  phone: string
-  hospitalName: string
-  hospitalAddress: string
-  hospitalAddressDetail: string
-}
-
-type PasswordForm = {
-  currentPassword: string
-  newPassword: string
-  newPasswordConfirm: string
-}
-
-type SettingsFeedback = {
-  title: string
-  message: string
-  tone: 'success' | 'error'
-} | null
-
-const initialProfileForm: ProfileForm = {
-  name: '김상담',
-  email: 'counselor@rebloom.com',
-  phone: '010-1234-5678',
-  hospitalName: 'RE:BLOOM 심리상담센터',
-  hospitalAddress: '서울특별시 강남구 테헤란로 123',
-  hospitalAddressDetail: '2층 203호',
-}
-
-const initialPasswordForm: PasswordForm = {
-  currentPassword: '',
-  newPassword: '',
-  newPasswordConfirm: '',
-}
-
-const MOCK_CURRENT_PASSWORD = 'rebloom1234'
-
-const profileFields: SettingsField[] = [
-  { id: 'name', label: '이름', value: initialProfileForm.name },
-  { id: 'email', label: '이메일', type: 'email', value: initialProfileForm.email },
-  { id: 'phone', label: '전화번호', type: 'tel', value: initialProfileForm.phone },
-  {
-    id: 'hospitalName',
-    label: '병원/센터 이름',
-    value: initialProfileForm.hospitalName,
-  },
-]
-
-const accountFields: SettingsField[] = [
-  { id: 'currentPassword', label: '현재 비밀번호', type: 'password', value: '' },
-  { id: 'newPassword', label: '새 비밀번호', type: 'password', value: '' },
-  { id: 'newPasswordConfirm', label: '새 비밀번호 확인', type: 'password', value: '' },
-]
-
-function isValidNewPassword(password: string) {
-  return (
-    password.length >= 8 &&
-    password.length <= 20 &&
-    /[A-Za-z]/.test(password) &&
-    /\d/.test(password) &&
-    /^[A-Za-z0-9!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?`~]+$/.test(password)
-  )
-}
-
-function normalizeFormValue(value: string) {
-  return value.trim()
-}
-
-type SettingsInputProps = {
-  field: SettingsField
-  value?: string
-  onChange?: (value: string) => void
-  readOnly?: boolean
-  action?: ReactNode
-  error?: string
-  help?: string
-}
-
-function SettingsInput({
-  field,
-  value,
-  onChange,
-  readOnly,
-  action,
-  error,
-  help,
-}: SettingsInputProps) {
-  return (
-    <label
-      className={`counselor-settings-field${action ? ' has-action' : ''}`}
-      htmlFor={`counselor-${field.id}`}
-    >
-      <span>{field.label}</span>
-      <div className="counselor-settings-input-wrap">
-        <input
-          id={`counselor-${field.id}`}
-          type={field.type ?? 'text'}
-          value={value}
-          defaultValue={value === undefined ? field.value : undefined}
-          onChange={onChange ? (event) => onChange(event.target.value) : undefined}
-          readOnly={readOnly}
-          placeholder={field.type === 'password' ? '비밀번호를 입력하세요' : undefined}
-        />
-        {action}
-      </div>
-      {error ? <small className="counselor-settings-field__error">{error}</small> : null}
-      {!error && help ? <small className="counselor-settings-field__help">{help}</small> : null}
-    </label>
-  )
-}
 
 function CounselorSettingsPage() {
   const navigate = useNavigate()
@@ -377,20 +275,7 @@ function CounselorSettingsPage() {
       </section>
 
       {feedback ? (
-        <div className="counselor-settings-feedback-overlay" role="presentation">
-          <section
-            aria-labelledby="counselor-settings-feedback-title"
-            aria-modal="true"
-            className={`counselor-settings-feedback is-${feedback.tone}`}
-            role="dialog"
-          >
-            <h2 id="counselor-settings-feedback-title">{feedback.title}</h2>
-            <p>{feedback.message}</p>
-            <button type="button" onClick={() => setFeedback(null)}>
-              확인
-            </button>
-          </section>
-        </div>
+        <SettingsFeedbackModal feedback={feedback} onClose={() => setFeedback(null)} />
       ) : null}
     </main>
   )
