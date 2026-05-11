@@ -13,6 +13,7 @@ import com.ssafy.rebloom.common.dto.ListResponseDto;
 import com.ssafy.rebloom.common.exception.CustomException;
 import com.ssafy.rebloom.common.exception.ErrorCode;
 import com.ssafy.rebloom.event.dto.SleepDataEvent;
+import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -85,8 +86,8 @@ public class SleepServiceImpl implements SleepService {
         // 권한 검증
         validateRelation(userId, role, childrenId);
 
-        LocalDate startDate = baseDate.minusDays(Constants.SLEEP_CHART_DAYS - 1);
-        LocalDateTime from = startDate.atStartOfDay();
+        LocalDate weekStartDate = baseDate.with(DayOfWeek.MONDAY);
+        LocalDateTime from = weekStartDate.atStartOfDay();
         LocalDateTime to = baseDate.plusDays(1).atStartOfDay();
 
         Map<LocalDate, Double> efficiencyMap = sleepRepository
@@ -99,7 +100,7 @@ public class SleepServiceImpl implements SleepService {
             ));
 
         List<SleepChartResponseDto> responses = IntStream.range(0, Constants.SLEEP_CHART_DAYS)
-            .mapToObj(startDate::plusDays)
+            .mapToObj(weekStartDate::plusDays)
             .map(date -> SleepChartResponseDto.from(date, efficiencyMap.get(date)))
             .toList();
 
