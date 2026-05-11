@@ -1,4 +1,11 @@
-import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react'
+import {
+  useEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+  type FormEvent,
+  type ReactNode,
+} from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   FiActivity,
@@ -30,7 +37,13 @@ type ObservationRecord = {
   day: string
   mood: string
   text: string
-  commentCount?: number
+  comment?: ObservationComment | null
+}
+
+type ObservationComment = {
+  id: number
+  relativeTime: string
+  text: string
 }
 
 type TimelineEntry = {
@@ -63,6 +76,24 @@ type ExpressionWeek = {
   trend: Record<ExpressionFilter, ExpressionTrendPoint[]>
   days: TimelineDay[]
 }
+
+type WeekNavigatorProps = {
+  label: string
+  isFirst: boolean
+  isLast: boolean
+  onPrev: () => void
+  onNext: () => void
+}
+
+type DashboardWeekSection =
+  | 'observation'
+  | 'sleepScore'
+  | 'sleepEfficiency'
+  | 'expression'
+  | 'biometricRatio'
+  | 'autonomic'
+
+type DashboardWeekIndexes = Record<DashboardWeekSection, number>
 
 type EmotionFlowMode = 'monthly' | 'yearly'
 
@@ -128,7 +159,11 @@ const observationRecords: ObservationRecord[] = [
     day: '화',
     mood: '침묵',
     text: '저녁 식사 때 말이 별로 없었음',
-    commentCount: 1,
+    comment: {
+      id: 1,
+      relativeTime: '2시간 전',
+      text: '아이에게 이렇게 이렇게 다가가 보세요',
+    },
   },
   {
     id: 2,
@@ -144,7 +179,95 @@ const observationRecords: ObservationRecord[] = [
     mood: '평온',
     text: '가족과 영화를 보며 편안해 보였음',
   },
+  {
+    id: 4,
+    date: '04/12',
+    day: '일',
+    mood: '평온',
+    text: '가족과 산책한 뒤 편안하게 쉬었음',
+  },
+  {
+    id: 5,
+    date: '04/11',
+    day: '토',
+    mood: '활발',
+    text: '오후에 먼저 놀이를 제안하고 웃음이 많았음',
+  },
+  {
+    id: 6,
+    date: '04/10',
+    day: '금',
+    mood: '불안',
+    text: '숙제를 시작하기 전 걱정을 여러 번 표현함',
+  },
 ]
+
+const observationRecordsByWeek: Record<string, ObservationRecord[]> = {
+  '2026-04-week-4': [
+    {
+      id: 101,
+      date: '04/22',
+      day: '수',
+      mood: '불안',
+      text: '등교 전 준비 시간이 길어지고 작은 소리에 예민하게 반응함',
+    },
+    {
+      id: 102,
+      date: '04/21',
+      day: '화',
+      mood: '침묵',
+      text: '저녁 식사 중 대화 참여가 적고 고개를 자주 숙였음',
+    },
+    {
+      id: 103,
+      date: '04/20',
+      day: '월',
+      mood: '평온',
+      text: '가족과 간식을 먹으며 편안하게 쉬었음',
+    },
+  ],
+  '2026-05-week-1': observationRecords,
+  '2026-05-week-2': [
+    {
+      id: 201,
+      date: '05/08',
+      day: '금',
+      mood: '활발',
+      text: '친구와 있었던 일을 먼저 이야기하며 표정이 밝았음',
+    },
+    {
+      id: 202,
+      date: '05/07',
+      day: '목',
+      mood: '평온',
+      text: '숙제를 마친 뒤 스스로 정리하고 차분하게 마무리함',
+    },
+    {
+      id: 203,
+      date: '05/06',
+      day: '수',
+      mood: '예민',
+      text: '잠들기 전 걱정을 반복해서 말하고 보호자 확인을 요청함',
+    },
+    {
+      id: 204,
+      date: '05/05',
+      day: '화',
+      mood: '활발',
+      text: '산책 중 주변 풍경을 이야기하며 웃음이 많았음',
+    },
+  ],
+}
+
+const allObservationRecords = Object.values(observationRecordsByWeek).flat()
+
+const initialObservationComments = allObservationRecords.reduce<Record<number, ObservationComment | null>>(
+  (comments, record) => {
+    comments[record.id] = record.comment ?? null
+    return comments
+  },
+  {},
+)
 
 const sleepScoreBars = [
   { label: '월', value: 78 },
@@ -183,6 +306,14 @@ const expressionTabs: Array<{ key: ExpressionFilter; label: string }> = [
 ]
 
 const DEFAULT_EXPRESSION_WEEK_INDEX = 1
+const INITIAL_DASHBOARD_WEEK_INDEXES: DashboardWeekIndexes = {
+  observation: DEFAULT_EXPRESSION_WEEK_INDEX,
+  sleepScore: DEFAULT_EXPRESSION_WEEK_INDEX,
+  sleepEfficiency: DEFAULT_EXPRESSION_WEEK_INDEX,
+  expression: DEFAULT_EXPRESSION_WEEK_INDEX,
+  biometricRatio: DEFAULT_EXPRESSION_WEEK_INDEX,
+  autonomic: DEFAULT_EXPRESSION_WEEK_INDEX,
+}
 
 const biometricRatio = [
   { label: '월', value: 52 },
@@ -276,7 +407,7 @@ const timelineDays: TimelineDay[] = [
 const expressionWeeks: ExpressionWeek[] = [
   {
     id: '2026-04-week-4',
-    label: '2026년 4월 4주차',
+    label: '2026년도 4월 4주차',
     insight:
       '지난 주에는 대화에서 부정 표현이 먼저 나타난 뒤 일기에서 불안 표현이 이어졌습니다. 주말에는 회복 표현이 함께 관찰됩니다.',
     trend: {
@@ -346,7 +477,7 @@ const expressionWeeks: ExpressionWeek[] = [
   },
   {
     id: '2026-05-week-1',
-    label: '2026년 5월 1주차',
+    label: '2026년도 5월 1주차',
     insight:
       '최근 3일간 부모와의 갈등을 바탕으로 다음과 같은 제안을 하고 있습니다. 부모님은 자녀가 약간 섬세한 감정 표현을 할 때 바로 질문하기보다 가볍게 함께할 수 있는 활동을 제안하는 편이 좋습니다.',
     trend: {
@@ -374,7 +505,7 @@ const expressionWeeks: ExpressionWeek[] = [
   },
   {
     id: '2026-05-week-2',
-    label: '2026년 5월 2주차',
+    label: '2026년도 5월 2주차',
     insight:
       '이번 주에는 일기에서 긍정 표현이 늘었고, 대화에서는 보호자에게 확인을 요청하는 문장이 반복되었습니다.',
     trend: {
@@ -527,6 +658,20 @@ function MetricTag({
   return <span className={`counselor-dashboard-tag is-${tone}`}>{children}</span>
 }
 
+function WeekNavigator({ label, isFirst, isLast, onPrev, onNext }: WeekNavigatorProps) {
+  return (
+    <div className="counselor-card-week">
+      <button type="button" aria-label="이전 주" disabled={isFirst} onClick={onPrev}>
+        <FiChevronLeft aria-hidden="true" />
+      </button>
+      <strong>{label}</strong>
+      <button type="button" aria-label="다음 주" disabled={isLast} onClick={onNext}>
+        <FiChevronRight aria-hidden="true" />
+      </button>
+    </div>
+  )
+}
+
 function DashboardCard({
   title,
   children,
@@ -582,15 +727,36 @@ function DashboardCard({
   )
 }
 
-function BarChart() {
+function clampMetricValue(value: number) {
+  return Math.max(0, Math.min(100, value))
+}
+
+function getWeekAdjustedValue(value: number, weekIndex: number, pointIndex: number) {
+  const weekDelta = (weekIndex - DEFAULT_EXPRESSION_WEEK_INDEX) * 5
+  const rhythmDelta = pointIndex % 2 === 0 ? weekDelta : -Math.round(weekDelta / 2)
+
+  return clampMetricValue(value + rhythmDelta)
+}
+
+function getWeekAdjustedLineData(
+  data: Array<{ label: string; value: number; emotionKey?: DiaryEmotionKey }>,
+  weekIndex: number,
+) {
+  return data.map((item, index) => ({
+    ...item,
+    value: getWeekAdjustedValue(item.value, weekIndex, index),
+  }))
+}
+
+function BarChart({ weekIndex }: { weekIndex: number }) {
   return (
     <div className="counselor-bar-chart" aria-label="수면 점수 추이">
-      {sleepScoreBars.map((bar) => (
+      {sleepScoreBars.map((bar, index) => (
         <div className="counselor-bar-chart-item" key={bar.label}>
           <div className="counselor-bar-track">
             <span
               className={bar.variant === 'warning' ? 'is-warning' : undefined}
-              style={{ height: `${bar.value}%` }}
+              style={{ height: `${getWeekAdjustedValue(bar.value, weekIndex, index)}%` }}
             />
           </div>
           <strong>{bar.label}</strong>
@@ -749,11 +915,27 @@ function EmotionFlowLineChart({ data }: { data: EmotionFlowPoint[] }) {
   )
 }
 
-function ObservationList() {
+function ObservationList({
+  records,
+  comments,
+  onSelect,
+}: {
+  records: ObservationRecord[]
+  comments: Record<number, ObservationComment | null>
+  onSelect: (record: ObservationRecord) => void
+}) {
   return (
     <div className="counselor-observation-list">
-      {observationRecords.map((record) => (
-        <article className="counselor-observation-card" key={record.id}>
+      {records.length === 0 ? (
+        <p className="counselor-observation-empty">선택한 주차의 관찰 기록이 없습니다.</p>
+      ) : null}
+      {records.map((record) => (
+        <button
+          type="button"
+          className="counselor-observation-card"
+          key={record.id}
+          onClick={() => onSelect(record)}
+        >
           <div className="counselor-observation-date">
             <strong>{record.date}</strong>
             <span>{record.day}</span>
@@ -761,15 +943,129 @@ function ObservationList() {
           <div className="counselor-observation-content">
             <MetricTag tone="green">{record.mood}</MetricTag>
             <p>{record.text}</p>
-            {record.commentCount ? (
-              <button type="button" className="counselor-comment-link">
+            {comments[record.id] ? (
+              <span className="counselor-comment-link">
                 <FiMessageSquare aria-hidden="true" />
-                상담사 코멘트 {record.commentCount}개
-              </button>
+                상담사 코멘트 1개
+              </span>
             ) : null}
           </div>
-        </article>
+        </button>
       ))}
+    </div>
+  )
+}
+
+function ObservationCommentModal({
+  record,
+  comment,
+  onClose,
+  onSave,
+  onDelete,
+}: {
+  record: ObservationRecord
+  comment: ObservationComment | null
+  onClose: () => void
+  onSave: (recordId: number, text: string) => void
+  onDelete: (recordId: number) => void
+}) {
+  const [draft, setDraft] = useState('')
+  const trimmedDraft = draft.trim()
+
+  useEffect(() => {
+    const originalOverflow = document.body.style.overflow
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        onClose()
+      }
+    }
+
+    document.body.style.overflow = 'hidden'
+    window.addEventListener('keydown', handleKeyDown)
+
+    return () => {
+      document.body.style.overflow = originalOverflow
+      window.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [onClose])
+
+  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+
+    if (!trimmedDraft) {
+      return
+    }
+
+    onSave(record.id, trimmedDraft)
+    setDraft('')
+  }
+
+  return (
+    <div className="counselor-observation-modal-overlay" role="presentation" onMouseDown={onClose}>
+      <section
+        className="counselor-observation-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="counselor-observation-modal-title"
+        onMouseDown={(event) => event.stopPropagation()}
+      >
+        <header className="counselor-observation-modal-header">
+          <h2 id="counselor-observation-modal-title">
+            {record.date} <span>{record.day}</span>
+          </h2>
+          <button
+            type="button"
+            className="counselor-observation-modal-close"
+            aria-label="아이 관찰 기록 닫기"
+            onClick={onClose}
+          >
+            <FiX aria-hidden="true" />
+          </button>
+        </header>
+
+        <div className="counselor-observation-modal-body">
+          <span className="counselor-observation-modal-tag">{record.mood}</span>
+          <div className="counselor-observation-modal-summary">{record.text}</div>
+
+          <form className="counselor-observation-comment-panel" onSubmit={handleSubmit}>
+            <div className="counselor-observation-comment-title">
+              <FiMessageSquare aria-hidden="true" />
+              <strong>상담사의 코멘트</strong>
+            </div>
+
+            {comment ? (
+              <div className="counselor-observation-comment-item">
+                <span className="counselor-observation-comment-dot" aria-hidden="true" />
+                <div>
+                  <div className="counselor-observation-comment-meta">
+                    <span>{comment.relativeTime}</span>
+                    <button type="button" onClick={() => onDelete(record.id)}>
+                      삭제
+                    </button>
+                  </div>
+                  <p>{comment.text}</p>
+                </div>
+              </div>
+            ) : (
+              <p className="counselor-observation-comment-empty">
+                아직 작성된 코멘트가 없습니다.
+              </p>
+            )}
+
+            <div className="counselor-observation-comment-form">
+              <textarea
+                value={draft}
+                onChange={(event) => setDraft(event.target.value)}
+                placeholder="코멘트를 입력하세요..."
+                aria-label="상담사 코멘트"
+              />
+              <button type="submit" disabled={!trimmedDraft}>
+                코멘트 추가
+              </button>
+            </div>
+          </form>
+        </div>
+      </section>
     </div>
   )
 }
@@ -883,15 +1179,24 @@ function EmotionFlowModal({ onClose }: { onClose: () => void }) {
   )
 }
 
-function ExpressionAnalysis({ maxHeight }: { maxHeight?: number }) {
+function ExpressionAnalysis({
+  maxHeight,
+  weekIndex,
+  onPrevWeek,
+  onNextWeek,
+}: {
+  maxHeight?: number
+  weekIndex: number
+  onPrevWeek: () => void
+  onNextWeek: () => void
+}) {
   const [activeFilter, setActiveFilter] = useState<ExpressionFilter>('all')
-  const [activeWeekIndex, setActiveWeekIndex] = useState(DEFAULT_EXPRESSION_WEEK_INDEX)
   const [isEmotionFlowOpen, setIsEmotionFlowOpen] = useState(false)
-  const currentWeek = expressionWeeks[activeWeekIndex]
+  const currentWeek = expressionWeeks[weekIndex]
   const currentTrend = currentWeek.trend[activeFilter]
   const visibleTimelineDays = getFilteredTimelineDays(currentWeek.days, activeFilter)
-  const isFirstWeek = activeWeekIndex === 0
-  const isLastWeek = activeWeekIndex === expressionWeeks.length - 1
+  const isFirstWeek = weekIndex === 0
+  const isLastWeek = weekIndex === expressionWeeks.length - 1
 
   return (
     <DashboardCard
@@ -923,27 +1228,13 @@ function ExpressionAnalysis({ maxHeight }: { maxHeight?: number }) {
         </button>
       </div>
 
-      <div className="counselor-expression-week">
-        <button
-          type="button"
-          aria-label="이전 주"
-          disabled={isFirstWeek}
-          onClick={() => setActiveWeekIndex((current) => Math.max(0, current - 1))}
-        >
-          <FiChevronLeft aria-hidden="true" />
-        </button>
-        <strong>{currentWeek.label}</strong>
-        <button
-          type="button"
-          aria-label="다음 주"
-          disabled={isLastWeek}
-          onClick={() =>
-            setActiveWeekIndex((current) => Math.min(expressionWeeks.length - 1, current + 1))
-          }
-        >
-          <FiChevronRight aria-hidden="true" />
-        </button>
-      </div>
+      <WeekNavigator
+        label={currentWeek.label}
+        isFirst={isFirstWeek}
+        isLast={isLastWeek}
+        onPrev={onPrevWeek}
+        onNext={onNextWeek}
+      />
 
       <div className="counselor-ai-summary">
         <span>AI 분석 인사이트</span>
@@ -1007,9 +1298,68 @@ function ExpressionAnalysis({ maxHeight }: { maxHeight?: number }) {
 
 function CounselorDashboardPage() {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
+  const [weekIndexes, setWeekIndexes] = useState<DashboardWeekIndexes>(
+    INITIAL_DASHBOARD_WEEK_INDEXES,
+  )
   const [analysisCardHeight, setAnalysisCardHeight] = useState<number>()
+  const [selectedObservation, setSelectedObservation] = useState<ObservationRecord | null>(null)
+  const [observationComments, setObservationComments] = useState(initialObservationComments)
   const mainColumnRef = useRef<HTMLDivElement | null>(null)
   const navigate = useNavigate()
+
+  const getWeekControls = (section: DashboardWeekSection) => {
+    const weekIndex = weekIndexes[section]
+    const currentWeek = expressionWeeks[weekIndex]
+
+    return {
+      weekIndex,
+      currentWeek,
+      isFirstWeek: weekIndex === 0,
+      isLastWeek: weekIndex === expressionWeeks.length - 1,
+      goPrevWeek: () => {
+        setWeekIndexes((current) => ({
+          ...current,
+          [section]: Math.max(0, current[section] - 1),
+        }))
+      },
+      goNextWeek: () => {
+        setWeekIndexes((current) => ({
+          ...current,
+          [section]: Math.min(expressionWeeks.length - 1, current[section] + 1),
+        }))
+      },
+    }
+  }
+
+  const observationWeek = getWeekControls('observation')
+  const sleepScoreWeek = getWeekControls('sleepScore')
+  const sleepEfficiencyWeek = getWeekControls('sleepEfficiency')
+  const expressionWeek = getWeekControls('expression')
+  const biometricRatioWeek = getWeekControls('biometricRatio')
+  const autonomicWeek = getWeekControls('autonomic')
+  const currentObservationRecords =
+    observationRecordsByWeek[observationWeek.currentWeek.id] ?? []
+  const selectedObservationComment = selectedObservation
+    ? observationComments[selectedObservation.id] ?? null
+    : null
+
+  const handleSaveObservationComment = (recordId: number, text: string) => {
+    setObservationComments((current) => ({
+      ...current,
+      [recordId]: {
+        id: Date.now(),
+        relativeTime: '방금 전',
+        text,
+      },
+    }))
+  }
+
+  const handleDeleteObservationComment = (recordId: number) => {
+    setObservationComments((current) => ({
+      ...current,
+      [recordId]: null,
+    }))
+  }
 
   useEffect(() => {
     const columnElement = mainColumnRef.current
@@ -1126,18 +1476,46 @@ function CounselorDashboardPage() {
                 title="아이 관찰 기록"
                 info={dashboardInfoMessages.observation}
               >
-                <ObservationList />
+                <WeekNavigator
+                  label={observationWeek.currentWeek.label}
+                  isFirst={observationWeek.isFirstWeek}
+                  isLast={observationWeek.isLastWeek}
+                  onPrev={observationWeek.goPrevWeek}
+                  onNext={observationWeek.goNextWeek}
+                />
+                <ObservationList
+                  records={currentObservationRecords}
+                  comments={observationComments}
+                  onSelect={setSelectedObservation}
+                />
               </DashboardCard>
 
               <DashboardCard title="수면 점수 추이" info={dashboardInfoMessages.sleepScore}>
-                <BarChart />
+                <WeekNavigator
+                  label={sleepScoreWeek.currentWeek.label}
+                  isFirst={sleepScoreWeek.isFirstWeek}
+                  isLast={sleepScoreWeek.isLastWeek}
+                  onPrev={sleepScoreWeek.goPrevWeek}
+                  onNext={sleepScoreWeek.goNextWeek}
+                />
+                <BarChart weekIndex={sleepScoreWeek.weekIndex} />
               </DashboardCard>
 
               <DashboardCard
                 title="수면 효율 추이"
                 info={dashboardInfoMessages.sleepEfficiency}
               >
-                <LineChart data={sleepEfficiency} color="#f2a57d" />
+                <WeekNavigator
+                  label={sleepEfficiencyWeek.currentWeek.label}
+                  isFirst={sleepEfficiencyWeek.isFirstWeek}
+                  isLast={sleepEfficiencyWeek.isLastWeek}
+                  onPrev={sleepEfficiencyWeek.goPrevWeek}
+                  onNext={sleepEfficiencyWeek.goNextWeek}
+                />
+                <LineChart
+                  data={getWeekAdjustedLineData(sleepEfficiency, sleepEfficiencyWeek.weekIndex)}
+                  color="#f2a57d"
+                />
                 <p className="counselor-card-note">
                   수면 추세 시간 중 실제로 잠든 시간의 비율을 의미합니다.
                 </p>
@@ -1147,7 +1525,12 @@ function CounselorDashboardPage() {
               className="counselor-dashboard-column counselor-dashboard-column--analysis"
               aria-label="대시보드 분석 정보"
             >
-              <ExpressionAnalysis maxHeight={analysisCardHeight} />
+              <ExpressionAnalysis
+                maxHeight={analysisCardHeight}
+                weekIndex={expressionWeek.weekIndex}
+                onPrevWeek={expressionWeek.goPrevWeek}
+                onNextWeek={expressionWeek.goNextWeek}
+              />
             </div>
           </div>
 
@@ -1160,7 +1543,17 @@ function CounselorDashboardPage() {
                 title="행동 활성"
                 info={dashboardInfoMessages.biometricRatio}
               >
-                <LineChart data={biometricRatio} color="#f2a57d" />
+                <WeekNavigator
+                  label={biometricRatioWeek.currentWeek.label}
+                  isFirst={biometricRatioWeek.isFirstWeek}
+                  isLast={biometricRatioWeek.isLastWeek}
+                  onPrev={biometricRatioWeek.goPrevWeek}
+                  onNext={biometricRatioWeek.goNextWeek}
+                />
+                <LineChart
+                  data={getWeekAdjustedLineData(biometricRatio, biometricRatioWeek.weekIndex)}
+                  color="#f2a57d"
+                />
                 <p className="counselor-card-note">
                   수요일에 행동 활성 지표가 유독 낮게 관찰되며 이후 점진적으로
                   활력을 회복하는 추세입니다.
@@ -1168,7 +1561,17 @@ function CounselorDashboardPage() {
               </DashboardCard>
 
               <DashboardCard title="자율 신경 안정도" info={dashboardInfoMessages.autonomic}>
-                <LineChart data={hrvTrend} color="#9b78f0" />
+                <WeekNavigator
+                  label={autonomicWeek.currentWeek.label}
+                  isFirst={autonomicWeek.isFirstWeek}
+                  isLast={autonomicWeek.isLastWeek}
+                  onPrev={autonomicWeek.goPrevWeek}
+                  onNext={autonomicWeek.goNextWeek}
+                />
+                <LineChart
+                  data={getWeekAdjustedLineData(hrvTrend, autonomicWeek.weekIndex)}
+                  color="#9b78f0"
+                />
                 <p className="counselor-card-note">
                   주말로 갈수록 RMSSD 수치가 상승하며 자율 신경 안정도가 개선이
                   되는 추세입니다.
@@ -1193,6 +1596,16 @@ function CounselorDashboardPage() {
           </section>
         </div>
       </section>
+
+      {selectedObservation ? (
+        <ObservationCommentModal
+          record={selectedObservation}
+          comment={selectedObservationComment}
+          onClose={() => setSelectedObservation(null)}
+          onSave={handleSaveObservationComment}
+          onDelete={handleDeleteObservationComment}
+        />
+      ) : null}
     </main>
   )
 }
