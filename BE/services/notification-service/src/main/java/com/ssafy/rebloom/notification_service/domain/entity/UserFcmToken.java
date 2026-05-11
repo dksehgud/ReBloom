@@ -32,6 +32,6 @@ public class UserFcmToken extends BaseTime {
     private String fcmToken;
 
     @Builder.Default
-    @Column(nullable = false)
+    @Column(name = "is_active", nullable = false)
     private boolean isActive = true;
 }

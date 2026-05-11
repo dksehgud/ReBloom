@@ -31,7 +31,9 @@ public class AnomalyAnalysedNotificationConsumer {
             MDC.put("correlationId", envelope.correlationId());
 
             if (!EventTypes.ANOMALY_ANALYSED.equals(envelope.eventType())) {
-                log.warn("Unexpected eventType. eventType={}, eventId={}", envelope.eventType(), envelope.eventId());
+                log.warn("Unexpected eventType. eventType={}, eventId={}",
+                    envelope.eventType(),
+                    envelope.eventId());
                 return;
             }
 

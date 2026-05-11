@@ -1,35 +1,41 @@
 package com.ssafy.rebloom.notification_service.service.impl;
 
-import com.ssafy.rebloom.event.config.property.KafkaCommonProperties;
 import com.ssafy.rebloom.event.dto.AnomalyEvent;
-import com.ssafy.rebloom.event.publisher.EventPublisher;
-import com.ssafy.rebloom.event.support.EventKeyGenerator;
-import com.ssafy.rebloom.notification_service.constants.Constants;
 import com.ssafy.rebloom.notification_service.domain.entity.Notification;
+import com.ssafy.rebloom.notification_service.domain.entity.NotificationPayload;
+import com.ssafy.rebloom.notification_service.domain.entity.NotificationType;
 import com.ssafy.rebloom.notification_service.domain.enums.DeliveryStatus;
 import com.ssafy.rebloom.notification_service.domain.enums.NotificationCode;
+import com.ssafy.rebloom.notification_service.domain.enums.ReceiverRole;
+import com.ssafy.rebloom.notification_service.dto.NotificationCommand;
+import com.ssafy.rebloom.notification_service.dto.ParentReceiverInfo;
+import com.ssafy.rebloom.notification_service.dto.RealtimeNotificationMessage;
 import com.ssafy.rebloom.notification_service.repository.NotificationRepository;
+import com.ssafy.rebloom.notification_service.resolver.NotificationTypeResolver;
+import com.ssafy.rebloom.notification_service.resolver.ReceiverResolver;
+import com.ssafy.rebloom.notification_service.service.FcmService;
+import com.ssafy.rebloom.notification_service.service.NotificationRealtimeService;
 import com.ssafy.rebloom.notification_service.service.NotificationService;
-import com.ssafy.rebloom.notification_service.service.RedisService;
-import java.time.Duration;
+import com.ssafy.rebloom.notification_service.service.NotificationSettingService;
+import com.ssafy.rebloom.notification_service.service.OnlineStatusService;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.Assert;
 
-@Slf4j
 @Service
-@Transactional(readOnly = true)
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class NotificationServiceImpl implements NotificationService {
 
-    private final RedisService redisService;
     private final NotificationRepository notificationRepository;
-    private final EventPublisher eventPublisher;
-    private final EventKeyGenerator eventKeyGenerator;
-    private final KafkaCommonProperties kafkaProperties;
+    private final NotificationTypeResolver notificationTypeResolver;
+    private final NotificationSettingService notificationSettingService;
+    private final OnlineStatusService onlineStatusService;
+    private final NotificationRealtimeService notificationRealtimeService;
+    private final FcmService fcmService;
+    private final ReceiverResolver receiverResolver;
+
     @Override
     @Transactional
     public void handleAnomalyAnalysed(AnomalyEvent event, String correlationId) {
@@ -37,62 +43,75 @@ public class NotificationServiceImpl implements NotificationService {
             return;
         }
 
-        UUID userId = event.userId();
-        Assert.notNull(userId, "event.userId must not be null");
+        UUID childrenId = event.userId();
+        ParentReceiverInfo receiverInfo = receiverResolver.resolveParentByChildrenId(childrenId);
 
-        String coolTimeKey = alertCoolTimeKey(userId);
-        boolean firstAlertInCooldown = redisService.setIfAbsent(coolTimeKey, anomalySourceId(event),
-            Duration.ofMinutes(Constants.ALERT_COOL_TIME));
+        NotificationPayload payload = NotificationPayload.builder()
+            .title("주의 필요")
+            .content(String.format("지금 한번 %s에게 관심을 표현해볼까요?", receiverInfo.childrenName()))
+            .childrenId(receiverInfo.childrenId())
+            .childrenName(receiverInfo.childrenName())
+            .childrenReportId(null)
+            .parentId(receiverInfo.parentId())
+            .counselorId(null)
+            .counselorName(null)
+            .build();
 
-        if (!firstAlertInCooldown) {
+        send(new NotificationCommand(
+            receiverInfo.parentId(),
+            ReceiverRole.PARENT,
+            NotificationCode.RISK_ALERT,
+            payload
+        ));
+    }
+
+    @Override
+    @Transactional
+    public void send(NotificationCommand command) {
+        NotificationType notificationType =
+            notificationTypeResolver.resolve(command.notificationCode());
+
+        Notification notification = notificationRepository.save(
+            Notification.builder()
+                .receiverId(command.receiverId())
+                .notificationType(notificationType)
+                .notificationPayload(command.payload())
+                .deliveryStatus(DeliveryStatus.PENDING)
+                .isRead(false)
+                .build()
+        );
+
+        if (!notificationSettingService.isEnabled(command.receiverId())) {
             return;
         }
 
-        saveRiskAlertNotification(event);
+        deliver(notification, command);
+    }
 
-        long alertCount = increaseAlertWindowCount(userId);
-        if (alertCount >= Constants.CONVERSATION_THRESHOLD) {
-            publishConversationInitiated(event);
+    private void deliver(Notification notification, NotificationCommand command) {
+        if (command.receiverRole() == ReceiverRole.COUNSELOR) {
+            publishRealtime(notification, command);
+            return;
+        }
+
+        if (command.receiverRole() == ReceiverRole.PARENT) {
+            if (onlineStatusService.isOnline(command.receiverId())) {
+                publishRealtime(notification, command);
+            } else {
+                fcmService.send(notification);
+            }
         }
     }
 
-    private void saveRiskAlertNotification(AnomalyEvent event) {
-        Notification notification = Notification.builder()
-            .userId(event.userId())
-            .notificationType(NotificationCode.RISK_ALERT)
-            .title("Health risk alert")
-            .content("An anomaly was detected in the biometric signal.")
-            .deliveryStatus(DeliveryStatus.PENDING)
-            .externalReferenceId(anomalySourceId(event))
-            .isRead(false)
-            .build();
-
-        Notification.create(
-            event.userId(),
-            NotificationCode.RISK_ALERT,
-
-        )
-
-        notificationRepository.save(notification);
-    }
-
-    private String alertCoolTimeKey(UUID userId) {
-        return Constants.ALERT_COOL_TIME_KEY_PREFIX + userId;
-    }
-
-    private String alertWindowKey(UUID userId) {
-        return Constants.ALERT_WINDOW_KEY_PREFIX + userId;
-    }
-
-    private String conversationLockKey(UUID userId) {
-        return Constants.CONVERSATION_LOCK_KEY_PREFIX + userId;
-    }
-
-    private String anomalySourceId(AnomalyEvent event) {
-        if (event.id() != null) {
-            return String.valueOf(event.id());
-        }
-
-        return event.userId() + ":" + event.tsStart() + ":" + event.tsEnd();
+    private void publishRealtime(Notification notification, NotificationCommand command) {
+        notificationRealtimeService.publish(new RealtimeNotificationMessage(
+            notification.getId(),
+            notification.getReceiverId(),
+            command.receiverRole(),
+            command.notificationCode(),
+            notification.getNotificationPayload(),
+            notification.isRead(),
+            notification.getCreatedAt()
+        ));
     }
 }

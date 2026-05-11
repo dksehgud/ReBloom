@@ -13,7 +13,6 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
-import java.util.Map;
 import java.util.UUID;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -54,4 +53,12 @@ public class Notification extends BaseTime {
     @Column(name = "delivery_status", nullable = false)
     @Builder.Default
     private DeliveryStatus deliveryStatus = DeliveryStatus.PENDING;
+
+    public void markSent() {
+        this.deliveryStatus = DeliveryStatus.SENT;
+    }
+
+    public void markFailed() {
+        this.deliveryStatus = DeliveryStatus.FAILED;
+    }
 }
