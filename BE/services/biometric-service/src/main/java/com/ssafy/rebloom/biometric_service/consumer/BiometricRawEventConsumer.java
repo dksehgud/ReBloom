@@ -21,7 +21,7 @@ public class BiometricRawEventConsumer {
     private final BiometricService biometricService;
 
     @KafkaListener(
-        topics = "${rebloom.kafka.topics.biometric-raw}",
+        topics = "${rebloom.kafka.topics.biometric-received}",
         groupId = "${rebloom.kafka.consumer.group-id}",
         containerFactory = "rebloomKafkaListenerContainerFactory"
     )
@@ -29,7 +29,7 @@ public class BiometricRawEventConsumer {
         try {
             MDC.put("correlationId", envelope.correlationId());
 
-            if (!EventTypes.BIOMETRIC_DATA_RECEIVED.equals(envelope.eventType())) {
+            if (!EventTypes.BIOMETRIC_RECEIVED.equals(envelope.eventType())) {
                 log.warn("Unexpected eventType. eventType={}, eventId={}", envelope.eventType(), envelope.eventId());
                 return;
             }

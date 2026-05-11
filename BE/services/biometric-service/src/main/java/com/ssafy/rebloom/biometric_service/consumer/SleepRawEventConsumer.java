@@ -21,7 +21,7 @@ public class SleepRawEventConsumer {
     private final SleepService sleepService;
 
     @KafkaListener(
-        topics = "${rebloom.kafka.topics.sleep-raw}",
+        topics = "${rebloom.kafka.topics.sleep-received}",
         groupId = "${rebloom.kafka.consumer.group-id}",
         containerFactory = "rebloomKafkaListenerContainerFactory"
     )
@@ -29,7 +29,7 @@ public class SleepRawEventConsumer {
         try {
             MDC.put("correlationId", envelope.correlationId());
 
-            if (!EventTypes.SLEEP_DATA_RECEIVED.equals(envelope.eventType())) {
+            if (!EventTypes.SLEEP_RECEIVED.equals(envelope.eventType())) {
                 log.warn("Unexpected eventType. eventType={}, eventId={}", envelope.eventType(), envelope.eventId());
                 return;
             }

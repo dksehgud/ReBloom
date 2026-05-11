@@ -28,15 +28,15 @@ public class IntakeServiceImpl implements IntakeService {
 
         String key = biometricRawDataRequest.userId().toString();
         String idempotencyKey = eventKeyGenerator.idempotencyKey(
-            EventTypes.BIOMETRIC_DATA_RECEIVED,
+            EventTypes.BIOMETRIC_RECEIVED,
             biometricRawDataRequest.userId().toString(),
             biometricRawDataRequest.tsStart().toString()
         );
 
         eventPublisher.publish(
-            kafkaProperties.getTopics().getBiometricRaw(),
+            kafkaProperties.getTopics().getBiometricReceived(),
             key,
-            EventTypes.BIOMETRIC_DATA_RECEIVED,
+            EventTypes.BIOMETRIC_RECEIVED,
             requestId,
             idempotencyKey,
             event
@@ -51,15 +51,15 @@ public class IntakeServiceImpl implements IntakeService {
 
         String key = event.userId().toString();
         String idempotencyKey = eventKeyGenerator.idempotencyKey(
-            EventTypes.SLEEP_DATA_RECEIVED,
+            EventTypes.SLEEP_RECEIVED,
             event.userId().toString(),
             event.wakeup().toString()
         );
 
         eventPublisher.publish(
-            kafkaProperties.getTopics().getSleepRaw(),
+            kafkaProperties.getTopics().getSleepReceived(),
             key,
-            EventTypes.SLEEP_DATA_RECEIVED,
+            EventTypes.SLEEP_RECEIVED,
             requestId,
             idempotencyKey,
             event

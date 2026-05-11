@@ -21,7 +21,7 @@ public class PhqResultEventConsumer {
     private final PhqResultService phqResultService;
 
     @KafkaListener(
-        topics = "${rebloom.kafka.topics.phq-result}",
+        topics = "${rebloom.kafka.topics.phq-completed}",
         groupId = "${rebloom.kafka.consumer.group-id}",
         containerFactory = "rebloomKafkaListenerContainerFactory"
     )
@@ -29,7 +29,7 @@ public class PhqResultEventConsumer {
         try {
             MDC.put("correlationId", envelope.correlationId());
 
-            if (!EventTypes.PHQ_RESULT_PREDICTED.equals(envelope.eventType())) {
+            if (!EventTypes.PHQ_COMPLETED.equals(envelope.eventType())) {
                 log.warn("Unexpected eventType. eventType={}, eventId={}", envelope.eventType(), envelope.eventId());
                 return;
             }
