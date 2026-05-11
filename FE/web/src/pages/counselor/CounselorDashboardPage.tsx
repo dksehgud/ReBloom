@@ -21,6 +21,7 @@ import {
   FiX,
 } from 'react-icons/fi'
 
+import type { CounselorCommentResponseDto } from '../../features/counselor/api/counselorCommentApi'
 import DiaryEmotionIcon from '../../features/diary/components/DiaryEmotionIcon'
 import type { DiaryEmotionKey } from '../../features/diary/constants/diaryEmotions'
 
@@ -33,6 +34,8 @@ type ChildListItem = {
 
 type ObservationRecord = {
   id: number
+  childrenId: string
+  reportId: string
   date: string
   day: string
   mood: string
@@ -40,11 +43,10 @@ type ObservationRecord = {
   comment?: ObservationComment | null
 }
 
-type ObservationComment = {
-  id: number
-  relativeTime: string
-  text: string
-}
+type ObservationComment = CounselorCommentResponseDto
+
+type ObservationRecordSeed = Omit<ObservationRecord, 'childrenId' | 'reportId'> &
+  Partial<Pick<ObservationRecord, 'childrenId' | 'reportId'>>
 
 type TimelineEntry = {
   id: number
@@ -137,6 +139,54 @@ const selectedChildProfile = {
   guardianName: '유주경',
 }
 
+const MOCK_CHILDREN_ID = '22222222-2222-2222-2222-222222222222'
+const MOCK_COUNSELOR_ID = '55555555-5555-5555-5555-555555555555'
+
+function getMockReportId(recordId: number) {
+  return `11111111-1111-4111-8111-${String(recordId).padStart(12, '0')}`
+}
+
+function getMockCommentId(recordId: number) {
+  return `44444444-4444-4444-8444-${String(recordId).padStart(12, '0')}`
+}
+
+function createMockComment(
+  recordId: number,
+  context: string,
+  createdAt = '2026-05-07T21:00:00',
+): ObservationComment {
+  return {
+    commentId: getMockCommentId(recordId),
+    counselorId: MOCK_COUNSELOR_ID,
+    reportId: getMockReportId(recordId),
+    context,
+    createdAt,
+  }
+}
+
+function createObservationRecord(record: ObservationRecordSeed): ObservationRecord {
+  return {
+    ...record,
+    childrenId: record.childrenId ?? MOCK_CHILDREN_ID,
+    reportId: record.reportId ?? getMockReportId(record.id),
+  }
+}
+
+function formatCommentCreatedAt(createdAt: string) {
+  const date = new Date(createdAt)
+
+  if (Number.isNaN(date.getTime())) {
+    return createdAt
+  }
+
+  return new Intl.DateTimeFormat('ko-KR', {
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(date)
+}
+
 const childList: ChildListItem[] = [
   {
     id: 1,
@@ -152,18 +202,14 @@ const childList: ChildListItem[] = [
   { id: 7, name: '박지우', meta: '12세(여)', subText: '보호자 : 박민정' },
 ]
 
-const observationRecords: ObservationRecord[] = [
+const observationRecords: ObservationRecord[] = ([
   {
     id: 1,
     date: '04/15',
     day: '화',
     mood: '침묵',
     text: '저녁 식사 때 말이 별로 없었음',
-    comment: {
-      id: 1,
-      relativeTime: '2시간 전',
-      text: '아이에게 이렇게 이렇게 다가가 보세요',
-    },
+    comment: createMockComment(1, '아이에게 이렇게 이렇게 다가가 보세요'),
   },
   {
     id: 2,
@@ -200,10 +246,10 @@ const observationRecords: ObservationRecord[] = [
     mood: '불안',
     text: '숙제를 시작하기 전 걱정을 여러 번 표현함',
   },
-]
+] satisfies ObservationRecordSeed[]).map(createObservationRecord)
 
 const observationRecordsByWeek: Record<string, ObservationRecord[]> = {
-  '2026-04-week-4': [
+  '2026-04-week-4': ([
     {
       id: 101,
       date: '04/22',
@@ -225,9 +271,9 @@ const observationRecordsByWeek: Record<string, ObservationRecord[]> = {
       mood: '평온',
       text: '가족과 간식을 먹으며 편안하게 쉬었음',
     },
-  ],
+  ] satisfies ObservationRecordSeed[]).map(createObservationRecord),
   '2026-05-week-1': observationRecords,
-  '2026-05-week-2': [
+  '2026-05-week-2': ([
     {
       id: 201,
       date: '05/08',
@@ -256,14 +302,14 @@ const observationRecordsByWeek: Record<string, ObservationRecord[]> = {
       mood: '활발',
       text: '산책 중 주변 풍경을 이야기하며 웃음이 많았음',
     },
-  ],
+  ] satisfies ObservationRecordSeed[]).map(createObservationRecord),
 }
 
 const allObservationRecords = Object.values(observationRecordsByWeek).flat()
 
-const initialObservationComments = allObservationRecords.reduce<Record<number, ObservationComment | null>>(
+const initialObservationComments = allObservationRecords.reduce<Record<string, ObservationComment | null>>(
   (comments, record) => {
-    comments[record.id] = record.comment ?? null
+    comments[record.reportId] = record.comment ?? null
     return comments
   },
   {},
@@ -751,17 +797,28 @@ function getWeekAdjustedLineData(
 function BarChart({ weekIndex }: { weekIndex: number }) {
   return (
     <div className="counselor-bar-chart" aria-label="수면 점수 추이">
-      {sleepScoreBars.map((bar, index) => (
-        <div className="counselor-bar-chart-item" key={bar.label}>
-          <div className="counselor-bar-track">
-            <span
-              className={bar.variant === 'warning' ? 'is-warning' : undefined}
-              style={{ height: `${getWeekAdjustedValue(bar.value, weekIndex, index)}%` }}
-            />
+      {sleepScoreBars.map((bar, index) => {
+        const adjustedValue = getWeekAdjustedValue(bar.value, weekIndex, index)
+        const isWarning = bar.variant === 'warning'
+
+        return (
+          <div className="counselor-bar-chart-item" key={bar.label}>
+            <div className="counselor-bar-track">
+              <span
+                className={`counselor-bar-score${isWarning ? ' is-warning' : ''}`}
+                style={{ bottom: `calc(${adjustedValue}% + 6px)` }}
+              >
+                {adjustedValue}
+              </span>
+              <span
+                className={`counselor-bar-fill${isWarning ? ' is-warning' : ''}`}
+                style={{ height: `${adjustedValue}%` }}
+              />
+            </div>
+            <strong>{bar.label}</strong>
           </div>
-          <strong>{bar.label}</strong>
-        </div>
-      ))}
+        )
+      })}
     </div>
   )
 }
@@ -921,7 +978,7 @@ function ObservationList({
   onSelect,
 }: {
   records: ObservationRecord[]
-  comments: Record<number, ObservationComment | null>
+  comments: Record<string, ObservationComment | null>
   onSelect: (record: ObservationRecord) => void
 }) {
   return (
@@ -943,7 +1000,7 @@ function ObservationList({
           <div className="counselor-observation-content">
             <MetricTag tone="green">{record.mood}</MetricTag>
             <p>{record.text}</p>
-            {comments[record.id] ? (
+            {comments[record.reportId] ? (
               <span className="counselor-comment-link">
                 <FiMessageSquare aria-hidden="true" />
                 상담사 코멘트 1개
@@ -966,8 +1023,8 @@ function ObservationCommentModal({
   record: ObservationRecord
   comment: ObservationComment | null
   onClose: () => void
-  onSave: (recordId: number, text: string) => void
-  onDelete: (recordId: number) => void
+  onSave: (record: ObservationRecord, context: string) => void
+  onDelete: (reportId: string, commentId: string) => void
 }) {
   const [draft, setDraft] = useState('')
   const trimmedDraft = draft.trim()
@@ -996,7 +1053,7 @@ function ObservationCommentModal({
       return
     }
 
-    onSave(record.id, trimmedDraft)
+    onSave(record, trimmedDraft)
     setDraft('')
   }
 
@@ -1038,31 +1095,32 @@ function ObservationCommentModal({
                 <span className="counselor-observation-comment-dot" aria-hidden="true" />
                 <div>
                   <div className="counselor-observation-comment-meta">
-                    <span>{comment.relativeTime}</span>
-                    <button type="button" onClick={() => onDelete(record.id)}>
+                    <span>{formatCommentCreatedAt(comment.createdAt)}</span>
+                    <button type="button" onClick={() => onDelete(record.reportId, comment.commentId)}>
                       삭제
                     </button>
                   </div>
-                  <p>{comment.text}</p>
+                  <p>{comment.context}</p>
                 </div>
               </div>
             ) : (
-              <p className="counselor-observation-comment-empty">
-                아직 작성된 코멘트가 없습니다.
-              </p>
+              <>
+                <p className="counselor-observation-comment-empty">
+                  아직 작성된 코멘트가 없습니다.
+                </p>
+                <div className="counselor-observation-comment-form">
+                  <textarea
+                    value={draft}
+                    onChange={(event) => setDraft(event.target.value)}
+                    placeholder="코멘트를 입력하세요..."
+                    aria-label="상담사 코멘트"
+                  />
+                  <button type="submit" disabled={!trimmedDraft}>
+                    코멘트 추가
+                  </button>
+                </div>
+              </>
             )}
-
-            <div className="counselor-observation-comment-form">
-              <textarea
-                value={draft}
-                onChange={(event) => setDraft(event.target.value)}
-                placeholder="코멘트를 입력하세요..."
-                aria-label="상담사 코멘트"
-              />
-              <button type="submit" disabled={!trimmedDraft}>
-                코멘트 추가
-              </button>
-            </div>
           </form>
         </div>
       </section>
@@ -1340,24 +1398,22 @@ function CounselorDashboardPage() {
   const currentObservationRecords =
     observationRecordsByWeek[observationWeek.currentWeek.id] ?? []
   const selectedObservationComment = selectedObservation
-    ? observationComments[selectedObservation.id] ?? null
+    ? observationComments[selectedObservation.reportId] ?? null
     : null
 
-  const handleSaveObservationComment = (recordId: number, text: string) => {
+  const handleSaveObservationComment = (record: ObservationRecord, context: string) => {
     setObservationComments((current) => ({
       ...current,
-      [recordId]: {
-        id: Date.now(),
-        relativeTime: '방금 전',
-        text,
-      },
+      [record.reportId]: createMockComment(record.id, context, new Date().toISOString()),
     }))
   }
 
-  const handleDeleteObservationComment = (recordId: number) => {
+  const handleDeleteObservationComment = (reportId: string, commentId: string) => {
+    void commentId
+
     setObservationComments((current) => ({
       ...current,
-      [recordId]: null,
+      [reportId]: null,
     }))
   }
 
@@ -1552,7 +1608,7 @@ function CounselorDashboardPage() {
                 />
                 <LineChart
                   data={getWeekAdjustedLineData(biometricRatio, biometricRatioWeek.weekIndex)}
-                  color="#f2a57d"
+                  color="#6B9AC4"
                 />
                 <p className="counselor-card-note">
                   수요일에 행동 활성 지표가 유독 낮게 관찰되며 이후 점진적으로
