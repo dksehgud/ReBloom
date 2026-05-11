@@ -1,0 +1,115 @@
+.counselor-bar-chart {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: clamp(16px, 3.4vw, 30px);
+  min-height: 184px;
+  padding: 22px 4px 0;
+}
+
+.counselor-bar-chart-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.counselor-bar-score {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  color: #6b9ac4;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.2;
+  white-space: nowrap;
+  z-index: 1;
+}
+
+.counselor-bar-score.is-warning {
+  color: #efa88f;
+}
+
+.counselor-bar-track {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  width: 30px;
+  height: 148px;
+}
+
+.counselor-bar-fill {
+  display: block;
+  width: 100%;
+  min-height: 24px;
+  background: linear-gradient(180deg, #84c4e6 0%, #6faed3 100%);
+  border-radius: 10px 10px 2px 2px;
+}
+
+.counselor-bar-fill.is-warning {
+  background: linear-gradient(180deg, #f7bb91 0%, #ee9f6f 100%);
+}
+
+.counselor-bar-chart-item strong {
+  color: var(--dashboard-muted);
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.counselor-line-chart {
+  width: 100%;
+  height: auto;
+  min-height: 164px;
+}
+
+.counselor-line-chart line {
+  stroke: rgba(168, 178, 188, 0.18);
+  stroke-width: 1;
+}
+
+.counselor-line-chart path {
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2.6;
+}
+
+.counselor-line-chart circle {
+  stroke: #ffffff;
+  stroke-width: 2;
+}
+
+.counselor-line-chart text {
+  fill: #a0aec0;
+  font-family: 'Inter', 'Noto Sans KR', sans-serif;
+  font-size: 9px;
+}
+
+.counselor-line-chart-label {
+  fill: var(--dashboard-muted);
+  text-anchor: middle;
+}
+
+.counselor-line-chart-emotion {
+  overflow: visible;
+  pointer-events: none;
+}
+
+.counselor-line-chart-emotion-icon {
+  display: block;
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
+}
+
+
+@media (max-width: 560px) {
+  .counselor-bar-chart {
+    gap: 12px;
+    justify-content: space-between;
+  }
+
+  .counselor-bar-track {
+    width: 24px;
+  }
+}

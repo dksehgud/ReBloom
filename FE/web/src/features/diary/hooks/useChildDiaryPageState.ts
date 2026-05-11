@@ -233,17 +233,30 @@ function useChildDiaryPageState() {
 
   useEffect(() => {
     if (!diaryBridge.isAvailable()) {
-      return
+      return undefined
     }
+
+    let isEffectActive = true
 
     try {
       const nextRecords = diaryBridge.getDiariesByMonth(currentMonthKey).map(nativeDiaryToRecord)
-      setRecordsByMonth((prev) => ({
-        ...prev,
-        [currentMonthKey]: nextRecords,
-      }))
+
+      queueMicrotask(() => {
+        if (!isEffectActive) {
+          return
+        }
+
+        setRecordsByMonth((prev) => ({
+          ...prev,
+          [currentMonthKey]: nextRecords,
+        }))
+      })
     } catch (error) {
       console.error('Failed to load native diary records', error)
+    }
+
+    return () => {
+      isEffectActive = false
     }
   }, [currentMonthKey])
 

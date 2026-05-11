@@ -1,0 +1,192 @@
+.counselor-dashboard-card {
+  box-sizing: border-box;
+  padding: 24px;
+  background: var(--dashboard-card);
+  border: 1px solid rgba(139, 181, 196, 0.12);
+  border-radius: 14px;
+  box-shadow: 0 8px 22px rgba(38, 55, 76, 0.035);
+}
+
+.counselor-dashboard-card-title {
+  position: relative;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: 0 0 18px;
+}
+
+.counselor-dashboard-card-title h3 {
+  margin: 0;
+  color: var(--dashboard-text);
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.5;
+}
+
+.counselor-dashboard-info-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  z-index: 31;
+}
+
+.counselor-dashboard-info-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  color: #94a3b8;
+  background: transparent;
+  border: 0;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.counselor-dashboard-info-button:hover,
+.counselor-dashboard-info-button[aria-expanded='true'] {
+  color: var(--dashboard-blue);
+  background: rgba(136, 181, 196, 0.12);
+}
+
+.counselor-dashboard-info-button:focus-visible {
+  outline: 2px solid rgba(136, 181, 196, 0.45);
+  outline-offset: 2px;
+}
+
+.counselor-dashboard-info-button svg {
+  width: 16px;
+  height: 16px;
+}
+
+.counselor-dashboard-tooltip-row {
+  position: absolute;
+  top: 30px;
+  left: 50%;
+  z-index: 100;
+  display: flex;
+  justify-content: center;
+  width: max-content;
+  max-width: min(300px, calc(100vw - 96px));
+  pointer-events: auto;
+  transform: translateX(-50%);
+}
+
+.counselor-dashboard-tooltip {
+  position: relative;
+  box-sizing: border-box;
+  max-width: 300px;
+  padding: 12px 14px;
+  color: #4b5563;
+  background: #f8fafc;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.12);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.5;
+  text-align: center;
+  white-space: normal;
+  word-break: keep-all;
+}
+
+.counselor-dashboard-tooltip::before {
+  position: absolute;
+  top: -6px;
+  left: calc(50% - var(--tooltip-arrow-offset, 0px));
+  width: 12px;
+  height: 12px;
+  background: #f8fafc;
+  border-top: 1px solid #e5e7eb;
+  border-left: 1px solid #e5e7eb;
+  content: '';
+  transform: translateX(-50%) rotate(45deg);
+}
+
+.counselor-dashboard-tag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 18px;
+  padding: 2px 9px;
+  border-radius: 999px;
+  color: #a8b2bc;
+  background: rgba(168, 178, 188, 0.12);
+  font-size: 9px;
+  font-weight: 600;
+  line-height: 1.3;
+  white-space: nowrap;
+}
+
+.counselor-dashboard-tag.is-green {
+  color: #9bc4a8;
+  background: rgba(155, 196, 168, 0.12);
+}
+
+.counselor-dashboard-tag.is-blue {
+  color: var(--dashboard-blue);
+  background: rgba(136, 181, 196, 0.2);
+}
+
+.counselor-dashboard-tag.is-orange {
+  color: #f2a57d;
+  background: rgba(242, 165, 125, 0.14);
+}
+
+
+.counselor-card-note {
+  margin: 8px 0 0;
+  color: var(--dashboard-muted);
+  font-size: 10px;
+  line-height: 1.6;
+}
+
+.counselor-card-week,
+.counselor-expression-week {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 12px;
+}
+
+.counselor-card-week button,
+.counselor-expression-week button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  color: var(--dashboard-blue);
+  background: transparent;
+  border: 0;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.counselor-card-week button:hover:not(:disabled),
+.counselor-expression-week button:hover:not(:disabled) {
+  color: var(--dashboard-primary);
+  background: rgba(136, 181, 196, 0.12);
+}
+
+.counselor-card-week button:disabled,
+.counselor-expression-week button:disabled {
+  color: rgba(113, 128, 150, 0.35);
+  cursor: not-allowed;
+}
+
+.counselor-card-week strong,
+.counselor-expression-week strong {
+  color: var(--dashboard-text);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+@media (max-width: 560px) {
+  .counselor-dashboard-card {
+    padding: 18px;
+  }
+}
