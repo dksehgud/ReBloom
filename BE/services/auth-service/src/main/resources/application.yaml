@@ -52,3 +52,4 @@ rebloom:
       - "/api/v1/auth/*/callback"
       - "/api/v1/users"
       - "/api/v1/users/profiles"
+      - "/api/v1/internal/children/*/target-location"

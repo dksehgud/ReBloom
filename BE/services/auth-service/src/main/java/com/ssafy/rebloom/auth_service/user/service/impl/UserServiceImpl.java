@@ -156,6 +156,7 @@ public class UserServiceImpl implements UserService {
             }
             case CHILDREN -> {
                 Children children = (Children) user;
+                validateChildrenLocationUpdate(request);
                 children.updateAddress(
                     resolveUpdateValue(request.address(), children.getAddress()),
                     resolveUpdateValue(request.addressDetail(), children.getAddressDetail()),
@@ -305,6 +306,15 @@ public class UserServiceImpl implements UserService {
         validateNotBlankIfPresent(request.hospitalAddress(), "hospitalAddress");
         validateNotBlankIfPresent(request.address(), "address");
         validateNotBlankIfPresent(request.addressDetail(), "addressDetail");
+    }
+
+    private void validateChildrenLocationUpdate(UserUpdateRequestDto request) {
+        boolean addressChanged = request.address() != null || request.addressDetail() != null;
+        boolean locationChanged = request.latitude() != null || request.longitude() != null;
+
+        if ((addressChanged || locationChanged) && (request.latitude() == null || request.longitude() == null)) {
+            throw new CustomException("주소 변경 시 위도와 경도는 함께 전달해야 합니다.", ErrorCode.INVALID_PARAMETER);
+        }
     }
 
     private void validateNotBlankIfPresent(String value, String fieldName) {
