@@ -11,6 +11,7 @@ type UseParentObservationListResult = {
   markedDays: number[]
   isLoading: boolean
   isError: boolean
+  refetch: () => void
   handlePreviousMonth: () => void
   handleNextMonth: () => void
 }
@@ -24,6 +25,14 @@ function moveMonth(year: number, month: number, diff: number) {
   }
 }
 
+function isAfterCurrentMonth(year: number, month: number) {
+  const today = new Date()
+  const currentYear = today.getFullYear()
+  const currentMonth = today.getMonth() + 1
+
+  return year > currentYear || (year === currentYear && month > currentMonth)
+}
+
 export function useParentObservationList(
   childrenId?: string,
 ): UseParentObservationListResult {
@@ -33,6 +42,7 @@ export function useParentObservationList(
   const [records, setRecords] = useState<ParentObservationRecord[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isError, setIsError] = useState(false)
+  const [reloadKey, setReloadKey] = useState(0)
 
   useEffect(() => {
     let isMounted = true
@@ -74,7 +84,7 @@ export function useParentObservationList(
     return () => {
       isMounted = false
     }
-  }, [accessToken, childrenId, currentMonth, currentYear])
+  }, [accessToken, childrenId, currentMonth, currentYear, reloadKey])
 
   const markedDays = useMemo(
     () => Array.from(new Set(records.map((record) => record.day))).sort((a, b) => a - b),
@@ -89,8 +99,17 @@ export function useParentObservationList(
 
   const handleNextMonth = () => {
     const nextMonth = moveMonth(currentYear, currentMonth, 1)
+
+    if (isAfterCurrentMonth(nextMonth.year, nextMonth.month)) {
+      return
+    }
+
     setCurrentYear(nextMonth.year)
     setCurrentMonth(nextMonth.month)
+  }
+
+  const refetch = () => {
+    setReloadKey((previous) => previous + 1)
   }
 
   return {
@@ -100,6 +119,7 @@ export function useParentObservationList(
     markedDays,
     isLoading,
     isError,
+    refetch,
     handlePreviousMonth,
     handleNextMonth,
   }

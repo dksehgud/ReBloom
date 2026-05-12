@@ -3,9 +3,12 @@ import { PARENT_OBSERVATION_PREVIEW_LIMIT } from '../constants/parentObservation
 import { parentObservationListMock } from '../mocks/parentObservationList'
 import type {
   ParentObservationDailyGroupDto,
+  ParentObservationDetailResponseDto,
   ParentObservationListItemDto,
   ParentObservationListResponse,
   ParentObservationListResponseDto,
+  ParentObservationMutationRequest,
+  ParentObservationMutationResponseDto,
   ParentObservationPreviewResponse,
   ParentObservationRecord,
 } from '../types/parentObservation'
@@ -19,6 +22,28 @@ type ParentObservationQueryParams = {
 
 type GetParentObservationPreviewParams = ParentObservationQueryParams & {
   limit?: number
+}
+
+type ParentObservationDetailParams = {
+  accessToken: string
+  childrenId: string
+  reportId: string
+}
+
+type ParentObservationMutationParams = {
+  accessToken: string
+  childrenId: string
+  payload: ParentObservationMutationRequest
+}
+
+type ParentObservationUpdateParams = ParentObservationMutationParams & {
+  reportId: string
+}
+
+type ParentObservationDeleteParams = {
+  accessToken: string
+  childrenId: string
+  reportId: string
 }
 
 const parentObservationApiPaths = {
@@ -54,6 +79,58 @@ function getRecordedAt(item: ParentObservationListItemDto) {
 
   const timePart = item.reportDate.split('T')[1]
   return timePart ? timePart.slice(0, 5) : '00:00'
+}
+
+function formatRelativeTimeLabel(createdAt?: string | null) {
+  if (!createdAt) {
+    return '상담사 코멘트'
+  }
+
+  const createdAtTime = new Date(createdAt).getTime()
+
+  if (Number.isNaN(createdAtTime)) {
+    return '상담사 코멘트'
+  }
+
+  const diffMinutes = Math.max(
+    0,
+    Math.floor((Date.now() - createdAtTime) / 1000 / 60),
+  )
+
+  if (diffMinutes < 1) {
+    return '방금 전'
+  }
+
+  if (diffMinutes < 60) {
+    return `${diffMinutes}분 전`
+  }
+
+  const diffHours = Math.floor(diffMinutes / 60)
+
+  if (diffHours < 24) {
+    return `${diffHours}시간 전`
+  }
+
+  return `${Math.floor(diffHours / 24)}일 전`
+}
+
+function mapCounselorComment(item: ParentObservationListItemDto) {
+  if (!item.counselorComment) {
+    return null
+  }
+
+  if (typeof item.counselorComment === 'string') {
+    return {
+      content: item.counselorComment,
+      relativeTimeLabel:
+        item.counselorCommentRelativeTime ?? '상담사 코멘트',
+    }
+  }
+
+  return {
+    content: item.counselorComment.context,
+    relativeTimeLabel: formatRelativeTimeLabel(item.counselorComment.createdAt),
+  }
 }
 
 function formatReportDate(reportDate: string) {
@@ -92,13 +169,7 @@ function mapObservationListItemToRecord(item: ParentObservationListItemDto): Par
     weekday: getWeekdayLabel(item),
     mood: item.emotionTag,
     description: item.context,
-    counselorComment:
-      item.counselorComment && item.counselorCommentRelativeTime
-        ? {
-            content: item.counselorComment,
-            relativeTimeLabel: item.counselorCommentRelativeTime,
-          }
-        : null,
+    counselorComment: mapCounselorComment(item),
   }
 }
 
@@ -196,15 +267,86 @@ export async function getParentObservationList({
     errorMessage: '보호자 관찰 기록 목록을 불러오지 못했습니다.',
   })
 
-  if (result.code) {
-    throw new Error(result.message ?? '보호자 관찰 기록 목록을 불러오지 못했습니다.')
-  }
-
-  const reports =
-    result.data.reports ?? flattenDailyReportGroups(result.data.dailyReports)
+  const reports = flattenDailyReportGroups(result.dailyReports)
 
   return {
     records: sortObservationRecords(reports.map(mapObservationListItemToRecord)),
+  }
+}
+
+export async function getParentObservationDetail({
+  accessToken,
+  childrenId,
+  reportId,
+}: ParentObservationDetailParams): Promise<ParentObservationRecord> {
+  const result = await apiRequest<ParentObservationDetailResponseDto>(
+    parentObservationApiPaths.detail(childrenId, reportId),
+    {
+      accessToken,
+      errorMessage: '보호자 관찰 기록을 불러오지 못했습니다.',
+    },
+  )
+
+  return mapObservationListItemToRecord(result)
+}
+
+export async function createParentObservationReport({
+  accessToken,
+  childrenId,
+  payload,
+}: ParentObservationMutationParams): Promise<void> {
+  const result = await apiRequest<ParentObservationMutationResponseDto>(
+    parentObservationApiPaths.list(childrenId),
+    {
+      accessToken,
+      body: payload,
+      errorMessage: '보호자 관찰 기록을 작성하지 못했습니다.',
+      method: 'POST',
+    },
+  )
+
+  if (result?.code) {
+    throw new Error(result.message ?? '보호자 관찰 기록을 작성하지 못했습니다.')
+  }
+}
+
+export async function updateParentObservationReport({
+  accessToken,
+  childrenId,
+  reportId,
+  payload,
+}: ParentObservationUpdateParams): Promise<void> {
+  const result = await apiRequest<ParentObservationMutationResponseDto>(
+    parentObservationApiPaths.detail(childrenId, reportId),
+    {
+      accessToken,
+      body: payload,
+      errorMessage: '보호자 관찰 기록을 수정하지 못했습니다.',
+      method: 'PATCH',
+    },
+  )
+
+  if (result?.code) {
+    throw new Error(result.message ?? '보호자 관찰 기록을 수정하지 못했습니다.')
+  }
+}
+
+export async function deleteParentObservationReport({
+  accessToken,
+  childrenId,
+  reportId,
+}: ParentObservationDeleteParams): Promise<void> {
+  const result = await apiRequest<ParentObservationMutationResponseDto>(
+    parentObservationApiPaths.detail(childrenId, reportId),
+    {
+      accessToken,
+      errorMessage: '보호자 관찰 기록을 삭제하지 못했습니다.',
+      method: 'DELETE',
+    },
+  )
+
+  if (result?.code) {
+    throw new Error(result.message ?? '보호자 관찰 기록을 삭제하지 못했습니다.')
   }
 }
 

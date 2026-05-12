@@ -3,6 +3,14 @@ export type ParentObservationCounselorComment = {
   relativeTimeLabel: string
 }
 
+export type ParentObservationCounselorCommentDto = {
+  commentId: string
+  counselorId: string
+  reportId: string
+  context: string
+  createdAt: string
+}
+
 export type ParentObservationRecord = {
   id: string
   reportDate: string
@@ -28,7 +36,7 @@ export type ParentObservationPreviewResponse = {
 export type ParentObservationListItemDto = {
   childrenId?: string
   context: string
-  counselorComment?: string | null
+  counselorComment?: string | ParentObservationCounselorCommentDto | null
   counselorCommentRelativeTime?: string | null
   dayOfWeek?: string
   emotionTag: string
@@ -45,10 +53,21 @@ export type ParentObservationDailyGroupDto = {
 }
 
 export type ParentObservationListResponseDto = {
+  dailyReports?: ParentObservationDailyGroupDto[]
+}
+
+export type ParentObservationDetailResponseDto = ParentObservationListItemDto & {
+  counselorComment?: ParentObservationCounselorCommentDto | null
+}
+
+export type ParentObservationMutationRequest = {
+  context: string
+  emotionTag: string
+  reportDate: string
+}
+
+export type ParentObservationMutationResponseDto = {
   code?: string | null
   message?: string | null
-  data: {
-    dailyReports?: ParentObservationDailyGroupDto[]
-    reports?: ParentObservationListItemDto[]
-  }
+  data?: null
 }
