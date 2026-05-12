@@ -2,11 +2,15 @@ package com.ssafy.rebloom.notification_service.controller;
 
 import com.ssafy.rebloom.common.dto.BaseResponse;
 import com.ssafy.rebloom.common.dto.SliceResponseDto;
+import com.ssafy.rebloom.notification_service.dto.request.DiaryReminderSettingUpdateRequestDto;
+import com.ssafy.rebloom.notification_service.dto.response.DiaryReminderSettingResponseDto;
 import com.ssafy.rebloom.notification_service.dto.response.NotificationResponseDto;
 import com.ssafy.rebloom.notification_service.service.NotificationService;
+import com.ssafy.rebloom.notification_service.service.NotificationSettingService;
 import com.ssafy.rebloom.notification_service.service.NotificationSseService;
 import com.ssafy.rebloom.security.annotation.LoginUserId;
 import com.ssafy.rebloom.security.annotation.LoginUserRole;
+import jakarta.validation.Valid;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
@@ -18,6 +22,8 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -30,6 +36,7 @@ public class NotificationController {
 
     private final NotificationSseService notificationSseService;
     private final NotificationService notificationService;
+    private final NotificationSettingService notificationSettingService;
 
     @GetMapping(value = "/subscribe", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     @PreAuthorize("isAuthenticated()")
@@ -83,6 +90,31 @@ public class NotificationController {
         int updatedCount = notificationService.markAllAsRead(userId);
         return ResponseEntity.ok(
             BaseResponse.success("전체 알림 읽음 처리 성공", updatedCount)
+        );
+    }
+
+    @GetMapping("/settings")
+    public ResponseEntity<BaseResponse<DiaryReminderSettingResponseDto>> getDiaryReminderSetting(
+        @LoginUserId UUID userId
+    ) {
+        DiaryReminderSettingResponseDto response =
+            notificationSettingService.getDiaryReminderSetting(userId);
+
+        return ResponseEntity.ok(
+            BaseResponse.success("알림 설정 조회 성공", response)
+        );
+    }
+
+    @PutMapping("/settings")
+    public ResponseEntity<BaseResponse<DiaryReminderSettingResponseDto>> updateDiaryReminderSetting(
+        @LoginUserId UUID userId,
+        @RequestBody @Valid DiaryReminderSettingUpdateRequestDto request
+    ) {
+        DiaryReminderSettingResponseDto response =
+            notificationSettingService.updateDiaryReminderSetting(userId, request);
+
+        return ResponseEntity.ok(
+            BaseResponse.success("알림 설정 수정 성공", response)
         );
     }
 }

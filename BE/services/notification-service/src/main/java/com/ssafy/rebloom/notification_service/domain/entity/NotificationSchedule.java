@@ -48,4 +48,18 @@ public class NotificationSchedule extends BaseTime {
 
     @Column(nullable = false)
     private LocalTime time;
+
+    public static NotificationSchedule create(
+        UUID userId,
+        NotificationType notificationType,
+        ScheduleDay day,
+        LocalTime time
+    ) {
+        return NotificationSchedule.builder()
+            .userId(userId)
+            .notificationType(notificationType)
+            .day(day)
+            .time(time)
+            .build();
+    }
 }
