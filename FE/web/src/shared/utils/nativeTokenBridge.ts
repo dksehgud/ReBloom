@@ -1,19 +1,25 @@
-type AndroidTokenBridge = {
-  clearToken?: () => void
-  saveToken?: (token: string) => void
-}
-
 declare global {
   interface Window {
-    Android?: AndroidTokenBridge
+    Android?: {
+      saveToken?: (token: string) => void
+      clearToken?: () => void
+    }
   }
 }
 
-function saveNativeAccessToken(accessToken: string) {
+function saveNativeAccessToken(accessToken: string | null | undefined) {
+  if (!accessToken || typeof window === 'undefined') {
+    return
+  }
+
   window.Android?.saveToken?.(accessToken)
 }
 
 function clearNativeAccessToken() {
+  if (typeof window === 'undefined') {
+    return
+  }
+
   window.Android?.clearToken?.()
 }
 
