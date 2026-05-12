@@ -1,6 +1,8 @@
 export type ChildAddress = {
   baseAddress: string
   detailAddress: string
+  latitude?: number
+  longitude?: number
 }
 
 export function formatChildAddress(address: ChildAddress) {

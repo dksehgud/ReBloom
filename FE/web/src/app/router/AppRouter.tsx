@@ -245,6 +245,8 @@ function ChildSettingsRoute() {
   const childProfileAddress: ChildAddress = {
     baseAddress: currentUser?.address ?? profileAddress.baseAddress,
     detailAddress: currentUser?.addressDetail ?? profileAddress.detailAddress,
+    latitude: currentUser?.latitude ?? profileAddress.latitude,
+    longitude: currentUser?.longitude ?? profileAddress.longitude,
   }
 
   return (
@@ -270,6 +272,8 @@ function ChildSettingsRoute() {
             {
               address: nextAddress.baseAddress,
               addressDetail: nextAddress.detailAddress,
+              latitude: nextAddress.latitude,
+              longitude: nextAddress.longitude,
             },
             accessToken,
           )
