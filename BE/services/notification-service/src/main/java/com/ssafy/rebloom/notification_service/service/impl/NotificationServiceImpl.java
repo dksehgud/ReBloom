@@ -14,7 +14,7 @@ import com.ssafy.rebloom.notification_service.repository.NotificationRepository;
 import com.ssafy.rebloom.notification_service.resolver.NotificationTypeResolver;
 import com.ssafy.rebloom.notification_service.resolver.ReceiverResolveClient;
 import com.ssafy.rebloom.notification_service.service.FcmService;
-import com.ssafy.rebloom.notification_service.service.NotificationRealtimeService;
+import com.ssafy.rebloom.notification_service.service.NotificationRedisPublishService;
 import com.ssafy.rebloom.notification_service.service.NotificationService;
 import com.ssafy.rebloom.notification_service.service.NotificationSettingService;
 import com.ssafy.rebloom.notification_service.service.OnlineStatusService;
@@ -32,7 +32,7 @@ public class NotificationServiceImpl implements NotificationService {
     private final NotificationTypeResolver notificationTypeResolver;
     private final NotificationSettingService notificationSettingService;
     private final OnlineStatusService onlineStatusService;
-    private final NotificationRealtimeService notificationRealtimeService;
+    private final NotificationRedisPublishService notificationRedisPublishService;
     private final FcmService fcmService;
     private final ReceiverResolveClient receiverResolveClient;
 
@@ -42,7 +42,6 @@ public class NotificationServiceImpl implements NotificationService {
         if (!Boolean.TRUE.equals(event.isAnomaly())) {
             return;
         }
-
         UUID childrenId = event.userId();
         ParentReceiverInfo receiverInfo = receiverResolveClient.resolveParentByChildrenId(childrenId);
 
@@ -51,10 +50,7 @@ public class NotificationServiceImpl implements NotificationService {
             .content(String.format("지금 한번 %s에게 관심을 표현해볼까요?", receiverInfo.childrenName()))
             .childrenId(receiverInfo.childrenId())
             .childrenName(receiverInfo.childrenName())
-            .childrenReportId(null)
             .parentId(receiverInfo.parentId())
-            .counselorId(null)
-            .counselorName(null)
             .build();
 
         send(new NotificationCommand(
@@ -105,7 +101,7 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     private void publishRealtime(Notification notification, NotificationCommand command) {
-        notificationRealtimeService.publish(new RealtimeNotificationMessage(
+        notificationRedisPublishService.publish(new RealtimeNotificationMessage(
             notification.getId(),
             notification.getReceiverId(),
             command.receiverRole(),

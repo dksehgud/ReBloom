@@ -10,7 +10,7 @@ import org.springframework.stereotype.Component;
 
 @Component
 @RequiredArgsConstructor
-public class NotificationRealtimeService {
+public class NotificationRedisPublishService {
 
     private final StringRedisTemplate redisTemplate;
     private final ObjectMapper objectMapper;
