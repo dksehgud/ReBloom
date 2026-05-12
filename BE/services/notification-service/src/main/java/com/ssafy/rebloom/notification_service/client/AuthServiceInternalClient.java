@@ -1,6 +1,7 @@
 package com.ssafy.rebloom.notification_service.client;
 
 import com.ssafy.rebloom.common.dto.BaseResponse;
+import com.ssafy.rebloom.notification_service.dto.response.ChildIotDeviceResponseDto;
 import com.ssafy.rebloom.notification_service.dto.response.ParentReceiverResponseDto;
 import java.util.UUID;
 import org.springframework.cloud.openfeign.FeignClient;
@@ -15,6 +16,11 @@ public interface AuthServiceInternalClient {
 
     @GetMapping("/api/v1/children/{childrenId}/parent-receiver")
     BaseResponse<ParentReceiverResponseDto> getParentReceiver(
+        @PathVariable UUID childrenId
+    );
+
+    @GetMapping("/api/v1/children/{childrenId}/iot-device")
+    BaseResponse<ChildIotDeviceResponseDto> getChildIotDevice(
         @PathVariable UUID childrenId
     );
 }

@@ -17,8 +17,10 @@ import com.ssafy.rebloom.notification_service.dto.response.NotificationResponseD
 import com.ssafy.rebloom.notification_service.repository.NotificationRepository;
 import com.ssafy.rebloom.notification_service.resolver.NotificationTypeResolver;
 import com.ssafy.rebloom.notification_service.resolver.ReceiverResolveClient;
+import com.ssafy.rebloom.notification_service.service.AnomalyAlertPolicyService;
+import com.ssafy.rebloom.notification_service.service.AnomalyConversationTriggerService;
 import com.ssafy.rebloom.notification_service.service.FcmService;
-import com.ssafy.rebloom.notification_service.service.NotificationRedisPublishService;
+import com.ssafy.rebloom.notification_service.pubsub.NotificationRedisPublisher;
 import com.ssafy.rebloom.notification_service.service.NotificationService;
 import com.ssafy.rebloom.notification_service.service.NotificationSettingService;
 import com.ssafy.rebloom.notification_service.service.OnlineStatusService;
@@ -38,9 +40,11 @@ public class NotificationServiceImpl implements NotificationService {
     private final NotificationTypeResolver notificationTypeResolver;
     private final NotificationSettingService notificationSettingService;
     private final OnlineStatusService onlineStatusService;
-    private final NotificationRedisPublishService notificationRedisPublishService;
+    private final NotificationRedisPublisher notificationRedisPublisher;
     private final FcmService fcmService;
     private final ReceiverResolveClient receiverResolveClient;
+    private final AnomalyConversationTriggerService anomalyConversationTriggerService;
+    private final AnomalyAlertPolicyService anomalyAlertPolicyService;
 
     @Override
     @Transactional
@@ -48,7 +52,13 @@ public class NotificationServiceImpl implements NotificationService {
         if (!Boolean.TRUE.equals(event.isAnomaly())) {
             return;
         }
+
         UUID childrenId = event.userId();
+
+        if (!anomalyAlertPolicyService.tryAcquireAlertCoolTime(childrenId)) {
+            return;
+        }
+
         ParentReceiverInfo receiverInfo = receiverResolveClient.resolveParentByChildrenId(childrenId);
 
         NotificationPayload payload = NotificationPayload.builder()
@@ -65,6 +75,8 @@ public class NotificationServiceImpl implements NotificationService {
             NotificationCode.RISK_ALERT,
             payload
         ));
+
+        anomalyConversationTriggerService.handleAnomaly(event, correlationId);
     }
 
     @Override
@@ -147,7 +159,7 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     private void publishRealtime(Notification notification, NotificationCommand command) {
-        notificationRedisPublishService.publish(new RealtimeNotificationMessage(
+        notificationRedisPublisher.publish(new RealtimeNotificationMessage(
             notification.getId(),
             notification.getReceiverId(),
             command.receiverRole(),

@@ -1,7 +1,8 @@
-package com.ssafy.rebloom.notification_service.service;
+package com.ssafy.rebloom.notification_service.pubsub;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ssafy.rebloom.notification_service.dto.RealtimeNotificationMessage;
+import com.ssafy.rebloom.notification_service.service.NotificationSseService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -9,7 +10,7 @@ import org.springframework.stereotype.Component;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class NotificationRedisSubscribeService {
+public class NotificationRedisSubscriber {
     private final ObjectMapper objectMapper;
     private final NotificationSseService notificationSseService;
 
