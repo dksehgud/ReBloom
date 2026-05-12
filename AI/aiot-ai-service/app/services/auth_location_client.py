@@ -18,10 +18,9 @@ async def fetch_user_target_location(user_id: str) -> dict:
 
     Expected auth-service response:
         {
-          "userId": "uuid-or-string",
+          "childId": "uuid-or-string",
           "latitude": 37.5012,
-          "longitude": 127.0396,
-          "deviceId": "rpi-001"
+          "longitude": 127.0396
         }
     """
     url = (
@@ -38,7 +37,7 @@ async def fetch_user_target_location(user_id: str) -> dict:
 
     body = response.json()
     data = body.get("data", body)
-    required_fields = ("latitude", "longitude", "deviceId")
+    required_fields = ("latitude", "longitude")
     missing_fields = [field for field in required_fields if field not in data]
     if missing_fields:
         raise AuthLocationClientError(

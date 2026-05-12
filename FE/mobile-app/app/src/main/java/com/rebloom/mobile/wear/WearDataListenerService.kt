@@ -7,6 +7,7 @@ import com.google.android.gms.wearable.DataMapItem
 import com.google.android.gms.wearable.WearableListenerService
 import com.rebloom.mobile.network.ApiClient
 import com.rebloom.mobile.network.BiometricRequest
+import com.rebloom.mobile.network.LocationEvaluateRequest
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -21,34 +22,53 @@ class WearDataListenerService : WearableListenerService() {
 
     override fun onDataChanged(dataEvents: DataEventBuffer) {
         dataEvents.forEach { event ->
-            if (event.type == DataEvent.TYPE_CHANGED &&
-                event.dataItem.uri.path?.startsWith("/biometric/") == true) {
+            if (event.type != DataEvent.TYPE_CHANGED) {
+                return@forEach
+            }
 
-                val dataMap = DataMapItem.fromDataItem(event.dataItem).dataMap
-
-                val tsStart = dataMap.getLong("tsStart")
-                val tsEnd = dataMap.getLong("tsEnd")
-                val hr = dataMap.getFloat("hr")
-                val ibi = dataMap.getFloat("ibi")
-                val accXAvg = dataMap.getFloat("accXAvg")
-                val accYAvg = dataMap.getFloat("accYAvg")
-                val accZAvg = dataMap.getFloat("accZAvg")
-                val accMag = dataMap.getFloat("accMag")
-                val rmssd = dataMap.getFloat("rmssd")
-                val pnn50 = dataMap.getFloat("pnn50")
-                val lfHf = dataMap.getFloat("lfHf")
-                val hrAccRatio = dataMap.getFloat("hrAccRatio")
-                val missingnessScore = dataMap.getFloat("missingnessScore")
-
-                Log.d("WearDataListener", "데이터 수신: HR=$hr, RMSSD=$rmssd, LF/HF=$lfHf")
-
-                sendBiometric(
-                    tsStart, tsEnd, hr, ibi,
-                    accXAvg, accYAvg, accZAvg, accMag,
-                    rmssd, pnn50, lfHf, hrAccRatio, missingnessScore
-                )
+            when {
+                event.dataItem.uri.path?.startsWith("/biometric/") == true -> handleBiometric(event)
+                event.dataItem.uri.path?.startsWith("/location/") == true -> handleLocation(event)
             }
         }
+    }
+
+    private fun handleBiometric(event: DataEvent) {
+        val dataMap = DataMapItem.fromDataItem(event.dataItem).dataMap
+
+        val tsStart = dataMap.getLong("tsStart")
+        val tsEnd = dataMap.getLong("tsEnd")
+        val hr = dataMap.getFloat("hr")
+        val ibi = dataMap.getFloat("ibi")
+        val accXAvg = dataMap.getFloat("accXAvg")
+        val accYAvg = dataMap.getFloat("accYAvg")
+        val accZAvg = dataMap.getFloat("accZAvg")
+        val accMag = dataMap.getFloat("accMag")
+        val rmssd = dataMap.getFloat("rmssd")
+        val pnn50 = dataMap.getFloat("pnn50")
+        val lfHf = dataMap.getFloat("lfHf")
+        val hrAccRatio = dataMap.getFloat("hrAccRatio")
+        val missingnessScore = dataMap.getFloat("missingnessScore")
+
+        Log.d(TAG, "Biometric received: hr=$hr, rmssd=$rmssd, lfHf=$lfHf")
+
+        sendBiometric(
+            tsStart, tsEnd, hr, ibi,
+            accXAvg, accYAvg, accZAvg, accMag,
+            rmssd, pnn50, lfHf, hrAccRatio, missingnessScore
+        )
+    }
+
+    private fun handleLocation(event: DataEvent) {
+        val dataMap = DataMapItem.fromDataItem(event.dataItem).dataMap
+
+        val timestamp = dataMap.getLong("timestamp")
+        val latitude = dataMap.getDouble("latitude")
+        val longitude = dataMap.getDouble("longitude")
+
+        Log.d(TAG, "Location received: lat=$latitude, lon=$longitude")
+
+        sendLocation(timestamp, latitude, longitude)
     }
 
     private fun sendBiometric(
@@ -63,7 +83,7 @@ class WearDataListenerService : WearableListenerService() {
         scope.launch {
             try {
                 val request = BiometricRequest(
-                    userId = "TODO: 토큰에서 userId 추출",
+                    userId = "TODO: extract userId from token",
                     tsStart = dateFormat.format(Date(tsStart)),
                     tsEnd = dateFormat.format(Date(tsEnd)),
                     hr = hr,
@@ -80,11 +100,41 @@ class WearDataListenerService : WearableListenerService() {
                 )
 
                 val response = ApiClient.create(applicationContext).sendBiometric(request)
-                Log.d("WearDataListener", "전송 성공: ${response.message}")
+                Log.d(TAG, "Biometric send success: ${response.message}")
 
             } catch (e: Exception) {
-                Log.e("WearDataListener", "전송 실패: ${e.message}")
+                Log.e(TAG, "Biometric send failed: ${e.message}")
             }
         }
+    }
+
+    private fun sendLocation(
+        timestamp: Long,
+        latitude: Double,
+        longitude: Double
+    ) {
+        scope.launch {
+            try {
+                val request = LocationEvaluateRequest(
+                    user_id = "TODO: extract userId from token",
+                    latitude = latitude,
+                    longitude = longitude,
+                    measured_at = dateFormat.format(Date(timestamp))
+                )
+
+                val response = ApiClient.create(applicationContext).evaluateLocation(request)
+                Log.d(
+                    TAG,
+                    "Location evaluate success: matched=${response.matched}, action=${response.action}"
+                )
+
+            } catch (e: Exception) {
+                Log.e(TAG, "Location evaluate failed: ${e.message}")
+            }
+        }
+    }
+
+    private companion object {
+        private const val TAG = "WearDataListener"
     }
 }

@@ -54,7 +54,7 @@ async def evaluate_location(
         longitude=float(target["longitude"]),
     )
     threshold_meters = settings.LOCATION_RADIUS_METERS
-    device_id = target["deviceId"]
+    device_id = settings.LOCATION_DEVICE_ID
 
     result = is_within_target_location(
         current=current_coordinate,

@@ -4,20 +4,20 @@ This document is for the BE owner of `BE/services/auth-service`.
 
 ## Goal
 
-`aiot-ai-service` receives the user's current GPS coordinate from the mobile app, retrieves the user's registered target coordinate and paired Raspberry Pi device id from `auth-service`, compares both coordinates using its own configured radius, and sends a signal to the Raspberry Pi device when the user is inside that radius.
+`aiot-ai-service` receives the user's current GPS coordinate from the mobile app, retrieves the child's registered target coordinate from `auth-service`, compares both coordinates using its own configured radius, and sends a signal to the configured Raspberry Pi device when the user is inside that radius.
 
 ## Flow
 
 1. Watch collects GPS.
 2. Mobile app receives GPS from watch.
 3. Mobile app calls `aiot-ai-service`.
-4. `aiot-ai-service` calls `auth-service` to retrieve the user's target location.
+4. `aiot-ai-service` calls `auth-service` to retrieve the child's target location.
 5. `aiot-ai-service` compares current GPS with target latitude/longitude.
-6. If matched, `aiot-ai-service` publishes an MQTT signal to the Raspberry Pi device id returned by `auth-service`.
+6. If matched, `aiot-ai-service` publishes an MQTT signal to the Raspberry Pi device configured by `LOCATION_DEVICE_ID`.
 
 ## Auth-Service API Required
 
-### GET `/api/v1/users/{userId}/target-location`
+### GET `/api/v1/internal/children/{childId}/target-location`
 
 Returns the location that should trigger the Raspberry Pi signal.
 
@@ -25,16 +25,17 @@ Returns the location that should trigger the Raspberry Pi signal.
 
 | Name | Type | Required | Description |
 | --- | --- | --- | --- |
-| `userId` | string | yes | User id managed by auth-service |
+| `childId` | UUID string | yes | Child user id managed by auth-service |
 
 ### Response 200
 
 ```json
 {
-  "userId": "a6a0c353-bdb0-4a7e-a85f-d9e1d94eb111",
-  "latitude": 37.501234,
-  "longitude": 127.039456,
-  "deviceId": "rpi-001"
+  "data": {
+    "childId": "a6a0c353-bdb0-4a7e-a85f-d9e1d94eb111",
+    "latitude": 37.501234,
+    "longitude": 127.039456
+  }
 }
 ```
 
@@ -42,10 +43,9 @@ Returns the location that should trigger the Raspberry Pi signal.
 
 | Field | Type | Required | Description |
 | --- | --- | --- | --- |
-| `userId` | string | yes | Same user id requested |
-| `latitude` | number | yes | Target latitude, range `-90` to `90` |
-| `longitude` | number | yes | Target longitude, range `-180` to `180` |
-| `deviceId` | string | yes | Paired Raspberry Pi device id, currently `devices.serial_number` |
+| `data.childId` | UUID string | yes | Same child id requested |
+| `data.latitude` | number | yes | Target latitude, range `-90` to `90` |
+| `data.longitude` | number | yes | Target longitude, range `-180` to `180` |
 
 ### Error Responses
 
@@ -57,7 +57,7 @@ Returns the location that should trigger the Raspberry Pi signal.
 
 ## AIoT-Service API Draft
 
-The new router file defines the following endpoint. It still needs to be registered in `app/main.py` when integration is allowed.
+The location router defines the following endpoint and is registered in `app/main.py`.
 
 ### POST `/api/v1/location/evaluate`
 
@@ -108,10 +108,11 @@ These can be added later without changing the BE contract.
 
 | Name | Default | Description |
 | --- | --- | --- |
-| `AUTH_SERVICE_BASE_URL` | `http://localhost:8080` | Base URL for auth-service |
-| `AUTH_SERVICE_LOCATION_PATH` | `/api/v1/users/{user_id}/target-location` | Path template for target location lookup |
+| `AUTH_SERVICE_BASE_URL` | `http://localhost:8081` | Base URL for auth-service |
+| `AUTH_SERVICE_LOCATION_PATH` | `/api/v1/internal/children/{user_id}/target-location` | Path template for target location lookup |
 | `AUTH_SERVICE_TIMEOUT` | `3.0` | HTTP timeout in seconds |
 | `LOCATION_RADIUS_METERS` | `100.0` | Match threshold in meters, owned by aiot-ai-service |
+| `LOCATION_DEVICE_ID` | `rpi-001` | Raspberry Pi device id used for the MQTT trigger |
 | `MQTT_TOPIC_LOCATION_SIGNAL` | `devices/{device_id}/location/trigger` | MQTT topic template for Raspberry Pi signal |
 
 ## MQTT Payload To Raspberry Pi

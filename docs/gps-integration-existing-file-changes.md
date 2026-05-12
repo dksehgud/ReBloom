@@ -16,9 +16,10 @@ Added:
 - `AUTH_SERVICE_LOCATION_PATH`
 - `AUTH_SERVICE_TIMEOUT`
 - `LOCATION_RADIUS_METERS`
+- `LOCATION_DEVICE_ID`
 - `MQTT_TOPIC_LOCATION_SIGNAL`
 
-Reason: GPS judgement needs to call `auth-service` for the target coordinate, own the radius decision in Python, and use a configurable MQTT topic for the Raspberry Pi trigger.
+Reason: GPS judgement needs to call `auth-service` for the target coordinate, own the radius and device decision in Python, and use a configurable MQTT topic for the Raspberry Pi trigger.
 
 ## AI/aiot-ai-service/.env.example
 
@@ -30,19 +31,19 @@ Reason: local, Docker, and deployed environments need explicit values without ch
 
 Removed `device_id` from `LocationEvaluateRequest`.
 
-Reason: `device_id` should come from `auth-service` through the paired device record, not from the mobile client.
+Reason: `device_id` should come from `aiot-ai-service` configuration, not from the mobile client.
 
 ## AI/aiot-ai-service/app/routers/location.py
 
-Changed location evaluation to use `deviceId` returned by `auth-service`, while `radiusMeters` comes from `aiot-ai-service` settings.
+Changed location evaluation to use latitude/longitude returned by `auth-service`, while `LOCATION_RADIUS_METERS` and `LOCATION_DEVICE_ID` come from `aiot-ai-service` settings.
 
-Reason: this keeps device ownership and pairing logic in BE, keeps location judgement policy in Python, and prevents clients from triggering arbitrary device ids.
+Reason: one watch-app-AIoT pairing is handled by the Python service configuration, and clients should not be able to trigger arbitrary device ids or radius values.
 
 ## AI/aiot-ai-service/app/services/auth_location_client.py
 
 Changed to use `settings` and unwrap `BaseResponse.data` responses.
 
-Reason: `auth-service` returns data through the common `BaseResponse` wrapper, and runtime URLs should be configured through `.env`.
+Reason: `auth-service` returns the child's target latitude/longitude through the common `BaseResponse` wrapper, and runtime URLs should be configured through `.env`.
 
 ## AI/aiot-ai-service/app/services/rpi_location_signal_client.py
 
@@ -50,29 +51,11 @@ Changed MQTT location topic lookup to use `settings.MQTT_TOPIC_LOCATION_SIGNAL`.
 
 Reason: topic format must be configurable per environment.
 
-## BE/services/auth-service/src/main/java/com/ssafy/rebloom/auth_service/user/controller/UserController.java
+## BE/services/auth-service
 
-Added `GET /api/v1/users/{userId}/target-location`.
+No existing auth-service file is modified by this integration branch.
 
-Reason: `aiot-ai-service` needs a simple internal API to retrieve the child's registered latitude/longitude and paired Raspberry Pi device id.
-
-## BE/services/auth-service/src/main/java/com/ssafy/rebloom/auth_service/user/service/UserService.java
-
-Added `getTargetLocation(UUID childrenId)`.
-
-Reason: exposes the target-location use case from the service layer.
-
-## BE/services/auth-service/src/main/java/com/ssafy/rebloom/auth_service/user/service/impl/UserServiceImpl.java
-
-Added target-location lookup logic.
-
-Reason: validates that the child has registered coordinates, finds the active parent relation, then resolves the latest paired device serial number as `deviceId`. It intentionally does not decide `radiusMeters`; that belongs to `aiot-ai-service`.
-
-## BE/services/auth-service/src/main/java/com/ssafy/rebloom/auth_service/user/repository/DeviceRepository.java
-
-Added `findLatestPairedDeviceByParentId`.
-
-Reason: GPS triggers need the Raspberry Pi device id paired to the connected parent.
+Reason: develop already provides `GET /api/v1/internal/children/{childId}/target-location`, returning the child's registered latitude/longitude. `aiot-ai-service` now consumes that API and owns radius/device configuration locally.
 
 ## BE/services/gateway-service/src/main/resources/application.yaml
 
