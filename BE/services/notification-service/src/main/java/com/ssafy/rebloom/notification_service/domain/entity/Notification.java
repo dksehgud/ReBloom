@@ -61,4 +61,8 @@ public class Notification extends BaseTime {
     public void markFailed() {
         this.deliveryStatus = DeliveryStatus.FAILED;
     }
+
+    public void markRead() {
+        this.isRead = true;
+    }
 }

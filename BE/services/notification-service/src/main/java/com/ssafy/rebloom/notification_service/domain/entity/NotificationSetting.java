@@ -32,6 +32,12 @@ public class NotificationSetting extends BaseTime {
     @Column(nullable = false)
     private boolean isEnabled = true;
 
+    public static NotificationSetting create(UUID userId, boolean isEnabled) {
+        return NotificationSetting.builder()
+            .userId(userId)
+            .isEnabled(isEnabled)
+            .build();
+    }
     public void updateEnabled(boolean isEnabled) {
         this.isEnabled = isEnabled;
     }

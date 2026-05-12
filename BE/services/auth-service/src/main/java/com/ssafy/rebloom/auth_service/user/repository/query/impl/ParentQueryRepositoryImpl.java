@@ -1,6 +1,5 @@
 package com.ssafy.rebloom.auth_service.user.repository.query.impl;
 
-
 import static com.ssafy.rebloom.auth_service.user.domain.entity.QChildren.children;
 import static com.ssafy.rebloom.auth_service.user.domain.entity.QChildrenParentRelation.childrenParentRelation;
 import static com.ssafy.rebloom.auth_service.user.domain.entity.QParent.parent;
