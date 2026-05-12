@@ -94,6 +94,7 @@ public class NotificationController {
     }
 
     @GetMapping("/settings")
+    @PreAuthorize("hasRole('CHILDREN')")
     public ResponseEntity<BaseResponse<DiaryReminderSettingResponseDto>> getDiaryReminderSetting(
         @LoginUserId UUID userId
     ) {
@@ -106,6 +107,7 @@ public class NotificationController {
     }
 
     @PutMapping("/settings")
+    @PreAuthorize("hasRole('CHILDREN')")
     public ResponseEntity<BaseResponse<DiaryReminderSettingResponseDto>> updateDiaryReminderSetting(
         @LoginUserId UUID userId,
         @RequestBody @Valid DiaryReminderSettingUpdateRequestDto request
