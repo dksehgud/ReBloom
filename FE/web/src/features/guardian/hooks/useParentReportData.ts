@@ -62,9 +62,16 @@ function getMondayOfWeek(date: Date) {
 }
 
 function getWeekLabelByEndDate(endDate: Date) {
-  const weekOfMonth = Math.ceil(endDate.getDate() / DAYS_PER_WEEK)
+  const thursday = addDays(getMondayOfWeek(endDate), 3)
+  const firstDayOfLabelMonth = new Date(thursday.getFullYear(), thursday.getMonth(), 1)
+  const daysUntilFirstThursday =
+    (4 - firstDayOfLabelMonth.getDay() + DAYS_PER_WEEK) % DAYS_PER_WEEK
+  const firstThursday = addDays(firstDayOfLabelMonth, daysUntilFirstThursday)
+  const weekOfMonth =
+    Math.floor((thursday.getTime() - firstThursday.getTime()) / (DAYS_PER_WEEK * 24 * 60 * 60 * 1000)) +
+    1
 
-  return `${endDate.getFullYear()}년 ${endDate.getMonth() + 1}월 ${weekOfMonth}주차`
+  return `${thursday.getFullYear()}년 ${thursday.getMonth() + 1}월 ${weekOfMonth}주차`
 }
 
 const dayOfWeekLabelMap: Record<string, ReportWeekday> = {
