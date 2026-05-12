@@ -42,7 +42,7 @@ public class AuthServiceResolveServiceImpl implements AuthServiceResolveService 
     @Override
     public ChildrenIotInfoResponseDto resolveChildrenIotInfo(UUID childrenId) {
         BaseResponse<ChildrenIotInfoResponseDto> response =
-            authServiceInternalClient.getChildrenAiotInfo(childrenId);
+            authServiceInternalClient.getChildrenIotInfo(childrenId);
 
         ChildrenIotInfoResponseDto childrenIotInfoResponseDto = response.getData();
 

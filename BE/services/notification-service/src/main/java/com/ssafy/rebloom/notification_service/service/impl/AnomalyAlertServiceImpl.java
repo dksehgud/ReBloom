@@ -40,6 +40,8 @@ public class AnomalyAlertServiceImpl implements AnomalyAlertService {
         try {
             mqttPublishService.publishConversationStart(iotInfo, correlationId);
         } catch (Exception e) {
+            releaseConversationLock(childrenId);
+
             log.error(
                 "Failed to publish MQTT conversation start message. childrenId={}, serialNumber={}",
                 childrenId,
@@ -78,5 +80,9 @@ public class AnomalyAlertServiceImpl implements AnomalyAlertService {
 
     private String conversationLockKey(UUID childrenId) {
         return Constants.CONVERSATION_LOCK_KEY_PREFIX + childrenId;
+    }
+
+    private void releaseConversationLock(UUID childrenId) {
+        redisService.delete(conversationLockKey(childrenId));
     }
 }
