@@ -1,3 +1,4 @@
+import { apiRequest } from '../../../shared/api/client'
 import type { AppRole } from '../../../shared/types/appRole'
 
 type BaseResponse<T> = {
@@ -65,6 +66,19 @@ type UserUpdateRequest = {
   longitude?: number
 }
 
+type PasswordChangeRequest = {
+  currentPassword: string
+  newPassword: string
+  newPasswordConfirm: string
+}
+
+type AuthRequestOptions = {
+  accessToken?: string | null
+  body?: unknown
+  method?: 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE'
+  withAuth?: boolean
+}
+
 class AuthApiError extends Error {
   code?: string
 
@@ -74,10 +88,6 @@ class AuthApiError extends Error {
     this.code = code ?? undefined
   }
 }
-
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL?.trim().replace(/\/$/, '') ??
-  (import.meta.env.DEV ? 'http://localhost:8080' : '')
 
 const AUTH_API_PREFIX = '/auth/api/v1'
 
@@ -89,47 +99,33 @@ function toAppRole(role: BackendRole): Exclude<AppRole, null> {
   return role.toLowerCase() as Exclude<AppRole, null>
 }
 
-async function request<T>(
-  path: string,
-  options: RequestInit = {},
-  accessToken?: string | null,
-) {
-  const headers = new Headers(options.headers)
-
-  if (options.body && !headers.has('Content-Type')) {
-    headers.set('Content-Type', 'application/json')
-  }
-
-  if (accessToken) {
-    headers.set('Authorization', `Bearer ${accessToken}`)
-  }
-
-  const response = await fetch(`${API_BASE_URL}${path}`, {
-    ...options,
-    credentials: 'include',
-    headers,
+async function request<T>(path: string, options: AuthRequestOptions = {}) {
+  const response = await apiRequest<BaseResponse<T> | null>(path, {
+    accessToken: options.accessToken,
+    body: options.body,
+    method: options.method,
+    withAuth: options.withAuth,
   })
 
-  const body = (await response.json().catch(() => null)) as BaseResponse<T> | null
-
-  if (!response.ok || body?.code) {
+  if (response?.code) {
     throw new AuthApiError(
-      body?.message ?? '요청 처리 중 오류가 발생했습니다.',
-      body?.code,
+      response.message ?? '요청 처리 중 오류가 발생했습니다.',
+      response.code,
     )
   }
 
-  if (!body) {
+  if (!response) {
     throw new AuthApiError('서버 응답이 올바르지 않습니다.')
   }
 
-  return body
+  return response
 }
 
 async function login(email: string, password: string) {
   const response = await request<LoginResponse>(`${AUTH_API_PREFIX}/auth/login`, {
     method: 'POST',
-    body: JSON.stringify({ email, password }),
+    body: { email, password },
+    withAuth: false,
   })
 
   if (!response.data) {
@@ -139,12 +135,10 @@ async function login(email: string, password: string) {
   return response.data
 }
 
-async function getMyInfo(accessToken: string) {
-  const response = await request<UserInfoResponse>(
-    `${AUTH_API_PREFIX}/users`,
-    undefined,
+async function getMyInfo(accessToken?: string | null) {
+  const response = await request<UserInfoResponse>(`${AUTH_API_PREFIX}/users`, {
     accessToken,
-  )
+  })
 
   if (!response.data) {
     throw new AuthApiError('사용자 정보를 불러오지 못했습니다.')
@@ -158,7 +152,8 @@ async function checkEmailDuplicate(email: string) {
     `${AUTH_API_PREFIX}/auth/emails/duplications`,
     {
       method: 'POST',
-      body: JSON.stringify({ email }),
+      body: { email },
+      withAuth: false,
     },
   )
 
@@ -168,7 +163,8 @@ async function checkEmailDuplicate(email: string) {
 async function sendEmailVerificationCode(email: string) {
   await request<void>(`${AUTH_API_PREFIX}/auth/emails/verification-codes`, {
     method: 'POST',
-    body: JSON.stringify({ email }),
+    body: { email },
+    withAuth: false,
   })
 }
 
@@ -177,7 +173,8 @@ async function verifyEmailCode(email: string, code: string) {
     `${AUTH_API_PREFIX}/auth/emails/verifications`,
     {
       method: 'POST',
-      body: JSON.stringify({ email, code }),
+      body: { email, code },
+      withAuth: false,
     },
   )
 
@@ -187,19 +184,17 @@ async function verifyEmailCode(email: string, code: string) {
 async function signup(payload: SignupRequest) {
   await request<void>(`${AUTH_API_PREFIX}/users`, {
     method: 'POST',
-    body: JSON.stringify(payload),
+    body: payload,
+    withAuth: false,
   })
 }
 
-async function updateMyInfo(payload: UserUpdateRequest, accessToken: string) {
-  const response = await request<UserInfoResponse>(
-    `${AUTH_API_PREFIX}/users`,
-    {
-      method: 'PATCH',
-      body: JSON.stringify(payload),
-    },
+async function updateMyInfo(payload: UserUpdateRequest, accessToken?: string | null) {
+  const response = await request<UserInfoResponse>(`${AUTH_API_PREFIX}/users`, {
     accessToken,
-  )
+    body: payload,
+    method: 'PATCH',
+  })
 
   if (!response.data) {
     throw new AuthApiError('사용자 정보를 수정하지 못했습니다.')
@@ -208,7 +203,27 @@ async function updateMyInfo(payload: UserUpdateRequest, accessToken: string) {
   return response.data
 }
 
+async function verifyPassword(password: string, accessToken?: string | null) {
+  await request<void>(`${AUTH_API_PREFIX}/users/passwords/verifications`, {
+    accessToken,
+    body: { password },
+    method: 'POST',
+  })
+}
+
+async function changePassword(
+  payload: PasswordChangeRequest,
+  accessToken?: string | null,
+) {
+  await request<void>(`${AUTH_API_PREFIX}/users/passwords`, {
+    accessToken,
+    body: payload,
+    method: 'PATCH',
+  })
+}
+
 const authApi = {
+  changePassword,
   checkEmailDuplicate,
   getMyInfo,
   login,
@@ -216,13 +231,15 @@ const authApi = {
   signup,
   updateMyInfo,
   verifyEmailCode,
+  verifyPassword,
 }
 
 export type {
   BackendGender,
   BackendRole,
+  PasswordChangeRequest,
   SignupRequest,
-  UserUpdateRequest,
   UserInfoResponse,
+  UserUpdateRequest,
 }
 export { AuthApiError, authApi, toAppRole }

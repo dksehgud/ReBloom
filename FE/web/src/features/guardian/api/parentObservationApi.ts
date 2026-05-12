@@ -1,3 +1,4 @@
+import { apiRequest } from '../../../shared/api/client'
 import { PARENT_OBSERVATION_PREVIEW_LIMIT } from '../constants/parentObservation'
 import { parentObservationListMock } from '../mocks/parentObservationList'
 import type {
@@ -138,13 +139,9 @@ export async function getParentObservationList({
     month,
   })}`
 
-  const response = await fetch(requestPath)
-
-  if (!response.ok) {
-    throw new Error('보호자 관찰 기록 목록을 불러오지 못했습니다.')
-  }
-
-  const result = (await response.json()) as ParentObservationListResponseDto
+  const result = await apiRequest<ParentObservationListResponseDto>(requestPath, {
+    errorMessage: '보호자 관찰 기록 목록을 불러오지 못했습니다.',
+  })
 
   return {
     records: sortObservationRecords(

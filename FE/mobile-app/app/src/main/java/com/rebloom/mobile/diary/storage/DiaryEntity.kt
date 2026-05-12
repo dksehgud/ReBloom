@@ -9,7 +9,7 @@ import java.util.UUID
 @Entity(
     tableName = "child_diaries",
     indices = [
-        Index(value = ["diary_date"], unique = true),
+        Index(value = ["user_id", "diary_date"], unique = true),
     ],
 )
 data class DiaryEntity(

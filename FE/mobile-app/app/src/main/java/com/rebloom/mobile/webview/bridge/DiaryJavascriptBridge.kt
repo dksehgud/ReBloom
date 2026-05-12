@@ -14,15 +14,15 @@ class DiaryJavascriptBridge(
     private val gson: Gson = Gson(),
 ) {
     @JavascriptInterface
-    fun getDiariesByMonth(yearMonth: String): String =
+    fun getDiariesByMonth(userId: String, yearMonth: String): String =
         runBridge {
-            diaryRepository.getMonth(yearMonth)
+            diaryRepository.getMonth(userId, yearMonth)
         }
 
     @JavascriptInterface
-    fun getDiaryByDate(diaryDate: String): String =
+    fun getDiaryByDate(userId: String, diaryDate: String): String =
         runBridge {
-            diaryRepository.getByDate(diaryDate)
+            diaryRepository.getByDate(userId, diaryDate)
         }
 
     @JavascriptInterface
@@ -36,9 +36,9 @@ class DiaryJavascriptBridge(
         }
 
     @JavascriptInterface
-    fun deleteDiary(id: String): String =
+    fun deleteDiary(userId: String, id: String): String =
         runBridge {
-            mapOf("deleted" to diaryRepository.delete(id))
+            mapOf("deleted" to diaryRepository.delete(userId, id))
         }
 
     private fun <T> runBridge(block: suspend () -> T): String =

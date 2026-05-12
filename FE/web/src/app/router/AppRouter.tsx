@@ -29,6 +29,10 @@ import { authApi, toAppRole } from '../../features/auth/api/authApi'
 import { useAppSessionStore } from '../../features/auth/store/useAppSessionStore'
 import { useSelectedChildStore } from '../../features/student/store/useSelectedChildStore'
 import type { ChildAddress } from '../../shared/types/childAddress'
+import {
+  clearNativeAccessToken,
+  saveNativeAccessToken,
+} from '../../shared/utils/nativeTokenBridge'
 
 type AuthRouteContextValue = {
   email: string
@@ -183,6 +187,7 @@ function LoginRoute() {
       const nextRole = toAppRole(myInfo.role)
 
       setSessionTokens(tokens)
+      saveNativeAccessToken(tokens.accessToken)
       setActiveRole(nextRole)
       setCurrentUser(myInfo)
 
@@ -274,6 +279,7 @@ function ChildSettingsRoute() {
 
     void authApi.getMyInfo(accessToken).then(setCurrentUser).catch(() => {
       clearSession()
+      clearNativeAccessToken()
       navigate('/login', { replace: true })
     })
   }, [accessToken, clearSession, currentUser, navigate, setCurrentUser])
@@ -292,8 +298,23 @@ function ChildSettingsRoute() {
         onBack={() => navigate('/child/diary')}
         onLogout={() => {
           clearSession()
+          clearNativeAccessToken()
           clearSelectedChild()
           navigate('/login', { replace: true })
+        }}
+        onVerifyCurrentPassword={async (password) => {
+          if (!accessToken) {
+            throw new Error('로그인이 필요합니다.')
+          }
+
+          await authApi.verifyPassword(password, accessToken)
+        }}
+        onChangePassword={async (payload) => {
+          if (!accessToken) {
+            throw new Error('로그인이 필요합니다.')
+          }
+
+          await authApi.changePassword(payload, accessToken)
         }}
         onSaveProfileAddress={async (nextAddress) => {
           setProfileAddress(nextAddress)
