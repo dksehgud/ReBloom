@@ -1,5 +1,8 @@
 package com.ssafy.rebloom.notification_service.service.impl;
 
+import com.ssafy.rebloom.common.dto.SliceResponseDto;
+import com.ssafy.rebloom.common.exception.CustomException;
+import com.ssafy.rebloom.common.exception.ErrorCode;
 import com.ssafy.rebloom.event.dto.AnomalyEvent;
 import com.ssafy.rebloom.notification_service.domain.entity.Notification;
 import com.ssafy.rebloom.notification_service.domain.entity.NotificationPayload;
@@ -10,6 +13,7 @@ import com.ssafy.rebloom.notification_service.domain.enums.ReceiverRole;
 import com.ssafy.rebloom.notification_service.dto.NotificationCommand;
 import com.ssafy.rebloom.notification_service.dto.ParentReceiverInfo;
 import com.ssafy.rebloom.notification_service.dto.RealtimeNotificationMessage;
+import com.ssafy.rebloom.notification_service.dto.response.NotificationResponseDto;
 import com.ssafy.rebloom.notification_service.repository.NotificationRepository;
 import com.ssafy.rebloom.notification_service.resolver.NotificationTypeResolver;
 import com.ssafy.rebloom.notification_service.resolver.ReceiverResolveClient;
@@ -20,6 +24,8 @@ import com.ssafy.rebloom.notification_service.service.NotificationSettingService
 import com.ssafy.rebloom.notification_service.service.OnlineStatusService;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -82,6 +88,46 @@ public class NotificationServiceImpl implements NotificationService {
         }
 
         deliver(notification, command);
+    }
+
+    @Override
+    public SliceResponseDto<NotificationResponseDto> getNotifications(UUID receiverId,
+        Boolean isRead, Pageable pageable) {
+        Slice<Notification> notifications;
+
+        if (isRead == null) {
+            notifications = notificationRepository.findByReceiverIdOrderByCreatedAtDesc(
+                receiverId,
+                pageable
+            );
+        } else {
+            notifications = notificationRepository.findByReceiverIdAndReadOrderByCreatedAtDesc(
+                receiverId,
+                isRead,
+                pageable
+            );
+        }
+
+        Slice<NotificationResponseDto> response = notifications.map(NotificationResponseDto::from);
+        return SliceResponseDto.from(response);
+    }
+
+    @Override
+    @Transactional
+    public void markAsRead(UUID receiverId, Long notificationId) {
+        Notification notification = notificationRepository.findByIdAndReceiverId(
+                notificationId,
+                receiverId
+            )
+            .orElseThrow(() -> new CustomException("알림을 찾을 수 없습니다.", ErrorCode.NOTIFICATION_NOT_FOUND));
+
+        notification.markRead();
+    }
+
+    @Override
+    @Transactional
+    public int markAllAsRead(UUID receiverId) {
+        return notificationRepository.markAllAsReadByReceiverId(receiverId);
     }
 
     private void deliver(Notification notification, NotificationCommand command) {
