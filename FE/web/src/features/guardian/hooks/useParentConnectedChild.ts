@@ -6,7 +6,9 @@ import {
   useSelectedChildStore,
 } from '../../student/store/useSelectedChildStore'
 import { getParentConnectedChild } from '../api/parentRelationApi'
+import { parentConnectedChildMock } from '../mocks/parentRelation'
 import type { ParentConnectedChild } from '../types/parentRelation'
+import { useParentMockMode } from './useParentMockMode'
 
 type UseParentConnectedChildResult = {
   connectedChild: ParentConnectedChild | null
@@ -18,14 +20,28 @@ type UseParentConnectedChildResult = {
 
 export function useParentConnectedChild(): UseParentConnectedChildResult {
   const accessToken = useAppSessionStore((state) => state.accessToken)
+  const isMockMode = useParentMockMode()
   const clearSelectedChild = useSelectedChildStore((state) => state.clearSelectedChild)
   const selectedChild = useSelectedChildStore((state) => state.selectedChild)
   const setSelectedChild = useSelectedChildStore((state) => state.setSelectedChild)
   const [connectedChild, setConnectedChild] = useState<ParentConnectedChild | null>(null)
-  const [isLoading, setIsLoading] = useState(Boolean(accessToken))
+  const [isLoading, setIsLoading] = useState(Boolean(accessToken || isMockMode))
   const [isError, setIsError] = useState(false)
 
   const loadConnectedChild = useCallback(async () => {
+    if (isMockMode) {
+      setConnectedChild(parentConnectedChildMock)
+      setSelectedChild({
+        age: parentConnectedChildMock.age,
+        email: parentConnectedChildMock.email,
+        id: parentConnectedChildMock.id ?? 'mock-child',
+        name: parentConnectedChildMock.name ?? '자녀',
+      })
+      setIsError(false)
+      setIsLoading(false)
+      return
+    }
+
     if (!accessToken) {
       setConnectedChild(null)
       setIsError(false)
@@ -60,7 +76,7 @@ export function useParentConnectedChild(): UseParentConnectedChildResult {
     } finally {
       setIsLoading(false)
     }
-  }, [accessToken, clearSelectedChild, setSelectedChild])
+  }, [accessToken, clearSelectedChild, isMockMode, setSelectedChild])
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {

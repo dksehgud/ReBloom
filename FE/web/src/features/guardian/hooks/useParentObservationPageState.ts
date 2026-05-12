@@ -10,6 +10,7 @@ import {
 import { type ParentObservationMood } from '../constants/parentObservationMoods'
 import type { ParentObservationRecord } from '../types/parentObservation'
 import { useParentObservationList } from './useParentObservationList'
+import { useParentMockMode } from './useParentMockMode'
 
 type ParentObservationModalMode = 'detail' | 'create' | 'edit' | 'delete' | null
 
@@ -84,6 +85,7 @@ function sortRecords(records: ParentObservationRecord[]) {
 
 export function useParentObservationPageState(childrenId?: string) {
   const accessToken = useAppSessionStore((state) => state.accessToken)
+  const isMockMode = useParentMockMode()
   const {
     currentYear,
     currentMonth,
@@ -113,7 +115,9 @@ export function useParentObservationPageState(childrenId?: string) {
   const [isMutating, setIsMutating] = useState(false)
 
   const monthKey = getMonthKey(currentYear, currentMonth)
-  const canUseObservationApi = Boolean(accessToken && childrenId)
+  const canUseObservationApi = Boolean(!isMockMode && accessToken && childrenId)
+  const canUseLocalMock = isMockMode
+  const canMutateObservation = canUseObservationApi || canUseLocalMock
 
   const clearCurrentMonthOverride = () => {
     setRecordsOverrideByMonth((previous) => {
@@ -228,7 +232,7 @@ export function useParentObservationPageState(childrenId?: string) {
     setSelectedRecordDetail(fallbackRecord)
     setModalMode('detail')
 
-    if (!accessToken || !childrenId) {
+    if (isMockMode || !accessToken || !childrenId) {
       return
     }
 
@@ -252,7 +256,7 @@ export function useParentObservationPageState(childrenId?: string) {
   }
 
   const handleOpenDelete = () => {
-    if (!selectedRecord) {
+    if (!selectedRecord || !canMutateObservation) {
       return
     }
 
@@ -260,7 +264,7 @@ export function useParentObservationPageState(childrenId?: string) {
   }
 
   const handleConfirmDelete = async () => {
-    if (!selectedRecord) {
+    if (!selectedRecord || !canMutateObservation) {
       return
     }
 
@@ -302,7 +306,7 @@ export function useParentObservationPageState(childrenId?: string) {
   }
 
   const handleOpenEdit = () => {
-    if (!selectedRecord) {
+    if (!selectedRecord || !canMutateObservation) {
       return
     }
 
@@ -331,6 +335,10 @@ export function useParentObservationPageState(childrenId?: string) {
   }
 
   const handleOpenCreate = () => {
+    if (!canMutateObservation) {
+      return
+    }
+
     const today = new Date()
     const isViewingTodayMonth =
       currentYear === today.getFullYear() && currentMonth === today.getMonth() + 1
@@ -412,7 +420,7 @@ export function useParentObservationPageState(childrenId?: string) {
   const handleSubmitDraft = async () => {
     const nextDescription = draftDescription.trim()
 
-    if (!draftMood || nextDescription.length === 0) {
+    if (!draftMood || nextDescription.length === 0 || !canMutateObservation) {
       return
     }
 

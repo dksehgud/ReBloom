@@ -169,7 +169,9 @@ function getWeekdayLabel(item: ParentObservationListItemDto) {
   return weekdayLabels[date.getDay()] ?? ''
 }
 
-function mapObservationListItemToRecord(item: ParentObservationListItemDto): ParentObservationRecord {
+export function mapObservationListItemToRecord(
+  item: ParentObservationListItemDto,
+): ParentObservationRecord {
   return {
     id: item.reportId,
     reportDate: getDatePart(item.reportDate),
@@ -183,7 +185,7 @@ function mapObservationListItemToRecord(item: ParentObservationListItemDto): Par
   }
 }
 
-function sortObservationRecords(records: ParentObservationRecord[]) {
+export function sortObservationRecords(records: ParentObservationRecord[]) {
   return [...records].sort((left, right) => {
     const leftKey = `${left.reportDate}T${left.recordedAt}`
     const rightKey = `${right.reportDate}T${right.recordedAt}`

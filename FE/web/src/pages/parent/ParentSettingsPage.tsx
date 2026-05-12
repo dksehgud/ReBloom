@@ -11,6 +11,7 @@ import {
   type ParentCounselorCandidate,
 } from '../../features/guardian/constants/parentSettings'
 import { useParentConnectedChild } from '../../features/guardian/hooks/useParentConnectedChild'
+import { useParentMockMode } from '../../features/guardian/hooks/useParentMockMode'
 import { mockCounselorCandidate } from '../../features/guardian/mocks/parentSettings'
 import ChildPasswordChangeModal from '../../features/user/components/ChildPasswordChangeModal'
 
@@ -228,6 +229,7 @@ function ContactRow({
 function ParentSettingsPage() {
   const accessToken = useAppSessionStore((state) => state.accessToken)
   const currentUser = useAppSessionStore((state) => state.currentUser)
+  const isMockMode = useParentMockMode()
   const { selectedChild } = useParentConnectedChild()
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false)
   const [isCounselorModalOpen, setIsCounselorModalOpen] = useState(false)
@@ -235,18 +237,19 @@ function ParentSettingsPage() {
     useState<ParentCounselorCandidate | null>(null)
 
   const isCounselorConnected = connectedCounselor !== null
+  const hasConnectedChild = Boolean(selectedChild?.id)
   const parentProfile = {
     email: currentUser?.email ?? '',
     name: currentUser?.name ?? '보호자',
   }
-  const linkedChildName = selectedChild?.name ?? '연결된 아이가 없습니다.'
+  const linkedChildName = selectedChild?.name ?? '아직 연결된 아이가 없습니다.'
   const linkedChildAgeLabel =
     typeof selectedChild?.age === 'number' ? `${selectedChild.age}세` : ''
   const linkedChildEmail = selectedChild?.email ?? ''
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
-      if (!accessToken) {
+      if (isMockMode || !accessToken || !hasConnectedChild) {
         setConnectedCounselor(null)
         return
       }
@@ -272,7 +275,7 @@ function ParentSettingsPage() {
     }, 0)
 
     return () => window.clearTimeout(timeoutId)
-  }, [accessToken])
+  }, [accessToken, hasConnectedChild, isMockMode])
 
   const handleVerifyCurrentPassword = async (password: string) => {
     if (!accessToken) {
@@ -341,7 +344,7 @@ function ParentSettingsPage() {
                     {linkedChildEmail}
                   </a>
                 ) : (
-                  '아이 계정과 연결되면 정보가 표시됩니다.'
+                  '아이 계정 회원가입 시 부모 정보를 입력하면 연결됩니다.'
                 )
               }
               icon={<UserIcon />}
@@ -353,7 +356,14 @@ function ParentSettingsPage() {
         <section className="parent-settings-page__section">
           <h2 className="parent-settings-page__section-title">상담사 연결</h2>
           <div className="parent-settings-page__box">
-            {isCounselorConnected && connectedCounselor ? (
+            {!hasConnectedChild ? (
+              <ParentSettingsRow
+                title="아이 연결 후 상담사 연결이 가능합니다."
+                description="아이 계정이 부모 정보로 연결되면 상담사 연결을 진행할 수 있어요."
+                icon={<PlusIcon />}
+                showDivider={false}
+              />
+            ) : isCounselorConnected && connectedCounselor ? (
               <ParentSettingsRow
                 title={connectedCounselor.name}
                 description={connectedCounselor.clinicName}
@@ -375,7 +385,7 @@ function ParentSettingsPage() {
         <section className="parent-settings-page__section">
           <h2 className="parent-settings-page__section-title">연락처</h2>
           <div className="parent-settings-page__box">
-            {isCounselorConnected && connectedCounselor ? (
+            {hasConnectedChild && isCounselorConnected && connectedCounselor ? (
               <ContactRow
                 title={connectedCounselor.name}
                 description={connectedCounselor.clinicName}

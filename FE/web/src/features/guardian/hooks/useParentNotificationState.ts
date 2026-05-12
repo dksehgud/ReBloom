@@ -6,13 +6,21 @@ import {
   markParentNotificationAsRead,
 } from '../api/parentNotificationApi'
 import type { ParentNotificationItem } from '../constants/parentNotifications'
+import { parentNotificationsMock } from '../mocks/parentNotifications'
 import type { ParentNotificationDto } from '../types/parentNotification'
+import { useParentMockMode } from './useParentMockMode'
 
 function useParentNotificationState(initialItems: ParentNotificationItem[] = []) {
   const [notifications, setNotifications] = useState<ParentNotificationItem[]>(() => initialItems)
   const accessToken = useAppSessionStore((state) => state.accessToken)
+  const isMockMode = useParentMockMode()
 
   const loadNotifications = useCallback(async () => {
+    if (isMockMode) {
+      setNotifications(parentNotificationsMock)
+      return
+    }
+
     if (!accessToken) {
       setNotifications([])
       return
@@ -25,7 +33,7 @@ function useParentNotificationState(initialItems: ParentNotificationItem[] = [])
       console.error(error)
       setNotifications([])
     }
-  }, [accessToken])
+  }, [accessToken, isMockMode])
 
   const markAsRead = useCallback((notificationId: string) => {
     setNotifications((currentItems) =>
@@ -36,7 +44,7 @@ function useParentNotificationState(initialItems: ParentNotificationItem[] = [])
 
     const apiNotificationId = Number(notificationId)
 
-    if (!accessToken || Number.isNaN(apiNotificationId)) {
+    if (isMockMode || !accessToken || Number.isNaN(apiNotificationId)) {
       return
     }
 
@@ -46,7 +54,7 @@ function useParentNotificationState(initialItems: ParentNotificationItem[] = [])
     }).catch((error: unknown) => {
       console.error(error)
     })
-  }, [accessToken])
+  }, [accessToken, isMockMode])
 
   const chooseAction = useCallback((notificationId: string, actionKey: string) => {
     setNotifications((currentItems) =>

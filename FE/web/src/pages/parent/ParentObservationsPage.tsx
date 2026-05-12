@@ -22,7 +22,8 @@ function ParentObservationsHeader({ childName }: { childName?: string }) {
 }
 
 function ParentObservationsPage() {
-  const { selectedChild } = useParentConnectedChild()
+  const { isLoading: isChildLoading, selectedChild } = useParentConnectedChild()
+  const hasConnectedChild = Boolean(selectedChild?.id)
   const {
     currentYear,
     currentMonth,
@@ -82,10 +83,16 @@ function ParentObservationsPage() {
           records={selectedDateRecords}
           selectedDateLabel={selectedDateLabel}
           currentMonthLabel={`${currentMonth}월`}
-          isLoading={isLoading}
+          emptyDescription={
+            hasConnectedChild
+              ? undefined
+              : '아이 계정 회원가입 시 부모 정보를 입력하면 관찰 기록을 입력할 수 있어요.'
+          }
+          emptyMessage={hasConnectedChild ? undefined : '아직 연결된 아이가 없습니다.'}
+          isLoading={isChildLoading || isLoading}
           isError={isError}
-          onAddRecord={handleOpenCreate}
-          onSelectRecord={handleSelectRecord}
+          onAddRecord={hasConnectedChild ? handleOpenCreate : undefined}
+          onSelectRecord={hasConnectedChild ? handleSelectRecord : undefined}
         />
       </div>
 

@@ -1,8 +1,14 @@
 import { useEffect, useMemo, useState } from 'react'
 
 import { useAppSessionStore } from '../../auth/store/useAppSessionStore'
-import { getParentObservationList } from '../api/parentObservationApi'
+import {
+  getParentObservationList,
+  mapObservationListItemToRecord,
+  sortObservationRecords,
+} from '../api/parentObservationApi'
+import { parentObservationListMock } from '../mocks/parentObservationList'
 import type { ParentObservationRecord } from '../types/parentObservation'
+import { useParentMockMode } from './useParentMockMode'
 
 type UseParentObservationListResult = {
   currentYear: number
@@ -37,6 +43,7 @@ export function useParentObservationList(
   childrenId?: string,
 ): UseParentObservationListResult {
   const accessToken = useAppSessionStore((state) => state.accessToken)
+  const isMockMode = useParentMockMode()
   const [currentYear, setCurrentYear] = useState(2026)
   const [currentMonth, setCurrentMonth] = useState(4)
   const [records, setRecords] = useState<ParentObservationRecord[]>([])
@@ -51,6 +58,28 @@ export function useParentObservationList(
       try {
         setIsLoading(true)
         setIsError(false)
+
+        if (isMockMode) {
+          const mockRecords = parentObservationListMock.filter((item) => {
+            const reportDate = new Date(`${item.reportDate.split('T')[0]}T00:00:00`)
+
+            return (
+              reportDate.getFullYear() === currentYear &&
+              reportDate.getMonth() + 1 === currentMonth
+            )
+          })
+
+          if (!isMounted) {
+            return
+          }
+
+          setRecords(
+            sortObservationRecords(
+              mockRecords.map(mapObservationListItemToRecord),
+            ),
+          )
+          return
+        }
 
         const response = await getParentObservationList({
           accessToken,
@@ -84,7 +113,7 @@ export function useParentObservationList(
     return () => {
       isMounted = false
     }
-  }, [accessToken, childrenId, currentMonth, currentYear, reloadKey])
+  }, [accessToken, childrenId, currentMonth, currentYear, isMockMode, reloadKey])
 
   const markedDays = useMemo(
     () => Array.from(new Set(records.map((record) => record.day))).sort((a, b) => a - b),

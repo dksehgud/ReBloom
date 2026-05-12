@@ -1,5 +1,6 @@
 import MobilePageLayout from '../../components/templates/MobilePageLayout/MobilePageLayout'
 import ParentBottomNavigation from '../../features/guardian/components/ParentBottomNavigation'
+import ParentChildConnectionEmptyState from '../../features/guardian/components/ParentChildConnectionEmptyState'
 import ParentObservationSection from '../../features/guardian/components/ParentObservationSection'
 import { useParentConnectedChild } from '../../features/guardian/hooks/useParentConnectedChild'
 
@@ -50,8 +51,34 @@ function ParentHomeHeader({ childName }: { childName?: string }) {
   )
 }
 
+function hasFinalConsonant(value: string) {
+  const lastCharacter = [...value.trim()].at(-1)
+
+  if (!lastCharacter) {
+    return false
+  }
+
+  const code = lastCharacter.charCodeAt(0)
+  const hangulStart = 0xac00
+  const hangulEnd = 0xd7a3
+
+  if (code < hangulStart || code > hangulEnd) {
+    return false
+  }
+
+  return (code - hangulStart) % 28 !== 0
+}
+
+function formatSubjectName(name: string) {
+  return `${name}${hasFinalConsonant(name) ? '이' : '가'}`
+}
+
 function ParentHomePage() {
-  const { selectedChild } = useParentConnectedChild()
+  const { isLoading: isChildLoading, selectedChild } = useParentConnectedChild()
+  const hasConnectedChild = Boolean(selectedChild?.id)
+  const childSubjectName = selectedChild?.name
+    ? formatSubjectName(selectedChild.name)
+    : '아이가'
 
   return (
     <MobilePageLayout
@@ -61,28 +88,45 @@ function ParentHomePage() {
       bottomNavigation={<ParentBottomNavigation />}
     >
       <div className="parent-home-page__body">
-        <section className="parent-home-page__summary-card" aria-label="보호자 홈 요약 영역">
-          <div className="parent-home-page__summary-copy">
-            <h2 className="parent-home-page__section-title">
-              지민이가 조금 지쳐 있는 것 같아요
-            </h2>
-            <p className="parent-home-page__section-description">
-              수면 질이 평소보다 좋지 않고, 활동량이 저번주에 비해 줄어들었어요.
-            </p>
-          </div>
-
-          <div className="parent-home-page__insight-box">
-            <div className="parent-home-page__tip-row">
-              <InsightTipIcon />
-              <p className="parent-home-page__tip-copy">
-                직접적인 상태 질문보다 가벼운 제안이 좋습니다.
+        {hasConnectedChild || isChildLoading ? (
+          <section className="parent-home-page__summary-card" aria-label="보호자 홈 요약 영역">
+            <div className="parent-home-page__summary-copy">
+              <h2 className="parent-home-page__section-title">
+                {hasConnectedChild
+                  ? `${childSubjectName} 조금 지쳐 있는 것 같아요`
+                  : '아이 정보를 불러오고 있어요'}
+              </h2>
+              <p className="parent-home-page__section-description">
+                {hasConnectedChild
+                  ? '수면 질이 평소보다 좋지 않고, 활동량이 저번주에 비해 줄어들었어요.'
+                  : '연결된 아이 정보를 확인한 뒤 홈 요약을 보여드릴게요.'}
               </p>
             </div>
-            <p className="parent-home-page__quote">"오늘 저녁에 같이 맛있는 거 먹을까?"</p>
-          </div>
-        </section>
 
-        <ParentObservationSection childrenId={selectedChild?.id} />
+            <div className="parent-home-page__insight-box">
+              <div className="parent-home-page__tip-row">
+                <InsightTipIcon />
+                <p className="parent-home-page__tip-copy">
+                  {hasConnectedChild
+                    ? '직접적인 상태 질문보다 가벼운 제안이 좋습니다.'
+                    : '아이 연결 후 맞춤 요약과 제안이 표시됩니다.'}
+                </p>
+              </div>
+              <p className="parent-home-page__quote">
+                {hasConnectedChild
+                  ? '"오늘 저녁에 같이 맛있는 거 먹을까?"'
+                  : '잠시만 기다려 주세요.'}
+              </p>
+            </div>
+          </section>
+        ) : (
+          <ParentChildConnectionEmptyState />
+        )}
+
+        <ParentObservationSection
+          childrenId={selectedChild?.id}
+          isConnectionLoading={isChildLoading}
+        />
       </div>
     </MobilePageLayout>
   )

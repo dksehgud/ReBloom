@@ -2,8 +2,14 @@ import { useEffect, useState } from 'react'
 
 import { useAppSessionStore } from '../../auth/store/useAppSessionStore'
 import { PARENT_OBSERVATION_PREVIEW_LIMIT } from '../constants/parentObservation'
-import { getParentObservationPreview } from '../api/parentObservationApi'
+import {
+  getParentObservationPreview,
+  mapObservationListItemToRecord,
+  sortObservationRecords,
+} from '../api/parentObservationApi'
+import { parentObservationListMock } from '../mocks/parentObservationList'
 import type { ParentObservationPreviewItem } from '../types/parentObservation'
+import { useParentMockMode } from './useParentMockMode'
 
 type UseParentObservationPreviewResult = {
   records: ParentObservationPreviewItem[]
@@ -15,6 +21,7 @@ export function useParentObservationPreview(
   childrenId?: string,
 ): UseParentObservationPreviewResult {
   const accessToken = useAppSessionStore((state) => state.accessToken)
+  const isMockMode = useParentMockMode()
   const [records, setRecords] = useState<ParentObservationPreviewItem[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isError, setIsError] = useState(false)
@@ -26,6 +33,19 @@ export function useParentObservationPreview(
       try {
         setIsLoading(true)
         setIsError(false)
+
+        if (isMockMode) {
+          if (!isMounted) {
+            return
+          }
+
+          setRecords(
+            sortObservationRecords(
+              parentObservationListMock.map(mapObservationListItemToRecord),
+            ).slice(0, PARENT_OBSERVATION_PREVIEW_LIMIT),
+          )
+          return
+        }
 
         const response = await getParentObservationPreview({
           accessToken,
@@ -58,7 +78,7 @@ export function useParentObservationPreview(
     return () => {
       isMounted = false
     }
-  }, [accessToken, childrenId])
+  }, [accessToken, childrenId, isMockMode])
 
   return {
     records,
