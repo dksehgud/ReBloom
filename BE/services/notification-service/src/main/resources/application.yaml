@@ -21,6 +21,9 @@ server:
 
 
 rebloom:
+  clients:
+    auth-service:
+      url: ${AUTH_SERVICE_URL:http://auth-service:8081}
   kafka:
     producer-name: notification-service
     topics:

@@ -4,6 +4,7 @@ import com.ssafy.rebloom.auth_service.auth.constants.Constants;
 import com.ssafy.rebloom.auth_service.user.domain.entity.*;
 import com.ssafy.rebloom.auth_service.user.domain.enums.RelationStatus;
 import com.ssafy.rebloom.auth_service.user.domain.enums.UserRole;
+import com.ssafy.rebloom.auth_service.user.dto.query.ParentReceiverDto;
 import com.ssafy.rebloom.auth_service.user.dto.request.PasswordChangeRequestDto;
 import com.ssafy.rebloom.auth_service.user.dto.request.ParentConnectRequestDto;
 import com.ssafy.rebloom.auth_service.user.dto.request.UserCreateRequestDto;
@@ -258,6 +259,22 @@ public class UserServiceImpl implements UserService {
 
         List<User> profiles = userRepository.findAllByEmailAndRole(email, userRole);
         return ListResponseDto.from(profiles.stream().map(UserProfileResponseDto::from).toList());
+    }
+
+    @Override
+    public ParentReceiverResponseDto getParentReceiverByChildrenId(UUID childrenId) {
+        return parentRepository.findParentReceiverByChildrenId(childrenId)
+            .map(this::toParentReceiverResponse)
+            .orElseGet(() -> ParentReceiverResponseDto.disconnected(childrenId));
+    }
+
+    private ParentReceiverResponseDto toParentReceiverResponse(ParentReceiverDto parentReceiverDto) {
+        return new ParentReceiverResponseDto(
+            true,
+            parentReceiverDto.parentId(),
+            parentReceiverDto.childrenId(),
+            parentReceiverDto.childrenName()
+        );
     }
 
     private User getUser(UUID userId) {
