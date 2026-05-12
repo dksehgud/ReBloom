@@ -67,7 +67,7 @@ function createObservationRecord(record: ObservationRecordSeed): ObservationReco
 
 const initialChildList: ChildListItem[] = [
   {
-    id: 1,
+    id: 'mock-child-1',
     name: '김주연',
     meta: '13세(남)',
     subText: '보호자 : 유주경',
@@ -77,7 +77,7 @@ const initialChildList: ChildListItem[] = [
     registeredAt: '2026-05-08T09:20:00',
   },
   {
-    id: 2,
+    id: 'mock-child-2',
     name: '이온준',
     meta: '12세(남)',
     subText: '보호자 : 한서윤',
@@ -87,7 +87,7 @@ const initialChildList: ChildListItem[] = [
     registeredAt: '2026-05-06T14:12:00',
   },
   {
-    id: 3,
+    id: 'mock-child-3',
     name: '박민서',
     meta: '14세(여)',
     subText: '보호자 : 박지현',
@@ -97,7 +97,7 @@ const initialChildList: ChildListItem[] = [
     registeredAt: '2026-05-05T10:45:00',
   },
   {
-    id: 4,
+    id: 'mock-child-4',
     name: '정민지',
     meta: '11세(여)',
     subText: '보호자 : 정하늘',
@@ -107,7 +107,7 @@ const initialChildList: ChildListItem[] = [
     registeredAt: '2026-05-03T17:30:00',
   },
   {
-    id: 5,
+    id: 'mock-child-5',
     name: '김나영',
     meta: '13세(여)',
     subText: '보호자 : 김도윤',
@@ -125,7 +125,7 @@ const initialConnectionRequests: CounselorConnectionRequest[] = [
     parentEmail: 'yuri.choi@example.com',
     requestedAt: '2026-05-11T09:18:00',
     child: {
-      id: 8,
+      id: 'mock-child-8',
       name: '최하린',
       meta: '10세(여)',
       subText: '보호자 : 최유리',
@@ -141,7 +141,7 @@ const initialConnectionRequests: CounselorConnectionRequest[] = [
     parentEmail: 'jungwoo.moon@example.com',
     requestedAt: '2026-05-10T18:42:00',
     child: {
-      id: 9,
+      id: 'mock-child-9',
       name: '문시온',
       meta: '12세(남)',
       subText: '보호자 : 문정우',

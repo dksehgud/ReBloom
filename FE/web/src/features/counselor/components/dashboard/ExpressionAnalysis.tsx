@@ -18,7 +18,7 @@ import LineChart from './charts/LineChart'
 type ExpressionAnalysisProps = {
   maxHeight?: number
   weekIndex: number
-  childId: number
+  childId: string
   onPrevWeek: () => void
   onNextWeek: () => void
 }

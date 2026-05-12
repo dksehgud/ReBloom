@@ -2,14 +2,15 @@ import type { CounselorCommentResponseDto } from '../api/counselorCommentApi'
 import type { DiaryEmotionKey } from '../../diary/constants/diaryEmotions'
 
 type ChildListItem = {
-  id: number
+  id: string
   name: string
   meta: string
   subText: string
-  age: string
-  gender: string
-  guardianName: string
+  age?: string
+  gender?: string
+  guardianName?: string
   registeredAt: string
+  counselingStatus?: string
 }
 
 type CounselorConnectionRequest = {

@@ -3,7 +3,7 @@ import { getWeekAdjustedValue } from '../../../utils/dashboardMetrics'
 
 type BarChartProps = {
   weekIndex: number
-  childId: number
+  childId: string
 }
 
 function BarChart({ weekIndex, childId }: BarChartProps) {

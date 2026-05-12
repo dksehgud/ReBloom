@@ -1,5 +1,9 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
+import {
+  getCounselorChildren,
+  type CounselorChildResponseDto,
+} from '../api/counselorChildrenApi'
 import {
   INITIAL_DASHBOARD_WEEK_INDEXES,
   createMockComment,
@@ -10,17 +14,57 @@ import {
   observationRecordsByWeek,
 } from '../mocks/dashboardMockData'
 import type {
+  ChildListItem,
   CounselorConnectionRequest,
   DashboardWeekIndexes,
   DashboardWeekSection,
   ObservationRecord,
 } from '../types/dashboard'
+import { useAppSessionStore } from '../../auth/store/useAppSessionStore'
+import { useCounselorMockMode } from './useCounselorMockMode'
+
+function getCounselingStatusLabel(status: string) {
+  if (status === 'IN_PROGRESS') {
+    return '상담 진행 중'
+  }
+
+  if (status === 'ENDED') {
+    return '상담 종료'
+  }
+
+  return status || '상담 상태 확인 중'
+}
+
+function mapCounselorChildToListItem(
+  child: CounselorChildResponseDto,
+): ChildListItem {
+  const statusLabel = getCounselingStatusLabel(child.counselingStatus)
+
+  return {
+    id: child.childrenId,
+    name: child.name,
+    meta: statusLabel,
+    subText: '연결된 상담 아동',
+    registeredAt: '1970-01-01T00:00:00.000Z',
+    counselingStatus: child.counselingStatus,
+  }
+}
 
 function useCounselorDashboardState() {
+  const accessToken = useAppSessionStore((state) => state.accessToken)
+  const isMockMode = useCounselorMockMode()
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
-  const [childItems, setChildItems] = useState(initialChildList)
-  const [selectedChildId, setSelectedChildId] = useState(initialChildList[0].id)
-  const [connectionRequests, setConnectionRequests] = useState(initialConnectionRequests)
+  const [childItems, setChildItems] = useState<ChildListItem[]>(() =>
+    isMockMode ? initialChildList : [],
+  )
+  const [selectedChildId, setSelectedChildId] = useState<string | null>(() =>
+    isMockMode ? initialChildList[0]?.id ?? null : null,
+  )
+  const [isLoadingChildItems, setIsLoadingChildItems] = useState(!isMockMode)
+  const [childItemsError, setChildItemsError] = useState<string>()
+  const [connectionRequests, setConnectionRequests] = useState(() =>
+    isMockMode ? initialConnectionRequests : [],
+  )
   const [isConnectionModalOpen, setIsConnectionModalOpen] = useState(false)
   const [weekIndexes, setWeekIndexes] = useState<DashboardWeekIndexes>(
     INITIAL_DASHBOARD_WEEK_INDEXES,
@@ -61,14 +105,14 @@ function useCounselorDashboardState() {
   const biometricRatioWeek = getWeekControls('biometricRatio')
   const autonomicWeek = getWeekControls('autonomic')
   const currentObservationRecords =
-    observationRecordsByWeek[observationWeek.currentWeek.id] ?? []
+    selectedChildId ? observationRecordsByWeek[observationWeek.currentWeek.id] ?? [] : []
   const selectedChildProfile =
-    childItems.find((child) => child.id === selectedChildId) ?? childItems[0]
+    childItems.find((child) => child.id === selectedChildId) ?? childItems[0] ?? null
   const selectedObservationComment = selectedObservation
     ? observationComments[selectedObservation.reportId] ?? null
     : null
 
-  const handleSelectChild = (childId: number) => {
+  const handleSelectChild = (childId: string) => {
     setSelectedChildId(childId)
     setSelectedObservation(null)
     setWeekIndexes(INITIAL_DASHBOARD_WEEK_INDEXES)
@@ -114,6 +158,63 @@ function useCounselorDashboardState() {
     }))
   }
 
+  const loadChildItems = useCallback(async () => {
+    if (isMockMode) {
+      setChildItems(initialChildList)
+      setSelectedChildId(initialChildList[0]?.id ?? null)
+      setConnectionRequests(initialConnectionRequests)
+      setSelectedObservation(null)
+      setChildItemsError(undefined)
+      setIsLoadingChildItems(false)
+      return
+    }
+
+    if (!accessToken) {
+      setChildItems([])
+      setSelectedChildId(null)
+      setSelectedObservation(null)
+      setChildItemsError(undefined)
+      setIsLoadingChildItems(false)
+      return
+    }
+
+    try {
+      setIsLoadingChildItems(true)
+      setChildItemsError(undefined)
+
+      const children = await getCounselorChildren(accessToken)
+      const nextChildItems = children.map(mapCounselorChildToListItem)
+
+      setChildItems(nextChildItems)
+      setSelectedChildId((current) =>
+        current && nextChildItems.some((child) => child.id === current)
+          ? current
+          : nextChildItems[0]?.id ?? null,
+      )
+      setSelectedObservation(null)
+    } catch (error) {
+      console.error(error)
+      setChildItems([])
+      setSelectedChildId(null)
+      setSelectedObservation(null)
+      setChildItemsError(
+        error instanceof Error
+          ? error.message
+          : '상담 아동 목록을 불러오지 못했습니다.',
+      )
+    } finally {
+      setIsLoadingChildItems(false)
+    }
+  }, [accessToken, isMockMode])
+
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => {
+      void loadChildItems()
+    }, 0)
+
+    return () => window.clearTimeout(timeoutId)
+  }, [loadChildItems])
+
   useEffect(() => {
     const columnElement = mainColumnRef.current
 
@@ -147,6 +248,7 @@ function useCounselorDashboardState() {
     autonomicWeek,
     biometricRatioWeek,
     childItems,
+    childItemsError,
     connectionRequests,
     currentObservationRecords,
     expressionWeek,
@@ -156,6 +258,7 @@ function useCounselorDashboardState() {
     handleSaveObservationComment,
     handleSelectChild,
     isConnectionModalOpen,
+    isLoadingChildItems,
     isSidebarCollapsed,
     mainColumnRef,
     observationComments,
