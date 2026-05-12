@@ -1,6 +1,7 @@
 import MobilePageLayout from '../../components/templates/MobilePageLayout/MobilePageLayout'
 import ParentBottomNavigation from '../../features/guardian/components/ParentBottomNavigation'
 import ParentNotificationFeed from '../../features/guardian/components/ParentNotificationFeed'
+import { useParentConnectedChild } from '../../features/guardian/hooks/useParentConnectedChild'
 import useParentNotificationState from '../../features/guardian/hooks/useParentNotificationState'
 
 function NotificationsHeaderIcon() {
@@ -17,7 +18,9 @@ function NotificationsHeaderIcon() {
   )
 }
 
-function ParentNotificationsHeader() {
+function ParentNotificationsHeader({ childName }: { childName?: string }) {
+  const displayName = childName?.trim() || '아이'
+
   return (
     <div className="parent-notifications-page__header">
       <div className="parent-notifications-page__header-copy">
@@ -28,7 +31,7 @@ function ParentNotificationsHeader() {
           <h1 className="parent-notifications-page__title">알림</h1>
         </div>
         <p className="parent-notifications-page__subtitle">
-          지민이의 감정 변화와 중요한 소식을 확인하세요
+          {displayName}의 감정 변화와 중요한 소식을 확인하세요
         </p>
       </div>
     </div>
@@ -36,11 +39,12 @@ function ParentNotificationsHeader() {
 }
 
 function ParentNotificationsPage() {
+  const { selectedChild } = useParentConnectedChild()
   const { notifications, markAsRead, chooseAction } = useParentNotificationState()
 
   return (
     <MobilePageLayout
-      header={<ParentNotificationsHeader />}
+      header={<ParentNotificationsHeader childName={selectedChild?.name} />}
       className="parent-home-page parent-notifications-page"
       contentClassName="parent-notifications-page__content"
       bottomNavigation={<ParentBottomNavigation />}
