@@ -7,10 +7,11 @@ import com.ssafy.rebloom.auth_service.user.repository.UserRepository;
 import com.ssafy.rebloom.auth_service.user.service.InternalUserService;
 import com.ssafy.rebloom.common.exception.CustomException;
 import com.ssafy.rebloom.common.exception.ErrorCode;
-import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -31,4 +32,6 @@ public class InternalUserServiceImpl implements InternalUserService {
         return new ChildGpsResponseDto(
             children.getId(),
             children.getLatitude() == null ? null : children.getLatitude().setScale(10, java.math.RoundingMode.HALF_UP),
-            children.getLongitude() == null ? null : children.getLongitude().setScale(10, java.math.RoundingMode.HALF_UP)
+            children.getLongitude() == null ? null : children.getLongitude().setScale(10, java.math.RoundingMode.HALF_UP));
+    }
+}
