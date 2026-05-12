@@ -1,6 +1,7 @@
 import { PARENT_OBSERVATION_PREVIEW_LIMIT } from '../constants/parentObservation'
 import { parentObservationListMock } from '../mocks/parentObservationList'
 import type {
+  ParentObservationDailyGroupDto,
   ParentObservationListItemDto,
   ParentObservationListResponse,
   ParentObservationListResponseDto,
@@ -9,6 +10,7 @@ import type {
 } from '../types/parentObservation'
 
 type ParentObservationQueryParams = {
+  accessToken?: string | null
   childrenId?: string
   year?: number
   month?: number
@@ -18,11 +20,17 @@ type GetParentObservationPreviewParams = ParentObservationQueryParams & {
   limit?: number
 }
 
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL?.trim().replace(/\/$/, '') ??
+  (import.meta.env.DEV ? 'http://localhost:8080' : '')
+
 const parentObservationApiPaths = {
   list: (childrenId: string) => `/api/v1/children/${childrenId}/reports`,
   detail: (childrenId: string, reportId: string) =>
     `/api/v1/children/${childrenId}/reports/${reportId}`,
 }
+
+const weekdayLabels = ['일', '월', '화', '수', '목', '금', '토']
 
 const dayOfWeekLabelMap: Record<string, string> = {
   MON: '월',
@@ -34,29 +42,57 @@ const dayOfWeekLabelMap: Record<string, string> = {
   SUN: '일',
 }
 
-function formatReportDate(reportDate: string) {
-  const [year, month, day] = reportDate.split('-')
+function padNumber(value: number) {
+  return String(value).padStart(2, '0')
+}
 
-  if (!year || !month || !day) {
-    return reportDate
+function getDatePart(reportDate: string) {
+  return reportDate.split('T')[0] ?? reportDate
+}
+
+function getRecordedAt(item: ParentObservationListItemDto) {
+  if (item.recordedAt) {
+    return item.recordedAt
+  }
+
+  const timePart = item.reportDate.split('T')[1]
+  return timePart ? timePart.slice(0, 5) : '00:00'
+}
+
+function formatReportDate(reportDate: string) {
+  const datePart = getDatePart(reportDate)
+  const [, month, day] = datePart.split('-')
+
+  if (!month || !day) {
+    return datePart
   }
 
   return `${month}/${day}`
 }
 
 function parseReportDay(reportDate: string) {
-  const [, , day] = reportDate.split('-')
+  const datePart = getDatePart(reportDate)
+  const [, , day] = datePart.split('-')
   return day ? Number(day) : 0
+}
+
+function getWeekdayLabel(item: ParentObservationListItemDto) {
+  if (item.dayOfWeek) {
+    return dayOfWeekLabelMap[item.dayOfWeek] ?? item.dayOfWeek
+  }
+
+  const date = new Date(`${getDatePart(item.reportDate)}T00:00:00`)
+  return weekdayLabels[date.getDay()] ?? ''
 }
 
 function mapObservationListItemToRecord(item: ParentObservationListItemDto): ParentObservationRecord {
   return {
     id: item.reportId,
-    reportDate: item.reportDate,
-    recordedAt: item.recordedAt ?? '00:00',
+    reportDate: getDatePart(item.reportDate),
+    recordedAt: getRecordedAt(item),
     date: formatReportDate(item.reportDate),
     day: parseReportDay(item.reportDate),
-    weekday: dayOfWeekLabelMap[item.dayOfWeek] ?? item.dayOfWeek,
+    weekday: getWeekdayLabel(item),
     mood: item.emotionTag,
     description: item.context,
     counselorComment:
@@ -78,15 +114,23 @@ function sortObservationRecords(records: ParentObservationRecord[]) {
   })
 }
 
+function getMonthDateRange(year: number, month: number) {
+  const startDate = `${year}-${padNumber(month)}-01`
+  const endDate = `${year}-${padNumber(month)}-${padNumber(new Date(year, month, 0).getDate())}`
+
+  return {
+    endDate,
+    startDate,
+  }
+}
+
 function createObservationListSearchParams({ year, month }: Pick<ParentObservationQueryParams, 'year' | 'month'>) {
   const searchParams = new URLSearchParams()
 
-  if (typeof year === 'number') {
-    searchParams.set('year', String(year))
-  }
-
-  if (typeof month === 'number') {
-    searchParams.set('month', String(month))
+  if (typeof year === 'number' && typeof month === 'number') {
+    const { startDate, endDate } = getMonthDateRange(year, month)
+    searchParams.set('startDate', startDate)
+    searchParams.set('endDate', endDate)
   }
 
   const query = searchParams.toString()
@@ -95,7 +139,9 @@ function createObservationListSearchParams({ year, month }: Pick<ParentObservati
 
 function filterMockRecords(records: ParentObservationListItemDto[], year?: number, month?: number) {
   return records.filter((record) => {
-    const [recordYear, recordMonth] = record.reportDate.split('-').map((value) => Number(value))
+    const [recordYear, recordMonth] = getDatePart(record.reportDate)
+      .split('-')
+      .map((value) => Number(value))
 
     if (typeof year === 'number' && recordYear !== year) {
       return false
@@ -107,6 +153,15 @@ function filterMockRecords(records: ParentObservationListItemDto[], year?: numbe
 
     return true
   })
+}
+
+function flattenDailyReportGroups(groups: ParentObservationDailyGroupDto[] = []) {
+  return groups.flatMap((group) =>
+    group.reportList.map((report) => ({
+      ...report,
+      reportDate: report.reportDate || group.date,
+    })),
+  )
 }
 
 async function getParentObservationListFromMock({
@@ -123,11 +178,12 @@ async function getParentObservationListFromMock({
 }
 
 export async function getParentObservationList({
+  accessToken,
   childrenId,
   year,
   month,
 }: ParentObservationQueryParams = {}): Promise<ParentObservationListResponse> {
-  if (!childrenId) {
+  if (!childrenId || !accessToken) {
     return getParentObservationListFromMock({ year, month })
   }
 
@@ -138,28 +194,34 @@ export async function getParentObservationList({
     month,
   })}`
 
-  const response = await fetch(requestPath)
+  const response = await fetch(`${API_BASE_URL}${requestPath}`, {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  })
+  const result = (await response.json().catch(() => null)) as ParentObservationListResponseDto | null
 
-  if (!response.ok) {
-    throw new Error('보호자 관찰 기록 목록을 불러오지 못했습니다.')
+  if (!response.ok || result?.code) {
+    throw new Error(result?.message ?? '보호자 관찰 기록 목록을 불러오지 못했습니다.')
   }
 
-  const result = (await response.json()) as ParentObservationListResponseDto
+  const reports =
+    result?.data.reports ?? flattenDailyReportGroups(result?.data.dailyReports)
 
   return {
-    records: sortObservationRecords(
-      result.data.reports.map(mapObservationListItemToRecord),
-    ),
+    records: sortObservationRecords(reports.map(mapObservationListItemToRecord)),
   }
 }
 
 export async function getParentObservationPreview({
+  accessToken,
   childrenId,
   year,
   month,
   limit = PARENT_OBSERVATION_PREVIEW_LIMIT,
 }: GetParentObservationPreviewParams = {}): Promise<ParentObservationPreviewResponse> {
   const response = await getParentObservationList({
+    accessToken,
     childrenId,
     year,
     month,

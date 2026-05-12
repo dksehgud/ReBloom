@@ -1,8 +1,12 @@
 import { useParentObservationPreview } from '../hooks/useParentObservationPreview'
 import ParentObservationListSection from './ParentObservationListSection'
 
-function ParentObservationSection() {
-  const { records, isLoading, isError } = useParentObservationPreview()
+type ParentObservationSectionProps = {
+  childrenId?: string
+}
+
+function ParentObservationSection({ childrenId }: ParentObservationSectionProps) {
+  const { records, isLoading, isError } = useParentObservationPreview(childrenId)
 
   return (
     <ParentObservationListSection

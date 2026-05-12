@@ -8,6 +8,7 @@ import {
   reportWeekdays,
   type ParentReportMood,
 } from '../../features/guardian/constants/parentReport'
+import { useParentConnectedChild } from '../../features/guardian/hooks/useParentConnectedChild'
 
 const STABILITY_CHART_WIDTH = 300
 const STABILITY_CHART_HEIGHT = 180
@@ -108,12 +109,14 @@ function InfoIcon() {
   )
 }
 
-function ParentReportHeader() {
+function ParentReportHeader({ childName }: { childName?: string }) {
   return (
     <div className="parent-home-page__header">
       <div className="parent-home-page__header-copy">
         <h1 className="parent-home-page__title">리포트</h1>
-        <p className="parent-home-page__subtitle">지민이의 변화 흐름입니다.</p>
+        <p className="parent-home-page__subtitle">
+          {childName ? `${childName}의 변화 흐름입니다.` : '아이의 변화 흐름입니다.'}
+        </p>
       </div>
     </div>
   )
@@ -180,6 +183,7 @@ function createStabilityChartData(scores: typeof parentReportWeeks[number]['stab
 }
 
 function ParentReportPage() {
+  const { selectedChild } = useParentConnectedChild()
   const [selectedWeekIndex, setSelectedWeekIndex] = useState(1)
   const [isEmotionInfoOpen, setIsEmotionInfoOpen] = useState(false)
   const [isStabilityInfoOpen, setIsStabilityInfoOpen] = useState(false)
@@ -224,7 +228,7 @@ function ParentReportPage() {
 
   return (
     <MobilePageLayout
-      header={<ParentReportHeader />}
+      header={<ParentReportHeader childName={selectedChild?.name} />}
       className="parent-home-page parent-report-page"
       contentClassName="parent-report-page__content"
       bottomNavigation={<ParentBottomNavigation />}

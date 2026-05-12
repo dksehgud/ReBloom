@@ -1,6 +1,7 @@
 import MobilePageLayout from '../../components/templates/MobilePageLayout/MobilePageLayout'
 import ParentBottomNavigation from '../../features/guardian/components/ParentBottomNavigation'
 import ParentObservationSection from '../../features/guardian/components/ParentObservationSection'
+import { useParentConnectedChild } from '../../features/guardian/hooks/useParentConnectedChild'
 
 function InsightTipIcon() {
   return (
@@ -36,21 +37,25 @@ function InsightTipIcon() {
   )
 }
 
-function ParentHomeHeader() {
+function ParentHomeHeader({ childName }: { childName?: string }) {
   return (
     <div className="parent-home-page__header">
       <div className="parent-home-page__header-copy">
         <h1 className="parent-home-page__title">내 아이 감정 모니터</h1>
-        <p className="parent-home-page__subtitle">지민 부모님</p>
+        <p className="parent-home-page__subtitle">
+          {childName ? `${childName} 부모님` : '보호자님'}
+        </p>
       </div>
     </div>
   )
 }
 
 function ParentHomePage() {
+  const { selectedChild } = useParentConnectedChild()
+
   return (
     <MobilePageLayout
-      header={<ParentHomeHeader />}
+      header={<ParentHomeHeader childName={selectedChild?.name} />}
       className="parent-home-page"
       contentClassName="parent-home-page__content"
       bottomNavigation={<ParentBottomNavigation />}
@@ -77,7 +82,7 @@ function ParentHomePage() {
           </div>
         </section>
 
-        <ParentObservationSection />
+        <ParentObservationSection childrenId={selectedChild?.id} />
       </div>
     </MobilePageLayout>
   )

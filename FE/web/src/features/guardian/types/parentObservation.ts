@@ -26,19 +26,29 @@ export type ParentObservationPreviewResponse = {
 }
 
 export type ParentObservationListItemDto = {
-  reportId: string
-  reportDate: string
-  recordedAt?: string
-  dayOfWeek: string
-  emotionTag: string
+  childrenId?: string
   context: string
   counselorComment?: string | null
   counselorCommentRelativeTime?: string | null
+  dayOfWeek?: string
+  emotionTag: string
+  hasCounselorComment?: boolean
+  parentId?: string
+  recordedAt?: string
+  reportDate: string
+  reportId: string
+}
+
+export type ParentObservationDailyGroupDto = {
+  date: string
+  reportList: ParentObservationListItemDto[]
 }
 
 export type ParentObservationListResponseDto = {
-  message: string
+  code?: string | null
+  message?: string | null
   data: {
-    reports: ParentObservationListItemDto[]
+    dailyReports?: ParentObservationDailyGroupDto[]
+    reports?: ParentObservationListItemDto[]
   }
 }

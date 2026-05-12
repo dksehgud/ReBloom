@@ -5,20 +5,24 @@ import ParentObservationDeleteModal from '../../features/guardian/components/Par
 import ParentObservationDetailModal from '../../features/guardian/components/ParentObservationDetailModal'
 import ParentObservationFormModal from '../../features/guardian/components/ParentObservationFormModal'
 import ParentObservationListSection from '../../features/guardian/components/ParentObservationListSection'
+import { useParentConnectedChild } from '../../features/guardian/hooks/useParentConnectedChild'
 import { useParentObservationPageState } from '../../features/guardian/hooks/useParentObservationPageState'
 
-function ParentObservationsHeader() {
+function ParentObservationsHeader({ childName }: { childName?: string }) {
   return (
     <div className="parent-home-page__header">
       <div className="parent-home-page__header-copy">
         <h1 className="parent-home-page__title">아이 관찰 기록</h1>
-        <p className="parent-home-page__subtitle">지민 부모님</p>
+        <p className="parent-home-page__subtitle">
+          {childName ? `${childName} 부모님` : '보호자님'}
+        </p>
       </div>
     </div>
   )
 }
 
 function ParentObservationsPage() {
+  const { selectedChild } = useParentConnectedChild()
   const {
     currentYear,
     currentMonth,
@@ -55,11 +59,11 @@ function ParentObservationsPage() {
     handleSelectDraftMood,
     handleDraftDescriptionChange,
     handleSubmitDraft,
-  } = useParentObservationPageState()
+  } = useParentObservationPageState(selectedChild?.id)
 
   return (
     <MobilePageLayout
-      header={<ParentObservationsHeader />}
+      header={<ParentObservationsHeader childName={selectedChild?.name} />}
       className="parent-home-page"
       contentClassName="parent-observations-page__content"
       bottomNavigation={<ParentBottomNavigation />}

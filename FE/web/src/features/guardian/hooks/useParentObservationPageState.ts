@@ -44,7 +44,7 @@ function sortRecords(records: ParentObservationRecord[]) {
   })
 }
 
-export function useParentObservationPageState() {
+export function useParentObservationPageState(childrenId?: string) {
   const {
     currentYear,
     currentMonth,
@@ -53,7 +53,7 @@ export function useParentObservationPageState() {
     isError,
     handlePreviousMonth,
     handleNextMonth,
-  } = useParentObservationList()
+  } = useParentObservationList(childrenId)
 
   const [selectedDay, setSelectedDay] = useState<number | null>(null)
   const [recordsOverrideByMonth, setRecordsOverrideByMonth] = useState<

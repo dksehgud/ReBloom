@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 
+import { useAppSessionStore } from '../../auth/store/useAppSessionStore'
 import { getParentObservationList } from '../api/parentObservationApi'
 import type { ParentObservationRecord } from '../types/parentObservation'
 
@@ -23,7 +24,10 @@ function moveMonth(year: number, month: number, diff: number) {
   }
 }
 
-export function useParentObservationList(): UseParentObservationListResult {
+export function useParentObservationList(
+  childrenId?: string,
+): UseParentObservationListResult {
+  const accessToken = useAppSessionStore((state) => state.accessToken)
   const [currentYear, setCurrentYear] = useState(2026)
   const [currentMonth, setCurrentMonth] = useState(4)
   const [records, setRecords] = useState<ParentObservationRecord[]>([])
@@ -39,6 +43,8 @@ export function useParentObservationList(): UseParentObservationListResult {
         setIsError(false)
 
         const response = await getParentObservationList({
+          accessToken,
+          childrenId,
           year: currentYear,
           month: currentMonth,
         })
@@ -68,7 +74,7 @@ export function useParentObservationList(): UseParentObservationListResult {
     return () => {
       isMounted = false
     }
-  }, [currentMonth, currentYear])
+  }, [accessToken, childrenId, currentMonth, currentYear])
 
   const markedDays = useMemo(
     () => Array.from(new Set(records.map((record) => record.day))).sort((a, b) => a - b),
