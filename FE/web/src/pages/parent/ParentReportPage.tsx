@@ -9,6 +9,7 @@ import {
   type ParentReportMood,
 } from '../../features/guardian/constants/parentReport'
 import { useParentConnectedChild } from '../../features/guardian/hooks/useParentConnectedChild'
+import { useParentReportData } from '../../features/guardian/hooks/useParentReportData'
 
 const STABILITY_CHART_WIDTH = 300
 const STABILITY_CHART_HEIGHT = 180
@@ -188,7 +189,10 @@ function ParentReportPage() {
   const [isEmotionInfoOpen, setIsEmotionInfoOpen] = useState(false)
   const [isStabilityInfoOpen, setIsStabilityInfoOpen] = useState(false)
 
-  const currentWeek = parentReportWeeks[selectedWeekIndex]
+  const { currentWeek } = useParentReportData({
+    childrenId: selectedChild?.id,
+    selectedWeekIndex,
+  })
   const isPrevDisabled = selectedWeekIndex === 0
   const isNextDisabled = selectedWeekIndex === parentReportWeeks.length - 1
   const stabilityChart = useMemo(
