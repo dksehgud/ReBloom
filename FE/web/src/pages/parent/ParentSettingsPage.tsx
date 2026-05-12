@@ -1,15 +1,18 @@
-import { useState, type ReactNode } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 
 import MobilePageLayout from '../../components/templates/MobilePageLayout/MobilePageLayout'
+import { authApi, type PasswordChangeRequest } from '../../features/auth/api/authApi'
+import { useAppSessionStore } from '../../features/auth/store/useAppSessionStore'
+import { getParentConnectedCounselor } from '../../features/guardian/api/parentRelationApi'
 import ParentBottomNavigation from '../../features/guardian/components/ParentBottomNavigation'
 import ParentCounselorConnectModal from '../../features/guardian/components/ParentCounselorConnectModal'
 import {
   mockCounselorCandidate,
-  mockLinkedChild,
   mockParentProfile,
   parentSupportContacts,
   type ParentCounselorCandidate,
 } from '../../features/guardian/constants/parentSettings'
+import { useParentConnectedChild } from '../../features/guardian/hooks/useParentConnectedChild'
 import ChildPasswordChangeModal from '../../features/user/components/ChildPasswordChangeModal'
 
 type ParentSettingsRowProps = {
@@ -199,6 +202,10 @@ function ContactRow({
   description?: string
   showDivider: boolean
 }) {
+  const contactHref = phoneNumber.includes('@')
+    ? `mailto:${phoneNumber}`
+    : `tel:${phoneNumber}`
+
   return (
     <div className={`parent-settings-page__row${showDivider ? ' has-divider' : ''}`}>
       <span className="parent-settings-page__icon-circle">
@@ -211,7 +218,7 @@ function ContactRow({
         ) : null}
       </span>
       <span className="parent-settings-page__row-end">
-        <a className="parent-settings-page__phone-chip" href={`tel:${phoneNumber}`}>
+        <a className="parent-settings-page__phone-chip" href={contactHref}>
           {phoneNumber}
         </a>
       </span>
@@ -220,12 +227,69 @@ function ContactRow({
 }
 
 function ParentSettingsPage() {
+  const accessToken = useAppSessionStore((state) => state.accessToken)
+  const currentUser = useAppSessionStore((state) => state.currentUser)
+  const { selectedChild } = useParentConnectedChild()
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false)
   const [isCounselorModalOpen, setIsCounselorModalOpen] = useState(false)
   const [connectedCounselor, setConnectedCounselor] =
     useState<ParentCounselorCandidate | null>(null)
 
   const isCounselorConnected = connectedCounselor !== null
+  const parentProfile = {
+    email: currentUser?.email ?? mockParentProfile.email,
+    name: currentUser?.name ?? mockParentProfile.name,
+  }
+  const linkedChildName = selectedChild?.name ?? '연결된 아이가 없습니다.'
+  const linkedChildAgeLabel =
+    typeof selectedChild?.age === 'number' ? `${selectedChild.age}세` : ''
+  const linkedChildEmail = selectedChild?.email ?? ''
+
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => {
+      if (!accessToken) {
+        setConnectedCounselor(null)
+        return
+      }
+
+      void getParentConnectedCounselor(accessToken)
+        .then((counselor) => {
+          if (!counselor.connected) {
+            setConnectedCounselor(null)
+            return
+          }
+
+          setConnectedCounselor({
+            clinicName: '연결된 상담사',
+            email: counselor.email ?? '',
+            name: counselor.name ?? '상담사',
+            phoneNumber: '',
+          })
+        })
+        .catch((error) => {
+          console.error(error)
+          setConnectedCounselor(null)
+        })
+    }, 0)
+
+    return () => window.clearTimeout(timeoutId)
+  }, [accessToken])
+
+  const handleVerifyCurrentPassword = async (password: string) => {
+    if (!accessToken) {
+      throw new Error('로그인 후 다시 시도해주세요.')
+    }
+
+    await authApi.verifyPassword(password, accessToken)
+  }
+
+  const handleChangePassword = async (payload: PasswordChangeRequest) => {
+    if (!accessToken) {
+      throw new Error('로그인 후 다시 시도해주세요.')
+    }
+
+    await authApi.changePassword(payload, accessToken)
+  }
 
   return (
     <MobilePageLayout
@@ -239,8 +303,8 @@ function ParentSettingsPage() {
           <h2 className="parent-settings-page__section-title">프로필 정보</h2>
           <div className="parent-settings-page__box">
             <ParentSettingsRow
-              title={mockParentProfile.name}
-              description={mockParentProfile.email}
+              title={parentProfile.name}
+              description={parentProfile.email}
               icon={<UserIcon />}
               showDivider
             />
@@ -261,19 +325,25 @@ function ParentSettingsPage() {
             <ParentSettingsRow
               title={
                 <>
-                  <span>{mockLinkedChild.name}</span>
-                  <span className="parent-settings-page__inline-meta">
-                    {mockLinkedChild.ageLabel}
-                  </span>
+                  <span>{linkedChildName}</span>
+                  {linkedChildAgeLabel ? (
+                    <span className="parent-settings-page__inline-meta">
+                      {linkedChildAgeLabel}
+                    </span>
+                  ) : null}
                 </>
               }
               description={
-                <a
-                  className="parent-settings-page__linked-email"
-                  href={`mailto:${mockLinkedChild.email}`}
-                >
-                  {mockLinkedChild.email}
-                </a>
+                linkedChildEmail ? (
+                  <a
+                    className="parent-settings-page__linked-email"
+                    href={`mailto:${linkedChildEmail}`}
+                  >
+                    {linkedChildEmail}
+                  </a>
+                ) : (
+                  '아이 계정과 연결되면 정보가 표시됩니다.'
+                )
               }
               icon={<UserIcon />}
               showDivider={false}
@@ -310,7 +380,7 @@ function ParentSettingsPage() {
               <ContactRow
                 title={connectedCounselor.name}
                 description={connectedCounselor.clinicName}
-                phoneNumber={connectedCounselor.phoneNumber}
+                phoneNumber={connectedCounselor.phoneNumber || connectedCounselor.email}
                 showDivider
               />
             ) : null}
@@ -328,7 +398,11 @@ function ParentSettingsPage() {
       </div>
 
       {isPasswordModalOpen ? (
-        <ChildPasswordChangeModal onClose={() => setIsPasswordModalOpen(false)} />
+        <ChildPasswordChangeModal
+          onChangePassword={handleChangePassword}
+          onClose={() => setIsPasswordModalOpen(false)}
+          onVerifyCurrentPassword={handleVerifyCurrentPassword}
+        />
       ) : null}
 
       {isCounselorModalOpen ? (

@@ -1,12 +1,12 @@
 import type {
+  ParentConnectedCounselor,
+  ParentConnectedCounselorDto,
+  ParentConnectedCounselorResponseDto,
   ParentConnectedChild,
   ParentConnectedChildDto,
   ParentConnectedChildResponseDto,
 } from '../types/parentRelation'
-
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL?.trim().replace(/\/$/, '') ??
-  (import.meta.env.DEV ? 'http://localhost:8080' : '')
+import { apiRequest } from '../../../shared/api/client'
 
 const AUTH_API_PREFIX = '/auth/api/v1'
 
@@ -21,6 +21,7 @@ class ParentRelationApiError extends Error {
 }
 
 const parentRelationApiPaths = {
+  connectedCounselor: `${AUTH_API_PREFIX}/parent/counselor`,
   connectedChild: `${AUTH_API_PREFIX}/parents/children`,
 }
 
@@ -46,17 +47,38 @@ function normalizeConnectedChild(
   }
 }
 
+function normalizeConnectedCounselor(
+  counselor?: ParentConnectedCounselorDto | null,
+): ParentConnectedCounselor {
+  if (!counselor?.counselorId) {
+    return {
+      connected: false,
+      email: null,
+      id: null,
+      name: null,
+    }
+  }
+
+  return {
+    connected: true,
+    email: counselor.email ?? null,
+    id: counselor.counselorId,
+    name: counselor.name ?? null,
+  }
+}
+
 async function getParentConnectedChild(
   accessToken: string,
 ): Promise<ParentConnectedChild> {
-  const response = await fetch(`${API_BASE_URL}${parentRelationApiPaths.connectedChild}`, {
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
+  const body = await apiRequest<ParentConnectedChildResponseDto | null>(
+    parentRelationApiPaths.connectedChild,
+    {
+      accessToken,
+      errorMessage: '연결된 자녀 정보를 불러오지 못했습니다.',
     },
-  })
-  const body = (await response.json().catch(() => null)) as ParentConnectedChildResponseDto | null
+  )
 
-  if (!response.ok || body?.code) {
+  if (body?.code) {
     throw new ParentRelationApiError(
       body?.message ?? '연결된 자녀 정보를 불러오지 못했습니다.',
       body?.code,
@@ -66,9 +88,32 @@ async function getParentConnectedChild(
   return normalizeConnectedChild(body?.data)
 }
 
+async function getParentConnectedCounselor(
+  accessToken: string,
+): Promise<ParentConnectedCounselor> {
+  const body = await apiRequest<ParentConnectedCounselorResponseDto | null>(
+    parentRelationApiPaths.connectedCounselor,
+    {
+      accessToken,
+      errorMessage: '연결된 상담사 정보를 불러오지 못했습니다.',
+    },
+  )
+
+  if (body?.code) {
+    throw new ParentRelationApiError(
+      body?.message ?? '연결된 상담사 정보를 불러오지 못했습니다.',
+      body?.code,
+    )
+  }
+
+  return normalizeConnectedCounselor(body?.data)
+}
+
 export {
   ParentRelationApiError,
+  getParentConnectedCounselor,
   getParentConnectedChild,
+  normalizeConnectedCounselor,
   normalizeConnectedChild,
   parentRelationApiPaths,
 }

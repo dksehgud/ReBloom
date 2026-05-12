@@ -19,3 +19,22 @@ export type ParentConnectedChildResponseDto = {
   data?: ParentConnectedChildDto | null
   message?: string | null
 }
+
+export type ParentConnectedCounselorDto = {
+  counselorId?: string | null
+  email?: string | null
+  name?: string | null
+}
+
+export type ParentConnectedCounselor = {
+  connected: boolean
+  email: string | null
+  id: string | null
+  name: string | null
+}
+
+export type ParentConnectedCounselorResponseDto = {
+  code?: string | null
+  data?: ParentConnectedCounselorDto | null
+  message?: string | null
+}
