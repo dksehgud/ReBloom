@@ -10,20 +10,25 @@ import java.time.YearMonth
 class DiaryRepository(
     private val diaryDao: DiaryDao,
 ) {
-    suspend fun getMonth(yearMonthText: String): List<Diary> {
+    suspend fun getMonth(userId: String, yearMonthText: String): List<Diary> {
+        requireUserId(userId)
+
         val yearMonth = YearMonth.parse(yearMonthText)
         val startDate = yearMonth.atDay(1).toString()
         val endDate = yearMonth.atEndOfMonth().toString()
 
-        return diaryDao.findByDateRange(startDate, endDate).map(Diary::from)
+        return diaryDao.findByDateRange(userId, startDate, endDate).map(Diary::from)
     }
 
-    suspend fun getByDate(diaryDate: String): Diary? {
+    suspend fun getByDate(userId: String, diaryDate: String): Diary? {
+        requireUserId(userId)
         requireValidDate(diaryDate)
-        return diaryDao.findByDate(diaryDate)?.let(Diary::from)
+        return diaryDao.findByDate(userId, diaryDate)?.let(Diary::from)
     }
 
     suspend fun save(request: DiarySaveRequest): Diary {
+        val userId = request.userId?.trim().orEmpty()
+        requireUserId(userId)
         requireValidDate(request.diaryDate)
         require(request.content.isNotBlank()) { "content is required" }
 
@@ -31,18 +36,18 @@ class DiaryRepository(
         val current =
             request.id
                 ?.takeIf(String::isNotBlank)
-                ?.let { diaryDao.findById(it) }
-                ?: diaryDao.findByDate(request.diaryDate)
+                ?.let { diaryDao.findById(userId, it) }
+                ?: diaryDao.findByDate(userId, request.diaryDate)
 
         val entity =
             current?.copy(
-                userId = request.userId ?: current.userId,
+                userId = userId,
                 diaryDate = request.diaryDate,
                 content = request.content,
                 emotionKey = request.emotionKey,
                 updatedAt = now,
             ) ?: DiaryEntity(
-                userId = request.userId,
+                userId = userId,
                 diaryDate = request.diaryDate,
                 content = request.content,
                 emotionKey = request.emotionKey,
@@ -54,9 +59,14 @@ class DiaryRepository(
         return Diary.from(entity)
     }
 
-    suspend fun delete(id: String): Boolean {
+    suspend fun delete(userId: String, id: String): Boolean {
+        requireUserId(userId)
         require(id.isNotBlank()) { "id is required" }
-        return diaryDao.deleteById(id) > 0
+        return diaryDao.deleteById(userId, id) > 0
+    }
+
+    private fun requireUserId(userId: String) {
+        require(userId.isNotBlank()) { "userId is required" }
     }
 
     private fun requireValidDate(value: String) {

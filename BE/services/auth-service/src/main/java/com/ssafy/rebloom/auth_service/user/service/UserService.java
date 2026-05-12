@@ -1,14 +1,15 @@
 package com.ssafy.rebloom.auth_service.user.service;
 
 import com.ssafy.rebloom.auth_service.user.domain.enums.UserRole;
-import com.ssafy.rebloom.auth_service.user.dto.request.PasswordChangeRequestDto;
 import com.ssafy.rebloom.auth_service.user.dto.request.ParentConnectRequestDto;
+import com.ssafy.rebloom.auth_service.user.dto.request.PasswordChangeRequestDto;
 import com.ssafy.rebloom.auth_service.user.dto.request.UserCreateRequestDto;
 import com.ssafy.rebloom.auth_service.user.dto.request.UserUpdateRequestDto;
 import com.ssafy.rebloom.auth_service.user.dto.response.ChildConnectedParentResponseDto;
 import com.ssafy.rebloom.auth_service.user.dto.response.CounselorChildrenResponseDto;
 import com.ssafy.rebloom.auth_service.user.dto.response.ParentConnectedChildResponseDto;
 import com.ssafy.rebloom.auth_service.user.dto.response.ParentCounselorResponseDto;
+import com.ssafy.rebloom.auth_service.user.dto.response.ParentReceiverResponseDto;
 import com.ssafy.rebloom.auth_service.user.dto.response.ParentSummaryResponseDto;
 import com.ssafy.rebloom.auth_service.user.dto.response.UserInfoResponseDto;
 import com.ssafy.rebloom.auth_service.user.dto.response.UserProfileResponseDto;
@@ -44,4 +45,6 @@ public interface UserService {
     void verifyPassword(UUID userId, String password);
 
     ListResponseDto<UserProfileResponseDto> searchProfiles(String email, UserRole userRole);
+
+    ParentReceiverResponseDto getParentReceiverByChildrenId(UUID childrenId);
 }

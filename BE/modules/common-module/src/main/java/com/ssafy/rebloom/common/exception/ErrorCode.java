@@ -52,6 +52,7 @@ public enum ErrorCode {
     NICKNAME_ALREADY_EXISTS(HttpStatus.CONFLICT, "이미 존재하는 닉네임입니다."),
     USER_WITHDRAW(HttpStatus.FORBIDDEN, "탈퇴한 유저입니다."),
     OAUTH_TEMP_SAVE_FAILED(HttpStatus.BAD_REQUEST, "임시 저장 실패"),
+    USER_ROLE_TYPE_MISMATCH(HttpStatus.BAD_REQUEST, "유효하지 않은 사용자 역할입니다."),
 
     // ============================================================
     // 2. PARENT(부모)
@@ -60,8 +61,9 @@ public enum ErrorCode {
 
 
     // ============================================================
-    // 3.
+    // 3. CHILDREN(자녀)
     // ============================================================
+    PARENT_RELATION_NOT_FOUND(HttpStatus.NOT_FOUND, "부모님과의 관계를 찾을 수 없습니다."),
 
 
 

@@ -7,7 +7,6 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
-import jakarta.validation.constraints.NotNull;
 import java.util.UUID;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -20,22 +19,20 @@ import lombok.NoArgsConstructor;
 @Builder
 @Table(name = "notification_settings")
 @AllArgsConstructor(access = AccessLevel.PROTECTED)
-@NoArgsConstructor(access = AccessLevel.PRIVATE)
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class NotificationSetting extends BaseTime {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @NotNull
-    @Column(name = "user_id", nullable = false)
+    @Column(unique = true)
     private UUID userId;
 
-    @NotNull
-    @Column(name = "fcm_token", nullable = false)
-    private String fcmToken;
+    @Builder.Default
+    @Column(nullable = false)
+    private boolean isEnabled = true;
 
-    @NotNull
-    @Column(name = "is_enabled", nullable = false)
-    private Boolean isEnabled;
+    public void updateEnabled(boolean isEnabled) {
+        this.isEnabled = isEnabled;
+    }
 }

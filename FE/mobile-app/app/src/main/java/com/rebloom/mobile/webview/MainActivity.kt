@@ -1,34 +1,42 @@
 package com.rebloom.mobile.webview
 
 import android.annotation.SuppressLint
-import android.graphics.Color
 import android.content.ActivityNotFoundException
 import android.content.Intent
+import android.graphics.Color
 import android.net.Uri
 import android.os.Bundle
+import android.os.Message
 import android.util.Log
-import android.view.ViewGroup.LayoutParams.MATCH_PARENT
+import android.view.Gravity
 import android.view.ViewGroup
+import android.view.ViewGroup.LayoutParams.MATCH_PARENT
 import android.webkit.WebChromeClient
 import android.webkit.WebResourceError
 import android.webkit.WebResourceRequest
 import android.webkit.WebSettings
 import android.webkit.WebView
+import android.webkit.WebView.WebViewTransport
 import android.webkit.WebViewClient
-import androidx.activity.OnBackPressedCallback
+import android.widget.FrameLayout
 import androidx.activity.ComponentActivity
+import androidx.activity.OnBackPressedCallback
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import com.rebloom.mobile.BuildConfig
 import com.rebloom.mobile.diary.DiaryRepository
 import com.rebloom.mobile.diary.network.DiaryAnalysisClient
+import com.rebloom.mobile.network.TokenBridge
 import com.rebloom.mobile.storage.database.RebloomDatabase
 import com.rebloom.mobile.webview.bridge.DiaryJavascriptBridge
-import com.rebloom.mobile.network.TokenBridge
 
 class MainActivity : ComponentActivity() {
 
+    private lateinit var rootView: FrameLayout
     private lateinit var webView: WebView
+    private var popupContainer: FrameLayout? = null
+    private var popupWebView: WebView? = null
+
     private val diaryBridge: DiaryJavascriptBridge by lazy {
         val database = RebloomDatabase.getInstance(applicationContext)
         DiaryJavascriptBridge(
@@ -52,36 +60,24 @@ class MainActivity : ComponentActivity() {
             isAppearanceLightNavigationBars = true
         }
 
-        webView = WebView(this).apply {
-            layoutParams = ViewGroup.LayoutParams(MATCH_PARENT, MATCH_PARENT)
-            setBackgroundColor(Color.WHITE)
-            settings.javaScriptEnabled = true
-            settings.domStorageEnabled = true
-            settings.builtInZoomControls = false
-            settings.displayZoomControls = false
-            settings.setSupportMultipleWindows(false)
-            settings.setSupportZoom(false)
-            settings.javaScriptCanOpenWindowsAutomatically = false
-            settings.useWideViewPort = false
-            settings.loadWithOverviewMode = false
-            settings.mixedContentMode = WebSettings.MIXED_CONTENT_NEVER_ALLOW
+        rootView = FrameLayout(this)
+        webView = createConfiguredWebView().apply {
             addJavascriptInterface(TokenBridge(this@MainActivity), "Android")
-            webChromeClient = WebChromeClient()
-            webViewClient = ReBloomWebViewClient()
             addJavascriptInterface(diaryBridge, DIARY_BRIDGE_NAME)
             loadUrl(launchUrl)
         }
 
-        setContentView(webView)
+        rootView.addView(webView)
+        setContentView(rootView)
 
         onBackPressedDispatcher.addCallback(
             this,
             object : OnBackPressedCallback(true) {
                 override fun handleOnBackPressed() {
-                    if (webView.canGoBack()) {
-                        webView.goBack()
-                    } else {
-                        finish()
+                    when {
+                        popupWebView != null -> closePopupWebView()
+                        webView.canGoBack() -> webView.goBack()
+                        else -> finish()
                     }
                 }
             },
@@ -89,6 +85,8 @@ class MainActivity : ComponentActivity() {
     }
 
     override fun onDestroy() {
+        closePopupWebView()
+
         if (::webView.isInitialized) {
             webView.apply {
                 stopLoading()
@@ -97,6 +95,85 @@ class MainActivity : ComponentActivity() {
             }
         }
         super.onDestroy()
+    }
+
+    @SuppressLint("SetJavaScriptEnabled")
+    private fun createConfiguredWebView(): WebView =
+        WebView(this).apply {
+            layoutParams = ViewGroup.LayoutParams(MATCH_PARENT, MATCH_PARENT)
+            setBackgroundColor(Color.WHITE)
+            settings.javaScriptEnabled = true
+            settings.domStorageEnabled = true
+            settings.builtInZoomControls = false
+            settings.displayZoomControls = false
+            settings.setSupportMultipleWindows(true)
+            settings.setSupportZoom(false)
+            settings.javaScriptCanOpenWindowsAutomatically = false
+            settings.useWideViewPort = false
+            settings.loadWithOverviewMode = false
+            settings.mixedContentMode = WebSettings.MIXED_CONTENT_NEVER_ALLOW
+            webChromeClient = ReBloomWebChromeClient()
+            webViewClient = ReBloomWebViewClient()
+        }
+
+    private fun closePopupWebView() {
+        val popup = popupWebView ?: return
+
+        popupContainer?.let { container ->
+            rootView.removeView(container)
+        }
+        popup.apply {
+            stopLoading()
+            loadUrl("about:blank")
+            destroy()
+        }
+        popupWebView = null
+        popupContainer = null
+    }
+
+    private inner class ReBloomWebChromeClient : WebChromeClient() {
+        override fun onCreateWindow(
+            view: WebView?,
+            isDialog: Boolean,
+            isUserGesture: Boolean,
+            resultMsg: Message?,
+        ): Boolean {
+            if (!isUserGesture) {
+                return false
+            }
+
+            val transport = resultMsg?.obj as? WebViewTransport ?: return false
+
+            closePopupWebView()
+
+            val popup = createConfiguredWebView()
+            val container =
+                FrameLayout(this@MainActivity).apply {
+                    setBackgroundColor(Color.WHITE)
+                    elevation = dp(16).toFloat()
+                    addView(popup, FrameLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT))
+                }
+
+            val width = (resources.displayMetrics.widthPixels - dp(32)).coerceAtLeast(dp(280))
+            val height = (resources.displayMetrics.heightPixels * 0.78f).toInt()
+            rootView.addView(
+                container,
+                FrameLayout.LayoutParams(width, height, Gravity.CENTER),
+            )
+
+            popupWebView = popup
+            popupContainer = container
+            transport.webView = popup
+            resultMsg.sendToTarget()
+
+            return true
+        }
+
+        override fun onCloseWindow(window: WebView?) {
+            if (window == popupWebView) {
+                closePopupWebView()
+            }
+        }
     }
 
     private inner class ReBloomWebViewClient : WebViewClient() {
@@ -137,6 +214,9 @@ class MainActivity : ComponentActivity() {
             false
         }
     }
+
+    private fun dp(value: Int): Int =
+        (value * resources.displayMetrics.density).toInt()
 
     private companion object {
         private const val TAG = "ReBloomWebView"

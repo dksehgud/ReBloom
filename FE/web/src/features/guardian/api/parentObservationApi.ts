@@ -1,3 +1,4 @@
+import { apiRequest } from '../../../shared/api/client'
 import { PARENT_OBSERVATION_PREVIEW_LIMIT } from '../constants/parentObservation'
 import { parentObservationListMock } from '../mocks/parentObservationList'
 import type {
@@ -19,10 +20,6 @@ type ParentObservationQueryParams = {
 type GetParentObservationPreviewParams = ParentObservationQueryParams & {
   limit?: number
 }
-
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL?.trim().replace(/\/$/, '') ??
-  (import.meta.env.DEV ? 'http://localhost:8080' : '')
 
 const parentObservationApiPaths = {
   list: (childrenId: string) => `/api/v1/children/${childrenId}/reports`,
@@ -194,19 +191,17 @@ export async function getParentObservationList({
     month,
   })}`
 
-  const response = await fetch(`${API_BASE_URL}${requestPath}`, {
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-    },
+  const result = await apiRequest<ParentObservationListResponseDto>(requestPath, {
+    accessToken,
+    errorMessage: '보호자 관찰 기록 목록을 불러오지 못했습니다.',
   })
-  const result = (await response.json().catch(() => null)) as ParentObservationListResponseDto | null
 
-  if (!response.ok || result?.code) {
-    throw new Error(result?.message ?? '보호자 관찰 기록 목록을 불러오지 못했습니다.')
+  if (result.code) {
+    throw new Error(result.message ?? '보호자 관찰 기록 목록을 불러오지 못했습니다.')
   }
 
   const reports =
-    result?.data.reports ?? flattenDailyReportGroups(result?.data.dailyReports)
+    result.data.reports ?? flattenDailyReportGroups(result.data.dailyReports)
 
   return {
     records: sortObservationRecords(reports.map(mapObservationListItemToRecord)),

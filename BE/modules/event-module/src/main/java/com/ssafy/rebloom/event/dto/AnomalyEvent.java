@@ -1,13 +1,14 @@
 package com.ssafy.rebloom.event.dto;
 
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 public record AnomalyEvent (
     Long id,
     UUID userId,
-    Instant tsStart,
-    Instant tsEnd,
+    LocalDateTime tsStart,
+    LocalDateTime tsEnd,
     Double hr,
     Double rmssd,
     Double pnn50,

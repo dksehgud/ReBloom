@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 
+import { useAppSessionStore } from '../../auth/store/useAppSessionStore'
 import { diaryBridge, type NativeDiary } from '../bridge/diaryBridge'
 import type { DiaryCalendarEntry } from '../components/DiaryCalendar'
 import type { DiaryListItem } from '../components/DiaryListView'
@@ -206,6 +207,7 @@ function cloneSampleRecords() {
 }
 
 function useChildDiaryPageState() {
+  const currentUserId = useAppSessionStore((state) => state.currentUser?.userId ?? null)
   const [currentDate, setCurrentDate] = useState(() => new Date())
   const [recordsByMonth, setRecordsByMonth] = useState<DiaryRecordsByMonth>(() =>
     diaryBridge.isAvailable() ? {} : cloneSampleRecords(),
@@ -227,19 +229,32 @@ function useChildDiaryPageState() {
     preloadDiaryEmotionAssets()
   }, [])
 
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => {
+      setRecordsByMonth(diaryBridge.isAvailable() ? {} : cloneSampleRecords())
+      setSelectedDiaryId(null)
+      setEditingDiaryId(null)
+      setViewMode('calendar')
+    }, 0)
+
+    return () => window.clearTimeout(timeoutId)
+  }, [currentUserId])
+
   const currentYear = currentDate.getFullYear()
   const currentMonth = currentDate.getMonth() + 1
   const currentMonthKey = getMonthKey(currentYear, currentMonth)
 
   useEffect(() => {
-    if (!diaryBridge.isAvailable()) {
+    if (!diaryBridge.isAvailable() || !currentUserId) {
       return undefined
     }
 
     let isEffectActive = true
 
     try {
-      const nextRecords = diaryBridge.getDiariesByMonth(currentMonthKey).map(nativeDiaryToRecord)
+      const nextRecords = diaryBridge
+        .getDiariesByMonth(currentUserId, currentMonthKey)
+        .map(nativeDiaryToRecord)
 
       queueMicrotask(() => {
         if (!isEffectActive) {
@@ -258,7 +273,7 @@ function useChildDiaryPageState() {
     return () => {
       isEffectActive = false
     }
-  }, [currentMonthKey])
+  }, [currentMonthKey, currentUserId])
 
   const records = useMemo(
     () => recordsByMonth[currentMonthKey] ?? [],
@@ -413,8 +428,13 @@ function useChildDiaryPageState() {
     }
 
     if (diaryBridge.isAvailable()) {
+      if (!currentUserId) {
+        console.error('Cannot delete native diary record without current user id')
+        return
+      }
+
       try {
-        const deleted = diaryBridge.deleteDiary(selectedRecord.id)
+        const deleted = diaryBridge.deleteDiary(currentUserId, selectedRecord.id)
         if (!deleted) {
           return
         }
@@ -460,9 +480,15 @@ function useChildDiaryPageState() {
     }
 
     if (diaryBridge.isAvailable()) {
+      if (!currentUserId) {
+        console.error('Cannot save native diary record without current user id')
+        return
+      }
+
       try {
         const savedDiary = diaryBridge.saveDiary({
           id: editingDiaryId ?? undefined,
+          userId: currentUserId,
           diaryDate,
           content: trimmedContent,
           emotionKey: draftEmotionKey,
