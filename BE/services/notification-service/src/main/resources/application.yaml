@@ -28,7 +28,6 @@ rebloom:
     producer-name: notification-service
     topics:
       anomaly-analysed: ${KAFKA_TOPIC_ANOMALY_ANALYSED:rebloom.anomaly.analysed.v1}
-      conversation-initiated: ${KAFKA_TOPIC_CONVERSATION_INITIATED:rebloom.conversation.initiated.v1}
       event-dlt: ${KAFKA_TOPIC_EVENT_DLT:rebloom.event.dlt.v1}
     producer:
       retries: 3

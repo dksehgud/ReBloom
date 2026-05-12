@@ -4,6 +4,7 @@ import com.ssafy.rebloom.common.dto.SliceResponseDto;
 import com.ssafy.rebloom.common.exception.CustomException;
 import com.ssafy.rebloom.common.exception.ErrorCode;
 import com.ssafy.rebloom.event.dto.AnomalyEvent;
+import com.ssafy.rebloom.notification_service.constants.Constants;
 import com.ssafy.rebloom.notification_service.domain.entity.Notification;
 import com.ssafy.rebloom.notification_service.domain.entity.NotificationPayload;
 import com.ssafy.rebloom.notification_service.domain.entity.NotificationType;
@@ -16,14 +17,15 @@ import com.ssafy.rebloom.notification_service.dto.RealtimeNotificationMessage;
 import com.ssafy.rebloom.notification_service.dto.response.NotificationResponseDto;
 import com.ssafy.rebloom.notification_service.pubsub.NotificationRedisPublisher;
 import com.ssafy.rebloom.notification_service.repository.NotificationRepository;
-import com.ssafy.rebloom.notification_service.resolver.NotificationTypeResolver;
-import com.ssafy.rebloom.notification_service.service.AnomalyAlertPolicyService;
 import com.ssafy.rebloom.notification_service.service.AnomalyAlertService;
 import com.ssafy.rebloom.notification_service.service.AuthServiceResolveService;
 import com.ssafy.rebloom.notification_service.service.FcmService;
 import com.ssafy.rebloom.notification_service.service.NotificationService;
 import com.ssafy.rebloom.notification_service.service.NotificationSettingService;
+import com.ssafy.rebloom.notification_service.service.NotificationTypeService;
 import com.ssafy.rebloom.notification_service.service.OnlineStatusService;
+import com.ssafy.rebloom.notification_service.service.RedisService;
+import java.time.Duration;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
@@ -37,14 +39,14 @@ import org.springframework.transaction.annotation.Transactional;
 public class NotificationServiceImpl implements NotificationService {
 
     private final NotificationRepository notificationRepository;
-    private final NotificationTypeResolver notificationTypeResolver;
+    private final NotificationTypeService notificationTypeService;
     private final NotificationSettingService notificationSettingService;
     private final OnlineStatusService onlineStatusService;
     private final NotificationRedisPublisher notificationRedisPublisher;
     private final FcmService fcmService;
     private final AuthServiceResolveService authServiceResolveService;
     private final AnomalyAlertService anomalyAlertService;
-    private final AnomalyAlertPolicyService anomalyAlertPolicyService;
+    private final RedisService redisService;
 
     @Override
     @Transactional
@@ -55,7 +57,7 @@ public class NotificationServiceImpl implements NotificationService {
 
         UUID childrenId = event.userId();
 
-        if (!anomalyAlertPolicyService.tryAcquireAlertCoolTime(childrenId)) {
+        if (!tryAcquireAlertCoolTime(childrenId)) {
             return;
         }
 
@@ -64,7 +66,10 @@ public class NotificationServiceImpl implements NotificationService {
 
         NotificationPayload payload = NotificationPayload.builder()
             .title("주의 필요")
-            .content(String.format("지금 한번 %s에게 관심을 표현해볼까요?", receiverInfo.childrenName()))
+            .content(String.format(
+                "지금 한번 %s에게 관심을 표현해볼까요?",
+                receiverInfo.childrenName()
+            ))
             .childrenId(receiverInfo.childrenId())
             .childrenName(receiverInfo.childrenName())
             .parentId(receiverInfo.parentId())
@@ -84,7 +89,7 @@ public class NotificationServiceImpl implements NotificationService {
     @Transactional
     public void send(NotificationCommand command) {
         NotificationType notificationType =
-            notificationTypeResolver.resolve(command.notificationCode());
+            notificationTypeService.resolve(command.notificationCode());
 
         Notification notification = notificationRepository.save(
             Notification.builder()
@@ -124,7 +129,9 @@ public class NotificationServiceImpl implements NotificationService {
             );
         }
 
-        Slice<NotificationResponseDto> response = notifications.map(NotificationResponseDto::from);
+        Slice<NotificationResponseDto> response =
+            notifications.map(NotificationResponseDto::from);
+
         return SliceResponseDto.from(response);
     }
 
@@ -147,6 +154,18 @@ public class NotificationServiceImpl implements NotificationService {
     @Transactional
     public int markAllAsRead(UUID receiverId) {
         return notificationRepository.markAllAsReadByReceiverId(receiverId);
+    }
+
+    private boolean tryAcquireAlertCoolTime(UUID childrenId) {
+        return redisService.setIfAbsent(
+            anomalyCoolTimeKey(childrenId),
+            "1",
+            Duration.ofMinutes(Constants.ALERT_COOL_TIME)
+        );
+    }
+
+    private String anomalyCoolTimeKey(UUID childrenId) {
+        return Constants.ALERT_COOL_TIME_KEY_PREFIX + ":" + childrenId;
     }
 
     private void deliver(Notification notification, NotificationCommand command) {

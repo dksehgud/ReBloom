@@ -4,7 +4,7 @@ import com.ssafy.rebloom.notification_service.constants.Constants;
 import com.ssafy.rebloom.notification_service.dto.response.ChildrenIotInfoResponseDto;
 import com.ssafy.rebloom.notification_service.service.AnomalyAlertService;
 import com.ssafy.rebloom.notification_service.service.AuthServiceResolveService;
-import com.ssafy.rebloom.notification_service.service.ConversationMqttPublishService;
+import com.ssafy.rebloom.notification_service.service.MqttPublishService;
 import com.ssafy.rebloom.notification_service.service.RedisService;
 import java.time.Duration;
 import java.util.UUID;
@@ -19,7 +19,7 @@ public class AnomalyAlertServiceImpl implements AnomalyAlertService {
 
     private final RedisService redisService;
     private final AuthServiceResolveService authServiceResolveService;
-    private final ConversationMqttPublishService conversationMqttPublishService;
+    private final MqttPublishService mqttPublishService;
 
     @Override
     public void handleValidAnomaly(UUID childrenId, String correlationId) {
@@ -38,7 +38,7 @@ public class AnomalyAlertServiceImpl implements AnomalyAlertService {
         }
 
         try {
-            conversationMqttPublishService.publishConversationStart(iotInfo, correlationId);
+            mqttPublishService.publishConversationStart(iotInfo, correlationId);
         } catch (Exception e) {
             log.error(
                 "Failed to publish MQTT conversation start message. childrenId={}, serialNumber={}",

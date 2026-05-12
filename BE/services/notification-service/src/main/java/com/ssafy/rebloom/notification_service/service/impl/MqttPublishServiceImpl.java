@@ -3,11 +3,11 @@ package com.ssafy.rebloom.notification_service.service.impl;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ssafy.rebloom.notification_service.config.property.MqttProperties;
+import com.ssafy.rebloom.notification_service.constants.Constants;
 import com.ssafy.rebloom.notification_service.dto.request.ConversationStartMqttRequestDto;
 import com.ssafy.rebloom.notification_service.dto.response.ChildrenIotInfoResponseDto;
-import com.ssafy.rebloom.notification_service.service.ConversationMqttPublishService;
+import com.ssafy.rebloom.notification_service.service.MqttPublishService;
 import java.time.OffsetDateTime;
-import java.time.ZoneId;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -21,10 +21,8 @@ import org.springframework.stereotype.Service;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class ConversationMqttPublishServiceImpl implements ConversationMqttPublishService {
-    private static final String CONVERSATION_START_TYPE = "conversation_start";
+public class MqttPublishServiceImpl implements MqttPublishService {
     private static final String DEFAULT_GREETING = "안녕! 무슨 일이 있니?";
-    private static final ZoneId SEOUL_ZONE_ID = ZoneId.of("Asia/Seoul");
 
     private final ObjectMapper objectMapper;
     private final MqttProperties mqttProperties;
@@ -40,11 +38,11 @@ public class ConversationMqttPublishServiceImpl implements ConversationMqttPubli
         );
 
         ConversationStartMqttRequestDto payload = new ConversationStartMqttRequestDto(
-            CONVERSATION_START_TYPE,
+            Constants.CONVERSATION_START_TYPE,
             aiotInfo.serialNumber(),
             DEFAULT_GREETING,
             correlationId,
-            OffsetDateTime.now(SEOUL_ZONE_ID).toString()
+            OffsetDateTime.now(Constants.SEOUL_ZONE_ID).toString()
         );
 
         publish(

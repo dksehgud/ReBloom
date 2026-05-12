@@ -19,8 +19,8 @@ public interface AuthServiceInternalClient {
         @PathVariable UUID childrenId
     );
 
-    @GetMapping("/api/v1/internal/children/{childrenId}/aiot-info")
-    BaseResponse<ChildrenIotInfoResponseDto> getChildrenAiotInfo(
+    @GetMapping("/api/v1/internal/children/{childrenId}/iot-info")
+    BaseResponse<ChildrenIotInfoResponseDto> getChildrenIotInfo(
         @PathVariable UUID childrenId
     );
 }

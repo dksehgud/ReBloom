@@ -12,8 +12,8 @@ import com.ssafy.rebloom.notification_service.dto.response.DiaryReminderSettingR
 import com.ssafy.rebloom.notification_service.dto.response.NotificationScheduleResponseDto;
 import com.ssafy.rebloom.notification_service.repository.NotificationScheduleRepository;
 import com.ssafy.rebloom.notification_service.repository.NotificationSettingRepository;
-import com.ssafy.rebloom.notification_service.resolver.NotificationTypeResolver;
 import com.ssafy.rebloom.notification_service.service.NotificationSettingService;
+import com.ssafy.rebloom.notification_service.service.NotificationTypeService;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
@@ -30,7 +30,7 @@ public class NotificationSettingServiceImpl implements NotificationSettingServic
 
     private final NotificationSettingRepository notificationSettingRepository;
     private final NotificationScheduleRepository notificationScheduleRepository;
-    private final NotificationTypeResolver notificationTypeResolver;
+    private final NotificationTypeService notificationTypeService;
 
     @Override
     public boolean isEnabled(UUID userId) {
@@ -67,7 +67,7 @@ public class NotificationSettingServiceImpl implements NotificationSettingServic
         setting.updateEnabled(request.isEnabled());
 
         NotificationType diaryReminderType =
-            notificationTypeResolver.resolve(NotificationCode.DIARY_REMINDER);
+            notificationTypeService.resolve(NotificationCode.DIARY_REMINDER);
 
         notificationScheduleRepository.deleteDiaryReminderSchedules(
             userId,

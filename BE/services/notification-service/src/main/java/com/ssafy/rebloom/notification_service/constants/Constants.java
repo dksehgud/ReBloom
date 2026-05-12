@@ -1,5 +1,7 @@
 package com.ssafy.rebloom.notification_service.constants;
 
+import java.time.ZoneId;
+
 public final class Constants {
     public static final long ALERT_COOL_TIME= 5L;
     public static final long ALERT_WINDOW = 15L;
@@ -16,5 +18,9 @@ public final class Constants {
     public static final String CHANNEL = "notification:events";
 
     public static final long SSE_TIMEOUT = 30L * 60L * 1000L;
+
+    public static final ZoneId SEOUL_ZONE_ID = ZoneId.of("Asia/Seoul");
+
+    public static final String CONVERSATION_START_TYPE = "conversation_start";
 
 }
