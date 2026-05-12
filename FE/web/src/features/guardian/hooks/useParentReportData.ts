@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import type { DiaryEmotionKey } from '../../diary/constants/diaryEmotions'
 import { useAppSessionStore } from '../../auth/store/useAppSessionStore'
@@ -32,23 +32,40 @@ type UseParentReportDataResult = {
 
 type ReportWeekday = ParentReportWeek['moods'][number]['weekday']
 
-const fallbackReportRanges = [
-  {
-    baseDate: '2026-04-20',
-    endDate: '2026-04-26',
-    startDate: '2026-04-20',
-  },
-  {
-    baseDate: '2026-04-27',
-    endDate: '2026-05-03',
-    startDate: '2026-04-27',
-  },
-  {
-    baseDate: '2026-05-04',
-    endDate: '2026-05-10',
-    startDate: '2026-05-04',
-  },
-] as const
+const CURRENT_REPORT_WEEK_INDEX = parentReportWeeks.length - 1
+const DAYS_PER_WEEK = 7
+
+function formatDateParam(date: Date) {
+  const year = date.getFullYear()
+  const month = `${date.getMonth() + 1}`.padStart(2, '0')
+  const day = `${date.getDate()}`.padStart(2, '0')
+
+  return `${year}-${month}-${day}`
+}
+
+function addDays(date: Date, days: number) {
+  const nextDate = new Date(date)
+  nextDate.setDate(nextDate.getDate() + days)
+
+  return nextDate
+}
+
+function getMondayOfWeek(date: Date) {
+  const monday = new Date(date)
+  monday.setHours(0, 0, 0, 0)
+
+  const dayOfWeek = monday.getDay()
+  const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek
+  monday.setDate(monday.getDate() + mondayOffset)
+
+  return monday
+}
+
+function getWeekLabelByEndDate(endDate: Date) {
+  const weekOfMonth = Math.ceil(endDate.getDate() / DAYS_PER_WEEK)
+
+  return `${endDate.getFullYear()}년 ${endDate.getMonth() + 1}월 ${weekOfMonth}주차`
+}
 
 const dayOfWeekLabelMap: Record<string, ReportWeekday> = {
   FRIDAY: '금',
@@ -77,7 +94,30 @@ const emotionToneMap: Record<DiaryEmotionKey, ParentReportMoodTone> = {
 }
 
 function getReportRange(selectedWeekIndex: number) {
-  return fallbackReportRanges[selectedWeekIndex] ?? fallbackReportRanges[0]
+  const weekOffset = selectedWeekIndex - CURRENT_REPORT_WEEK_INDEX
+  const startOfWeek = addDays(getMondayOfWeek(new Date()), weekOffset * DAYS_PER_WEEK)
+  const endOfWeek = addDays(startOfWeek, DAYS_PER_WEEK - 1)
+  const startDate = formatDateParam(startOfWeek)
+  const endDate = formatDateParam(endOfWeek)
+
+  return {
+    baseDate: startDate,
+    endDate,
+    id: `${startDate}_${endDate}`,
+    label: getWeekLabelByEndDate(endOfWeek),
+    startDate,
+  }
+}
+
+function createReportWeekForRange(
+  templateWeek: ParentReportWeek,
+  reportRange: ReturnType<typeof getReportRange>,
+): ParentReportWeek {
+  return {
+    ...templateWeek,
+    id: reportRange.id,
+    label: reportRange.label,
+  }
 }
 
 function normalizeEmotionIcon(value?: string | null): DiaryEmotionKey | null {
@@ -216,7 +256,17 @@ export function useParentReportData({
   const [apiWeek, setApiWeek] = useState<ParentReportWeek | null>(null)
   const [isError, setIsError] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
-  const currentFallbackWeek = parentReportWeeks[selectedWeekIndex] ?? parentReportWeeks[0]
+  const reportRange = useMemo(() => getReportRange(selectedWeekIndex), [selectedWeekIndex])
+  const currentFallbackWeek = useMemo(
+    () =>
+      createReportWeekForRange(
+        parentReportWeeks[selectedWeekIndex] ??
+          parentReportWeeks[CURRENT_REPORT_WEEK_INDEX] ??
+          parentReportWeeks[0],
+        reportRange,
+      ),
+    [reportRange, selectedWeekIndex],
+  )
 
   const loadReportData = useCallback(async () => {
     if (!accessToken || !childrenId) {
@@ -226,7 +276,7 @@ export function useParentReportData({
       return
     }
 
-    const { baseDate, endDate, startDate } = getReportRange(selectedWeekIndex)
+    const { baseDate, endDate, startDate } = reportRange
 
     try {
       setIsLoading(true)
@@ -272,7 +322,7 @@ export function useParentReportData({
     } finally {
       setIsLoading(false)
     }
-  }, [accessToken, childrenId, currentFallbackWeek, selectedWeekIndex])
+  }, [accessToken, childrenId, currentFallbackWeek, reportRange])
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {

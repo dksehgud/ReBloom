@@ -185,7 +185,7 @@ function createStabilityChartData(scores: typeof parentReportWeeks[number]['stab
 
 function ParentReportPage() {
   const { selectedChild } = useParentConnectedChild()
-  const [selectedWeekIndex, setSelectedWeekIndex] = useState(1)
+  const [selectedWeekIndex, setSelectedWeekIndex] = useState(parentReportWeeks.length - 1)
   const [isEmotionInfoOpen, setIsEmotionInfoOpen] = useState(false)
   const [isStabilityInfoOpen, setIsStabilityInfoOpen] = useState(false)
 
