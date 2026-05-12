@@ -3,8 +3,16 @@ import { useState } from 'react'
 import AuthInput from '../../../components/auth/AuthInput'
 import PasswordResetModalLayout from '../../../components/auth/password-reset/PasswordResetModalLayout'
 
+type PasswordChangePayload = {
+  currentPassword: string
+  newPassword: string
+  newPasswordConfirm: string
+}
+
 type ChildPasswordChangeModalProps = {
   onClose: () => void
+  onChangePassword?: (payload: PasswordChangePayload) => Promise<void>
+  onVerifyCurrentPassword?: (password: string) => Promise<void>
 }
 
 function EyeIcon({ visible }: { visible: boolean }) {
@@ -75,9 +83,11 @@ function EyeIcon({ visible }: { visible: boolean }) {
   )
 }
 
-const MOCK_CURRENT_PASSWORD = 'Rebloom!123'
-
-function ChildPasswordChangeModal({ onClose }: ChildPasswordChangeModalProps) {
+function ChildPasswordChangeModal({
+  onChangePassword,
+  onClose,
+  onVerifyCurrentPassword,
+}: ChildPasswordChangeModalProps) {
   const [currentStep, setCurrentStep] = useState(1)
   const [currentPassword, setCurrentPassword] = useState('')
   const [nextPassword, setNextPassword] = useState('')
@@ -85,13 +95,12 @@ function ChildPasswordChangeModal({ onClose }: ChildPasswordChangeModalProps) {
   const [showCurrentPassword, setShowCurrentPassword] = useState(false)
   const [showNextPassword, setShowNextPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   const hasLengthRule = nextPassword.length >= 8 && nextPassword.length <= 20
   const hasNumberRule = /\d/.test(nextPassword)
   const hasSpecialRule = /[^A-Za-z0-9]/.test(nextPassword)
-
-  const isCurrentPasswordMismatched =
-    currentPassword.trim().length > 0 && currentPassword !== MOCK_CURRENT_PASSWORD
   const isSameAsCurrentPassword =
     nextPassword.trim().length > 0 && nextPassword === currentPassword
   const isPasswordMatched =
@@ -99,8 +108,7 @@ function ChildPasswordChangeModal({ onClose }: ChildPasswordChangeModalProps) {
   const isPasswordMismatched =
     confirmPassword.trim().length > 0 && confirmPassword !== nextPassword
 
-  const isCurrentStepEnabled =
-    currentPassword.trim().length > 0 && !isCurrentPasswordMismatched
+  const isCurrentStepEnabled = currentPassword.trim().length > 0
   const isNextStepEnabled =
     nextPassword.trim().length > 0 &&
     hasLengthRule &&
@@ -117,6 +125,8 @@ function ChildPasswordChangeModal({ onClose }: ChildPasswordChangeModalProps) {
     setShowCurrentPassword(false)
     setShowNextPassword(false)
     setShowConfirmPassword(false)
+    setErrorMessage(null)
+    setIsSubmitting(false)
   }
 
   const handleClose = () => {
@@ -125,22 +135,50 @@ function ChildPasswordChangeModal({ onClose }: ChildPasswordChangeModalProps) {
   }
 
   const handlePrevious = () => {
+    setErrorMessage(null)
     setCurrentStep((prev) => Math.max(1, prev - 1))
   }
 
-  const handlePrimaryAction = () => {
-    if (currentStep === 1 && isCurrentStepEnabled) {
-      setCurrentStep(2)
+  const handlePrimaryAction = async () => {
+    if (isSubmitting) {
       return
     }
 
-    if (currentStep === 2 && isNextStepEnabled) {
-      setCurrentStep(3)
-      return
-    }
+    try {
+      setIsSubmitting(true)
+      setErrorMessage(null)
 
-    if (currentStep === 3 && isConfirmStepEnabled) {
-      handleClose()
+      if (currentStep === 1 && isCurrentStepEnabled) {
+        if (!onVerifyCurrentPassword) {
+          throw new Error('현재 비밀번호 확인 기능이 연결되어 있지 않습니다.')
+        }
+
+        await onVerifyCurrentPassword(currentPassword)
+        setCurrentStep(2)
+        return
+      }
+
+      if (currentStep === 2 && isNextStepEnabled) {
+        setCurrentStep(3)
+        return
+      }
+
+      if (currentStep === 3 && isConfirmStepEnabled) {
+        if (!onChangePassword) {
+          throw new Error('비밀번호 변경 기능이 연결되어 있지 않습니다.')
+        }
+
+        await onChangePassword({
+          currentPassword,
+          newPassword: nextPassword,
+          newPasswordConfirm: confirmPassword,
+        })
+        handleClose()
+      }
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : '비밀번호 변경에 실패했습니다.')
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
@@ -149,8 +187,8 @@ function ChildPasswordChangeModal({ onClose }: ChildPasswordChangeModalProps) {
       ? {
           title: '현재 비밀번호 입력',
           description: '본인 확인을 위해 현재 비밀번호를 입력해주세요.',
-          primaryLabel: '다음',
-          primaryEnabled: isCurrentStepEnabled,
+          primaryLabel: isSubmitting ? '확인 중' : '다음',
+          primaryEnabled: isCurrentStepEnabled && !isSubmitting,
           content: (
             <AuthInput
               label=""
@@ -159,18 +197,12 @@ function ChildPasswordChangeModal({ onClose }: ChildPasswordChangeModalProps) {
               autoComplete="current-password"
               value={currentPassword}
               onChange={(event) => setCurrentPassword(event.target.value)}
-              error={
-                isCurrentPasswordMismatched
-                  ? '현재 비밀번호가 일치하지 않습니다.'
-                  : undefined
-              }
+              error={errorMessage ?? undefined}
               action={
                 <button
                   type="button"
                   className="field-input-icon"
-                  aria-label={
-                    showCurrentPassword ? '비밀번호 숨기기' : '비밀번호 보기'
-                  }
+                  aria-label={showCurrentPassword ? '비밀번호 숨기기' : '비밀번호 보기'}
                   onClick={() => setShowCurrentPassword((prev) => !prev)}
                 >
                   <EyeIcon visible={showCurrentPassword} />
@@ -184,7 +216,7 @@ function ChildPasswordChangeModal({ onClose }: ChildPasswordChangeModalProps) {
             title: '새 비밀번호 입력',
             description: '이전과 다른 비밀번호로 설정해주세요.',
             primaryLabel: '다음',
-            primaryEnabled: isNextStepEnabled,
+            primaryEnabled: isNextStepEnabled && !isSubmitting,
             content: (
               <>
                 <AuthInput
@@ -203,9 +235,7 @@ function ChildPasswordChangeModal({ onClose }: ChildPasswordChangeModalProps) {
                     <button
                       type="button"
                       className="field-input-icon"
-                      aria-label={
-                        showNextPassword ? '비밀번호 숨기기' : '비밀번호 보기'
-                      }
+                      aria-label={showNextPassword ? '비밀번호 숨기기' : '비밀번호 보기'}
                       onClick={() => setShowNextPassword((prev) => !prev)}
                     >
                       <EyeIcon visible={showNextPassword} />
@@ -222,35 +252,38 @@ function ChildPasswordChangeModal({ onClose }: ChildPasswordChangeModalProps) {
           }
         : {
             title: '비밀번호 확인',
-            description: '새 비밀번호를 다시 한 번 입력해주세요.',
-            primaryLabel: '완료',
-            primaryEnabled: isConfirmStepEnabled,
+            description: '새 비밀번호를 다시 한번 입력해주세요.',
+            primaryLabel: isSubmitting ? '변경 중' : '완료',
+            primaryEnabled: isConfirmStepEnabled && !isSubmitting,
             content: (
-              <AuthInput
-                label=""
-                type={showConfirmPassword ? 'text' : 'password'}
-                placeholder="비밀번호 확인"
-                autoComplete="new-password"
-                value={confirmPassword}
-                onChange={(event) => setConfirmPassword(event.target.value)}
-                error={
-                  isPasswordMismatched
-                    ? '새 비밀번호가 일치하지 않습니다.'
-                    : undefined
-                }
-                action={
-                  <button
-                    type="button"
-                    className="field-input-icon"
-                    aria-label={
-                      showConfirmPassword ? '비밀번호 숨기기' : '비밀번호 보기'
-                    }
-                    onClick={() => setShowConfirmPassword((prev) => !prev)}
-                  >
-                    <EyeIcon visible={showConfirmPassword} />
-                  </button>
-                }
-              />
+              <>
+                <AuthInput
+                  label=""
+                  type={showConfirmPassword ? 'text' : 'password'}
+                  placeholder="비밀번호 확인"
+                  autoComplete="new-password"
+                  value={confirmPassword}
+                  onChange={(event) => setConfirmPassword(event.target.value)}
+                  error={
+                    isPasswordMismatched
+                      ? '새 비밀번호와 일치하지 않습니다.'
+                      : undefined
+                  }
+                  action={
+                    <button
+                      type="button"
+                      className="field-input-icon"
+                      aria-label={
+                        showConfirmPassword ? '비밀번호 숨기기' : '비밀번호 보기'
+                      }
+                      onClick={() => setShowConfirmPassword((prev) => !prev)}
+                    >
+                      <EyeIcon visible={showConfirmPassword} />
+                    </button>
+                  }
+                />
+                {errorMessage ? <p className="field-error">{errorMessage}</p> : null}
+              </>
             ),
           }
 
@@ -266,8 +299,9 @@ function ChildPasswordChangeModal({ onClose }: ChildPasswordChangeModalProps) {
             type="button"
             className="auth-button is-secondary"
             onClick={currentStep === 1 ? handleClose : handlePrevious}
+            disabled={isSubmitting}
           >
-            이전
+            {currentStep === 1 ? '취소' : '이전'}
           </button>
           <button
             type="button"
@@ -289,4 +323,5 @@ function ChildPasswordChangeModal({ onClose }: ChildPasswordChangeModalProps) {
   )
 }
 
+export type { PasswordChangePayload }
 export default ChildPasswordChangeModal

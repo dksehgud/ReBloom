@@ -6,7 +6,9 @@ import ChildDiaryNotificationDetailModal, {
   type DiaryNotificationSettings,
 } from '../../features/user/components/ChildDiaryNotificationDetailModal'
 import ChildLogoutConfirmModal from '../../features/user/components/ChildLogoutConfirmModal'
-import ChildPasswordChangeModal from '../../features/user/components/ChildPasswordChangeModal'
+import ChildPasswordChangeModal, {
+  type PasswordChangePayload,
+} from '../../features/user/components/ChildPasswordChangeModal'
 import ChildProfileAddressModal from '../../features/user/components/ChildProfileAddressModal'
 import { formatChildAddress, type ChildAddress } from '../../shared/types/childAddress'
 
@@ -17,9 +19,11 @@ type ChildSettingsPageProps = {
   counselorName?: string | null
   counselorSubtitle?: string | null
   onBack?: () => void
+  onChangePassword?: (payload: PasswordChangePayload) => Promise<void>
   onSaveProfileAddress?: (address: ChildAddress) => void | Promise<void>
   onOpenCounselStatus?: () => void
   onLogout?: () => void
+  onVerifyCurrentPassword?: (password: string) => Promise<void>
 }
 
 type SettingsCardRowProps = {
@@ -241,9 +245,11 @@ function ChildSettingsPage({
   counselorName = null,
   counselorSubtitle = null,
   onBack,
+  onChangePassword,
   onSaveProfileAddress,
   onOpenCounselStatus,
   onLogout,
+  onVerifyCurrentPassword,
 }: ChildSettingsPageProps) {
   const [isAddressModalOpen, setIsAddressModalOpen] = useState(false)
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false)
@@ -364,7 +370,23 @@ function ChildSettingsPage({
       ) : null}
 
       {isPasswordModalOpen ? (
-        <ChildPasswordChangeModal onClose={() => setIsPasswordModalOpen(false)} />
+        <ChildPasswordChangeModal
+          onClose={() => setIsPasswordModalOpen(false)}
+          onChangePassword={async (payload) => {
+            if (!onChangePassword) {
+              throw new Error('로그인 정보가 없어 비밀번호를 변경할 수 없습니다.')
+            }
+
+            await onChangePassword(payload)
+          }}
+          onVerifyCurrentPassword={async (password) => {
+            if (!onVerifyCurrentPassword) {
+              throw new Error('로그인 정보가 없어 현재 비밀번호를 확인할 수 없습니다.')
+            }
+
+            await onVerifyCurrentPassword(password)
+          }}
+        />
       ) : null}
 
       {isLogoutModalOpen ? (

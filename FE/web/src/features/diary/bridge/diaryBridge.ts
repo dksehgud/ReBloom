@@ -12,7 +12,7 @@ type NativeDiary = {
 
 type DiarySavePayload = {
   id?: string
-  userId?: string | null
+  userId: string
   diaryDate: string
   content: string
   emotionKey: DiaryEmotionKey | null
@@ -25,10 +25,10 @@ type BridgeResponse<T> = {
 }
 
 type NativeDiaryBridge = {
-  getDiariesByMonth: (yearMonth: string) => string
-  getDiaryByDate: (diaryDate: string) => string
+  getDiariesByMonth: (userId: string, yearMonth: string) => string
+  getDiaryByDate: (userId: string, diaryDate: string) => string
   saveDiary: (requestJson: string) => string
-  deleteDiary: (id: string) => string
+  deleteDiary: (userId: string, id: string) => string
 }
 
 declare global {
@@ -56,22 +56,22 @@ const diaryBridge = {
     return Boolean(getBridge())
   },
 
-  getDiariesByMonth(yearMonth: string) {
+  getDiariesByMonth(userId: string, yearMonth: string) {
     const bridge = getBridge()
     if (!bridge) {
       return []
     }
 
-    return parseBridgeResponse<NativeDiary[]>(bridge.getDiariesByMonth(yearMonth)).data ?? []
+    return parseBridgeResponse<NativeDiary[]>(bridge.getDiariesByMonth(userId, yearMonth)).data ?? []
   },
 
-  getDiaryByDate(diaryDate: string) {
+  getDiaryByDate(userId: string, diaryDate: string) {
     const bridge = getBridge()
     if (!bridge) {
       return null
     }
 
-    return parseBridgeResponse<NativeDiary | null>(bridge.getDiaryByDate(diaryDate)).data
+    return parseBridgeResponse<NativeDiary | null>(bridge.getDiaryByDate(userId, diaryDate)).data
   },
 
   saveDiary(payload: DiarySavePayload) {
@@ -85,13 +85,13 @@ const diaryBridge = {
     ).data
   },
 
-  deleteDiary(id: string) {
+  deleteDiary(userId: string, id: string) {
     const bridge = getBridge()
     if (!bridge) {
       throw new Error('Diary bridge is not available')
     }
 
-    return parseBridgeResponse<{ deleted: boolean }>(bridge.deleteDiary(id)).data?.deleted ?? false
+    return parseBridgeResponse<{ deleted: boolean }>(bridge.deleteDiary(userId, id)).data?.deleted ?? false
   },
 }
 

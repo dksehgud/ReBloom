@@ -11,21 +11,22 @@ interface DiaryDao {
         """
         SELECT *
         FROM child_diaries
-        WHERE diary_date BETWEEN :startDate AND :endDate
+        WHERE user_id = :userId
+        AND diary_date BETWEEN :startDate AND :endDate
         ORDER BY diary_date ASC
         """,
     )
-    suspend fun findByDateRange(startDate: String, endDate: String): List<DiaryEntity>
+    suspend fun findByDateRange(userId: String, startDate: String, endDate: String): List<DiaryEntity>
 
-    @Query("SELECT * FROM child_diaries WHERE id = :id LIMIT 1")
-    suspend fun findById(id: String): DiaryEntity?
+    @Query("SELECT * FROM child_diaries WHERE user_id = :userId AND id = :id LIMIT 1")
+    suspend fun findById(userId: String, id: String): DiaryEntity?
 
-    @Query("SELECT * FROM child_diaries WHERE diary_date = :diaryDate LIMIT 1")
-    suspend fun findByDate(diaryDate: String): DiaryEntity?
+    @Query("SELECT * FROM child_diaries WHERE user_id = :userId AND diary_date = :diaryDate LIMIT 1")
+    suspend fun findByDate(userId: String, diaryDate: String): DiaryEntity?
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun save(entity: DiaryEntity)
 
-    @Query("DELETE FROM child_diaries WHERE id = :id")
-    suspend fun deleteById(id: String): Int
+    @Query("DELETE FROM child_diaries WHERE user_id = :userId AND id = :id")
+    suspend fun deleteById(userId: String, id: String): Int
 }
