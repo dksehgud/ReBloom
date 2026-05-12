@@ -59,4 +59,10 @@ public class ParentCounselorRelation extends BaseTime {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "parent_id", nullable = false)
     private Parent parent;
+
+    public void activate() {
+        this.relationStatus = RelationStatus.ACTIVE;
+        this.startedAt = LocalDateTime.now();
+        this.endedAt = LocalDateTime.of(2038, 1, 19, 3, 14, 7);
+    }
 }

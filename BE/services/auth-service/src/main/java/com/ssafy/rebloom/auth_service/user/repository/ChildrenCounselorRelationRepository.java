@@ -48,4 +48,10 @@ public interface ChildrenCounselorRelationRepository extends JpaRepository<Child
     List<CounselorChildProjection> findChildrenByCounselorId(
         @Param("counselorId") UUID counselorId
     );
+
+    boolean existsByCounselor_IdAndChildren_IdAndRelationStatus(
+        UUID counselorId,
+        UUID childrenId,
+        RelationStatus relationStatus
+    );
 }
