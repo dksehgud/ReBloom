@@ -4,37 +4,60 @@ import { Link } from 'react-router-dom'
 
 import AuthInput from '../../components/auth/AuthInput'
 import CounselorAuthLayout from '../../components/templates/CounselorAuthLayout/CounselorAuthLayout'
+import { authApi } from '../../features/auth/api/authApi'
+
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 function CounselorFindPasswordPage() {
   const [email, setEmail] = useState('')
   const [isSubmitted, setIsSubmitted] = useState(false)
-  const [isError, setIsError] = useState(false)
+  const [emailError, setEmailError] = useState<string | undefined>()
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const isSubmitEnabled = email.trim().length > 0
+  const normalizedEmail = email.trim().toLowerCase()
+  const isSubmitEnabled = normalizedEmail.length > 0
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault()
-
-    if (!isSubmitEnabled) {
-      return
-    }
-
-    if (
-      email.toLowerCase().includes('missing') ||
-      email.toLowerCase().includes('none') ||
-      email.toLowerCase().includes('notfound')
-    ) {
-      setIsError(true)
+  const sendTemporaryPassword = async () => {
+    if (!EMAIL_PATTERN.test(normalizedEmail)) {
+      setEmailError('올바른 이메일 형식으로 입력해주세요.')
       setIsSubmitted(false)
       return
     }
 
-    setIsError(false)
-    setIsSubmitted(true)
+    try {
+      setIsSubmitting(true)
+      setEmailError(undefined)
+      await authApi.resetPassword(normalizedEmail)
+      setEmail(normalizedEmail)
+      setIsSubmitted(true)
+    } catch (error) {
+      setEmailError(
+        error instanceof Error
+          ? error.message
+          : '임시 비밀번호 발급에 실패했습니다.',
+      )
+      setIsSubmitted(false)
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+
+    if (!isSubmitEnabled || isSubmitting) {
+      return
+    }
+
+    void sendTemporaryPassword()
   }
 
   const handleResend = () => {
-    setIsSubmitted(true)
+    if (isSubmitting) {
+      return
+    }
+
+    void sendTemporaryPassword()
   }
 
   return (
@@ -56,9 +79,10 @@ function CounselorFindPasswordPage() {
             value={email}
             onChange={(event) => {
               setEmail(event.target.value)
-              setIsError(false)
+              setEmailError(undefined)
+              setIsSubmitted(false)
             }}
-            error={isError ? '존재하지 않는 이메일입니다.' : undefined}
+            error={emailError}
           />
 
           {isSubmitted ? (
@@ -69,9 +93,10 @@ function CounselorFindPasswordPage() {
               <button
                 type="button"
                 className="counselor-auth-link counselor-code-resend"
+                disabled={isSubmitting}
                 onClick={handleResend}
               >
-                재전송
+                {isSubmitting ? '재전송 중' : '재전송'}
               </button>
             </div>
           ) : null}
@@ -87,9 +112,9 @@ function CounselorFindPasswordPage() {
             <button
               type="submit"
               className="counselor-auth-button counselor-auth-button--primary"
-              disabled={!isSubmitEnabled}
+              disabled={!isSubmitEnabled || isSubmitting}
             >
-              임시 비밀번호 받기
+              {isSubmitting ? '발급 중' : '임시 비밀번호 받기'}
             </button>
           )}
         </form>

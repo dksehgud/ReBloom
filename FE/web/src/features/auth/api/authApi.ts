@@ -37,6 +37,8 @@ type UserInfoResponse = {
   addressDetail?: string
   latitude?: number
   longitude?: number
+  hospitalName?: string
+  hospitalAddress?: string
 }
 
 type SignupRequest = {
@@ -52,6 +54,9 @@ type SignupRequest = {
   addressDetail?: string
   latitude?: number
   longitude?: number
+  hospitalName?: string
+  hospitalAddress?: string
+  hospitalAddressDetail?: string
 }
 
 type UserUpdateRequest = {
@@ -189,6 +194,14 @@ async function signup(payload: SignupRequest) {
   })
 }
 
+async function resetPassword(email: string) {
+  await request<void>(`${AUTH_API_PREFIX}/auth/passwords/resets`, {
+    method: 'POST',
+    body: { email },
+    withAuth: false,
+  })
+}
+
 async function updateMyInfo(payload: UserUpdateRequest, accessToken?: string | null) {
   const response = await request<UserInfoResponse>(`${AUTH_API_PREFIX}/users`, {
     accessToken,
@@ -227,6 +240,7 @@ const authApi = {
   checkEmailDuplicate,
   getMyInfo,
   login,
+  resetPassword,
   sendEmailVerificationCode,
   signup,
   updateMyInfo,
