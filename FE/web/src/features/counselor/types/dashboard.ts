@@ -14,11 +14,12 @@ type ChildListItem = {
 }
 
 type CounselorConnectionRequest = {
-  id: number
+  id: string
   parentName: string
   parentEmail: string
   child: ChildListItem
   requestedAt: string
+  relationStatus?: string
 }
 
 type ObservationComment = CounselorCommentResponseDto

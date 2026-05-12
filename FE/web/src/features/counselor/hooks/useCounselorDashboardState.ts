@@ -5,6 +5,11 @@ import {
   type CounselorChildResponseDto,
 } from '../api/counselorChildrenApi'
 import {
+  acceptCounselorParentRelation,
+  getCounselorParentRelations,
+  type CounselorParentRelationResponseDto,
+} from '../api/counselorParentRelationApi'
+import {
   INITIAL_DASHBOARD_WEEK_INDEXES,
   createMockComment,
   expressionWeeks,
@@ -35,6 +40,22 @@ function getCounselingStatusLabel(status: string) {
   return status || '상담 상태 확인 중'
 }
 
+function getRelationStatusLabel(status: string) {
+  if (status === 'PENDING') {
+    return '연결 대기'
+  }
+
+  if (status === 'ACTIVE') {
+    return '연결 완료'
+  }
+
+  if (status === 'REJECT') {
+    return '연결 거절'
+  }
+
+  return status || '연결 상태 확인 중'
+}
+
 function mapCounselorChildToListItem(
   child: CounselorChildResponseDto,
 ): ChildListItem {
@@ -47,6 +68,28 @@ function mapCounselorChildToListItem(
     subText: '연결된 상담 아동',
     registeredAt: '1970-01-01T00:00:00.000Z',
     counselingStatus: child.counselingStatus,
+  }
+}
+
+function mapParentRelationToConnectionRequest(
+  relation: CounselorParentRelationResponseDto,
+): CounselorConnectionRequest {
+  const statusLabel = getRelationStatusLabel(relation.relationStatus)
+
+  return {
+    id: relation.parentId,
+    parentName: relation.parentName,
+    parentEmail: relation.parentEmail,
+    requestedAt: '',
+    relationStatus: relation.relationStatus,
+    child: {
+      id: relation.childrenId,
+      name: relation.childrenName,
+      meta: statusLabel,
+      subText: `보호자 : ${relation.parentName}`,
+      registeredAt: '1970-01-01T00:00:00.000Z',
+      counselingStatus: relation.relationStatus,
+    },
   }
 }
 
@@ -65,6 +108,9 @@ function useCounselorDashboardState() {
   const [connectionRequests, setConnectionRequests] = useState(() =>
     isMockMode ? initialConnectionRequests : [],
   )
+  const [isLoadingConnectionRequests, setIsLoadingConnectionRequests] =
+    useState(!isMockMode)
+  const [connectionRequestsError, setConnectionRequestsError] = useState<string>()
   const [isConnectionModalOpen, setIsConnectionModalOpen] = useState(false)
   const [weekIndexes, setWeekIndexes] = useState<DashboardWeekIndexes>(
     INITIAL_DASHBOARD_WEEK_INDEXES,
@@ -118,30 +164,6 @@ function useCounselorDashboardState() {
     setWeekIndexes(INITIAL_DASHBOARD_WEEK_INDEXES)
   }
 
-  const handleAcceptConnectionRequest = (request: CounselorConnectionRequest) => {
-    const acceptedChild = {
-      ...request.child,
-      registeredAt: new Date().toISOString(),
-    }
-
-    setChildItems((current) =>
-      [acceptedChild, ...current.filter((child) => child.id !== acceptedChild.id)].sort(
-        (first, second) =>
-          new Date(second.registeredAt).getTime() - new Date(first.registeredAt).getTime(),
-      ),
-    )
-    setConnectionRequests((current) =>
-      current.filter((candidate) => candidate.id !== request.id),
-    )
-    handleSelectChild(acceptedChild.id)
-  }
-
-  const handleRejectConnectionRequest = (requestId: number) => {
-    setConnectionRequests((current) =>
-      current.filter((request) => request.id !== requestId),
-    )
-  }
-
   const handleSaveObservationComment = (record: ObservationRecord, context: string) => {
     setObservationComments((current) => ({
       ...current,
@@ -162,7 +184,6 @@ function useCounselorDashboardState() {
     if (isMockMode) {
       setChildItems(initialChildList)
       setSelectedChildId(initialChildList[0]?.id ?? null)
-      setConnectionRequests(initialConnectionRequests)
       setSelectedObservation(null)
       setChildItemsError(undefined)
       setIsLoadingChildItems(false)
@@ -207,6 +228,100 @@ function useCounselorDashboardState() {
     }
   }, [accessToken, isMockMode])
 
+  const loadConnectionRequests = useCallback(async () => {
+    if (isMockMode) {
+      setConnectionRequests(initialConnectionRequests)
+      setConnectionRequestsError(undefined)
+      setIsLoadingConnectionRequests(false)
+      return
+    }
+
+    if (!accessToken) {
+      setConnectionRequests([])
+      setConnectionRequestsError(undefined)
+      setIsLoadingConnectionRequests(false)
+      return
+    }
+
+    try {
+      setIsLoadingConnectionRequests(true)
+      setConnectionRequestsError(undefined)
+
+      const relations = await getCounselorParentRelations(accessToken)
+      const pendingRequests = relations
+        .filter((relation) => relation.relationStatus === 'PENDING')
+        .map(mapParentRelationToConnectionRequest)
+
+      setConnectionRequests(pendingRequests)
+    } catch (error) {
+      console.error(error)
+      setConnectionRequests([])
+      setConnectionRequestsError(
+        error instanceof Error
+          ? error.message
+          : '상담사 연결 요청을 불러오지 못했습니다.',
+      )
+    } finally {
+      setIsLoadingConnectionRequests(false)
+    }
+  }, [accessToken, isMockMode])
+
+  const handleAcceptConnectionRequest = async (
+    request: CounselorConnectionRequest,
+  ) => {
+    if (isMockMode) {
+      const acceptedChild = {
+        ...request.child,
+        registeredAt: new Date().toISOString(),
+      }
+
+      setChildItems((current) =>
+        [acceptedChild, ...current.filter((child) => child.id !== acceptedChild.id)].sort(
+          (first, second) =>
+            new Date(second.registeredAt).getTime() - new Date(first.registeredAt).getTime(),
+        ),
+      )
+      setConnectionRequests((current) =>
+        current.filter((candidate) => candidate.id !== request.id),
+      )
+      handleSelectChild(acceptedChild.id)
+      return
+    }
+
+    if (!accessToken) {
+      setConnectionRequestsError('로그인이 필요합니다.')
+      return
+    }
+
+    try {
+      setIsLoadingConnectionRequests(true)
+      setConnectionRequestsError(undefined)
+
+      const acceptedRelation = await acceptCounselorParentRelation(
+        request.id,
+        accessToken,
+      )
+
+      await Promise.all([loadChildItems(), loadConnectionRequests()])
+      handleSelectChild(acceptedRelation.childrenId)
+    } catch (error) {
+      console.error(error)
+      setConnectionRequestsError(
+        error instanceof Error
+          ? error.message
+          : '상담사 연결 요청을 수락하지 못했습니다.',
+      )
+    } finally {
+      setIsLoadingConnectionRequests(false)
+    }
+  }
+
+  const handleRejectConnectionRequest = (requestId: string) => {
+    setConnectionRequests((current) =>
+      current.filter((request) => request.id !== requestId),
+    )
+  }
+
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
       void loadChildItems()
@@ -214,6 +329,14 @@ function useCounselorDashboardState() {
 
     return () => window.clearTimeout(timeoutId)
   }, [loadChildItems])
+
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => {
+      void loadConnectionRequests()
+    }, 0)
+
+    return () => window.clearTimeout(timeoutId)
+  }, [loadConnectionRequests])
 
   useEffect(() => {
     const columnElement = mainColumnRef.current
@@ -250,6 +373,7 @@ function useCounselorDashboardState() {
     childItems,
     childItemsError,
     connectionRequests,
+    connectionRequestsError,
     currentObservationRecords,
     expressionWeek,
     handleAcceptConnectionRequest,
@@ -257,6 +381,7 @@ function useCounselorDashboardState() {
     handleRejectConnectionRequest,
     handleSaveObservationComment,
     handleSelectChild,
+    isLoadingConnectionRequests,
     isConnectionModalOpen,
     isLoadingChildItems,
     isSidebarCollapsed,
@@ -272,6 +397,7 @@ function useCounselorDashboardState() {
     setSelectedObservation,
     sleepEfficiencyWeek,
     sleepScoreWeek,
+    canRejectConnectionRequests: isMockMode,
   }
 }
 

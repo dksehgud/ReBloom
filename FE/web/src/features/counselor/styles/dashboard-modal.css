@@ -332,6 +332,12 @@
   font-weight: 700;
 }
 
+.counselor-connection-empty.is-error {
+  color: #b45353;
+  background: rgba(255, 245, 245, 0.78);
+  border-color: rgba(180, 83, 83, 0.22);
+}
+
 .counselor-observation-comment-panel {
   display: flex;
   flex-direction: column;

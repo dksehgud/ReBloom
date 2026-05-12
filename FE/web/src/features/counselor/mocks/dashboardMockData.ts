@@ -120,7 +120,7 @@ const initialChildList: ChildListItem[] = [
 
 const initialConnectionRequests: CounselorConnectionRequest[] = [
   {
-    id: 101,
+    id: 'mock-request-101',
     parentName: '최유리',
     parentEmail: 'yuri.choi@example.com',
     requestedAt: '2026-05-11T09:18:00',
@@ -136,7 +136,7 @@ const initialConnectionRequests: CounselorConnectionRequest[] = [
     },
   },
   {
-    id: 102,
+    id: 'mock-request-102',
     parentName: '문정우',
     parentEmail: 'jungwoo.moon@example.com',
     requestedAt: '2026-05-10T18:42:00',

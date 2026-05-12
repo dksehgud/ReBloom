@@ -35,6 +35,7 @@ function CounselorDashboardPage() {
     childItemsError,
     childItems,
     connectionRequests,
+    connectionRequestsError,
     currentObservationRecords,
     expressionWeek,
     handleAcceptConnectionRequest,
@@ -42,6 +43,7 @@ function CounselorDashboardPage() {
     handleRejectConnectionRequest,
     handleSaveObservationComment,
     handleSelectChild,
+    isLoadingConnectionRequests,
     isConnectionModalOpen,
     isLoadingChildItems,
     isSidebarCollapsed,
@@ -57,6 +59,7 @@ function CounselorDashboardPage() {
     setSelectedObservation,
     sleepEfficiencyWeek,
     sleepScoreWeek,
+    canRejectConnectionRequests,
   } = useCounselorDashboardState()
   const selectedChildMetaItems = selectedChildProfile
     ? [
@@ -294,6 +297,9 @@ function CounselorDashboardPage() {
 
       {isConnectionModalOpen ? (
         <CounselorConnectionModal
+          canRejectRequests={canRejectConnectionRequests}
+          error={connectionRequestsError}
+          isLoading={isLoadingConnectionRequests}
           requests={connectionRequests}
           onAccept={handleAcceptConnectionRequest}
           onReject={handleRejectConnectionRequest}
