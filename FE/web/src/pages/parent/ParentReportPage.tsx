@@ -4,9 +4,10 @@ import MobilePageLayout from '../../components/templates/MobilePageLayout/Mobile
 import DiaryEmotionIcon from '../../features/diary/components/DiaryEmotionIcon'
 import ParentBottomNavigation from '../../features/guardian/components/ParentBottomNavigation'
 import {
-  parentReportWeeks,
+  PARENT_REPORT_VISIBLE_WEEK_COUNT,
   reportWeekdays,
   type ParentReportMood,
+  type ParentReportWeek,
 } from '../../features/guardian/constants/parentReport'
 import { useParentConnectedChild } from '../../features/guardian/hooks/useParentConnectedChild'
 import { useParentReportData } from '../../features/guardian/hooks/useParentReportData'
@@ -158,7 +159,7 @@ function getBarTone(score: number) {
   return score <= 55 ? 'warning' : 'default'
 }
 
-function createStabilityChartData(scores: typeof parentReportWeeks[number]['stabilityScores']) {
+function createStabilityChartData(scores: ParentReportWeek['stabilityScores']) {
   const usableWidth = STABILITY_CHART_WIDTH - STABILITY_CHART_PADDING_X * 2
   const usableHeight =
     STABILITY_CHART_HEIGHT - STABILITY_CHART_PADDING_TOP - STABILITY_CHART_PADDING_BOTTOM
@@ -185,7 +186,7 @@ function createStabilityChartData(scores: typeof parentReportWeeks[number]['stab
 
 function ParentReportPage() {
   const { selectedChild } = useParentConnectedChild()
-  const [selectedWeekIndex, setSelectedWeekIndex] = useState(parentReportWeeks.length - 1)
+  const [selectedWeekIndex, setSelectedWeekIndex] = useState(PARENT_REPORT_VISIBLE_WEEK_COUNT - 1)
   const [isEmotionInfoOpen, setIsEmotionInfoOpen] = useState(false)
   const [isStabilityInfoOpen, setIsStabilityInfoOpen] = useState(false)
 
@@ -194,7 +195,7 @@ function ParentReportPage() {
     selectedWeekIndex,
   })
   const isPrevDisabled = selectedWeekIndex === 0
-  const isNextDisabled = selectedWeekIndex === parentReportWeeks.length - 1
+  const isNextDisabled = selectedWeekIndex === PARENT_REPORT_VISIBLE_WEEK_COUNT - 1
   const stabilityChart = useMemo(
     () => createStabilityChartData(currentWeek.stabilityScores),
     [currentWeek.stabilityScores],

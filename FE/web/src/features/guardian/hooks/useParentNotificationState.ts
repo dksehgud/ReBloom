@@ -5,19 +5,16 @@ import {
   getParentNotifications,
   markParentNotificationAsRead,
 } from '../api/parentNotificationApi'
-import {
-  parentNotifications,
-  type ParentNotificationItem,
-} from '../constants/parentNotifications'
+import type { ParentNotificationItem } from '../constants/parentNotifications'
 import type { ParentNotificationDto } from '../types/parentNotification'
 
-function useParentNotificationState(initialItems: ParentNotificationItem[] = parentNotifications) {
+function useParentNotificationState(initialItems: ParentNotificationItem[] = []) {
   const [notifications, setNotifications] = useState<ParentNotificationItem[]>(() => initialItems)
   const accessToken = useAppSessionStore((state) => state.accessToken)
 
   const loadNotifications = useCallback(async () => {
     if (!accessToken) {
-      setNotifications(initialItems)
+      setNotifications([])
       return
     }
 
@@ -26,9 +23,9 @@ function useParentNotificationState(initialItems: ParentNotificationItem[] = par
       setNotifications((response.contents ?? []).map(mapNotificationDtoToItem))
     } catch (error) {
       console.error(error)
-      setNotifications(initialItems)
+      setNotifications([])
     }
-  }, [accessToken, initialItems])
+  }, [accessToken])
 
   const markAsRead = useCallback((notificationId: string) => {
     setNotifications((currentItems) =>

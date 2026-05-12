@@ -3,7 +3,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { DiaryEmotionKey } from '../../diary/constants/diaryEmotions'
 import { useAppSessionStore } from '../../auth/store/useAppSessionStore'
 import {
-  parentReportWeeks,
+  PARENT_REPORT_VISIBLE_WEEK_COUNT,
   reportWeekdays,
   type ParentReportMood,
   type ParentReportMoodTone,
@@ -32,7 +32,7 @@ type UseParentReportDataResult = {
 
 type ReportWeekday = ParentReportWeek['moods'][number]['weekday']
 
-const CURRENT_REPORT_WEEK_INDEX = parentReportWeeks.length - 1
+const CURRENT_REPORT_WEEK_INDEX = PARENT_REPORT_VISIBLE_WEEK_COUNT - 1
 const DAYS_PER_WEEK = 7
 
 function formatDateParam(date: Date) {
@@ -116,14 +116,27 @@ function getReportRange(selectedWeekIndex: number) {
   }
 }
 
-function createReportWeekForRange(
-  templateWeek: ParentReportWeek,
+function createEmptyReportWeek(
   reportRange: ReturnType<typeof getReportRange>,
 ): ParentReportWeek {
   return {
-    ...templateWeek,
     id: reportRange.id,
     label: reportRange.label,
+    moods: reportWeekdays.map((weekday) => ({
+      emotionKey: null,
+      tone: null,
+      weekday,
+    })),
+    sleepInsight: '',
+    sleepScores: reportWeekdays.map((weekday) => ({
+      score: 0,
+      weekday,
+    })),
+    stabilityInsight: '',
+    stabilityScores: reportWeekdays.map((weekday) => ({
+      score: 0,
+      weekday,
+    })),
   }
 }
 
@@ -265,14 +278,8 @@ export function useParentReportData({
   const [isLoading, setIsLoading] = useState(false)
   const reportRange = useMemo(() => getReportRange(selectedWeekIndex), [selectedWeekIndex])
   const currentFallbackWeek = useMemo(
-    () =>
-      createReportWeekForRange(
-        parentReportWeeks[selectedWeekIndex] ??
-          parentReportWeeks[CURRENT_REPORT_WEEK_INDEX] ??
-          parentReportWeeks[0],
-        reportRange,
-      ),
-    [reportRange, selectedWeekIndex],
+    () => createEmptyReportWeek(reportRange),
+    [reportRange],
   )
 
   const loadReportData = useCallback(async () => {

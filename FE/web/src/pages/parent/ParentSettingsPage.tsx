@@ -7,12 +7,11 @@ import { getParentConnectedCounselor } from '../../features/guardian/api/parentR
 import ParentBottomNavigation from '../../features/guardian/components/ParentBottomNavigation'
 import ParentCounselorConnectModal from '../../features/guardian/components/ParentCounselorConnectModal'
 import {
-  mockCounselorCandidate,
-  mockParentProfile,
   parentSupportContacts,
   type ParentCounselorCandidate,
 } from '../../features/guardian/constants/parentSettings'
 import { useParentConnectedChild } from '../../features/guardian/hooks/useParentConnectedChild'
+import { mockCounselorCandidate } from '../../features/guardian/mocks/parentSettings'
 import ChildPasswordChangeModal from '../../features/user/components/ChildPasswordChangeModal'
 
 type ParentSettingsRowProps = {
@@ -237,8 +236,8 @@ function ParentSettingsPage() {
 
   const isCounselorConnected = connectedCounselor !== null
   const parentProfile = {
-    email: currentUser?.email ?? mockParentProfile.email,
-    name: currentUser?.name ?? mockParentProfile.name,
+    email: currentUser?.email ?? '',
+    name: currentUser?.name ?? '보호자',
   }
   const linkedChildName = selectedChild?.name ?? '연결된 아이가 없습니다.'
   const linkedChildAgeLabel =

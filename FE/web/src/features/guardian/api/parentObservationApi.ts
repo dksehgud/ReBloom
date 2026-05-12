@@ -1,6 +1,5 @@
 import { apiRequest } from '../../../shared/api/client'
 import { PARENT_OBSERVATION_PREVIEW_LIMIT } from '../constants/parentObservation'
-import { parentObservationListMock } from '../mocks/parentObservationList'
 import type {
   ParentObservationBaseResponseDto,
   ParentObservationDailyGroupDto,
@@ -216,24 +215,6 @@ function createObservationListSearchParams({ year, month }: Pick<ParentObservati
   return query ? `?${query}` : ''
 }
 
-function filterMockRecords(records: ParentObservationListItemDto[], year?: number, month?: number) {
-  return records.filter((record) => {
-    const [recordYear, recordMonth] = getDatePart(record.reportDate)
-      .split('-')
-      .map((value) => Number(value))
-
-    if (typeof year === 'number' && recordYear !== year) {
-      return false
-    }
-
-    if (typeof month === 'number' && recordMonth !== month) {
-      return false
-    }
-
-    return true
-  })
-}
-
 function flattenDailyReportGroups(groups: ParentObservationDailyGroupDto[] = []) {
   return groups.flatMap((group) =>
     group.reportList.map((report) => ({
@@ -243,19 +224,6 @@ function flattenDailyReportGroups(groups: ParentObservationDailyGroupDto[] = [])
   )
 }
 
-async function getParentObservationListFromMock({
-  year,
-  month,
-}: ParentObservationQueryParams = {}): Promise<ParentObservationListResponse> {
-  return {
-    records: sortObservationRecords(
-      filterMockRecords(parentObservationListMock, year, month).map(
-        mapObservationListItemToRecord,
-      ),
-    ),
-  }
-}
-
 export async function getParentObservationList({
   accessToken,
   childrenId,
@@ -263,7 +231,9 @@ export async function getParentObservationList({
   month,
 }: ParentObservationQueryParams = {}): Promise<ParentObservationListResponse> {
   if (!childrenId || !accessToken) {
-    return getParentObservationListFromMock({ year, month })
+    return {
+      records: [],
+    }
   }
 
   const requestPath = `${parentObservationApiPaths.list(
