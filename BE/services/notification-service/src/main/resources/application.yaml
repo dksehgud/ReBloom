@@ -40,3 +40,8 @@ rebloom:
       group-id: notification-service
       retry-interval-ms: 1000
       retry-max-attempts: 3
+  mqtt:
+    broker-uri: ${MQTT_BROKER_URI}
+    client-id-prefix: ${MQTT_CLIENT_ID_PREFIX:notification-service}
+    qos: ${MQTT_QOS:1}
+    conversation-start-topic-template: ${MQTT_CONVERSATION_START_TOPIC_TEMPLATE:devices/%s/conversation/start}

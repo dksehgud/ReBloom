@@ -1,35 +1,115 @@
 package com.ssafy.rebloom.notification_service.service.impl;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ssafy.rebloom.notification_service.config.property.MqttProperties;
 import com.ssafy.rebloom.notification_service.dto.request.ConversationStartMqttRequestDto;
-import com.ssafy.rebloom.notification_service.dto.response.ChildIotDeviceResponseDto;
+import com.ssafy.rebloom.notification_service.dto.response.ChildrenIotInfoResponseDto;
 import com.ssafy.rebloom.notification_service.service.ConversationMqttPublishService;
 import java.time.OffsetDateTime;
+import java.time.ZoneId;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.eclipse.paho.client.mqttv3.MqttClient;
+import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
+import org.eclipse.paho.client.mqttv3.MqttException;
+import org.eclipse.paho.client.mqttv3.MqttMessage;
+import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
 import org.springframework.stereotype.Service;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class ConversationMqttPublishServiceImpl implements ConversationMqttPublishService {
+    private static final String CONVERSATION_START_TYPE = "conversation_start";
+    private static final String DEFAULT_GREETING = "안녕! 무슨 일이 있니?";
+    private static final ZoneId SEOUL_ZONE_ID = ZoneId.of("Asia/Seoul");
+
+    private final ObjectMapper objectMapper;
+    private final MqttProperties mqttProperties;
 
     @Override
     public void publishConversationStart(
-        ChildIotDeviceResponseDto device,
+        ChildrenIotInfoResponseDto aiotInfo,
         String correlationId
     ) {
-        String topic = "devices/" + device.serialNumber() + "/conversation/start";
-
-        ConversationStartMqttRequestDto payload = new ConversationStartMqttRequestDto(
-            "conversation_start",
-            device.serialNumber(),
-            "안녕! 무슨 일이 있니?",
-            correlationId,
-            OffsetDateTime.now().toString()
+        String topic = String.format(
+            mqttProperties.getConversationStartTopicTemplate(),
+            aiotInfo.serialNumber()
         );
 
-        // 실제 MQTT client를 이용해 broker로 publish
-        // broker: mqtt://jukang.duckdns.org:7000
-        // username/password: device.serialNumber()
-        // topic: devices/{serial_number}/conversation/start
-        // payload: ConversationStartMqttRequestDto JSON
+        ConversationStartMqttRequestDto payload = new ConversationStartMqttRequestDto(
+            CONVERSATION_START_TYPE,
+            aiotInfo.serialNumber(),
+            DEFAULT_GREETING,
+            correlationId,
+            OffsetDateTime.now(SEOUL_ZONE_ID).toString()
+        );
+
+        publish(
+            aiotInfo.serialNumber(),
+            topic,
+            payload
+        );
+    }
+
+    private void publish(
+        String serialNumber,
+        String topic,
+        ConversationStartMqttRequestDto payload
+    ) {
+        MqttClient mqttClient = null;
+
+        try {
+            mqttClient = new MqttClient(
+                mqttProperties.getBrokerUri(),
+                mqttProperties.getClientIdPrefix() + "-" + UUID.randomUUID(),
+                new MemoryPersistence()
+            );
+
+            MqttConnectOptions options = new MqttConnectOptions();
+            options.setCleanSession(true);
+            options.setAutomaticReconnect(false);
+            options.setUserName(serialNumber);
+            options.setPassword(serialNumber.toCharArray());
+
+            mqttClient.connect(options);
+
+            byte[] body = objectMapper.writeValueAsBytes(payload);
+            MqttMessage message = new MqttMessage(body);
+            message.setQos(mqttProperties.getQos());
+            message.setRetained(false);
+
+            mqttClient.publish(topic, message);
+
+            log.info(
+                "Published MQTT conversation start message. topic={}, serialNumber={}",
+                topic,
+                serialNumber
+            );
+        } catch (MqttException | JsonProcessingException e) {
+            throw new IllegalStateException(
+                "MQTT conversation start publish failed.",
+                e
+            );
+        } finally {
+            closeQuietly(mqttClient);
+        }
+    }
+
+    private void closeQuietly(MqttClient mqttClient) {
+        if (mqttClient == null) {
+            return;
+        }
+
+        try {
+            if (mqttClient.isConnected()) {
+                mqttClient.disconnect();
+            }
+            mqttClient.close();
+        } catch (MqttException e) {
+            log.warn("Failed to close MQTT client cleanly.", e);
+        }
     }
 }

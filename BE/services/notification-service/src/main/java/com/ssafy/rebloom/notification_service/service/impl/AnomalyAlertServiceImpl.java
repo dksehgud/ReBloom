@@ -1,10 +1,9 @@
 package com.ssafy.rebloom.notification_service.service.impl;
 
-import com.ssafy.rebloom.event.dto.AnomalyEvent;
 import com.ssafy.rebloom.notification_service.constants.Constants;
 import com.ssafy.rebloom.notification_service.dto.response.ChildrenIotInfoResponseDto;
-import com.ssafy.rebloom.notification_service.service.AnomalyConversationTriggerService;
-import com.ssafy.rebloom.notification_service.service.ChildDeviceResolveService;
+import com.ssafy.rebloom.notification_service.service.AnomalyAlertService;
+import com.ssafy.rebloom.notification_service.service.AuthServiceResolveService;
 import com.ssafy.rebloom.notification_service.service.ConversationMqttPublishService;
 import com.ssafy.rebloom.notification_service.service.RedisService;
 import java.time.Duration;
@@ -16,30 +15,38 @@ import org.springframework.stereotype.Service;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class AnomalyConversationTriggerServiceImpl implements AnomalyConversationTriggerService {
+public class AnomalyAlertServiceImpl implements AnomalyAlertService {
 
     private final RedisService redisService;
-    private final ChildDeviceResolveService childDeviceResolveService;
+    private final AuthServiceResolveService authServiceResolveService;
     private final ConversationMqttPublishService conversationMqttPublishService;
-    @Override
-    public void handleAnomaly(AnomalyEvent event, String correlationId) {
-        UUID childrenId = event.userId();
 
+    @Override
+    public void handleValidAnomaly(UUID childrenId, String correlationId) {
         long count = increaseWindowCount(childrenId);
         if (count < Constants.CONVERSATION_THRESHOLD) {
             log.debug("Anomaly window count increased. childrenId={}, count={}", childrenId, count);
             return;
         }
 
-        ChildrenIotInfoResponseDto iotDevice =
-            childDeviceResolveService.resolveIotDeviceByChildrenId(childrenId);
+        ChildrenIotInfoResponseDto iotInfo =
+            authServiceResolveService.resolveChildrenIotInfo(childrenId);
 
         if (!acquireConversationLock(childrenId)) {
             log.debug("Conversation initiation ignored by lock. childrenId={}", childrenId);
             return;
         }
 
-        triggerConversationStart(iotDevice, correlationId);
+        try {
+            conversationMqttPublishService.publishConversationStart(iotInfo, correlationId);
+        } catch (Exception e) {
+            log.error(
+                "Failed to publish MQTT conversation start message. childrenId={}, serialNumber={}",
+                childrenId,
+                iotInfo.serialNumber(),
+                e
+            );
+        }
     }
 
     private long increaseWindowCount(UUID childrenId) {
@@ -47,28 +54,21 @@ public class AnomalyConversationTriggerServiceImpl implements AnomalyConversatio
         long count = redisService.incrementBy(key, 1L);
 
         if (count == 1L) {
-            redisService.set(key, String.valueOf(count), Duration.ofMinutes(Constants.ALERT_WINDOW));
+            redisService.set(
+                key,
+                String.valueOf(count),
+                Duration.ofMinutes(Constants.ALERT_WINDOW)
+            );
         }
 
         return count;
     }
 
     private boolean acquireConversationLock(UUID childrenId) {
-        String key = conversationLockKey(childrenId);
         return redisService.setIfAbsent(
-            key,
+            conversationLockKey(childrenId),
             "1",
             Duration.ofMinutes(Constants.CONVERSATION_COOL_TIME)
-        );
-    }
-
-    private void triggerConversationStart(
-        ChildrenIotInfoResponseDto iotDevice,
-        String correlationId
-    ) {
-        conversationMqttPublishService.publishConversationStart(
-            iotDevice,
-            correlationId
         );
     }
 
@@ -79,5 +79,4 @@ public class AnomalyConversationTriggerServiceImpl implements AnomalyConversatio
     private String conversationLockKey(UUID childrenId) {
         return Constants.CONVERSATION_LOCK_KEY_PREFIX + childrenId;
     }
-
 }

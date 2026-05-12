@@ -14,13 +14,13 @@ import com.ssafy.rebloom.notification_service.dto.NotificationCommand;
 import com.ssafy.rebloom.notification_service.dto.ParentReceiverInfo;
 import com.ssafy.rebloom.notification_service.dto.RealtimeNotificationMessage;
 import com.ssafy.rebloom.notification_service.dto.response.NotificationResponseDto;
+import com.ssafy.rebloom.notification_service.pubsub.NotificationRedisPublisher;
 import com.ssafy.rebloom.notification_service.repository.NotificationRepository;
 import com.ssafy.rebloom.notification_service.resolver.NotificationTypeResolver;
-import com.ssafy.rebloom.notification_service.resolver.ReceiverResolveClient;
 import com.ssafy.rebloom.notification_service.service.AnomalyAlertPolicyService;
-import com.ssafy.rebloom.notification_service.service.AnomalyConversationTriggerService;
+import com.ssafy.rebloom.notification_service.service.AnomalyAlertService;
+import com.ssafy.rebloom.notification_service.service.AuthServiceResolveService;
 import com.ssafy.rebloom.notification_service.service.FcmService;
-import com.ssafy.rebloom.notification_service.pubsub.NotificationRedisPublisher;
 import com.ssafy.rebloom.notification_service.service.NotificationService;
 import com.ssafy.rebloom.notification_service.service.NotificationSettingService;
 import com.ssafy.rebloom.notification_service.service.OnlineStatusService;
@@ -42,8 +42,8 @@ public class NotificationServiceImpl implements NotificationService {
     private final OnlineStatusService onlineStatusService;
     private final NotificationRedisPublisher notificationRedisPublisher;
     private final FcmService fcmService;
-    private final ReceiverResolveClient receiverResolveClient;
-    private final AnomalyConversationTriggerService anomalyConversationTriggerService;
+    private final AuthServiceResolveService authServiceResolveService;
+    private final AnomalyAlertService anomalyAlertService;
     private final AnomalyAlertPolicyService anomalyAlertPolicyService;
 
     @Override
@@ -59,7 +59,8 @@ public class NotificationServiceImpl implements NotificationService {
             return;
         }
 
-        ParentReceiverInfo receiverInfo = receiverResolveClient.resolveParentByChildrenId(childrenId);
+        ParentReceiverInfo receiverInfo =
+            authServiceResolveService.resolveParentByChildrenId(childrenId);
 
         NotificationPayload payload = NotificationPayload.builder()
             .title("주의 필요")
@@ -76,7 +77,7 @@ public class NotificationServiceImpl implements NotificationService {
             payload
         ));
 
-        anomalyConversationTriggerService.handleAnomaly(event, correlationId);
+        anomalyAlertService.handleValidAnomaly(childrenId, correlationId);
     }
 
     @Override
@@ -103,8 +104,11 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     @Override
-    public SliceResponseDto<NotificationResponseDto> getNotifications(UUID receiverId,
-        Boolean isRead, Pageable pageable) {
+    public SliceResponseDto<NotificationResponseDto> getNotifications(
+        UUID receiverId,
+        Boolean isRead,
+        Pageable pageable
+    ) {
         Slice<Notification> notifications;
 
         if (isRead == null) {
@@ -131,7 +135,10 @@ public class NotificationServiceImpl implements NotificationService {
                 notificationId,
                 receiverId
             )
-            .orElseThrow(() -> new CustomException("알림을 찾을 수 없습니다.", ErrorCode.NOTIFICATION_NOT_FOUND));
+            .orElseThrow(() -> new CustomException(
+                "알림을 찾을 수 없습니다.",
+                ErrorCode.NOTIFICATION_NOT_FOUND
+            ));
 
         notification.markRead();
     }

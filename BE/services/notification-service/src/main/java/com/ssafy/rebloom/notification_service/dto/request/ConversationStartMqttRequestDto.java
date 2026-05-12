@@ -1,10 +1,12 @@
 package com.ssafy.rebloom.notification_service.dto.request;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 public record ConversationStartMqttRequestDto(
     String type,
-    String deviceId,
+    @JsonProperty("device_id") String deviceId,
     String greeting,
-    String requestId,
-    String createdAt
+    @JsonProperty("request_id") String requestId,
+    @JsonProperty("created_at") String createdAt
 ) {
 }
