@@ -2,6 +2,7 @@ import { apiRequest } from '../../../shared/api/client'
 import { PARENT_OBSERVATION_PREVIEW_LIMIT } from '../constants/parentObservation'
 import { parentObservationListMock } from '../mocks/parentObservationList'
 import type {
+  ParentObservationBaseResponseDto,
   ParentObservationDailyGroupDto,
   ParentObservationDetailResponseDto,
   ParentObservationListItemDto,
@@ -46,10 +47,20 @@ type ParentObservationDeleteParams = {
   reportId: string
 }
 
+const REPORT_API_PREFIX = '/report/api/v1'
+
 const parentObservationApiPaths = {
-  list: (childrenId: string) => `/api/v1/children/${childrenId}/reports`,
+  list: (childrenId: string) => `${REPORT_API_PREFIX}/children/${childrenId}/reports`,
   detail: (childrenId: string, reportId: string) =>
-    `/api/v1/children/${childrenId}/reports/${reportId}`,
+    `${REPORT_API_PREFIX}/children/${childrenId}/reports/${reportId}`,
+}
+
+function unwrapApiData<T>(response: ParentObservationBaseResponseDto<T> | T): T {
+  if (response && typeof response === 'object' && 'data' in response) {
+    return ((response as ParentObservationBaseResponseDto<T>).data ?? null) as T
+  }
+
+  return response as T
 }
 
 const weekdayLabels = ['일', '월', '화', '수', '목', '금', '토']
@@ -262,12 +273,15 @@ export async function getParentObservationList({
     month,
   })}`
 
-  const result = await apiRequest<ParentObservationListResponseDto>(requestPath, {
+  const result = await apiRequest<
+    ParentObservationBaseResponseDto<ParentObservationListResponseDto> | ParentObservationListResponseDto
+  >(requestPath, {
     accessToken,
     errorMessage: '보호자 관찰 기록 목록을 불러오지 못했습니다.',
   })
 
-  const reports = flattenDailyReportGroups(result.dailyReports)
+  const data = unwrapApiData(result)
+  const reports = flattenDailyReportGroups(data?.dailyReports)
 
   return {
     records: sortObservationRecords(reports.map(mapObservationListItemToRecord)),
@@ -279,7 +293,9 @@ export async function getParentObservationDetail({
   childrenId,
   reportId,
 }: ParentObservationDetailParams): Promise<ParentObservationRecord> {
-  const result = await apiRequest<ParentObservationDetailResponseDto>(
+  const result = await apiRequest<
+    ParentObservationBaseResponseDto<ParentObservationDetailResponseDto> | ParentObservationDetailResponseDto
+  >(
     parentObservationApiPaths.detail(childrenId, reportId),
     {
       accessToken,
@@ -287,7 +303,7 @@ export async function getParentObservationDetail({
     },
   )
 
-  return mapObservationListItemToRecord(result)
+  return mapObservationListItemToRecord(unwrapApiData(result))
 }
 
 export async function createParentObservationReport({

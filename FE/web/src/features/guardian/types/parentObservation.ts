@@ -56,6 +56,12 @@ export type ParentObservationListResponseDto = {
   dailyReports?: ParentObservationDailyGroupDto[]
 }
 
+export type ParentObservationBaseResponseDto<T> = {
+  code?: string | null
+  data?: T | null
+  message?: string | null
+}
+
 export type ParentObservationDetailResponseDto = ParentObservationListItemDto & {
   counselorComment?: ParentObservationCounselorCommentDto | null
 }
