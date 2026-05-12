@@ -3,6 +3,7 @@ package com.ssafy.rebloom.common.dto;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Slice;
 
 @JsonInclude(Include.NON_NULL)
 public record SortInfo(
@@ -16,6 +17,17 @@ public record SortInfo(
         }
 
         return page.getSort().stream()
+            .findFirst()
+            .map(order -> new SortInfo(order.getProperty(), order.getDirection().name()))
+            .orElse(null);
+    }
+
+    public static SortInfo of(Slice<?> slice) {
+        if (slice.getSort().isUnsorted() || slice.getSort().isEmpty()) {
+            return null;
+        }
+
+        return slice.getSort().stream()
             .findFirst()
             .map(order -> new SortInfo(order.getProperty(), order.getDirection().name()))
             .orElse(null);

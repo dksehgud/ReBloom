@@ -9,6 +9,7 @@ import {
   type SignupRequest,
 } from '../../features/auth/api/authApi'
 import { openDaumPostcodePopup } from '../../shared/utils/daumPostcode'
+import { geocodeAddress } from '../../shared/utils/kakaoGeocoder'
 
 type UserRole = 'child' | 'parent'
 type SignUpStep = 'role' | 'email' | 'code' | 'details'
@@ -47,6 +48,8 @@ function SignUpPage({ onBackToLogin }: SignUpPageProps) {
   const [birthDate, setBirthDate] = useState('')
   const [baseAddress, setBaseAddress] = useState('')
   const [detailAddress, setDetailAddress] = useState('')
+  const [latitude, setLatitude] = useState<number | undefined>()
+  const [longitude, setLongitude] = useState<number | undefined>()
   const [addressError, setAddressError] = useState<string | undefined>()
   const [isLoadingAddressSearch, setIsLoadingAddressSearch] = useState(false)
   const [password, setPassword] = useState('')
@@ -293,10 +296,22 @@ function SignUpPage({ onBackToLogin }: SignUpPageProps) {
       setAddressError(undefined)
 
       await openDaumPostcodePopup(
-        (data) => {
+        async (data) => {
           const nextAddress = data.roadAddress || data.address || data.jibunAddress
-          setBaseAddress(nextAddress)
-          setAddressError(undefined)
+          try {
+            const coords = await geocodeAddress(nextAddress)
+            setBaseAddress(nextAddress)
+            setLatitude(coords.latitude)
+            setLongitude(coords.longitude)
+            setAddressError(undefined)
+          } catch (error) {
+            setBaseAddress(nextAddress)
+            setLatitude(undefined)
+            setLongitude(undefined)
+            setAddressError(
+              error instanceof Error ? error.message : '주소의 위도/경도를 찾지 못했습니다.',
+            )
+          }
         },
         '회원가입 주소 검색',
       )
@@ -307,7 +322,9 @@ function SignUpPage({ onBackToLogin }: SignUpPageProps) {
     }
   }
 
-  const buildSignupRequest = (): SignupRequest | null => {
+  const buildSignupRequest = (
+    coords?: { latitude: number; longitude: number },
+  ): SignupRequest | null => {
     if (!role) {
       return null
     }
@@ -337,11 +354,13 @@ function SignUpPage({ onBackToLogin }: SignUpPageProps) {
       gender: gender === 'male' ? 'MALE' : 'FEMALE',
       address: baseAddress.trim(),
       addressDetail: detailAddress.trim(),
+      latitude: coords?.latitude ?? latitude,
+      longitude: coords?.longitude ?? longitude,
     }
   }
 
-  const submitSignup = async () => {
-    const request = buildSignupRequest()
+  const submitSignup = async (coords?: { latitude: number; longitude: number }) => {
+    const request = buildSignupRequest(coords)
 
     if (!request) {
       setSubmitError('회원가입 정보를 다시 확인해주세요.')
@@ -391,7 +410,30 @@ function SignUpPage({ onBackToLogin }: SignUpPageProps) {
       return
     }
 
-    const isSuccess = await submitSignup()
+    let coords =
+      latitude !== undefined && longitude !== undefined
+        ? { latitude, longitude }
+        : undefined
+
+    if (!coords) {
+      try {
+        setIsLoadingAddressSearch(true)
+        coords = await geocodeAddress(baseAddress)
+        setLatitude(coords.latitude)
+        setLongitude(coords.longitude)
+        setAddressError(undefined)
+      } catch (error) {
+        setAddressError(
+          error instanceof Error ? error.message : '주소의 위도/경도를 찾지 못했습니다.',
+        )
+        setIsLoadingAddressSearch(false)
+        return
+      } finally {
+        setIsLoadingAddressSearch(false)
+      }
+    }
+
+    const isSuccess = await submitSignup(coords)
     if (isSuccess) {
       setModal('complete')
     }
@@ -416,6 +458,8 @@ function SignUpPage({ onBackToLogin }: SignUpPageProps) {
     setBirthDate('')
     setBaseAddress('')
     setDetailAddress('')
+    setLatitude(undefined)
+    setLongitude(undefined)
     setAddressError(undefined)
     setIsLoadingAddressSearch(false)
     setPassword('')
@@ -538,6 +582,8 @@ function SignUpPage({ onBackToLogin }: SignUpPageProps) {
           nameError={nameError}
           onBaseAddressChange={(event) => {
             setBaseAddress(event.target.value)
+            setLatitude(undefined)
+            setLongitude(undefined)
             setAddressError(undefined)
           }}
           onBirthDateChange={handleBirthDateChange}

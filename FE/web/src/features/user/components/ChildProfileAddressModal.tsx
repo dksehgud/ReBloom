@@ -7,6 +7,7 @@ import {
   type ChildAddress,
 } from '../../../shared/types/childAddress'
 import { openDaumPostcodePopup } from '../../../shared/utils/daumPostcode'
+import { geocodeAddress } from '../../../shared/utils/kakaoGeocoder'
 
 type ChildProfileAddressModalProps = {
   profileName: string
@@ -32,15 +33,31 @@ function ChildProfileAddressModal({
       setIsLoadingScript(true)
       setScriptError(null)
 
-      await openDaumPostcodePopup((data) => {
+      await openDaumPostcodePopup(async (data) => {
         const nextAddress = data.roadAddress || data.address || data.jibunAddress
-        setDraftAddress((prev) => ({
-          ...prev,
-          baseAddress: nextAddress,
-        }))
+
+        try {
+          const coords = await geocodeAddress(nextAddress)
+          setDraftAddress((prev) => ({
+            ...prev,
+            baseAddress: nextAddress,
+            latitude: coords.latitude,
+            longitude: coords.longitude,
+          }))
+        } catch (error) {
+          setDraftAddress((prev) => ({
+            ...prev,
+            baseAddress: nextAddress,
+            latitude: undefined,
+            longitude: undefined,
+          }))
+          setScriptError(
+            error instanceof Error ? error.message : '주소의 위도/경도를 찾지 못했습니다.',
+          )
+        }
       }, '프로필 주소 검색')
     } catch {
-      setScriptError('주소 검색창을 여는 데 실패했어요. 기본 주소를 직접 입력해 주세요.')
+      setScriptError('주소 검색창을 여는 데 실패했어요. 기본 주소를 직접 입력해주세요.')
     } finally {
       setIsLoadingScript(false)
     }
@@ -50,7 +67,20 @@ function ChildProfileAddressModal({
     try {
       setIsSaving(true)
       setSaveError(null)
-      await onSave(draftAddress)
+
+      const coords =
+        draftAddress.latitude !== undefined && draftAddress.longitude !== undefined
+          ? {
+              latitude: draftAddress.latitude,
+              longitude: draftAddress.longitude,
+            }
+          : await geocodeAddress(draftAddress.baseAddress)
+
+      await onSave({
+        ...draftAddress,
+        latitude: coords.latitude,
+        longitude: coords.longitude,
+      })
     } catch (error) {
       setSaveError(
         error instanceof Error ? error.message : '주소를 저장하지 못했습니다.',
@@ -138,6 +168,8 @@ function ChildProfileAddressModal({
                 setDraftAddress((prev) => ({
                   ...prev,
                   baseAddress: event.target.value,
+                  latitude: undefined,
+                  longitude: undefined,
                 }))
               }
               placeholder="주소 검색"
