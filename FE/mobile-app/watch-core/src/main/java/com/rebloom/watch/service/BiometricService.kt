@@ -10,10 +10,12 @@ import com.rebloom.watch.model.AccelerometerData
 import com.rebloom.watch.model.HeartRateData
 import com.rebloom.watch.repository.BiometricRepository
 import com.rebloom.watch.sensor.BiometricSensor
+import com.rebloom.watch.sensor.LocationSensor
 
 class BiometricService : Service() {
 
     private lateinit var sensor: BiometricSensor
+    private lateinit var locationSensor: LocationSensor
     private lateinit var repository: BiometricRepository
 
     override fun onCreate() {
@@ -22,6 +24,7 @@ class BiometricService : Service() {
 
         repository = BiometricRepository()
         sensor = BiometricSensor(this)
+        locationSensor = LocationSensor(this)
 
         sensor.onHeartRateReceived = { hr, ibiList ->
             repository.addHeartRateData(
@@ -65,12 +68,27 @@ class BiometricService : Service() {
                 .putDataItem(dataMap)
         }
 
+        locationSensor.onLocationReceived = { location ->
+            val dataMap = com.google.android.gms.wearable.PutDataMapRequest.create("/location/${location.timestamp}").apply {
+                dataMap.putLong("timestamp", location.timestamp)
+                dataMap.putDouble("latitude", location.latitude)
+                dataMap.putDouble("longitude", location.longitude)
+                location.accuracy?.let { dataMap.putFloat("accuracy", it) }
+                location.provider?.let { dataMap.putString("provider", it) }
+            }.asPutDataRequest()
+
+            com.google.android.gms.wearable.Wearable.getDataClient(this)
+                .putDataItem(dataMap)
+        }
+
         sensor.connect()
+        locationSensor.connect()
     }
 
     override fun onDestroy() {
         super.onDestroy()
         sensor.disconnect()
+        locationSensor.disconnect()
     }
 
     override fun onBind(intent: Intent?): IBinder? = null

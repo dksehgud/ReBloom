@@ -81,7 +81,6 @@ Response when location is not matched:
   "matched": false,
   "distance_meters": 321.74,
   "threshold_meters": 100,
-  "target_name": "home",
   "action": "none",
   "request_id": null,
   "topic": null
@@ -97,7 +96,6 @@ Response when location is matched:
   "matched": true,
   "distance_meters": 21.42,
   "threshold_meters": 100,
-  "target_name": "home",
   "action": "rpi_signal_published",
   "request_id": "8d5817f6-9711-4097-98e4-b6fb68ab7d42",
   "topic": "devices/rpi-001/location/trigger"
@@ -113,7 +111,6 @@ These can be added later without changing the BE contract.
 | `AUTH_SERVICE_BASE_URL` | `http://localhost:8080` | Base URL for auth-service |
 | `AUTH_SERVICE_LOCATION_PATH` | `/api/v1/users/{user_id}/target-location` | Path template for target location lookup |
 | `AUTH_SERVICE_TIMEOUT` | `3.0` | HTTP timeout in seconds |
-| `LOCATION_TARGET_NAME` | `registered_location` | Target name used by aiot-ai-service responses/logs/MQTT payload |
 | `LOCATION_RADIUS_METERS` | `100.0` | Match threshold in meters, owned by aiot-ai-service |
 | `MQTT_TOPIC_LOCATION_SIGNAL` | `devices/{device_id}/location/trigger` | MQTT topic template for Raspberry Pi signal |
 
@@ -132,7 +129,6 @@ Payload:
   "type": "location_trigger",
   "device_id": "rpi-001",
   "user_id": "a6a0c353-bdb0-4a7e-a85f-d9e1d94eb111",
-  "target_name": "home",
   "distance_meters": 21.42,
   "threshold_meters": 100,
   "request_id": "8d5817f6-9711-4097-98e4-b6fb68ab7d42",

@@ -54,7 +54,6 @@ async def evaluate_location(
         longitude=float(target["longitude"]),
     )
     threshold_meters = settings.LOCATION_RADIUS_METERS
-    target_name = settings.LOCATION_TARGET_NAME
     device_id = target["deviceId"]
 
     result = is_within_target_location(
@@ -70,7 +69,6 @@ async def evaluate_location(
             matched=False,
             distance_meters=result.distance_meters,
             threshold_meters=result.threshold_meters,
-            target_name=target_name,
             action="none",
         )
 
@@ -79,7 +77,6 @@ async def evaluate_location(
             publish_location_signal,
             device_id,
             request.user_id,
-            target_name,
             result.distance_meters,
             result.threshold_meters,
         )
@@ -92,7 +89,6 @@ async def evaluate_location(
         matched=True,
         distance_meters=result.distance_meters,
         threshold_meters=result.threshold_meters,
-        target_name=target_name,
         action="rpi_signal_published",
         request_id=request_id,
         topic=topic,

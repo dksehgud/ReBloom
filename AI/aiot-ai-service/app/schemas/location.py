@@ -31,7 +31,6 @@ class LocationEvaluateResponse(BaseModel):
     matched: bool
     distance_meters: float
     threshold_meters: float
-    target_name: str | None = None
     action: Literal["none", "rpi_signal_published"]
     request_id: str | None = None
     topic: str | None = None

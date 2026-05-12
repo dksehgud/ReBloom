@@ -15,11 +15,10 @@ Added:
 - `AUTH_SERVICE_BASE_URL`
 - `AUTH_SERVICE_LOCATION_PATH`
 - `AUTH_SERVICE_TIMEOUT`
-- `LOCATION_TARGET_NAME`
 - `LOCATION_RADIUS_METERS`
 - `MQTT_TOPIC_LOCATION_SIGNAL`
 
-Reason: GPS judgement needs to call `auth-service` for the target coordinate, own the target label/radius decision in Python, and use a configurable MQTT topic for the Raspberry Pi trigger.
+Reason: GPS judgement needs to call `auth-service` for the target coordinate, own the radius decision in Python, and use a configurable MQTT topic for the Raspberry Pi trigger.
 
 ## AI/aiot-ai-service/.env.example
 
@@ -35,7 +34,7 @@ Reason: `device_id` should come from `auth-service` through the paired device re
 
 ## AI/aiot-ai-service/app/routers/location.py
 
-Changed location evaluation to use `deviceId` returned by `auth-service`, while `targetName` and `radiusMeters` come from `aiot-ai-service` settings.
+Changed location evaluation to use `deviceId` returned by `auth-service`, while `radiusMeters` comes from `aiot-ai-service` settings.
 
 Reason: this keeps device ownership and pairing logic in BE, keeps location judgement policy in Python, and prevents clients from triggering arbitrary device ids.
 
@@ -67,7 +66,7 @@ Reason: exposes the target-location use case from the service layer.
 
 Added target-location lookup logic.
 
-Reason: validates that the child has registered coordinates, finds the active parent relation, then resolves the latest paired device serial number as `deviceId`. It intentionally does not decide `targetName` or `radiusMeters`; those belong to `aiot-ai-service`.
+Reason: validates that the child has registered coordinates, finds the active parent relation, then resolves the latest paired device serial number as `deviceId`. It intentionally does not decide `radiusMeters`; that belongs to `aiot-ai-service`.
 
 ## BE/services/auth-service/src/main/java/com/ssafy/rebloom/auth_service/user/repository/DeviceRepository.java
 

@@ -28,7 +28,6 @@ def build_location_signal_topic(device_id: str) -> str:
 def publish_location_signal(
     device_id: str,
     user_id: str,
-    target_name: str | None,
     distance_meters: float,
     threshold_meters: float,
     request_id: str | None = None,
@@ -45,7 +44,6 @@ def publish_location_signal(
         "type": "location_trigger",
         "device_id": device_id,
         "user_id": user_id,
-        "target_name": target_name,
         "distance_meters": distance_meters,
         "threshold_meters": threshold_meters,
         "request_id": resolved_request_id,
