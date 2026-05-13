@@ -1,6 +1,8 @@
 import { create } from 'zustand'
 
-type SelectedChild = {
+export type SelectedChild = {
+  age?: number | null
+  email?: string | null
   id: string
   name: string
 }

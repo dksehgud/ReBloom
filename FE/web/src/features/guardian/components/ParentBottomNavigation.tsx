@@ -1,5 +1,7 @@
 import { useLocation, useNavigate } from 'react-router-dom'
 
+import { getParentMockSearch } from '../hooks/useParentMockMode'
+
 type ParentNavItem = {
   key: 'home' | 'observations' | 'report' | 'notifications' | 'settings'
   label: string
@@ -129,6 +131,7 @@ function getNavIcon(key: ParentNavItem['key']) {
 function ParentBottomNavigation() {
   const location = useLocation()
   const navigate = useNavigate()
+  const mockSearch = getParentMockSearch(location.search)
 
   return (
     <nav className="parent-bottom-nav" aria-label="보호자 하단 탐색">
@@ -142,7 +145,7 @@ function ParentBottomNavigation() {
               type="button"
               className={`parent-bottom-nav__item${isActive ? ' is-active' : ''}`}
               aria-current={isActive ? 'page' : undefined}
-              onClick={() => navigate(item.path)}
+              onClick={() => navigate(`${item.path}${mockSearch}`)}
             >
               <span className="parent-bottom-nav__icon">{getNavIcon(item.key)}</span>
               <span className="parent-bottom-nav__label">{item.label}</span>

@@ -3,11 +3,15 @@ import { useEffect, useMemo, useState } from 'react'
 import MobilePageLayout from '../../components/templates/MobilePageLayout/MobilePageLayout'
 import DiaryEmotionIcon from '../../features/diary/components/DiaryEmotionIcon'
 import ParentBottomNavigation from '../../features/guardian/components/ParentBottomNavigation'
+import ParentChildConnectionEmptyState from '../../features/guardian/components/ParentChildConnectionEmptyState'
 import {
-  parentReportWeeks,
+  PARENT_REPORT_VISIBLE_WEEK_COUNT,
   reportWeekdays,
   type ParentReportMood,
+  type ParentReportWeek,
 } from '../../features/guardian/constants/parentReport'
+import { useParentConnectedChild } from '../../features/guardian/hooks/useParentConnectedChild'
+import { useParentReportData } from '../../features/guardian/hooks/useParentReportData'
 
 const STABILITY_CHART_WIDTH = 300
 const STABILITY_CHART_HEIGHT = 180
@@ -108,12 +112,14 @@ function InfoIcon() {
   )
 }
 
-function ParentReportHeader() {
+function ParentReportHeader({ childName }: { childName?: string }) {
   return (
     <div className="parent-home-page__header">
       <div className="parent-home-page__header-copy">
         <h1 className="parent-home-page__title">리포트</h1>
-        <p className="parent-home-page__subtitle">지민이의 변화 흐름입니다.</p>
+        <p className="parent-home-page__subtitle">
+          {childName ? `${childName}의 변화 흐름입니다.` : '아이의 변화 흐름입니다.'}
+        </p>
       </div>
     </div>
   )
@@ -154,7 +160,7 @@ function getBarTone(score: number) {
   return score <= 55 ? 'warning' : 'default'
 }
 
-function createStabilityChartData(scores: typeof parentReportWeeks[number]['stabilityScores']) {
+function createStabilityChartData(scores: ParentReportWeek['stabilityScores']) {
   const usableWidth = STABILITY_CHART_WIDTH - STABILITY_CHART_PADDING_X * 2
   const usableHeight =
     STABILITY_CHART_HEIGHT - STABILITY_CHART_PADDING_TOP - STABILITY_CHART_PADDING_BOTTOM
@@ -180,13 +186,18 @@ function createStabilityChartData(scores: typeof parentReportWeeks[number]['stab
 }
 
 function ParentReportPage() {
-  const [selectedWeekIndex, setSelectedWeekIndex] = useState(1)
+  const { isLoading: isChildLoading, selectedChild } = useParentConnectedChild()
+  const [selectedWeekIndex, setSelectedWeekIndex] = useState(PARENT_REPORT_VISIBLE_WEEK_COUNT - 1)
   const [isEmotionInfoOpen, setIsEmotionInfoOpen] = useState(false)
   const [isStabilityInfoOpen, setIsStabilityInfoOpen] = useState(false)
 
-  const currentWeek = parentReportWeeks[selectedWeekIndex]
+  const { currentWeek } = useParentReportData({
+    childrenId: selectedChild?.id,
+    selectedWeekIndex,
+  })
+  const hasConnectedChild = Boolean(selectedChild?.id)
   const isPrevDisabled = selectedWeekIndex === 0
-  const isNextDisabled = selectedWeekIndex === parentReportWeeks.length - 1
+  const isNextDisabled = selectedWeekIndex === PARENT_REPORT_VISIBLE_WEEK_COUNT - 1
   const stabilityChart = useMemo(
     () => createStabilityChartData(currentWeek.stabilityScores),
     [currentWeek.stabilityScores],
@@ -224,35 +235,39 @@ function ParentReportPage() {
 
   return (
     <MobilePageLayout
-      header={<ParentReportHeader />}
+      header={<ParentReportHeader childName={selectedChild?.name} />}
       className="parent-home-page parent-report-page"
       contentClassName="parent-report-page__content"
       bottomNavigation={<ParentBottomNavigation />}
     >
       <div className="parent-report-page__body">
-        <section className="parent-report-page__week-nav" aria-label="리포트 주차 이동">
-          <button
-            type="button"
-            className="parent-report-page__week-nav-button"
-            onClick={() => setSelectedWeekIndex((previous) => previous - 1)}
-            disabled={isPrevDisabled}
-            aria-label="이전 주차 보기"
-          >
-            <ChevronLeftIcon />
-          </button>
-          <p className="parent-report-page__week-nav-label">{currentWeek.label}</p>
-          <button
-            type="button"
-            className="parent-report-page__week-nav-button"
-            onClick={() => setSelectedWeekIndex((previous) => previous + 1)}
-            disabled={isNextDisabled}
-            aria-label="다음 주차 보기"
-          >
-            <ChevronRightIcon />
-          </button>
-        </section>
+        {!hasConnectedChild && !isChildLoading ? (
+          <ParentChildConnectionEmptyState />
+        ) : (
+          <>
+            <section className="parent-report-page__week-nav" aria-label="리포트 주차 이동">
+              <button
+                type="button"
+                className="parent-report-page__week-nav-button"
+                onClick={() => setSelectedWeekIndex((previous) => previous - 1)}
+                disabled={isPrevDisabled}
+                aria-label="이전 주차 보기"
+              >
+                <ChevronLeftIcon />
+              </button>
+              <p className="parent-report-page__week-nav-label">{currentWeek.label}</p>
+              <button
+                type="button"
+                className="parent-report-page__week-nav-button"
+                onClick={() => setSelectedWeekIndex((previous) => previous + 1)}
+                disabled={isNextDisabled}
+                aria-label="다음 주차 보기"
+              >
+                <ChevronRightIcon />
+              </button>
+            </section>
 
-        <section className="parent-report-page__section" aria-labelledby="weekly-emotion-report">
+            <section className="parent-report-page__section" aria-labelledby="weekly-emotion-report">
           <div className="parent-report-page__section-header">
             <div className="parent-report-page__section-title-wrap">
               <span className="parent-report-page__section-icon parent-report-page__section-icon--blue">
@@ -294,9 +309,9 @@ function ParentReportPage() {
               })}
             </div>
           </div>
-        </section>
+            </section>
 
-        <section className="parent-report-page__section" aria-labelledby="sleep-score-report">
+            <section className="parent-report-page__section" aria-labelledby="sleep-score-report">
           <div className="parent-report-page__section-header">
             <div className="parent-report-page__section-title-wrap">
               <span className="parent-report-page__section-icon parent-report-page__section-icon--blue">
@@ -335,9 +350,9 @@ function ParentReportPage() {
             </div>
             <div className="parent-report-page__insight-line">{currentWeek.sleepInsight}</div>
           </div>
-        </section>
+            </section>
 
-        <section className="parent-report-page__section" aria-labelledby="nervous-system-report">
+            <section className="parent-report-page__section" aria-labelledby="nervous-system-report">
           <div className="parent-report-page__section-header">
             <div className="parent-report-page__section-title-wrap">
               <span className="parent-report-page__section-icon parent-report-page__section-icon--orange">
@@ -402,7 +417,9 @@ function ParentReportPage() {
             </div>
             <div className="parent-report-page__insight-line">{currentWeek.stabilityInsight}</div>
           </div>
-        </section>
+            </section>
+          </>
+        )}
       </div>
     </MobilePageLayout>
   )
