@@ -53,6 +53,7 @@ public enum ErrorCode {
     USER_WITHDRAW(HttpStatus.FORBIDDEN, "탈퇴한 유저입니다."),
     OAUTH_TEMP_SAVE_FAILED(HttpStatus.BAD_REQUEST, "임시 저장 실패"),
     USER_ROLE_TYPE_MISMATCH(HttpStatus.BAD_REQUEST, "유효하지 않은 사용자 역할입니다."),
+    TARGET_LOCATION_NOT_CONFIGURED(HttpStatus.CONFLICT, "Target location is not configured."),
 
     // ============================================================
     // 2. PARENT(부모)
