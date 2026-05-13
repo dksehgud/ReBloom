@@ -65,10 +65,9 @@ public class UserRelationController {
     @GetMapping("/parents/relations/counselors")
     @PreAuthorize("hasRole('PARENT')")
     public ResponseEntity<BaseResponse<ParentCounselorResponseDto>> getParentCounselorRelation(
-        @LoginUserId UUID parentId,
-        @RequestParam String counselorEmail
+        @LoginUserId UUID parentId
     ) {
-        ParentCounselorResponseDto response = userService.getParentCounselor(parentId, counselorEmail);
+        ParentCounselorResponseDto response = userService.getParentCounselor(parentId);
         return ResponseEntity.ok(BaseResponse.success("상담사 연결 조회 성공", response));
     }
 
