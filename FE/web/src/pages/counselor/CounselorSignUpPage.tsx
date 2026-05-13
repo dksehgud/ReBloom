@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { FiEye, FiEyeOff } from 'react-icons/fi'
 import { useNavigate } from 'react-router-dom'
 
+import AuthModal from '../../components/auth/AuthModal'
 import AuthInput from '../../components/auth/AuthInput'
 import CounselorAuthLayout from '../../components/templates/CounselorAuthLayout/CounselorAuthLayout'
 import {
@@ -75,6 +76,7 @@ function CounselorSignUpPage() {
     useState(false)
   const [submitError, setSubmitError] = useState<string | undefined>()
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isCompleteModalOpen, setIsCompleteModalOpen] = useState(false)
 
   const verificationInputRefs = useRef<Array<HTMLInputElement | null>>([])
 
@@ -333,7 +335,7 @@ function CounselorSignUpPage() {
       setIsSubmitting(true)
       setSubmitError(undefined)
       await authApi.signup(request)
-      navigate('/counselor/login', { replace: true })
+      setIsCompleteModalOpen(true)
     } catch (error) {
       setSubmitError(
         error instanceof Error ? error.message : '회원가입에 실패했습니다.',
@@ -341,6 +343,11 @@ function CounselorSignUpPage() {
     } finally {
       setIsSubmitting(false)
     }
+  }
+
+  const handleCompleteSignup = () => {
+    setIsCompleteModalOpen(false)
+    navigate('/counselor/login', { replace: true })
   }
 
   return (
@@ -607,6 +614,25 @@ function CounselorSignUpPage() {
             </button>
           </form>
         </div>
+      ) : null}
+
+      {isCompleteModalOpen ? (
+        <AuthModal
+          actions={
+            <button
+              className="auth-button is-primary"
+              onClick={handleCompleteSignup}
+              type="button"
+            >
+              확인
+            </button>
+          }
+          title="회원가입 완료"
+        >
+          <div className="auth-modal-panel">
+            상담사 회원가입이 완료되었습니다.
+          </div>
+        </AuthModal>
       ) : null}
     </CounselorAuthLayout>
   )
