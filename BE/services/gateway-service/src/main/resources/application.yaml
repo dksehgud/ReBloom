@@ -104,16 +104,6 @@ spring:
             - Path=/notification/**
           filters: *secured-filters
 
-        # ==========================================
-        # AIOT AI SERVICE - Secured
-        # GPS location trigger, MQTT bridge, chat
-        # ==========================================
-        - id: aiot-ai-service
-          uri: ${AIOT_AI_SERVICE_URI:http://localhost:8001}
-          predicates:
-            - Path=/aiot/**
-          filters: *secured-filters
-
 jwt:
   secret: ${JWT_SECRET}
 

@@ -38,10 +38,6 @@
                     android:host="*"
                     android:pathPrefix="/biometric"
                     android:scheme="wear" />
-                <data
-                    android:host="*"
-                    android:pathPrefix="/location"
-                    android:scheme="wear" />
             </intent-filter>
         </service>
 

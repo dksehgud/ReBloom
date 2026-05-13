@@ -55,9 +55,7 @@ class BiometricSensor(private val context: Context) {
                 }
             }
             override fun onFlushCompleted() {}
-            override fun onError(error: HealthTracker.TrackerError) {
-                Log.e("BiometricSensor", "HR tracker error: $error")
-            }
+            override fun onError(error: HealthTracker.TrackerError) {}
         })
     }
 
@@ -76,9 +74,7 @@ class BiometricSensor(private val context: Context) {
                 }
             }
             override fun onFlushCompleted() {}
-            override fun onError(error: HealthTracker.TrackerError) {
-                Log.e("BiometricSensor", "ACC tracker error: $error")
-            }
+            override fun onError(error: HealthTracker.TrackerError) {}
         })
     }
 
