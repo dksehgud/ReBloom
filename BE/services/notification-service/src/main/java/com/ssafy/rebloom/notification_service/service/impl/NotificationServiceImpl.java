@@ -15,11 +15,10 @@ import com.ssafy.rebloom.notification_service.dto.NotificationCommand;
 import com.ssafy.rebloom.notification_service.dto.ParentReceiverInfo;
 import com.ssafy.rebloom.notification_service.dto.RealtimeNotificationMessage;
 import com.ssafy.rebloom.notification_service.dto.response.NotificationResponseDto;
-import com.ssafy.rebloom.notification_service.pubsub.NotificationRedisPublisher;
+import com.ssafy.rebloom.notification_service.event.NotificationDeliveryEvent;
 import com.ssafy.rebloom.notification_service.repository.NotificationRepository;
 import com.ssafy.rebloom.notification_service.service.AnomalyAlertService;
 import com.ssafy.rebloom.notification_service.service.AuthServiceResolveService;
-import com.ssafy.rebloom.notification_service.service.FcmService;
 import com.ssafy.rebloom.notification_service.service.NotificationService;
 import com.ssafy.rebloom.notification_service.service.NotificationSettingService;
 import com.ssafy.rebloom.notification_service.service.NotificationTypeService;
@@ -28,6 +27,7 @@ import com.ssafy.rebloom.notification_service.service.RedisService;
 import java.time.Duration;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
@@ -42,8 +42,7 @@ public class NotificationServiceImpl implements NotificationService {
     private final NotificationTypeService notificationTypeService;
     private final NotificationSettingService notificationSettingService;
     private final OnlineStatusService onlineStatusService;
-    private final NotificationRedisPublisher notificationRedisPublisher;
-    private final FcmService fcmService;
+    private final ApplicationEventPublisher applicationEventPublisher;
     private final AuthServiceResolveService authServiceResolveService;
     private final AnomalyAlertService anomalyAlertService;
     private final RedisService redisService;
@@ -170,40 +169,42 @@ public class NotificationServiceImpl implements NotificationService {
 
     private void deliver(Notification notification, NotificationCommand command) {
         if (command.receiverRole() == ReceiverRole.COUNSELOR) {
-            publishRealtime(notification, command);
+            publishDeliveryEventForRealtime(notification, command);
             return;
         }
 
         if (command.receiverRole() == ReceiverRole.PARENT
             || command.receiverRole() == ReceiverRole.CHILDREN) {
             if (onlineStatusService.isOnline(command.receiverId())) {
-                publishRealtime(notification, command);
+                publishDeliveryEventForRealtime(notification, command);
             } else {
-                deliverFcm(notification);
+                publishDeliveryEventForFcm(notification.getId());
             }
         }
     }
 
-    private void publishRealtime(Notification notification, NotificationCommand command) {
-        notificationRedisPublisher.publish(new RealtimeNotificationMessage(
-            notification.getId(),
-            notification.getReceiverId(),
-            command.receiverRole(),
-            command.notificationCode(),
-            notification.getNotificationPayload(),
-            notification.isRead(),
-            notification.getCreatedAt()
-        ));
+    private void publishDeliveryEventForRealtime(
+        Notification notification,
+        NotificationCommand command
+    ) {
+        applicationEventPublisher.publishEvent(
+            NotificationDeliveryEvent.realtime(
+                new RealtimeNotificationMessage(
+                    notification.getId(),
+                    notification.getReceiverId(),
+                    command.receiverRole(),
+                    command.notificationCode(),
+                    notification.getNotificationPayload(),
+                    notification.isRead(),
+                    notification.getCreatedAt()
+                )
+            )
+        );
     }
 
-    private void deliverFcm(Notification notification) {
-        boolean sent = fcmService.send(notification);
-
-        if (sent) {
-            notification.markSent();
-            return;
-        }
-
-        notification.markFailed();
+    private void publishDeliveryEventForFcm(Long notificationId) {
+        applicationEventPublisher.publishEvent(
+            NotificationDeliveryEvent.fcm(notificationId)
+        );
     }
 }
