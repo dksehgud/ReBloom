@@ -1,5 +1,6 @@
 package com.ssafy.rebloom.biometric_service.domain.entity;
 
+import com.ssafy.rebloom.event.dto.SleepDataEvent;
 import jakarta.persistence.Column;
 import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
@@ -56,5 +57,18 @@ public class Sleep {
             .sleepEfficiency(sleepEfficiency)
             .isMainSleep(null)
             .build();
+    }
+
+    public SleepDataEvent toEvent() {
+        return new SleepDataEvent(
+            id.getUserId(),
+            id.getWakeup(),
+            asleep,
+            id.getWakeup().toLocalDate(),
+            sleepDuration,
+            waso,
+            sleepScore,
+            sleepEfficiency
+        );
     }
 }
