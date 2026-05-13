@@ -153,20 +153,6 @@
   min-width: 0;
 }
 
-.counselor-dashboard-sidebar-avatar {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  flex: 0 0 32px;
-  color: var(--dashboard-primary);
-  background: rgba(136, 181, 196, 0.16);
-  border-radius: 10px;
-  font-size: 13px;
-  font-weight: 800;
-}
-
 .counselor-dashboard-sidebar-profile strong {
   overflow: hidden;
   color: var(--dashboard-text);

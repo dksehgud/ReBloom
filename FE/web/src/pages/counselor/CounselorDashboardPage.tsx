@@ -16,14 +16,14 @@ import ExpressionAnalysis from '../../features/counselor/components/dashboard/Ex
 import ObservationCommentModal from '../../features/counselor/components/dashboard/ObservationCommentModal'
 import ObservationList from '../../features/counselor/components/dashboard/ObservationList'
 import WeekNavigator from '../../features/counselor/components/dashboard/WeekNavigator'
-import {
-  counselorProfile,
-  dashboardInfoMessages,
-} from '../../features/counselor/mocks/dashboardMockData'
+import { dashboardInfoMessages } from '../../features/counselor/mocks/dashboardMockData'
 import useCounselorDashboardState from '../../features/counselor/hooks/useCounselorDashboardState'
+import { useAppSessionStore } from '../../features/auth/store/useAppSessionStore'
 
 function CounselorDashboardPage() {
   const navigate = useNavigate()
+  const counselorName =
+    useAppSessionStore((state) => state.currentUser?.name?.trim()) || '상담사'
   const {
     analysisCardHeight,
     autonomicData,
@@ -100,7 +100,7 @@ function CounselorDashboardPage() {
         isCollapsed={isSidebarCollapsed}
         childItems={childItems}
         selectedChildId={selectedChildId}
-        counselorName={counselorProfile.name}
+        counselorName={counselorName}
         isLoadingChildren={isLoadingChildItems}
         childrenError={childItemsError}
         onToggle={() => setIsSidebarCollapsed((current) => !current)}

@@ -83,10 +83,7 @@ function CounselorSidebar({
 
       <footer className="counselor-dashboard-sidebar-footer">
         <div className="counselor-dashboard-sidebar-profile">
-          <span className="counselor-dashboard-sidebar-avatar" aria-hidden="true">
-            {counselorName.slice(0, 1)}
-          </span>
-          <strong>{counselorName} 상담자님</strong>
+          <strong>{counselorName} 상담사님</strong>
         </div>
         <button
           type="button"
