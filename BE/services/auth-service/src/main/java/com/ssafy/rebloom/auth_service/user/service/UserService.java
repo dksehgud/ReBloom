@@ -46,7 +46,7 @@ public interface UserService {
         CounselorRelationRequestDto request
     );
 
-    void deleteCounselorRelation(UUID parentId, UUID counselorId);
+    void deleteCounselorRelation(UUID parentId, String counselorEmail);
 
     ParentConnectedChildResponseDto getConnectedChildByParent(UUID parentId);
 

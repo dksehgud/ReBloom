@@ -8,7 +8,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface ParentRepository extends JpaRepository<Parent, UUID>, ParentQueryRepository {
 
-    Optional<Parent> findByCode(String code);
-
     Optional<Parent> findByEmail(String email);
 }
