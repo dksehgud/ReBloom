@@ -13,6 +13,5 @@ public class KafkaTopicsProperties {
     private String modelTrainingRequested;
     private String modelRetrainingRequested;
     private String phqCompleted;
-    private String conversationInitiated;
     private String eventDlt;
 }
