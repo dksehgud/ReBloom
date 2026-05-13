@@ -1,4 +1,4 @@
-package com.ssafy.rebloom.notification_service.service;
+package com.ssafy.rebloom.notification_service.pubsub;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -10,7 +10,7 @@ import org.springframework.stereotype.Component;
 
 @Component
 @RequiredArgsConstructor
-public class NotificationRedisPublishService {
+public class NotificationRedisPublisher {
 
     private final StringRedisTemplate redisTemplate;
     private final ObjectMapper objectMapper;

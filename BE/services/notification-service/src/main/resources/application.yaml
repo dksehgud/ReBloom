@@ -24,11 +24,11 @@ rebloom:
   clients:
     auth-service:
       url: ${AUTH_SERVICE_URL:http://auth-service:8081}
+
   kafka:
     producer-name: notification-service
     topics:
       anomaly-analysed: ${KAFKA_TOPIC_ANOMALY_ANALYSED:rebloom.anomaly.analysed.v1}
-      conversation-initiated: ${KAFKA_TOPIC_CONVERSATION_INITIATED:rebloom.conversation.initiated.v1}
       event-dlt: ${KAFKA_TOPIC_EVENT_DLT:rebloom.event.dlt.v1}
     producer:
       retries: 3
@@ -40,3 +40,13 @@ rebloom:
       group-id: notification-service
       retry-interval-ms: 1000
       retry-max-attempts: 3
+
+  mqtt:
+    broker-uri: ${MQTT_BROKER_URI}
+    client-id-prefix: ${MQTT_CLIENT_ID_PREFIX:notification-service}
+    qos: ${MQTT_QOS:1}
+    conversation-start-topic-template: ${MQTT_CONVERSATION_START_TOPIC_TEMPLATE:devices/%s/conversation/start}
+
+  firebase:
+    service-account-path: ${FIREBASE_SERVICE_ACCOUNT_PATH:}
+    dry-run: ${FCM_DRY_RUN:false}

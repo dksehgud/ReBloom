@@ -248,6 +248,23 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
+    public void rejectCounselorRelation(UUID counselorId, UUID parentId) {
+        ParentCounselorRelation relation = parentCounselorRelationRepository
+            .findByParentIdAndCounselorIdAndRelationStatusIn(
+                parentId,
+                counselorId,
+                List.of(RelationStatus.PENDING)
+            )
+            .orElseThrow(() -> new CustomException(
+                "상담사 연결 신청을 찾을 수 없습니다.",
+                ErrorCode.NOT_FOUND
+            ));
+
+        parentCounselorRelationRepository.delete(relation);
+    }
+
+    @Override
+    @Transactional
     public CounselorRelationResponseDto requestCounselorRelation(
         UUID parentId,
         CounselorRelationRequestDto request
