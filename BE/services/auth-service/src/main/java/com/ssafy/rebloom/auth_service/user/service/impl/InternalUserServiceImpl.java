@@ -34,10 +34,17 @@ public class InternalUserServiceImpl implements InternalUserService {
     public ChildGpsResponseDto getChildGpsInfo(UUID childId) {
         Children children = getChildren(childId);
 
+        if (children.getLatitude() == null || children.getLongitude() == null) {
+            throw new CustomException(
+                "Target location is not configured.",
+                ErrorCode.TARGET_LOCATION_NOT_CONFIGURED
+            );
+        }
+
         return new ChildGpsResponseDto(
             children.getId(),
-            children.getLatitude() == null ? null : children.getLatitude().setScale(10, java.math.RoundingMode.HALF_UP),
-            children.getLongitude() == null ? null : children.getLongitude().setScale(10, java.math.RoundingMode.HALF_UP)
+            children.getLatitude().setScale(10, java.math.RoundingMode.HALF_UP),
+            children.getLongitude().setScale(10, java.math.RoundingMode.HALF_UP)
         );
     }
 
@@ -56,17 +63,7 @@ public class InternalUserServiceImpl implements InternalUserService {
             throw new CustomException("아동 사용자가 아닙니다.", ErrorCode.INVALID_PARAMETER);
         }
 
-        if (children.getLatitude() == null || children.getLongitude() == null) {
-            throw new CustomException(
-                "Target location is not configured.",
-                ErrorCode.TARGET_LOCATION_NOT_CONFIGURED
-            );
-        }
-
-        return new ChildGpsResponseDto(
-            children.getId(),
-            children.getLatitude().setScale(10, java.math.RoundingMode.HALF_UP),
-            children.getLongitude().setScale(10, java.math.RoundingMode.HALF_UP));
+        return children;
     }
 
     @Override
