@@ -38,6 +38,8 @@ const counselorParentRelationApiPaths = {
   parentRelations: `${AUTH_API_PREFIX}/counselors/relations/parents`,
   acceptParentRelation: (parentId: string) =>
     `${AUTH_API_PREFIX}/counselors/relations/parents/${parentId}/accept`,
+  rejectParentRelation: (parentId: string) =>
+    `${AUTH_API_PREFIX}/counselors/relations/parents/${parentId}`,
 }
 
 function assertSuccess<T>(
@@ -90,6 +92,22 @@ async function acceptCounselorParentRelation(
   return body.data
 }
 
+async function rejectCounselorParentRelation(
+  parentId: string,
+  accessToken?: string | null,
+) {
+  const response = await apiRequest<BaseResponse<void>>(
+    counselorParentRelationApiPaths.rejectParentRelation(parentId),
+    {
+      accessToken,
+      method: 'DELETE',
+      errorMessage: '상담사 연결 요청을 거절하지 못했습니다.',
+    },
+  )
+
+  assertSuccess(response, '상담사 연결 요청을 거절하지 못했습니다.')
+}
+
 export type {
   CounselorParentRelationResponseDto,
   CounselorParentRelationStatus,
@@ -99,4 +117,5 @@ export {
   acceptCounselorParentRelation,
   counselorParentRelationApiPaths,
   getCounselorParentRelations,
+  rejectCounselorParentRelation,
 }

@@ -18,6 +18,7 @@ import {
 import {
   acceptCounselorParentRelation,
   getCounselorParentRelations,
+  rejectCounselorParentRelation,
   type CounselorParentRelationResponseDto,
 } from '../api/counselorParentRelationApi'
 import { getCounselorObservationRecords } from '../api/counselorObservationApi'
@@ -1135,10 +1136,35 @@ function useCounselorDashboardState() {
     }
   }
 
-  const handleRejectConnectionRequest = (requestId: string) => {
-    setConnectionRequests((current) =>
-      current.filter((request) => request.id !== requestId),
-    )
+  const handleRejectConnectionRequest = async (requestId: string) => {
+    if (isMockMode) {
+      setConnectionRequests((current) =>
+        current.filter((request) => request.id !== requestId),
+      )
+      return
+    }
+
+    if (!accessToken) {
+      setConnectionRequestsError('로그인이 필요합니다.')
+      return
+    }
+
+    try {
+      setIsLoadingConnectionRequests(true)
+      setConnectionRequestsError(undefined)
+
+      await rejectCounselorParentRelation(requestId, accessToken)
+      await loadConnectionRequests()
+    } catch (error) {
+      console.error(error)
+      setConnectionRequestsError(
+        error instanceof Error
+          ? error.message
+          : '상담사 연결 요청을 거절하지 못했습니다.',
+      )
+    } finally {
+      setIsLoadingConnectionRequests(false)
+    }
   }
 
 
@@ -1327,7 +1353,7 @@ function useCounselorDashboardState() {
     sleepEfficiencyWeek,
     sleepScoreData,
     sleepScoreWeek,
-    canRejectConnectionRequests: isMockMode,
+    canRejectConnectionRequests: true,
   }
 }
 
