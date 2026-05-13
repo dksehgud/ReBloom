@@ -1,12 +1,14 @@
 package com.ssafy.rebloom.notification_service.constants;
 
+import java.time.ZoneId;
+
 public final class Constants {
     public static final long ALERT_COOL_TIME= 5L;
     public static final long ALERT_WINDOW = 15L;
-    public static final long CONVERSATION_COOLDOWN = 15;
+    public static final long CONVERSATION_COOL_TIME = 15;
     public static final long CONVERSATION_THRESHOLD = 3L;
 
-    public static final String ALERT_COOL_TIME_KEY_PREFIX = "notification:anomaly:cooldown";
+    public static final String ALERT_COOL_TIME_KEY_PREFIX = "notification:anomaly:cool:time";
     public static final String ALERT_WINDOW_KEY_PREFIX = "notification:anomaly:window";
     public static final String CONVERSATION_LOCK_KEY_PREFIX = "notification:conversation:initiated:lock:";
 
@@ -16,5 +18,11 @@ public final class Constants {
     public static final String CHANNEL = "notification:events";
 
     public static final long SSE_TIMEOUT = 30L * 60L * 1000L;
+
+    public static final ZoneId SEOUL_ZONE_ID = ZoneId.of("Asia/Seoul");
+
+    public static final String CONVERSATION_START_TYPE = "conversation_start";
+
+    public static final String ANDROID_CHANNEL_ID = "rebloom_notification";
 
 }

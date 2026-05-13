@@ -37,6 +37,8 @@ public interface UserService {
 
     CounselorParentRelationResponseDto acceptCounselorRelation(UUID counselorId, UUID parentId);
 
+    void rejectCounselorRelation(UUID counselorId, UUID parentId);
+
     ParentCounselorResponseDto getParentCounselor(UUID parentId);
 
     CounselorRelationResponseDto requestCounselorRelation(

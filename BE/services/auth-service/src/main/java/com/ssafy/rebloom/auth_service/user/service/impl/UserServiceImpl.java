@@ -153,7 +153,8 @@ public class UserServiceImpl implements UserService {
                     resolveUpdateValue(request.name(), counselor.getName()),
                     resolveUpdateValue(request.phone(), counselor.getPhone()),
                     resolveUpdateValue(request.hospitalName(), counselor.getHospitalName()),
-                    resolveUpdateValue(request.hospitalAddress(), counselor.getHospitalAddress())
+                    resolveUpdateValue(request.hospitalAddress(), counselor.getHospitalAddress()),
+                    resolveUpdateValue(request.hospitalAddressDetail(), counselor.getHospitalAddressDetail())
                 );
                 yield toUserInfoResponse(counselor);
             }
@@ -244,6 +245,23 @@ public class UserServiceImpl implements UserService {
     public ParentCounselorResponseDto getParentCounselor(UUID parentId) {
         return parentCounselorRelationRepository.findByParentId(parentId)
             .orElseGet(ParentCounselorResponseDto::disconnected);
+    }
+
+    @Override
+    @Transactional
+    public void rejectCounselorRelation(UUID counselorId, UUID parentId) {
+        ParentCounselorRelation relation = parentCounselorRelationRepository
+            .findByParentIdAndCounselorIdAndRelationStatusIn(
+                parentId,
+                counselorId,
+                List.of(RelationStatus.PENDING)
+            )
+            .orElseThrow(() -> new CustomException(
+                "상담사 연결 신청을 찾을 수 없습니다.",
+                ErrorCode.NOT_FOUND
+            ));
+
+        parentCounselorRelationRepository.delete(relation);
     }
 
     @Override
@@ -422,6 +440,7 @@ public class UserServiceImpl implements UserService {
         validateNotBlankIfPresent(request.phone(), "phone");
         validateNotBlankIfPresent(request.hospitalName(), "hospitalName");
         validateNotBlankIfPresent(request.hospitalAddress(), "hospitalAddress");
+        validateNotBlankIfPresent(request.hospitalAddressDetail(), "hospitalAddressDetail");
         validateNotBlankIfPresent(request.address(), "address");
         validateNotBlankIfPresent(request.addressDetail(), "addressDetail");
     }
@@ -503,6 +522,7 @@ public class UserServiceImpl implements UserService {
                     .status(counselor.getStatus())
                     .hospitalName(counselor.getHospitalName())
                     .hospitalAddress(counselor.getHospitalAddress())
+                    .hospitalAddressDetail(counselor.getHospitalAddressDetail())
                     .build();
             }
         };

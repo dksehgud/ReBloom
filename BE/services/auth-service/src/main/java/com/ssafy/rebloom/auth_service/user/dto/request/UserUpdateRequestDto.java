@@ -16,6 +16,8 @@ public record UserUpdateRequestDto(
 
     String hospitalAddress,
 
+    String hospitalAddressDetail,
+
     String address,
 
     String addressDetail,

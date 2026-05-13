@@ -36,6 +36,11 @@ dependencies {
 	// common module
 	implementation(project(':modules:common-module')){
 		exclude group: 'org.springframework.boot', module: 'spring-boot-starter-data-jpa'
+		exclude group: 'org.springframework.boot', module: 'spring-boot-starter-data-jpa'
+		exclude group: 'com.querydsl', module: 'querydsl-jpa'
+		exclude group: 'com.querydsl', module: 'querydsl-apt'
+		exclude group: 'jakarta.annotation', module: 'jakarta.annotation-api'
+		exclude group: 'jakarta.persistence', module: 'jakarta.persistence-api'
 	}
 
 }

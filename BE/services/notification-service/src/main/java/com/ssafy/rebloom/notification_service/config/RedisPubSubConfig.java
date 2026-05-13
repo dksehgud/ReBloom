@@ -1,7 +1,7 @@
 package com.ssafy.rebloom.notification_service.config;
 
 import com.ssafy.rebloom.notification_service.constants.Constants;
-import com.ssafy.rebloom.notification_service.service.NotificationRedisSubscribeService;
+import com.ssafy.rebloom.notification_service.pubsub.NotificationRedisSubscriber;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -14,7 +14,7 @@ import org.springframework.data.redis.listener.adapter.MessageListenerAdapter;
 @RequiredArgsConstructor
 public class RedisPubSubConfig {
 
-    private final NotificationRedisSubscribeService notificationRedisSubscribeService;
+    private final NotificationRedisSubscriber notificationRedisSubscriber;
 
     @Bean
     public RedisMessageListenerContainer redisMessageListenerContainer(
@@ -32,6 +32,6 @@ public class RedisPubSubConfig {
 
     @Bean
     public MessageListenerAdapter notificationListenerAdapter() {
-        return new MessageListenerAdapter(notificationRedisSubscribeService, "onMessage");
+        return new MessageListenerAdapter(notificationRedisSubscriber, "onMessage");
     }
 }

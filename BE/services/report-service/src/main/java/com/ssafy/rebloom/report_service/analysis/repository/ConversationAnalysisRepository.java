@@ -17,7 +17,6 @@ public interface ConversationAnalysisRepository extends JpaRepository<Conversati
                user_id,
                started_at,
                ended_at,
-               emotion_icon,
                embedding_text,
                prediction,
                is_ai_initiated,
