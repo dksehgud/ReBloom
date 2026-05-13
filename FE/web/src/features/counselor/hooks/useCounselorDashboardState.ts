@@ -1,6 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 import {
+  createCounselorComment,
+  deleteCounselorComment,
+  getCounselorComment,
+} from '../api/counselorCommentApi'
+import {
   getCounselorChildren,
   type CounselorChildResponseDto,
 } from '../api/counselorChildrenApi'
@@ -15,6 +20,7 @@ import {
   getCounselorParentRelations,
   type CounselorParentRelationResponseDto,
 } from '../api/counselorParentRelationApi'
+import { getCounselorObservationRecords } from '../api/counselorObservationApi'
 import {
   DEFAULT_EXPRESSION_WEEK_INDEX,
   INITIAL_DASHBOARD_WEEK_OFFSETS,
@@ -353,6 +359,22 @@ function getMockWeekIndex(weekOffset: number) {
   return clampWeekIndex(DEFAULT_EXPRESSION_WEEK_INDEX + weekOffset)
 }
 
+function updateObservationRecordComment(
+  records: ObservationRecord[],
+  reportId: string,
+  comment: ObservationRecord['comment'],
+) {
+  return records.map((record) =>
+    record.reportId === reportId
+      ? {
+          ...record,
+          comment,
+          hasComment: Boolean(comment),
+        }
+      : record,
+  )
+}
+
 function getCardsAverageValue(
   cards: Array<
     CounselorDiaryAnalysisCardDto | CounselorConversationAnalysisCardDto
@@ -544,9 +566,22 @@ function useCounselorDashboardState() {
   const [analysisCardHeight, setAnalysisCardHeight] = useState<number>()
   const [selectedObservation, setSelectedObservation] =
     useState<ObservationRecord | null>(null)
+  const [observationRecords, setObservationRecords] = useState<
+    ObservationRecord[]
+  >(() => observationRecordsByWeek[expressionWeeks[DEFAULT_EXPRESSION_WEEK_INDEX]?.id] ?? [])
   const [observationComments, setObservationComments] = useState(
     initialObservationComments,
   )
+  const [isLoadingObservationRecords, setIsLoadingObservationRecords] =
+    useState(!isMockMode)
+  const [observationRecordsError, setObservationRecordsError] =
+    useState<string>()
+  const [isLoadingObservationComment, setIsLoadingObservationComment] =
+    useState(false)
+  const [isSubmittingObservationComment, setIsSubmittingObservationComment] =
+    useState(false)
+  const [observationCommentError, setObservationCommentError] =
+    useState<string>()
   const mainColumnRef = useRef<HTMLDivElement | null>(null)
 
   const getWeekControls = (section: DashboardWeekSection) => {
@@ -593,16 +628,15 @@ function useCounselorDashboardState() {
   const expressionWeek = getWeekControls('expression')
   const biometricRatioWeek = getWeekControls('biometricRatio')
   const autonomicWeek = getWeekControls('autonomic')
-  const currentObservationRecords =
-    selectedChildId && isMockMode
-      ? (observationRecordsByWeek[observationWeek.currentWeek.id] ?? [])
-      : []
+  const currentObservationRecords = selectedChildId ? observationRecords : []
   const selectedChildProfile =
     childItems.find((child) => child.id === selectedChildId) ??
     childItems[0] ??
     null
   const selectedObservationComment = selectedObservation
-    ? (observationComments[selectedObservation.reportId] ?? null)
+    ? (observationComments[selectedObservation.reportId] ??
+      selectedObservation.comment ??
+      null)
     : null
 
   const handleSelectChild = (childId: string) => {
@@ -611,30 +645,139 @@ function useCounselorDashboardState() {
     setWeekOffsets(INITIAL_DASHBOARD_WEEK_OFFSETS)
   }
 
-  const handleSaveObservationComment = (
+  const handleSaveObservationComment = async (
     record: ObservationRecord,
     context: string,
   ) => {
-    setObservationComments((current) => ({
-      ...current,
-      [record.reportId]: createMockComment(
+    if (isMockMode) {
+      const nextComment = createMockComment(
         record.id,
         context,
         new Date().toISOString(),
-      ),
-    }))
+      )
+
+      setObservationComments((current) => ({
+        ...current,
+        [record.reportId]: nextComment,
+      }))
+      setObservationRecords((current) =>
+        updateObservationRecordComment(current, record.reportId, nextComment),
+      )
+      return true
+    }
+
+    if (!accessToken || !selectedChildId) {
+      setObservationCommentError('로그인이 필요합니다.')
+      return false
+    }
+
+    try {
+      setIsSubmittingObservationComment(true)
+      setObservationCommentError(undefined)
+
+      const nextComment = await createCounselorComment({
+        accessToken,
+        childrenId: record.childrenId || selectedChildId,
+        context,
+        reportId: record.reportId,
+      })
+
+      setObservationComments((current) => ({
+        ...current,
+        [record.reportId]: nextComment,
+      }))
+      setObservationRecords((current) =>
+        updateObservationRecordComment(current, record.reportId, nextComment),
+      )
+      setSelectedObservation((current) =>
+        current?.reportId === record.reportId
+          ? {
+              ...current,
+              comment: nextComment,
+              hasComment: true,
+            }
+          : current,
+      )
+      return true
+    } catch (error) {
+      console.error(error)
+      setObservationCommentError(
+        error instanceof Error
+          ? error.message
+          : '상담사 코멘트를 작성하지 못했습니다.',
+      )
+      return false
+    } finally {
+      setIsSubmittingObservationComment(false)
+    }
   }
 
-  const handleDeleteObservationComment = (
+  const handleDeleteObservationComment = async (
     reportId: string,
     commentId: string,
   ) => {
-    void commentId
+    if (isMockMode) {
+      setObservationComments((current) => ({
+        ...current,
+        [reportId]: null,
+      }))
+      setObservationRecords((current) =>
+        updateObservationRecordComment(current, reportId, null),
+      )
+      return true
+    }
 
-    setObservationComments((current) => ({
-      ...current,
-      [reportId]: null,
-    }))
+    if (!accessToken || !selectedChildId) {
+      setObservationCommentError('로그인이 필요합니다.')
+      return false
+    }
+
+    try {
+      setIsSubmittingObservationComment(true)
+      setObservationCommentError(undefined)
+
+      await deleteCounselorComment({
+        accessToken,
+        childrenId: selectedObservation?.childrenId || selectedChildId,
+        commentId,
+        reportId,
+      })
+
+      setObservationComments((current) => ({
+        ...current,
+        [reportId]: null,
+      }))
+      setObservationRecords((current) =>
+        updateObservationRecordComment(current, reportId, null),
+      )
+      setSelectedObservation((current) =>
+        current?.reportId === reportId
+          ? {
+              ...current,
+              comment: null,
+              hasComment: false,
+            }
+          : current,
+      )
+      return true
+    } catch (error) {
+      console.error(error)
+      setObservationCommentError(
+        error instanceof Error
+          ? error.message
+          : '상담사 코멘트를 삭제하지 못했습니다.',
+      )
+      return false
+    } finally {
+      setIsSubmittingObservationComment(false)
+    }
+  }
+
+  const handleSelectObservation = (record: ObservationRecord | null) => {
+    setSelectedObservation(record)
+    setObservationCommentError(undefined)
+    setIsLoadingObservationComment(false)
+    setIsSubmittingObservationComment(false)
   }
 
   const loadChildItems = useCallback(async () => {
@@ -722,6 +865,76 @@ function useCounselorDashboardState() {
       setIsLoadingConnectionRequests(false)
     }
   }, [accessToken, isMockMode])
+
+  const loadObservationRecords = useCallback(async () => {
+    if (isMockMode) {
+      const mockWeekId = expressionWeeks[getMockWeekIndex(weekOffsets.observation)]?.id
+      const nextRecords = mockWeekId ? observationRecordsByWeek[mockWeekId] ?? [] : []
+
+      setObservationRecords(nextRecords)
+      setSelectedObservation((current) =>
+        current && nextRecords.some((record) => record.reportId === current.reportId)
+          ? current
+          : null,
+      )
+      setObservationComments(initialObservationComments)
+      setObservationRecordsError(undefined)
+      setIsLoadingObservationRecords(false)
+      return
+    }
+
+    if (!accessToken || !selectedChildId) {
+      setObservationRecords([])
+      setObservationRecordsError(undefined)
+      setIsLoadingObservationRecords(false)
+      return
+    }
+
+    const observationRange = getWeekRangeByOffset(weekOffsets.observation, {
+      baseDateStrategy: 'end',
+      clampEndDateToToday: true,
+    })
+
+    try {
+      setIsLoadingObservationRecords(true)
+      setObservationRecordsError(undefined)
+
+      const nextRecords = await getCounselorObservationRecords({
+        accessToken,
+        childrenId: selectedChildId,
+        endDate: observationRange.endDate,
+        startDate: observationRange.startDate,
+      })
+
+      setObservationRecords(nextRecords)
+      setSelectedObservation((current) =>
+        current && nextRecords.some((record) => record.reportId === current.reportId)
+          ? current
+          : null,
+      )
+      setObservationComments((current) => {
+        const nextComments = { ...current }
+
+        nextRecords.forEach((record) => {
+          if (!record.hasComment) {
+            nextComments[record.reportId] = null
+          }
+        })
+
+        return nextComments
+      })
+    } catch (error) {
+      console.error(error)
+      setObservationRecords([])
+      setObservationRecordsError(
+        error instanceof Error
+          ? error.message
+          : '상담 아동 관찰 기록을 불러오지 못했습니다.',
+      )
+    } finally {
+      setIsLoadingObservationRecords(false)
+    }
+  }, [accessToken, isMockMode, selectedChildId, weekOffsets.observation])
 
   const loadDashboardMetrics = useCallback(async () => {
     const currentChildId =
@@ -928,6 +1141,7 @@ function useCounselorDashboardState() {
     )
   }
 
+
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
       void loadChildItems()
@@ -946,11 +1160,99 @@ function useCounselorDashboardState() {
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
+      void loadObservationRecords()
+    }, 0)
+
+    return () => window.clearTimeout(timeoutId)
+  }, [loadObservationRecords])
+
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => {
       void loadDashboardMetrics()
     }, 0)
 
     return () => window.clearTimeout(timeoutId)
   }, [loadDashboardMetrics])
+
+  useEffect(() => {
+    if (!selectedObservation) {
+      return undefined
+    }
+
+    if (isMockMode) {
+      return undefined
+    }
+
+    if (!accessToken || !selectedChildId) {
+      return undefined
+    }
+
+    if (!selectedObservation.hasComment) {
+      return undefined
+    }
+
+    if (observationComments[selectedObservation.reportId] !== undefined) {
+      return undefined
+    }
+
+    let isActive = true
+
+    const loadSelectedObservationComment = async () => {
+      try {
+        setIsLoadingObservationComment(true)
+        setObservationCommentError(undefined)
+
+        const comment = await getCounselorComment({
+          accessToken,
+          childrenId: selectedObservation.childrenId || selectedChildId,
+          reportId: selectedObservation.reportId,
+        })
+
+        if (!isActive) {
+          return
+        }
+
+        setObservationComments((current) => ({
+          ...current,
+          [selectedObservation.reportId]: comment,
+        }))
+        setObservationRecords((current) =>
+          updateObservationRecordComment(
+            current,
+            selectedObservation.reportId,
+            comment,
+          ),
+        )
+      } catch (error) {
+        if (!isActive) {
+          return
+        }
+
+        console.error(error)
+        setObservationCommentError(
+          error instanceof Error
+            ? error.message
+            : '상담사 코멘트를 불러오지 못했습니다.',
+        )
+      } finally {
+        if (isActive) {
+          setIsLoadingObservationComment(false)
+        }
+      }
+    }
+
+    void loadSelectedObservationComment()
+
+    return () => {
+      isActive = false
+    }
+  }, [
+    accessToken,
+    isMockMode,
+    observationComments,
+    selectedChildId,
+    selectedObservation,
+  ])
 
   useEffect(() => {
     const columnElement = mainColumnRef.current
@@ -1001,13 +1303,18 @@ function useCounselorDashboardState() {
     handleRejectConnectionRequest,
     handleSaveObservationComment,
     handleSelectChild,
+    isLoadingObservationComment,
     isLoadingConnectionRequests,
     isLoadingDashboardMetrics,
     isConnectionModalOpen,
     isLoadingChildItems,
+    isLoadingObservationRecords,
+    isSubmittingObservationComment,
     isSidebarCollapsed,
     mainColumnRef,
+    observationCommentError,
     observationComments,
+    observationRecordsError,
     observationWeek,
     selectedChildId,
     selectedChildProfile,
@@ -1015,7 +1322,7 @@ function useCounselorDashboardState() {
     selectedObservationComment,
     setIsConnectionModalOpen,
     setIsSidebarCollapsed,
-    setSelectedObservation,
+    setSelectedObservation: handleSelectObservation,
     sleepEfficiencyData,
     sleepEfficiencyWeek,
     sleepScoreData,

@@ -25,11 +25,12 @@ type CounselorConnectionRequest = {
 type ObservationComment = CounselorCommentResponseDto
 
 type ObservationRecord = {
-  id: number
+  id: number | string
   childrenId: string
   reportId: string
   date: string
   day: string
+  hasComment?: boolean
   mood: string
   text: string
   comment?: ObservationComment | null

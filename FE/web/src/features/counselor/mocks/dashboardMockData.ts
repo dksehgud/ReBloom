@@ -35,16 +35,16 @@ const counselorProfile = {
 const MOCK_CHILDREN_ID = '22222222-2222-2222-2222-222222222222'
 const MOCK_COUNSELOR_ID = '55555555-5555-5555-5555-555555555555'
 
-function getMockReportId(recordId: number) {
+function getMockReportId(recordId: number | string) {
   return `11111111-1111-4111-8111-${String(recordId).padStart(12, '0')}`
 }
 
-function getMockCommentId(recordId: number) {
+function getMockCommentId(recordId: number | string) {
   return `44444444-4444-4444-8444-${String(recordId).padStart(12, '0')}`
 }
 
 function createMockComment(
-  recordId: number,
+  recordId: number | string,
   context: string,
   createdAt = '2026-05-07T21:00:00',
 ): ObservationComment {

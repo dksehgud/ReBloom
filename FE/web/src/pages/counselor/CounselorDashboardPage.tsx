@@ -43,13 +43,18 @@ function CounselorDashboardPage() {
     handleRejectConnectionRequest,
     handleSaveObservationComment,
     handleSelectChild,
+    isLoadingObservationComment,
     isLoadingConnectionRequests,
     isLoadingDashboardMetrics,
     isConnectionModalOpen,
     isLoadingChildItems,
+    isLoadingObservationRecords,
+    isSubmittingObservationComment,
     isSidebarCollapsed,
     mainColumnRef,
+    observationCommentError,
     observationComments,
+    observationRecordsError,
     observationWeek,
     selectedChildId,
     selectedChildProfile,
@@ -138,6 +143,8 @@ function CounselorDashboardPage() {
                     <ObservationList
                       records={currentObservationRecords}
                       comments={observationComments}
+                      error={observationRecordsError}
+                      isLoading={isLoadingObservationRecords}
                       onSelect={setSelectedObservation}
                     />
                   </DashboardCard>
@@ -270,6 +277,9 @@ function CounselorDashboardPage() {
         <ObservationCommentModal
           record={selectedObservation}
           comment={selectedObservationComment}
+          error={observationCommentError}
+          isCommentLoading={isLoadingObservationComment}
+          isSubmitting={isSubmittingObservationComment}
           onClose={() => setSelectedObservation(null)}
           onSave={handleSaveObservationComment}
           onDelete={handleDeleteObservationComment}

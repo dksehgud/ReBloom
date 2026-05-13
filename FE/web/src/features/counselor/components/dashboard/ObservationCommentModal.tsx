@@ -5,19 +5,25 @@ import type { ObservationComment, ObservationRecord } from '../../types/dashboar
 import { formatCommentCreatedAt } from '../../utils/dashboardTimeline'
 
 type ObservationCommentModalProps = {
-  record: ObservationRecord
   comment: ObservationComment | null
+  error?: string
+  isCommentLoading?: boolean
+  isSubmitting?: boolean
+  record: ObservationRecord
   onClose: () => void
-  onSave: (record: ObservationRecord, context: string) => void
-  onDelete: (reportId: string, commentId: string) => void
+  onDelete: (reportId: string, commentId: string) => boolean | Promise<boolean>
+  onSave: (record: ObservationRecord, context: string) => boolean | Promise<boolean>
 }
 
 function ObservationCommentModal({
-  record,
   comment,
+  error,
+  isCommentLoading = false,
+  isSubmitting = false,
+  record,
   onClose,
-  onSave,
   onDelete,
+  onSave,
 }: ObservationCommentModalProps) {
   const [draft, setDraft] = useState('')
   const trimmedDraft = draft.trim()
@@ -39,15 +45,26 @@ function ObservationCommentModal({
     }
   }, [onClose])
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
 
-    if (!trimmedDraft) {
+    if (!trimmedDraft || isSubmitting) {
       return
     }
 
-    onSave(record, trimmedDraft)
-    setDraft('')
+    const didSave = await onSave(record, trimmedDraft)
+
+    if (didSave) {
+      setDraft('')
+    }
+  }
+
+  const handleDelete = async (commentId: string) => {
+    if (isSubmitting) {
+      return
+    }
+
+    await onDelete(record.reportId, commentId)
   }
 
   return (
@@ -83,13 +100,25 @@ function ObservationCommentModal({
               <strong>상담사의 코멘트</strong>
             </div>
 
-            {comment ? (
+            {error ? (
+              <p className="counselor-observation-comment-empty">{error}</p>
+            ) : null}
+
+            {isCommentLoading ? (
+              <p className="counselor-observation-comment-empty">
+                코멘트를 불러오는 중입니다.
+              </p>
+            ) : comment ? (
               <div className="counselor-observation-comment-item">
                 <span className="counselor-observation-comment-dot" aria-hidden="true" />
                 <div>
                   <div className="counselor-observation-comment-meta">
                     <span>{formatCommentCreatedAt(comment.createdAt)}</span>
-                    <button type="button" onClick={() => onDelete(record.reportId, comment.commentId)}>
+                    <button
+                      type="button"
+                      disabled={isSubmitting}
+                      onClick={() => void handleDelete(comment.commentId)}
+                    >
                       삭제
                     </button>
                   </div>
@@ -104,12 +133,13 @@ function ObservationCommentModal({
                 <div className="counselor-observation-comment-form">
                   <textarea
                     value={draft}
+                    disabled={isSubmitting}
                     onChange={(event) => setDraft(event.target.value)}
-                    placeholder="코멘트를 입력하세요..."
+                    placeholder="코멘트를 입력하세요."
                     aria-label="상담사 코멘트"
                   />
-                  <button type="submit" disabled={!trimmedDraft}>
-                    코멘트 추가
+                  <button type="submit" disabled={!trimmedDraft || isSubmitting}>
+                    {isSubmitting ? '저장 중' : '코멘트 추가'}
                   </button>
                 </div>
               </>
