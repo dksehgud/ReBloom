@@ -1,6 +1,7 @@
 package com.rebloom.mobile.network
 
 import android.content.Context
+import com.rebloom.mobile.BuildConfig
 import kotlinx.coroutines.runBlocking
 import okhttp3.Interceptor
 import okhttp3.OkHttpClient
@@ -10,7 +11,7 @@ import retrofit2.converter.gson.GsonConverterFactory
 
 object ApiClient {
 
-    private const val BASE_URL = "http://k14b109.p.ssafy.io:8080/"
+    private val baseUrl = BuildConfig.API_BASE_URL.trimEnd('/') + "/"
 
     fun create(context: Context): ApiService {
         val tokenInterceptor = Interceptor { chain ->
@@ -35,7 +36,7 @@ object ApiClient {
             .build()
 
         return Retrofit.Builder()
-            .baseUrl(BASE_URL)
+            .baseUrl(baseUrl)
             .client(client)
             .addConverterFactory(GsonConverterFactory.create())
             .build()
