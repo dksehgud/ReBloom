@@ -34,4 +34,8 @@ public class UserFcmToken extends BaseTime {
     @Builder.Default
     @Column(name = "is_active", nullable = false)
     private boolean isActive = true;
+
+    public void deactivate() {
+        this.isActive = false;
+    }
 }

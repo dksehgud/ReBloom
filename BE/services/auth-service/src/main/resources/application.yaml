@@ -54,3 +54,4 @@ rebloom:
       - "/api/v1/users/profiles"
       - "/api/v1/internal/children/*/target-location"
       - "/api/v1/internal/devices/serial/*/children-id"
+      - "/api/v1/internal/children/*/iot-info"

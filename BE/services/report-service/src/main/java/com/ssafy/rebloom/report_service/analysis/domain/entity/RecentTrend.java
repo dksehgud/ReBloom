@@ -24,5 +24,9 @@ public class RecentTrend {
 
     @Column(nullable = false)
     private String summary;
+
+    public void updateSummary(String summary) {
+        this.summary = summary;
+    }
 }
 
