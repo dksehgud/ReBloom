@@ -49,6 +49,7 @@ class ConversationManager:
         self._trigger_pending = False
         self._start_sound_args = SimpleNamespace(
             start_sound=config.start_sound,
+            start_sound_file=config.start_sound_file,
             start_sound_player=config.start_sound_player,
             start_sound_device=config.start_sound_device,
             aplay_bin=config.aplay_bin,

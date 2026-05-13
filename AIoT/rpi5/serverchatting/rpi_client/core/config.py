@@ -1,8 +1,15 @@
 import os
 from functools import lru_cache
+from pathlib import Path
 
 from dotenv import load_dotenv
 from pydantic import BaseModel, Field
+
+
+SERVERCHATTING_DIR = Path(__file__).resolve().parents[2]
+DEFAULT_OPENWAKEWORD_MODEL_PATHS = (
+    str(SERVERCHATTING_DIR / "Wake_Model" / "hi_blooming.onnx"),
+)
 
 
 class Settings(BaseModel):
@@ -29,6 +36,7 @@ class Settings(BaseModel):
     stt_retry_seconds: float = Field(default=5.0, ge=0.1)
     mic_busy_retry_seconds: float = Field(default=10.0, ge=0.1)
     start_sound: str = "on"
+    start_sound_file: str = ""
     start_sound_player: str = "auto"
     start_sound_device: str = ""
     language: str = "ko"
@@ -43,6 +51,16 @@ class Settings(BaseModel):
     edge_voice: str = "ko-KR-SunHiNeural"
     edge_rate: str = "+0%"
     edge_volume: str = "+0%"
+    elevenlabs_api_key: str = ""
+    elevenlabs_voice_id: str = "JBFqnCBsd6RMkjVDRZzb"
+    elevenlabs_model_id: str = "eleven_multilingual_v2"
+    elevenlabs_output_format: str = "mp3_44100_128"
+    elevenlabs_timeout_seconds: float = Field(default=30.0, ge=1.0)
+    elevenlabs_stability: float = Field(default=0.45, ge=0.0, le=1.0)
+    elevenlabs_similarity_boost: float = Field(default=0.8, ge=0.0, le=1.0)
+    elevenlabs_style: float = Field(default=0.25, ge=0.0, le=1.0)
+    elevenlabs_use_speaker_boost: bool = True
+    elevenlabs_speed: float = Field(default=0.95, ge=0.7, le=1.2)
     mp3_player: str = "mpg123"
     mp3_player_args: str = ""
     tts_output_file: str = ""
@@ -50,14 +68,20 @@ class Settings(BaseModel):
     piper_bin: str = "piper"
     piper_model: str = ""
     aplay_bin: str = "aplay"
+    hf_tts_model: str = "myshell-ai/MeloTTS-Korean"
+    hf_tts_device: str = "cpu"
+    hf_tts_torch_dtype: str = "auto"
+    melotts_language: str = "KR"
+    melotts_speaker: str = "KR"
+    melotts_speed: float = Field(default=1.0, ge=0.5, le=2.0)
     session_events_url: str = ""
     session_window_seconds: float = Field(default=300.0, ge=1)
     session_send_timeout: float = Field(default=5.0, ge=0.1)
     start_conversation_on_boot: bool = False
     wake_word_enabled: bool = True
     wake_word_engine: str = "openwakeword"
-    wake_words: tuple[str, ...] = ("alexa", "알렉사")
-    openwakeword_model_paths: tuple[str, ...] = ()
+    wake_words: tuple[str, ...] = ("hi blooming", "하이 블루밍")
+    openwakeword_model_paths: tuple[str, ...] = DEFAULT_OPENWAKEWORD_MODEL_PATHS
     openwakeword_threshold: float = Field(default=0.5, ge=0.0, le=1.0)
     openwakeword_debug: bool = False
     openwakeword_rearm_seconds: float = Field(default=2.0, ge=0.0)
@@ -103,6 +127,7 @@ def get_settings() -> Settings:
         stt_retry_seconds=_get_float_env("STT_RETRY_SECONDS", 5.0),
         mic_busy_retry_seconds=_get_float_env("MIC_BUSY_RETRY_SECONDS", 10.0),
         start_sound=os.getenv("START_SOUND", "on").strip(),
+        start_sound_file=os.getenv("START_SOUND_FILE", "").strip(),
         start_sound_player=os.getenv("START_SOUND_PLAYER", "auto").strip(),
         start_sound_device=os.getenv("START_SOUND_DEVICE", "").strip(),
         language=os.getenv("LANGUAGE", "ko").strip(),
@@ -117,6 +142,16 @@ def get_settings() -> Settings:
         edge_voice=os.getenv("EDGE_VOICE", "ko-KR-SunHiNeural").strip(),
         edge_rate=os.getenv("EDGE_RATE", "+0%").strip(),
         edge_volume=os.getenv("EDGE_VOLUME", "+0%").strip(),
+        elevenlabs_api_key=os.getenv("ELEVENLABS_API_KEY", "").strip(),
+        elevenlabs_voice_id=os.getenv("ELEVENLABS_VOICE_ID", "JBFqnCBsd6RMkjVDRZzb").strip(),
+        elevenlabs_model_id=os.getenv("ELEVENLABS_MODEL_ID", "eleven_multilingual_v2").strip(),
+        elevenlabs_output_format=os.getenv("ELEVENLABS_OUTPUT_FORMAT", "mp3_44100_128").strip(),
+        elevenlabs_timeout_seconds=_get_float_env("ELEVENLABS_TIMEOUT_SECONDS", 30.0),
+        elevenlabs_stability=_get_float_env("ELEVENLABS_STABILITY", 0.45),
+        elevenlabs_similarity_boost=_get_float_env("ELEVENLABS_SIMILARITY_BOOST", 0.8),
+        elevenlabs_style=_get_float_env("ELEVENLABS_STYLE", 0.25),
+        elevenlabs_use_speaker_boost=_get_bool_env("ELEVENLABS_USE_SPEAKER_BOOST", True),
+        elevenlabs_speed=_get_float_env("ELEVENLABS_SPEED", 0.95),
         mp3_player=os.getenv("MP3_PLAYER", "mpg123").strip(),
         mp3_player_args=os.getenv("MP3_PLAYER_ARGS", "").strip(),
         tts_output_file=os.getenv("TTS_OUTPUT_FILE", "").strip(),
@@ -124,14 +159,20 @@ def get_settings() -> Settings:
         piper_bin=os.getenv("PIPER_BIN", "piper").strip(),
         piper_model=os.getenv("PIPER_MODEL", "").strip(),
         aplay_bin=os.getenv("APLAY_BIN", "aplay").strip(),
+        hf_tts_model=os.getenv("HF_TTS_MODEL", "myshell-ai/MeloTTS-Korean").strip(),
+        hf_tts_device=os.getenv("HF_TTS_DEVICE", "cpu").strip(),
+        hf_tts_torch_dtype=os.getenv("HF_TTS_TORCH_DTYPE", "auto").strip(),
+        melotts_language=os.getenv("MELOTTS_LANGUAGE", "KR").strip(),
+        melotts_speaker=os.getenv("MELOTTS_SPEAKER", "KR").strip(),
+        melotts_speed=_get_float_env("MELOTTS_SPEED", 1.0),
         session_events_url=os.getenv("SESSION_EVENTS_URL", "").strip(),
         session_window_seconds=_get_float_env("SESSION_WINDOW_SECONDS", 300.0),
         session_send_timeout=_get_float_env("SESSION_SEND_TIMEOUT", 5.0),
         start_conversation_on_boot=_get_bool_env("START_CONVERSATION_ON_BOOT", False),
         wake_word_enabled=_get_bool_env("WAKE_WORD_ENABLED", True),
         wake_word_engine=os.getenv("WAKE_WORD_ENGINE", "openwakeword").strip().lower(),
-        wake_words=_get_csv_env("WAKE_WORDS", ("alexa", "알렉사")),
-        openwakeword_model_paths=_get_csv_env("OPENWAKEWORD_MODEL_PATHS", ()),
+        wake_words=_get_csv_env("WAKE_WORDS", ("hi blooming", "하이 블루밍")),
+        openwakeword_model_paths=_get_csv_env("OPENWAKEWORD_MODEL_PATHS", DEFAULT_OPENWAKEWORD_MODEL_PATHS),
         openwakeword_threshold=_get_float_env("OPENWAKEWORD_THRESHOLD", 0.5),
         openwakeword_debug=_get_bool_env("OPENWAKEWORD_DEBUG", False),
         openwakeword_rearm_seconds=_get_float_env("OPENWAKEWORD_REARM_SECONDS", 2.0),
