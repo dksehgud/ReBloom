@@ -5,6 +5,7 @@ import com.ssafy.rebloom.auth_service.user.domain.entity.*;
 import com.ssafy.rebloom.auth_service.user.domain.enums.RelationStatus;
 import com.ssafy.rebloom.auth_service.user.domain.enums.UserRole;
 import com.ssafy.rebloom.auth_service.user.dto.query.ParentReceiverDto;
+import com.ssafy.rebloom.auth_service.user.dto.request.CounselorRelationRequestDto;
 import com.ssafy.rebloom.auth_service.user.dto.request.PasswordChangeRequestDto;
 import com.ssafy.rebloom.auth_service.user.dto.request.ParentConnectRequestDto;
 import com.ssafy.rebloom.auth_service.user.dto.request.UserCreateRequestDto;
@@ -24,6 +25,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.Period;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
@@ -38,6 +40,7 @@ public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
     private final ParentRepository parentRepository;
+    private final CounselorRepository counselorRepository;
     private final ChildrenParentRelationRepository childrenParentRelationRepository;
     private final ChildrenCounselorRelationRepository childrenCounselorRelationRepository;
     private final ParentCounselorRelationRepository parentCounselorRelationRepository;
@@ -54,7 +57,7 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public void signupUser(UserCreateRequestDto userCreateRequestDto) {
         if (userRepository.existsByEmail(userCreateRequestDto.email())) {
-            throw new CustomException("이미 사용 중인 이메일입니다.", ErrorCode.EMAIL_ALREADY_EXISTS);
+            throw new CustomException("이미 존재하는 이메일입니다.", ErrorCode.EMAIL_ALREADY_EXISTS);
         }
 
         String registerUUID = userCreateRequestDto.registerUUID();
@@ -95,7 +98,7 @@ public class UserServiceImpl implements UserService {
                 ChildrenParentRelation relation = ChildrenParentRelation.builder()
                     .children(child)
                     .parent(parent)
-                    .relationStatus(RelationStatus.PENDING)
+                    .relationStatus(RelationStatus.ACTIVE)
                     .build();
                 childrenParentRelationRepository.save(relation);
             }
@@ -139,7 +142,7 @@ public class UserServiceImpl implements UserService {
 
         String email = resolveUpdateValue(request.email(), user.getEmail());
         if (!user.getEmail().equals(email) && userRepository.existsByEmail(email)) {
-            throw new CustomException("이미 사용 중인 이메일입니다.", ErrorCode.EMAIL_ALREADY_EXISTS);
+            throw new CustomException("이미 존재하는 이메일입니다.", ErrorCode.EMAIL_ALREADY_EXISTS);
         }
 
         return switch (user.getRole()) {
@@ -184,9 +187,115 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    public ListResponseDto<CounselorParentRelationResponseDto> getCounselorParentRelations(UUID counselorId) {
+        List<CounselorParentRelationResponseDto> relations = parentCounselorRelationRepository
+            .findAllByCounselorIdAndRelationStatusIn(
+                counselorId,
+                List.of(RelationStatus.ACTIVE, RelationStatus.PENDING)
+            )
+            .stream()
+            .map(parentCounselorRelation -> CounselorParentRelationResponseDto.from(
+                parentCounselorRelation,
+                getActiveChildRelationByParentId(parentCounselorRelation.getParent().getId())
+            ))
+            .toList();
+
+        return ListResponseDto.from(relations);
+    }
+
+    @Override
+    @Transactional
+    public CounselorParentRelationResponseDto acceptCounselorRelation(UUID counselorId, UUID parentId) {
+        ParentCounselorRelation parentCounselorRelation = parentCounselorRelationRepository
+            .findByParentIdAndCounselorIdAndRelationStatusIn(
+                parentId,
+                counselorId,
+                List.of(RelationStatus.PENDING)
+            )
+            .orElseThrow(() -> new CustomException(
+                "상담사 연결 신청을 찾을 수 없습니다.",
+                ErrorCode.NOT_FOUND
+            ));
+
+        ChildrenParentRelation childrenParentRelation = getActiveChildRelationByParentId(parentId);
+        parentCounselorRelation.activate();
+
+        boolean hasActiveChildCounselorRelation =
+            childrenCounselorRelationRepository.existsByCounselor_IdAndChildren_IdAndRelationStatus(
+                counselorId,
+                childrenParentRelation.getChildren().getId(),
+                RelationStatus.ACTIVE
+            );
+
+        if (!hasActiveChildCounselorRelation) {
+            ChildrenCounselorRelation childrenCounselorRelation = ChildrenCounselorRelation.builder()
+                .counselor(parentCounselorRelation.getCounselor())
+                .children(childrenParentRelation.getChildren())
+                .startedAt(LocalDateTime.now())
+                .relationStatus(RelationStatus.ACTIVE)
+                .build();
+            childrenCounselorRelationRepository.save(childrenCounselorRelation);
+        }
+
+        return CounselorParentRelationResponseDto.from(parentCounselorRelation, childrenParentRelation);
+    }
+
+    @Override
     public ParentCounselorResponseDto getParentCounselor(UUID parentId) {
         return parentCounselorRelationRepository.findByParentId(parentId)
             .orElseGet(ParentCounselorResponseDto::disconnected);
+    }
+
+    @Override
+    @Transactional
+    public CounselorRelationResponseDto requestCounselorRelation(
+        UUID parentId,
+        CounselorRelationRequestDto request
+    ) {
+        Parent parent = parentRepository.findById(parentId)
+            .orElseThrow(() -> new CustomException("부모를 찾을 수 없습니다.", ErrorCode.USER_NOT_FOUND));
+        Counselor counselor = counselorRepository.findById(request.counselorId())
+            .orElseThrow(() -> new CustomException("상담사를 찾을 수 없습니다.", ErrorCode.USER_NOT_FOUND));
+
+        boolean hasActiveOrPendingRelation =
+            parentCounselorRelationRepository.existsByParentIdAndRelationStatusIn(
+                parentId,
+                List.of(RelationStatus.ACTIVE, RelationStatus.PENDING)
+            );
+
+        if (hasActiveOrPendingRelation) {
+            throw new CustomException(
+                "이미 상담사 등록 신청 또는 연결이 존재합니다.",
+                ErrorCode.DUPLICATE_RESOURCE
+            );
+        }
+
+        ParentCounselorRelation relation = ParentCounselorRelation.builder()
+            .parent(parent)
+            .counselor(counselor)
+            .relationStatus(RelationStatus.PENDING)
+            .startedAt(LocalDateTime.now())
+            .endedAt(LocalDateTime.of(2038, 1, 19, 3, 14, 7))
+            .build();
+
+        return CounselorRelationResponseDto.from(parentCounselorRelationRepository.save(relation));
+    }
+
+    @Override
+    @Transactional
+    public void deleteCounselorRelation(UUID parentId, UUID counselorId) {
+        ParentCounselorRelation relation = parentCounselorRelationRepository
+            .findByParentIdAndCounselorIdAndRelationStatusIn(
+                parentId,
+                counselorId,
+                List.of(RelationStatus.ACTIVE, RelationStatus.PENDING)
+            )
+            .orElseThrow(() -> new CustomException(
+                "상담사 연결을 찾을 수 없습니다.",
+                ErrorCode.NOT_FOUND
+            ));
+
+        parentCounselorRelationRepository.delete(relation);
     }
 
     @Override
@@ -278,6 +387,15 @@ public class UserServiceImpl implements UserService {
         );
     }
 
+    private ChildrenParentRelation getActiveChildRelationByParentId(UUID parentId) {
+        return childrenParentRelationRepository
+            .findFirstByParentIdAndRelationStatus(parentId, RelationStatus.ACTIVE)
+            .orElseThrow(() -> new CustomException(
+                "부모와 연결된 아이를 찾을 수 없습니다.",
+                ErrorCode.NOT_FOUND
+            ));
+    }
+
     private User getUser(UUID userId) {
         return userRepository.findById(userId).orElseThrow(
             () -> new CustomException("사용자를 찾을 수 없습니다.", ErrorCode.USER_NOT_FOUND)
@@ -313,7 +431,7 @@ public class UserServiceImpl implements UserService {
         boolean locationChanged = request.latitude() != null || request.longitude() != null;
 
         if ((addressChanged || locationChanged) && (request.latitude() == null || request.longitude() == null)) {
-            throw new CustomException("주소 변경 시 위도와 경도는 함께 전달해야 합니다.", ErrorCode.INVALID_PARAMETER);
+            throw new CustomException("주소 변경 시 위도와 경도를 함께 전달해야 합니다.", ErrorCode.INVALID_PARAMETER);
         }
     }
 

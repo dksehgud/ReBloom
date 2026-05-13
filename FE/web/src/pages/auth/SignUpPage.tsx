@@ -20,6 +20,8 @@ type Gender = 'male' | 'female' | null
 
 const CODE_LENGTH = 6
 const CODE_DURATION_SECONDS = 300
+const KOREAN_NAME_PATTERN = /^[가-힣]{2,10}$/
+const PASSWORD_ALLOWED_PATTERN = /^[!-~]+$/
 
 type SignUpPageProps = {
   onBackToLogin: () => void
@@ -67,9 +69,21 @@ function SignUpPage({ onBackToLogin }: SignUpPageProps) {
   ).padStart(2, '0')}`
   const hasEmailValue = email.trim().length > 0
   const isEmailAvailable = emailStatus === 'available'
+  const isNameValid = KOREAN_NAME_PATTERN.test(name)
+  const nameError =
+    name.length > 0 && !isNameValid
+      ? '이름은 한글 2~10자로 입력해주세요.'
+      : undefined
   const hasPasswordLengthRule = password.length >= 8 && password.length <= 20
+  const hasPasswordLetterRule = /[A-Za-z]/.test(password)
   const hasPasswordNumberRule = /\d/.test(password)
   const hasPasswordSpecialRule = /[^A-Za-z0-9]/.test(password)
+  const hasPasswordAllowedCharacters =
+    password.length === 0 || PASSWORD_ALLOWED_PATTERN.test(password)
+  const passwordError =
+    password.length > 0 && !hasPasswordAllowedCharacters
+      ? '공백이나 한글은 사용할 수 없어요.'
+      : undefined
   const parentEmailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
   const hasParentEmailValue = parentEmail.trim().length > 0
   const isParentEmailValid = parentEmailPattern.test(parentEmail.trim())
@@ -79,18 +93,19 @@ function SignUpPage({ onBackToLogin }: SignUpPageProps) {
       : undefined
   const hasPasswordRuleMatch =
     hasPasswordLengthRule &&
+    hasPasswordLetterRule &&
     hasPasswordNumberRule &&
-    hasPasswordSpecialRule
+    hasPasswordAllowedCharacters
   const passwordsMatch =
     password.length > 0 &&
     passwordConfirm.length > 0 &&
     password === passwordConfirm
   const parentFormValid =
-    name.trim().length > 0 &&
+    isNameValid &&
     hasPasswordRuleMatch &&
     passwordsMatch
   const childFormValid =
-    name.trim().length > 0 &&
+    isNameValid &&
     gender !== null &&
     birthDate.trim().length > 0 &&
     baseAddress.trim().length > 0 &&
@@ -556,12 +571,15 @@ function SignUpPage({ onBackToLogin }: SignUpPageProps) {
           detailAddress={detailAddress}
           email={email}
           gender={gender}
+          hasPasswordAllowedCharacters={hasPasswordAllowedCharacters}
+          hasPasswordLetterRule={hasPasswordLetterRule}
           hasPasswordLengthRule={hasPasswordLengthRule}
           hasPasswordNumberRule={hasPasswordNumberRule}
           hasPasswordSpecialRule={hasPasswordSpecialRule}
           isLoadingAddressSearch={isLoadingAddressSearch}
           isSubmitting={isSubmitting}
           name={name}
+          nameError={nameError}
           onBaseAddressChange={(event) => {
             setBaseAddress(event.target.value)
             setLatitude(undefined)
@@ -584,6 +602,7 @@ function SignUpPage({ onBackToLogin }: SignUpPageProps) {
           parentEmail={parentEmail}
           parentEmailError={parentEmailError}
           password={password}
+          passwordError={passwordError}
           passwordConfirm={passwordConfirm}
           passwordsMatch={passwordsMatch}
           role={role}

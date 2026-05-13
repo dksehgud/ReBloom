@@ -633,6 +633,14 @@ body[data-shell-mode='webview'] .child-floating-action-button {
   color: #1a6dff;
 }
 
+.password-rules span.is-optional {
+  color: #6b7280;
+}
+
+.password-rules span.is-optional::before {
+  color: #6b7280;
+}
+
 .common-modal-overlay {
   align-items: center;
   display: flex;

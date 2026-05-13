@@ -1,4 +1,4 @@
-package com.ssafy.rebloom.auth_service.user.config;
+package com.ssafy.rebloom.common.config;
 
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import jakarta.persistence.EntityManager;
