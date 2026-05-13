@@ -153,7 +153,8 @@ public class UserServiceImpl implements UserService {
                     resolveUpdateValue(request.name(), counselor.getName()),
                     resolveUpdateValue(request.phone(), counselor.getPhone()),
                     resolveUpdateValue(request.hospitalName(), counselor.getHospitalName()),
-                    resolveUpdateValue(request.hospitalAddress(), counselor.getHospitalAddress())
+                    resolveUpdateValue(request.hospitalAddress(), counselor.getHospitalAddress()),
+                    resolveUpdateValue(request.hospitalAddressDetail(), counselor.getHospitalAddressDetail())
                 );
                 yield toUserInfoResponse(counselor);
             }
@@ -439,6 +440,7 @@ public class UserServiceImpl implements UserService {
         validateNotBlankIfPresent(request.phone(), "phone");
         validateNotBlankIfPresent(request.hospitalName(), "hospitalName");
         validateNotBlankIfPresent(request.hospitalAddress(), "hospitalAddress");
+        validateNotBlankIfPresent(request.hospitalAddressDetail(), "hospitalAddressDetail");
         validateNotBlankIfPresent(request.address(), "address");
         validateNotBlankIfPresent(request.addressDetail(), "addressDetail");
     }
@@ -520,6 +522,7 @@ public class UserServiceImpl implements UserService {
                     .status(counselor.getStatus())
                     .hospitalName(counselor.getHospitalName())
                     .hospitalAddress(counselor.getHospitalAddress())
+                    .hospitalAddressDetail(counselor.getHospitalAddressDetail())
                     .build();
             }
         };
