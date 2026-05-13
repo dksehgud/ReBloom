@@ -103,4 +103,13 @@ public class DeviceController {
         deviceService.deleteDevice(parentId, childrenId, serialNumber);
         return ResponseEntity.ok(BaseResponse.success("기기 삭제 성공"));
     }
+
+    @GetMapping("/internal/devices/serial/{serialNumber}/children-id")
+    public ResponseEntity<BaseResponse<UUID>> getChildrenIdByDeviceSerial(
+        @PathVariable String serialNumber
+    ) {
+        UUID childrenId = deviceService.getChildrenIdBySerialNumber(serialNumber);
+        return ResponseEntity.ok(BaseResponse.success("기기 아동 ID 조회 성공", childrenId));
+    }
+    
 }
