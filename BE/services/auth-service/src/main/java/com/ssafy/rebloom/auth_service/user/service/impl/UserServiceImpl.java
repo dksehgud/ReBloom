@@ -244,8 +244,15 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public ParentCounselorResponseDto getParentCounselor(UUID parentId) {
-        return parentCounselorRelationRepository.findByParentId(parentId)
+    public ParentCounselorResponseDto getParentCounselor(UUID parentId, String counselorEmail) {
+        validateCounselorEmail(counselorEmail);
+
+        return parentCounselorRelationRepository.findByParentIdAndCounselorEmailAndRelationStatusIn(
+                parentId,
+                counselorEmail,
+                List.of(RelationStatus.ACTIVE, RelationStatus.PENDING)
+            )
+            .map(this::toParentCounselorResponse)
             .orElseGet(ParentCounselorResponseDto::disconnected);
     }
 
@@ -274,7 +281,7 @@ public class UserServiceImpl implements UserService {
     ) {
         Parent parent = parentRepository.findById(parentId)
             .orElseThrow(() -> new CustomException("부모를 찾을 수 없습니다.", ErrorCode.USER_NOT_FOUND));
-        Counselor counselor = counselorRepository.findById(request.counselorId())
+        Counselor counselor = counselorRepository.findByEmail(request.counselorEmail())
             .orElseThrow(() -> new CustomException("상담사를 찾을 수 없습니다.", ErrorCode.USER_NOT_FOUND));
 
         boolean hasActiveOrPendingRelation =
@@ -303,11 +310,13 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
-    public void deleteCounselorRelation(UUID parentId, UUID counselorId) {
+    public void deleteCounselorRelation(UUID parentId, String counselorEmail) {
+        validateCounselorEmail(counselorEmail);
+
         ParentCounselorRelation relation = parentCounselorRelationRepository
-            .findByParentIdAndCounselorIdAndRelationStatusIn(
+            .findByParentIdAndCounselorEmailAndRelationStatusIn(
                 parentId,
-                counselorId,
+                counselorEmail,
                 List.of(RelationStatus.ACTIVE, RelationStatus.PENDING)
             )
             .orElseThrow(() -> new CustomException(
@@ -459,6 +468,12 @@ public class UserServiceImpl implements UserService {
         }
     }
 
+    private void validateCounselorEmail(String counselorEmail) {
+        if (!StringUtils.hasText(counselorEmail)) {
+            throw new CustomException("counselorEmail은(는) 공백일 수 없습니다.", ErrorCode.INVALID_PARAMETER);
+        }
+    }
+
     private void validateNotBlankIfPresent(String value, String fieldName) {
         if (value != null && !StringUtils.hasText(value)) {
             throw new CustomException(fieldName + "은(는) 공백일 수 없습니다.", ErrorCode.INVALID_PARAMETER);
@@ -557,6 +572,16 @@ public class UserServiceImpl implements UserService {
             projection.getParentId(),
             projection.getName(),
             projection.getEmail()
+        );
+    }
+
+    private ParentCounselorResponseDto toParentCounselorResponse(ParentCounselorRelation relation) {
+        Counselor counselor = relation.getCounselor();
+        return new ParentCounselorResponseDto(
+            counselor.getId(),
+            counselor.getName(),
+            counselor.getEmail(),
+            relation.getRelationStatus()
         );
     }
 

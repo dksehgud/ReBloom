@@ -2,31 +2,18 @@ package com.ssafy.rebloom.auth_service.user.controller;
 
 import com.ssafy.rebloom.auth_service.user.dto.request.CounselorRelationRequestDto;
 import com.ssafy.rebloom.auth_service.user.dto.request.ParentConnectRequestDto;
-import com.ssafy.rebloom.auth_service.user.dto.response.ChildConnectedParentResponseDto;
-import com.ssafy.rebloom.auth_service.user.dto.response.CounselorChildrenResponseDto;
-import com.ssafy.rebloom.auth_service.user.dto.response.CounselorParentRelationResponseDto;
-import com.ssafy.rebloom.auth_service.user.dto.response.CounselorRelationResponseDto;
-import com.ssafy.rebloom.auth_service.user.dto.response.ParentConnectedChildResponseDto;
-import com.ssafy.rebloom.auth_service.user.dto.response.ParentCounselorResponseDto;
-import com.ssafy.rebloom.auth_service.user.dto.response.ParentReceiverResponseDto;
-import com.ssafy.rebloom.auth_service.user.dto.response.ParentSummaryResponseDto;
+import com.ssafy.rebloom.auth_service.user.dto.response.*;
 import com.ssafy.rebloom.auth_service.user.service.UserService;
 import com.ssafy.rebloom.common.dto.BaseResponse;
 import com.ssafy.rebloom.common.dto.ListResponseDto;
 import com.ssafy.rebloom.security.annotation.LoginUserId;
 import jakarta.validation.Valid;
-import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.UUID;
 
 @RestController
 @RequiredArgsConstructor
@@ -72,15 +59,16 @@ public class UserRelationController {
         @PathVariable UUID parentId
     ) {
         userService.rejectCounselorRelation(counselorId, parentId);
-        return ResponseEntity.ok(BaseResponse.success("상담사 연결 신청 거절 성공"));
+        return ResponseEntity.ok(BaseResponse.success("상담사 연결 요청 거절 성공"));
     }
 
     @GetMapping("/parents/relations/counselors")
     @PreAuthorize("hasRole('PARENT')")
     public ResponseEntity<BaseResponse<ParentCounselorResponseDto>> getParentCounselorRelation(
-        @LoginUserId UUID parentId
+        @LoginUserId UUID parentId,
+        @RequestParam String counselorEmail
     ) {
-        ParentCounselorResponseDto response = userService.getParentCounselor(parentId);
+        ParentCounselorResponseDto response = userService.getParentCounselor(parentId, counselorEmail);
         return ResponseEntity.ok(BaseResponse.success("상담사 연결 조회 성공", response));
     }
 
@@ -91,17 +79,17 @@ public class UserRelationController {
         @RequestBody @Valid CounselorRelationRequestDto request
     ) {
         CounselorRelationResponseDto response = userService.requestCounselorRelation(parentId, request);
-        return ResponseEntity.ok(BaseResponse.success("상담자 등록 신청 성공", response));
+        return ResponseEntity.ok(BaseResponse.success("상담사 등록 요청 성공", response));
     }
 
-    @DeleteMapping("/parents/relations/counselors/{counselorId}")
+    @DeleteMapping("/parents/relations/counselors")
     @PreAuthorize("hasRole('PARENT')")
     public ResponseEntity<BaseResponse<Void>> deleteCounselorRelation(
         @LoginUserId UUID parentId,
-        @PathVariable UUID counselorId
+        @RequestParam String counselorEmail
     ) {
-        userService.deleteCounselorRelation(parentId, counselorId);
-        return ResponseEntity.ok(BaseResponse.success("상담사 연결 삭제 성공"));
+        userService.deleteCounselorRelation(parentId, counselorEmail);
+        return ResponseEntity.ok(BaseResponse.success("상담사 연결 해제 성공"));
     }
 
     @GetMapping("/parents/children")
@@ -152,3 +140,4 @@ public class UserRelationController {
         );
     }
 }
+

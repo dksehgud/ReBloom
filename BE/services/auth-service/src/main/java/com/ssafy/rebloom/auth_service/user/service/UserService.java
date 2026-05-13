@@ -39,14 +39,14 @@ public interface UserService {
 
     void rejectCounselorRelation(UUID counselorId, UUID parentId);
 
-    ParentCounselorResponseDto getParentCounselor(UUID parentId);
+    ParentCounselorResponseDto getParentCounselor(UUID parentId, String counselorEmail);
 
     CounselorRelationResponseDto requestCounselorRelation(
         UUID parentId,
         CounselorRelationRequestDto request
     );
 
-    void deleteCounselorRelation(UUID parentId, UUID counselorId);
+    void deleteCounselorRelation(UUID parentId, String counselorEmail);
 
     ParentConnectedChildResponseDto getConnectedChildByParent(UUID parentId);
 
