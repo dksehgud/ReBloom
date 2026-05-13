@@ -27,7 +27,7 @@ CREATE TABLE notification_settings (
     fcm_token VARCHAR NOT NULL,
     is_enabled BOOLEAN NOT NULL,
     created_at TIMESTAMP NOT NULL,
-    modifired_at TIMESTAMP NOT NULL
+    modified_at TIMESTAMP NOT NULL
 );
 
 CREATE TABLE notification_schedules (
