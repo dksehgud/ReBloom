@@ -12,6 +12,9 @@ import org.springframework.data.repository.query.Param;
 
 public interface BiometricRepository extends JpaRepository<Biometric, BiometricId> {
 
+    @Query("SELECT DISTINCT b.id.userId FROM Biometric b")
+    List<UUID> findDistinctUserIds();
+
     @Query("SELECT b FROM Biometric b " +
         "WHERE b.id.userId = :userId " +
         "AND b.id.tsStart BETWEEN :from AND :to " +
@@ -21,6 +24,11 @@ public interface BiometricRepository extends JpaRepository<Biometric, BiometricI
         @Param("from") LocalDateTime from,
         @Param("to") LocalDateTime to
     );
+
+    @Query("SELECT b FROM Biometric b " +
+        "WHERE b.id.userId = :userId " +
+        "ORDER BY b.id.tsStart ASC")
+    List<Biometric> findAllByUserIdOrderByTsStart(@Param("userId") UUID userId);
 
     @Query(value = """
         SELECT CAST(b.ts_start AS date) AS date,

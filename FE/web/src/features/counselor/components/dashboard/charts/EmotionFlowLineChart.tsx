@@ -11,11 +11,15 @@ function EmotionFlowLineChart({ data }: EmotionFlowLineChartProps) {
   const paddingRight = 26
   const paddingTop = 22
   const paddingBottom = 38
-  const maxValue = 27
+  const maxDataValue = Math.max(
+    1,
+    ...data.flatMap((point) => [point.diary, point.conversation]),
+  )
+  const maxValue = Math.max(27, Math.ceil(maxDataValue / 9) * 9)
   const chartWidth = width - paddingLeft - paddingRight
   const chartHeight = height - paddingTop - paddingBottom
   const horizontalGap = data.length > 1 ? chartWidth / (data.length - 1) : 0
-  const ticks = [27, 18, 9, 0]
+  const ticks = [maxValue, Math.round((maxValue * 2) / 3), Math.round(maxValue / 3), 0]
   const seriesColors: Record<EmotionFlowSeries, string> = {
     diary: '#344966',
     conversation: '#88b5c4',
@@ -69,7 +73,7 @@ function EmotionFlowLineChart({ data }: EmotionFlowLineChartProps) {
       {data.map((item, index) => (
         <text
           className="counselor-emotion-flow-label"
-          key={item.label}
+          key={`${item.label}-${index}`}
           x={getX(index)}
           y={height - 10}
         >

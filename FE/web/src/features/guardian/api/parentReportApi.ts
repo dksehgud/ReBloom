@@ -1,8 +1,11 @@
 import { apiRequest } from '../../../shared/api/client'
+import {
+  childChartApiPaths,
+  getChildRmssds,
+  getChildSleepScores,
+} from '../../../shared/api/childChartApi'
 import type {
   BaseResponseDto,
-  ListResponseDto,
-  ParentChartPointDto,
   ParentDiaryEmotionResponseDto,
 } from '../types/parentReport'
 
@@ -21,15 +24,16 @@ type ParentChartParams = ParentReportApiParams & {
 }
 
 const REPORT_API_PREFIX = '/report/api/v1'
-const BIOMETRIC_API_PREFIX = '/biometric/api/v1'
 
 const parentReportApiPaths = {
-  diaryEmotions: ({ childrenId, startDate, endDate }: Omit<ParentDiaryEmotionParams, 'accessToken'>) =>
+  diaryEmotions: ({
+    childrenId,
+    endDate,
+    startDate,
+  }: Omit<ParentDiaryEmotionParams, 'accessToken'>) =>
     `${REPORT_API_PREFIX}/children/${childrenId}/diaries/emotions?startDate=${startDate}&endDate=${endDate}`,
-  rmssds: ({ childrenId, baseDate }: Omit<ParentChartParams, 'accessToken'>) =>
-    `${BIOMETRIC_API_PREFIX}/children/${childrenId}/charts/biometrics/rmssds?baseDate=${baseDate}`,
-  sleepScores: ({ childrenId, baseDate }: Omit<ParentChartParams, 'accessToken'>) =>
-    `${BIOMETRIC_API_PREFIX}/children/${childrenId}/charts/sleeps/scores?baseDate=${baseDate}`,
+  rmssds: childChartApiPaths.rmssds,
+  sleepScores: childChartApiPaths.sleepScores,
 }
 
 function unwrapApiData<T>(response: BaseResponseDto<T> | T): T {
@@ -48,7 +52,7 @@ async function getParentDiaryEmotions({
 }: ParentDiaryEmotionParams) {
   const response = await apiRequest<
     BaseResponseDto<ParentDiaryEmotionResponseDto> | ParentDiaryEmotionResponseDto
-  >(parentReportApiPaths.diaryEmotions({ childrenId, startDate, endDate }), {
+  >(parentReportApiPaths.diaryEmotions({ childrenId, endDate, startDate }), {
     accessToken,
     errorMessage: '보호자 리포트 감정 기록을 불러오지 못했습니다.',
   })
@@ -61,14 +65,7 @@ async function getParentSleepScores({
   baseDate,
   childrenId,
 }: ParentChartParams) {
-  const response = await apiRequest<
-    BaseResponseDto<ListResponseDto<ParentChartPointDto>> | ListResponseDto<ParentChartPointDto>
-  >(parentReportApiPaths.sleepScores({ childrenId, baseDate }), {
-    accessToken,
-    errorMessage: '보호자 리포트 수면 점수를 불러오지 못했습니다.',
-  })
-
-  return unwrapApiData(response)
+  return getChildSleepScores({ accessToken, baseDate, childrenId })
 }
 
 async function getParentRmssds({
@@ -76,14 +73,7 @@ async function getParentRmssds({
   baseDate,
   childrenId,
 }: ParentChartParams) {
-  const response = await apiRequest<
-    BaseResponseDto<ListResponseDto<ParentChartPointDto>> | ListResponseDto<ParentChartPointDto>
-  >(parentReportApiPaths.rmssds({ childrenId, baseDate }), {
-    accessToken,
-    errorMessage: '보호자 리포트 자율신경 안정도를 불러오지 못했습니다.',
-  })
-
-  return unwrapApiData(response)
+  return getChildRmssds({ accessToken, baseDate, childrenId })
 }
 
 export {

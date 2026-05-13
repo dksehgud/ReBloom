@@ -20,4 +20,7 @@ public interface InternalAuthClient {
         @PathVariable UUID parentId,
         @PathVariable UUID childrenId
     );
+
+    @GetMapping("/api/v1/internal/users/{userId}/age")
+    BaseResponse<ChildAgeResponseDto> getChildAge(@PathVariable UUID userId);
 }

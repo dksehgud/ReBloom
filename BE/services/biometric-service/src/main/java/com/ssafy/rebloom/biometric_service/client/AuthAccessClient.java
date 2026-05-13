@@ -17,4 +17,8 @@ public class AuthAccessClient {
     public void validateParentChildAccess(UUID parentId, UUID childId) {
         internalAuthClient.validateParentChildAccess(parentId, childId);
     }
+
+    public Integer getChildAge(UUID childId) {
+        return internalAuthClient.getChildAge(childId).getData().age();
+    }
 }
