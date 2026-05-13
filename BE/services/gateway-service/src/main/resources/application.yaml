@@ -45,7 +45,7 @@ spring:
           uri: ${AUTH_SERVICE_URI:http://localhost:8081}
           predicates:
             # 로그인, 토큰 재발급, 이메일 관련 API, OAuth 로그인/가입, 비밀번호 재발급
-            - Path=/auth/api/v1/auth/login, /auth/api/v1/auth/passwords/resets, /auth/api/v1/auth/reissue, /auth/api/v1/auth/emails/**, /auth/api/v1/users/profiles, /auth/api/v1/auth/*/callback
+            - Path=/auth/api/v1/auth/login, /auth/api/v1/auth/passwords/resets, /auth/api/v1/auth/reissue, /auth/api/v1/auth/emails/**, /auth/api/v1/users/profiles, /auth/api/v1/auth/*/callback, /auth/oauth2/**, /auth/login/oauth2/code/**
           filters: *public-filters
 
         # 회원가입: POST /auth/api/v1/users - 인증 불필요

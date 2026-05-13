@@ -63,6 +63,20 @@ public interface ParentCounselorRelationRepository extends JpaRepository<ParentC
     @Query("""
         SELECT pcr
         FROM ParentCounselorRelation pcr
+        JOIN FETCH pcr.counselor
+        WHERE pcr.parent.id = :parentId
+          AND pcr.counselor.email = :counselorEmail
+          AND pcr.relationStatus IN :relationStatuses
+        """)
+    Optional<ParentCounselorRelation> findByParentIdAndCounselorEmailAndRelationStatusIn(
+        @Param("parentId") UUID parentId,
+        @Param("counselorEmail") String counselorEmail,
+        @Param("relationStatuses") Collection<RelationStatus> relationStatuses
+    );
+
+    @Query("""
+        SELECT pcr
+        FROM ParentCounselorRelation pcr
         JOIN FETCH pcr.parent
         WHERE pcr.counselor.id = :counselorId
           AND pcr.relationStatus IN :relationStatuses

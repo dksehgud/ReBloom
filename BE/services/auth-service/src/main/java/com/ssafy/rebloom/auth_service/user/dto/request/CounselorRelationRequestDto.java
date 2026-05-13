@@ -1,10 +1,9 @@
 package com.ssafy.rebloom.auth_service.user.dto.request;
 
-import jakarta.validation.constraints.NotNull;
-import java.util.UUID;
+import jakarta.validation.constraints.NotBlank;
 
 public record CounselorRelationRequestDto(
-    @NotNull
-    UUID counselorId
+    @NotBlank
+    String counselorEmail
 ) {
 }
