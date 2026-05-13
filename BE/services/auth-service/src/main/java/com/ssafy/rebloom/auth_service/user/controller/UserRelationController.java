@@ -65,6 +65,16 @@ public class UserRelationController {
         return ResponseEntity.ok(BaseResponse.success("상담사 연결 수락 성공", response));
     }
 
+    @DeleteMapping("/counselors/relations/parents/{parentId}")
+    @PreAuthorize("hasRole('COUNSELOR')")
+    public ResponseEntity<BaseResponse<Void>> rejectCounselorRelation(
+        @LoginUserId UUID counselorId,
+        @PathVariable UUID parentId
+    ) {
+        userService.rejectCounselorRelation(counselorId, parentId);
+        return ResponseEntity.ok(BaseResponse.success("상담사 연결 신청 거절 성공"));
+    }
+
     @GetMapping("/parents/relations/counselors")
     @PreAuthorize("hasRole('PARENT')")
     public ResponseEntity<BaseResponse<ParentCounselorResponseDto>> getParentCounselorRelation(

@@ -12,6 +12,10 @@ val diaryAnalysisApiUrl =
     providers.gradleProperty("DIARY_ANALYSIS_API_URL")
         .orElse("")
         .get()
+val apiBaseUrl =
+    providers.gradleProperty("API_BASE_URL")
+        .orElse("https://example.invalid/")
+        .get()
 
 android {
     namespace = "com.rebloom.mobile"
@@ -27,6 +31,7 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         buildConfigField("String", "WEB_APP_BASE_URL", "\"$webAppBaseUrl\"")
         buildConfigField("String", "DIARY_ANALYSIS_API_URL", "\"$diaryAnalysisApiUrl\"")
+        buildConfigField("String", "API_BASE_URL", "\"$apiBaseUrl\"")
     }
 
     buildTypes {

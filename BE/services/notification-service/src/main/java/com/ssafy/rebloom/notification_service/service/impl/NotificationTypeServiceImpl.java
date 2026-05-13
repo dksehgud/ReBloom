@@ -1,14 +1,15 @@
-package com.ssafy.rebloom.notification_service.resolver;
+package com.ssafy.rebloom.notification_service.service.impl;
 
 import com.ssafy.rebloom.notification_service.domain.entity.NotificationType;
 import com.ssafy.rebloom.notification_service.domain.enums.NotificationCode;
 import com.ssafy.rebloom.notification_service.repository.NotificationTypeRepository;
+import com.ssafy.rebloom.notification_service.service.NotificationTypeService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 
-@Component
+@Service
 @RequiredArgsConstructor
-public class NotificationTypeResolver {
+public class NotificationTypeServiceImpl implements NotificationTypeService {
 
     private final NotificationTypeRepository notificationTypeRepository;
 

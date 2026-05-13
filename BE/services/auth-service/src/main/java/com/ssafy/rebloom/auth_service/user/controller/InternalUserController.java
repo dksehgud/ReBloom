@@ -2,6 +2,7 @@ package com.ssafy.rebloom.auth_service.user.controller;
 
 import com.ssafy.rebloom.auth_service.user.dto.response.ChildAgeResponseDto;
 import com.ssafy.rebloom.auth_service.user.dto.response.ChildGpsResponseDto;
+import com.ssafy.rebloom.auth_service.user.dto.response.ChildrenIotInfoResponseDto;
 import com.ssafy.rebloom.auth_service.user.service.InternalUserService;
 import com.ssafy.rebloom.common.dto.BaseResponse;
 import java.util.UUID;
@@ -33,5 +34,16 @@ public class InternalUserController {
     ) {
         ChildAgeResponseDto response = internalUserService.getChildAge(userId);
         return ResponseEntity.ok(BaseResponse.success("아동 나이 조회 성공", response));
+
+    @GetMapping("/children/{childrenId}/iot-info")
+    public ResponseEntity<BaseResponse<ChildrenIotInfoResponseDto>> getChildrenIotInfo(
+        @PathVariable UUID childrenId
+    ) {
+        ChildrenIotInfoResponseDto response =
+            internalUserService.getChildrenIotInfo(childrenId);
+
+        return ResponseEntity.ok(
+            BaseResponse.success("자녀 AIoT 정보 조회 성공", response)
+        );
     }
 }

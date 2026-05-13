@@ -46,6 +46,7 @@ public class AnalysisInferenceService {
     private final ConversationAnalysisRepository conversationAnalysisRepository;
     private final ConversationKeywordRepository conversationKeywordRepository;
     private final DiaryKeywordRepository diaryKeywordRepository;
+    private final RecentTrendRepository recentTrendRepository;
 
     /*
      * @Value("${...}")
@@ -190,6 +191,7 @@ public class AnalysisInferenceService {
         );
     }
 
+    @Transactional
     public void generateRecentInsight(RecentInsightInferenceRequestDto request) {
         /*
          * 이 메서드는 최근 우울 단계 추이를 한 문장으로 요약할 때 호출됩니다.
@@ -237,6 +239,17 @@ public class AnalysisInferenceService {
         List<DailyPredictionSummary> summaries = loadDailyPredictionSummaries(request);
         String insightPrompt = buildRecentInsightPrompt(request, summaries);
         JsonNode output = requestRecentInsightApi(insightPrompt);
+        String summary = readInsightText(output);
+
+        recentTrendRepository.findByUserIdAndReportDate(request.userId(), request.endDate())
+            .ifPresentOrElse(
+                recentTrend -> recentTrend.updateSummary(summary),
+                () -> recentTrendRepository.save(RecentTrend.builder()
+                    .id(new RecentTrendId(UUID.randomUUID(), request.userId()))
+                    .reportDate(request.endDate())
+                    .summary(summary)
+                    .build())
+            );
 
         log.info(
             "recent insight completed. userId={}, startDate={}, endDate={}, dayCount={}, summary={}",
@@ -244,7 +257,7 @@ public class AnalysisInferenceService {
             request.startDate(),
             request.endDate(),
             summaries.size(),
-            readInsightText(output)
+            summary
         );
     }
 

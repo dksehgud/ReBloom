@@ -32,6 +32,7 @@ public record UserInfoResponseDto(
 
     // COUNSELOR
     String hospitalName,
-    String hospitalAddress
+    String hospitalAddress,
+    String hospitalAddressDetail
 ) {
 }
