@@ -4,7 +4,9 @@
 .idea
 .vscode
 .gradle
-**/build
+**/build/*
+!**/build/libs/
+!**/build/libs/*.jar
 !services/*/build/libs/*.jar
 services/*/gradle
 services/*/gradlew
