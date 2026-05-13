@@ -23,4 +23,6 @@ public final class Constants {
 
     public static final String CONVERSATION_START_TYPE = "conversation_start";
 
+    public static final String ANDROID_CHANNEL_ID = "rebloom_notification";
+
 }

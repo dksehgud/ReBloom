@@ -179,7 +179,7 @@ public class NotificationServiceImpl implements NotificationService {
             if (onlineStatusService.isOnline(command.receiverId())) {
                 publishRealtime(notification, command);
             } else {
-                fcmService.send(notification);
+                deliverFcm(notification);
             }
         }
     }
@@ -194,5 +194,16 @@ public class NotificationServiceImpl implements NotificationService {
             notification.isRead(),
             notification.getCreatedAt()
         ));
+    }
+
+    private void deliverFcm(Notification notification) {
+        boolean sent = fcmService.send(notification);
+
+        if (sent) {
+            notification.markSent();
+            return;
+        }
+
+        notification.markFailed();
     }
 }
