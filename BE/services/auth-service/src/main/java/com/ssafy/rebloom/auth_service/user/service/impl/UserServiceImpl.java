@@ -507,7 +507,6 @@ public class UserServiceImpl implements UserService {
                     .name(parent.getName())
                     .role(parent.getRole())
                     .status(parent.getStatus())
-                    .parentCode(parent.getCode())
                     .build();
             }
             case CHILDREN -> {

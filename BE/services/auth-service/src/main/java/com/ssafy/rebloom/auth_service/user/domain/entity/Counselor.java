@@ -6,7 +6,6 @@ import jakarta.persistence.DiscriminatorValue;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotNull;
-import java.util.UUID;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
@@ -35,10 +34,6 @@ public class Counselor extends User {
     @Column(nullable = false)
     private String phone;
 
-    @NotNull
-    @Column(name = "code", nullable = false)
-    private String code;
-
     @Builder(access = AccessLevel.PRIVATE)
     private Counselor(String email, String password, String name, String phone, String hospitalName, String hospitalAddress, String hospitalAddressDetail) {
         super(email, password, name, UserRole.COUNSELOR);
@@ -46,7 +41,6 @@ public class Counselor extends User {
         this.hospitalAddress = hospitalAddress;
         this.hospitalAddressDetail = hospitalAddressDetail;
         this.phone = phone;
-        this.code = UUID.randomUUID().toString().substring(0, 8).toUpperCase();
     }
 
     public static Counselor createCounselor(String email, String password, String name, String phone, String hospitalName, String hospitalAddress, String hospitalAddressDetail) {
