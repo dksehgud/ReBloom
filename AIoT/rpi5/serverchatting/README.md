@@ -11,7 +11,7 @@ Raspberry Pi 5 기반 AIoT 스마트 스피커에서 LLM 서버와 WebSocket str
 - `LLM/voice_chat.py`의 로컬 STT/TTS 런타임 재사용
 - 대화 내역을 서버로 주기 전송
 - WebSocket 연결 실패 시 재시도
-- 평상시 wake word 대기, `alexa`/`알렉사` 호출 시 대화 시작
+- 평상시 wake word 대기, `hi blooming`/`하이 블루밍` 호출 시 대화 시작
 - GET `/api/v1/analyses/conversations` 수신 시 먼저 인사 TTS 후 대화 시작
 
 ## 프로젝트 구조
@@ -47,6 +47,13 @@ pip install -r requirements.txt
 
 시스템의 기본 Python이 3.11 이상이면 `python3`를 사용해도 됩니다.
 
+MeloTTS를 사용할 때 `fugashi` 설치 중 MeCab 오류가 나면 먼저 시스템 패키지를 설치합니다.
+
+```bash
+sudo apt-get update
+sudo apt-get install -y mecab libmecab-dev mecab-ipadic-utf8
+```
+
 ## 환경변수 설정
 
 ```bash
@@ -70,22 +77,37 @@ AUDIO_DEVICE=auto
 STT_RETRY_SECONDS=5
 MIC_BUSY_RETRY_SECONDS=10
 START_SOUND=on
-START_SOUND_PLAYER=auto
+START_SOUND_FILE=/home/ssafy/project/S14P31B109/AIoT/rpi5/serverchatting/music/feedback.mp3
+START_SOUND_PLAYER=ffplay
 START_SOUND_DEVICE=
 WHISPER_BIN=/home/ssafy/whisper.cpp/build/bin/whisper-cli
 WHISPER_MODEL=/home/ssafy/whisper.cpp/models/ggml-base.bin
 
 TTS_ENGINE=auto
+ELEVENLABS_API_KEY=
+ELEVENLABS_VOICE_ID=JBFqnCBsd6RMkjVDRZzb
+ELEVENLABS_MODEL_ID=eleven_multilingual_v2
+ELEVENLABS_STABILITY=0.45
+ELEVENLABS_SIMILARITY_BOOST=0.80
+ELEVENLABS_STYLE=0.25
+ELEVENLABS_USE_SPEAKER_BOOST=true
+ELEVENLABS_SPEED=0.95
 MP3_PLAYER=mpg123
 APLAY_BIN=aplay
+HF_TTS_MODEL=myshell-ai/MeloTTS-Korean
+HF_TTS_DEVICE=cpu
+HF_TTS_TORCH_DTYPE=auto
+MELOTTS_LANGUAGE=KR
+MELOTTS_SPEAKER=KR
+MELOTTS_SPEED=1.0
 
 SESSION_EVENTS_URL=
 SESSION_WINDOW_SECONDS=300
 SESSION_SEND_TIMEOUT=5
 
-WAKE_WORDS=alexa,알렉사
+WAKE_WORDS=hi blooming,하이 블루밍
 WAKE_WORD_ENGINE=openwakeword
-OPENWAKEWORD_MODEL_PATHS=
+OPENWAKEWORD_MODEL_PATHS=/home/ssafy/project/S14P31B109/AIoT/rpi5/serverchatting/Wake_Model/hi_blooming.onnx
 OPENWAKEWORD_THRESHOLD=0.5
 OPENWAKEWORD_DEBUG=false
 TRIGGER_API_HOST=0.0.0.0
@@ -113,8 +135,8 @@ python -m rpi_client.main
 
 `USE_MOCK_STT=true`, `USE_MOCK_TTS=true` 상태로 실행하면 콘솔 입력과 콘솔 출력만으로 테스트할 수 있습니다.
 
-- 평상시에는 `사용자>` 프롬프트에 `alexa` 또는 `알렉사`를 입력하면 대화 모드로 들어갑니다.
-- `alexa 오늘 기분이 좋아`처럼 wake word 뒤에 문장을 붙이면 그 문장을 바로 LLM 서버로 전송합니다.
+- 평상시에는 `사용자>` 프롬프트에 `hi blooming` 또는 `하이 블루밍`을 입력하면 대화 모드로 들어갑니다.
+- `hi blooming 오늘 기분이 좋아`처럼 wake word 뒤에 문장을 붙이면 그 문장을 바로 LLM 서버로 전송합니다.
 - 대화 모드에서 `사용자>` 프롬프트에 문장을 입력하면 LLM 서버로 전송됩니다.
 - 서버에서 `sentence` 메시지를 보내면 `[TTS] 문장` 형태로 출력됩니다.
 - 대화 모드에서 `exit`, `quit`, `종료`를 입력하면 대화를 끝내고 대기 상태로 돌아갑니다.
@@ -224,7 +246,7 @@ Raspberry Pi에서 서버로 보내는 요청:
 
 현재 `LocalSTTService`는 기존 `/home/ssafy/project/S14P31B109/AIoT/rpi5/LLM/voice_chat.py`에서 쓰던 `LLM/etc/voice_runtime.py`를 재사용합니다.
 
-로컬 STT는 `arecord`로 음성을 녹음하고 `whisper.cpp`로 텍스트를 추출합니다. 로컬 TTS는 `edge`, `piper`, `espeak`, `auto` 모드를 지원합니다.
+로컬 STT는 `arecord`로 음성을 녹음하고 `whisper.cpp`로 텍스트를 추출합니다. 로컬 TTS는 `edge`, `elevenlabs`, `melotts`, `huggingface`, `piper`, `espeak`, `auto` 모드를 지원합니다.
 
 실제 STT/TTS를 사용하려면 `.env`에서 아래 값을 변경합니다.
 
@@ -246,7 +268,8 @@ WHISPER_THREADS=4
 STT_RETRY_SECONDS=5
 MIC_BUSY_RETRY_SECONDS=10
 START_SOUND=on
-START_SOUND_PLAYER=auto
+START_SOUND_FILE=/home/ssafy/project/S14P31B109/AIoT/rpi5/serverchatting/music/feedback.mp3
+START_SOUND_PLAYER=ffplay
 START_SOUND_DEVICE=
 ```
 
@@ -255,11 +278,32 @@ START_SOUND_DEVICE=
 ```env
 TTS_ENGINE=auto
 EDGE_VOICE=ko-KR-SunHiNeural
+ELEVENLABS_API_KEY=
+ELEVENLABS_VOICE_ID=JBFqnCBsd6RMkjVDRZzb
+ELEVENLABS_MODEL_ID=eleven_multilingual_v2
+ELEVENLABS_OUTPUT_FORMAT=mp3_44100_128
+ELEVENLABS_TIMEOUT_SECONDS=30
+ELEVENLABS_STABILITY=0.45
+ELEVENLABS_SIMILARITY_BOOST=0.80
+ELEVENLABS_STYLE=0.25
+ELEVENLABS_USE_SPEAKER_BOOST=true
+ELEVENLABS_SPEED=0.95
 MP3_PLAYER=mpg123
 PIPER_MODEL=
 APLAY_BIN=aplay
+HF_TTS_MODEL=myshell-ai/MeloTTS-Korean
+HF_TTS_DEVICE=cpu
+HF_TTS_TORCH_DTYPE=auto
+MELOTTS_LANGUAGE=KR
+MELOTTS_SPEAKER=KR
+MELOTTS_SPEED=1.0
 ```
 
+`TTS_ENGINE=melotts`는 MeloTTS 공식 Python API인 `melo.api.TTS(language="KR")`로 한국어 음성을 생성합니다.
+PyPI `melotts` 패키지는 빌드 파일이 빠져 설치에 실패할 수 있으므로 `requirements.txt`는 공식 GitHub repo에서 설치하도록 지정합니다.
+`fugashi` 빌드 중 `Have you installed MeCab?` 오류가 나면 `sudo apt-get install -y mecab libmecab-dev mecab-ipadic-utf8`를 먼저 실행하세요.
+`TTS_ENGINE=huggingface`는 Hugging Face `text-to-speech` pipeline으로 `HF_TTS_MODEL`을 실행합니다. MeloTTS Korean은 `HF_TTS_MODEL=myshell-ai/MeloTTS-Korean`으로 사용할 수 있습니다.
+`TTS_ENGINE=elevenlabs`를 사용하려면 `ELEVENLABS_API_KEY`에 API 키를 넣고, 필요하면 `ELEVENLABS_VOICE_ID`를 원하는 voice id로 바꾸세요.
 `TTS_ENGINE=auto`는 Edge TTS, Piper, espeak-ng 순서로 사용 가능한 엔진을 찾습니다.
 
 ## 상시 대기 운영 모드
