@@ -12,6 +12,19 @@ class AuthLocationClientError(Exception):
     """Raised when auth-service target location lookup fails."""
 
 
+def _coerce_coordinate_field(data: dict, field: str) -> float:
+    value = data.get(field)
+    if value is None:
+        raise AuthLocationClientError(f"auth-service response has null field: {field}")
+
+    try:
+        return float(value)
+    except (TypeError, ValueError) as exc:
+        raise AuthLocationClientError(
+            f"auth-service response has invalid field: {field}"
+        ) from exc
+
+
 async def fetch_user_target_location(user_id: str) -> dict:
     """
     Fetch the target coordinate for a user from auth-service.
@@ -37,11 +50,17 @@ async def fetch_user_target_location(user_id: str) -> dict:
 
     body = response.json()
     data = body.get("data", body)
+    if not isinstance(data, dict):
+        raise AuthLocationClientError("auth-service response data must be an object")
+
     required_fields = ("latitude", "longitude")
     missing_fields = [field for field in required_fields if field not in data]
     if missing_fields:
         raise AuthLocationClientError(
             f"auth-service response missing fields: {', '.join(missing_fields)}"
         )
+
+    data["latitude"] = _coerce_coordinate_field(data, "latitude")
+    data["longitude"] = _coerce_coordinate_field(data, "longitude")
 
     return data
