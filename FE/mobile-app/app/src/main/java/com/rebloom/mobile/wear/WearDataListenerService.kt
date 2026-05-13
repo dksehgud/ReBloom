@@ -1,6 +1,7 @@
 package com.rebloom.mobile.wear
 
 import android.util.Log
+import android.util.Base64
 import com.google.android.gms.wearable.DataEvent
 import com.google.android.gms.wearable.DataEventBuffer
 import com.google.android.gms.wearable.DataMapItem
@@ -8,9 +9,11 @@ import com.google.android.gms.wearable.WearableListenerService
 import com.rebloom.mobile.network.ApiClient
 import com.rebloom.mobile.network.BiometricRequest
 import com.rebloom.mobile.network.LocationEvaluateRequest
+import com.rebloom.mobile.network.TokenDataStore
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import org.json.JSONObject
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -82,8 +85,14 @@ class WearDataListenerService : WearableListenerService() {
     ) {
         scope.launch {
             try {
+                val userId = getUserIdFromToken()
+                if (userId == null) {
+                    Log.e(TAG, "Biometric send skipped: user id is missing from token")
+                    return@launch
+                }
+
                 val request = BiometricRequest(
-                    userId = "TODO: extract userId from token",
+                    userId = userId,
                     tsStart = dateFormat.format(Date(tsStart)),
                     tsEnd = dateFormat.format(Date(tsEnd)),
                     hr = hr,
@@ -115,8 +124,14 @@ class WearDataListenerService : WearableListenerService() {
     ) {
         scope.launch {
             try {
+                val userId = getUserIdFromToken()
+                if (userId == null) {
+                    Log.e(TAG, "Location evaluate skipped: user id is missing from token")
+                    return@launch
+                }
+
                 val request = LocationEvaluateRequest(
-                    user_id = "TODO: extract userId from token",
+                    user_id = userId,
                     latitude = latitude,
                     longitude = longitude,
                     measured_at = dateFormat.format(Date(timestamp))
@@ -132,6 +147,17 @@ class WearDataListenerService : WearableListenerService() {
                 Log.e(TAG, "Location evaluate failed: ${e.message}")
             }
         }
+    }
+
+    private suspend fun getUserIdFromToken(): String? {
+        val token = TokenDataStore.getToken(applicationContext) ?: return null
+        return runCatching {
+            val payload = token.split(".").getOrNull(1) ?: return null
+            val decoded = Base64.decode(payload, Base64.URL_SAFE or Base64.NO_WRAP or Base64.NO_PADDING)
+            JSONObject(String(decoded, Charsets.UTF_8)).optString("sub").takeIf { it.isNotBlank() }
+        }.onFailure { error ->
+            Log.e(TAG, "Failed to extract user id from token: ${error.message}")
+        }.getOrNull()
     }
 
     private companion object {

@@ -12,15 +12,25 @@ class AuthLocationClientError(Exception):
     """Raised when auth-service target location lookup fails."""
 
 
+class AuthLocationUpstreamError(AuthLocationClientError):
+    """Raised when auth-service cannot be reached or rejects the lookup."""
+
+
+class AuthLocationInvalidResponseError(AuthLocationClientError):
+    """Raised when auth-service returns an unusable target location response."""
+
+
 def _coerce_coordinate_field(data: dict, field: str) -> float:
     value = data.get(field)
     if value is None:
-        raise AuthLocationClientError(f"auth-service response has null field: {field}")
+        raise AuthLocationInvalidResponseError(
+            f"auth-service response has null field: {field}"
+        )
 
     try:
         return float(value)
     except (TypeError, ValueError) as exc:
-        raise AuthLocationClientError(
+        raise AuthLocationInvalidResponseError(
             f"auth-service response has invalid field: {field}"
         ) from exc
 
@@ -46,17 +56,21 @@ async def fetch_user_target_location(user_id: str) -> dict:
             response = await client.get(url)
             response.raise_for_status()
     except httpx.HTTPError as exc:
-        raise AuthLocationClientError("Failed to fetch target location from auth-service") from exc
+        raise AuthLocationUpstreamError(
+            "Failed to fetch target location from auth-service"
+        ) from exc
 
     body = response.json()
     data = body.get("data", body)
     if not isinstance(data, dict):
-        raise AuthLocationClientError("auth-service response data must be an object")
+        raise AuthLocationInvalidResponseError(
+            "auth-service response data must be an object"
+        )
 
     required_fields = ("latitude", "longitude")
     missing_fields = [field for field in required_fields if field not in data]
     if missing_fields:
-        raise AuthLocationClientError(
+        raise AuthLocationInvalidResponseError(
             f"auth-service response missing fields: {', '.join(missing_fields)}"
         )
 
