@@ -34,6 +34,7 @@ public class InternalUserController {
     ) {
         ChildAgeResponseDto response = internalUserService.getChildAge(userId);
         return ResponseEntity.ok(BaseResponse.success("아동 나이 조회 성공", response));
+    }
 
     @GetMapping("/children/{childrenId}/iot-info")
     public ResponseEntity<BaseResponse<ChildrenIotInfoResponseDto>> getChildrenIotInfo(
