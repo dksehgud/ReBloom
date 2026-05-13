@@ -99,6 +99,11 @@ public class DeviceServiceImpl implements DeviceService {
         return getDevicesByChildrenId(childrenId);
     }
 
+    @Override
+    public UUID getChildrenIdBySerialNumber(String serialNumber) {
+        return getDeviceBySerialNumber(serialNumber).getChildrenId();
+    }
+
     private void validateParentChildRelation(UUID parentId, UUID childrenId) {
         boolean hasActiveRelation = childrenParentRelationRepository.existsActiveRelation(
             parentId,

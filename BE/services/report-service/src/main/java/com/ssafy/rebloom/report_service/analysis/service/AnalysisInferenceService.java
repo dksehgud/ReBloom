@@ -3,25 +3,26 @@ package com.ssafy.rebloom.report_service.analysis.service;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.ssafy.rebloom.common.exception.CustomException;
 import com.ssafy.rebloom.common.exception.ErrorCode;
+import com.ssafy.rebloom.report_service.analysis.client.AuthAccessClient;
+import com.ssafy.rebloom.report_service.analysis.domain.entity.*;
 import com.ssafy.rebloom.report_service.analysis.dto.request.ConversationSessionCreateRequestDto;
 import com.ssafy.rebloom.report_service.analysis.dto.request.DiaryAnalysisInferenceRequestDto;
 import com.ssafy.rebloom.report_service.analysis.dto.request.RecentInsightInferenceRequestDto;
-import java.sql.Timestamp;
-import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import com.ssafy.rebloom.report_service.analysis.repository.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
+
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.*;
 
 @Slf4j
 @Service
@@ -39,18 +40,12 @@ public class AnalysisInferenceService {
      */
     private final RestClient.Builder restClientBuilder;
 
-    /*
-     * JdbcTemplate
-     * - SQL을 직접 실행하게 해주는 Spring 도구입니다.
-     * - 여기서 Repository 대신 JdbcTemplate을 쓰는 이유:
-     *   develop 브랜치의 migration은 컬럼명을 emotion_icon, embedding_text,
-     *   prediction으로 바꿨지만, 일부 Entity 클래스는 아직 이전 컬럼명을
-     *   보고 있습니다.
-     * - 현재 이 서비스는 분석 결과를 DB에 INSERT하지 않습니다.
-     * - generateRecentInsight에서 최근 7일 요약을 만들 때만 기존 분석 결과를
-     *   SELECT하기 위해 사용합니다.
-     */
-    private final JdbcTemplate jdbcTemplate;
+    private final AuthAccessClient authAccessClient;
+    private final AnalysisKeywordRepository analysisKeywordRepository;
+    private final DiaryAnalysisRepository diaryAnalysisRepository;
+    private final ConversationAnalysisRepository conversationAnalysisRepository;
+    private final ConversationKeywordRepository conversationKeywordRepository;
+    private final DiaryKeywordRepository diaryKeywordRepository;
 
     /*
      * @Value("${...}")
@@ -77,6 +72,7 @@ public class AnalysisInferenceService {
     @Value("${RECENT_INSIGHT_API_KEY}")
     private String recentInsightApiKey;
 
+    @Transactional
     public void analyzeConversation(ConversationSessionCreateRequestDto request) {
         /*
          * 이 메서드는 IoT 기기에서 대화 세션이 끝난 뒤 호출됩니다.
@@ -96,7 +92,8 @@ public class AnalysisInferenceService {
          * 전체 흐름:
          * 1. events를 RunPod가 원하는 text 형식으로 바꾼다.
          * 2. RunPod에 text를 보내 prediction을 받는다.
-         * 3. 지금 단계에서는 DB에 저장하지 않고 결과를 로그로만 확인한다.
+         * 3. raspberrypi_id로 기기 소유 아동 ID를 조회한다.
+         * 4. RunPod output을 conversation_analysis와 conversation_keywords에 저장한다.
          */
         log.info(
             "conversation analysis requested. sessionId={}, raspberrypiId={}, startedAt={}, endedAt={}, eventCount={}",
@@ -120,16 +117,33 @@ public class AnalysisInferenceService {
          */
         String text = buildConversationText(request.events());
         JsonNode output = requestRunpod(text);
+        UUID childrenId = authAccessClient.getChildrenIdByDeviceSerial(request.raspberrypiId());
+        UUID analysisId = parseSessionId(request.sessionId());
+        String prediction = readRequiredText(output, "prediction");
+        List<String> keywords = readRequiredTextList(output, "keywords");
+
+        conversationAnalysisRepository.save(ConversationAnalysis.builder()
+            .id(new ConversationAnalysisId(analysisId, childrenId))
+            .startedAt(request.startedAt().toLocalDateTime())
+            .endedAt(request.endedAt().toLocalDateTime())
+            .embeddingText(readRequiredText(output, "embedding_text"))
+            .prediction(prediction)
+            .aiInitiated(false)
+            .build());
+        saveConversationKeywords(analysisId, childrenId, keywords);
 
         log.info(
-            "conversation analysis completed. sessionId={}, raspberrypiId={}, prediction={}, output={}",
+            "conversation analysis completed. sessionId={}, raspberrypiId={}, userId={}, prediction={}, keywords={}, output={}",
             request.sessionId(),
             request.raspberrypiId(),
-            readRequiredText(output, "prediction"),
+            childrenId,
+            prediction,
+            keywords,
             output
         );
     }
 
+    @Transactional
     public void analyzeDiary(DiaryAnalysisInferenceRequestDto request) {
         /*
          * 이 메서드는 일기 분석 요청이 들어왔을 때 호출됩니다.
@@ -140,7 +154,7 @@ public class AnalysisInferenceService {
          * 전체 흐름:
          * 1. request.content()를 RunPod input.text로 보낸다.
          * 2. RunPod output에서 embedding_text, prediction, keywords를 읽는다.
-         * 3. 지금 단계에서는 DB에 저장하지 않고 결과를 로그로만 확인한다.
+         * 3. 요청에 포함된 emotion_icon과 RunPod output을 diary_analysis / diary_keywords에 저장한다.
          */
         log.info(
             "diary analysis requested. diaryId={}, userId={}, targetDate={}",
@@ -154,12 +168,24 @@ public class AnalysisInferenceService {
          * The diary content is already a single text body, so it can be sent as-is.
          */
         JsonNode output = requestRunpod(request.content());
+        String prediction = readRequiredText(output, "prediction");
+        List<String> keywords = readRequiredTextList(output, "keywords");
+
+        diaryAnalysisRepository.save(DiaryAnalysis.builder()
+            .id(new DiaryAnalysisId(request.diaryId(), request.userId()))
+            .targetDate(request.targetDate().atStartOfDay())
+            .emotionIcon(request.emotionIcon())
+            .embeddingText(readRequiredText(output, "embedding_text"))
+            .prediction(prediction)
+            .build());
+        saveDiaryKeywords(request.diaryId(), request.userId(), keywords);
 
         log.info(
-            "diary analysis completed. diaryId={}, userId={}, prediction={}, output={}",
+            "diary analysis completed. diaryId={}, userId={}, prediction={}, keywords={}, output={}",
             request.diaryId(),
             request.userId(),
-            readRequiredText(output, "prediction"),
+            prediction,
+            keywords,
             output
         );
     }
@@ -410,38 +436,16 @@ public class AnalysisInferenceService {
             summaries.put(date, new DailyPredictionSummary(date));
         }
 
-        jdbcTemplate.query(
-            """
-            SELECT target_date, prediction
-            FROM diary_analysis
-            WHERE user_id = ?
-              AND target_date BETWEEN ? AND ?
-            """,
-            rs -> {
-                LocalDate date = rs.getObject("target_date", LocalDate.class);
-                summaries.get(date).addDiaryPrediction(rs.getString("prediction"));
-            },
-            request.userId(),
-            startDate,
-            request.endDate()
-        );
+        LocalDateTime from = startDate.atStartOfDay();
+        LocalDateTime to = request.endDate().plusDays(1).atStartOfDay().minusNanos(1);
 
-        jdbcTemplate.query(
-            """
-            SELECT started_at, prediction
-            FROM conversation_analysis
-            WHERE user_id = ?
-              AND started_at >= ?
-              AND started_at < ?
-            """,
-            rs -> {
-                LocalDate date = rs.getTimestamp("started_at").toLocalDateTime().toLocalDate();
-                summaries.get(date).addConversationPrediction(rs.getString("prediction"));
-            },
-            request.userId(),
-            Timestamp.valueOf(startDate.atStartOfDay()),
-            Timestamp.valueOf(request.endDate().plusDays(1).atStartOfDay())
-        );
+        diaryAnalysisRepository.findByPeriod(request.userId(), from, to)
+            .forEach(analysis -> summaries.get(analysis.getTargetDate().toLocalDate())
+                .addDiaryPrediction(analysis.getPrediction()));
+
+        conversationAnalysisRepository.findByPeriod(request.userId(), from, to)
+            .forEach(analysis -> summaries.get(analysis.getStartedAt().toLocalDate())
+                .addConversationPrediction(analysis.getPrediction()));
 
         return summaries.values()
             .stream()
@@ -516,6 +520,77 @@ public class AnalysisInferenceService {
             throw new CustomException("RunPod output missing required field: " + fieldName, ErrorCode.INTERNAL_SERVER_ERROR);
         }
         return value;
+    }
+
+    private List<String> readRequiredTextList(JsonNode output, String fieldName) {
+        List<String> values = readTextList(output, fieldName);
+        if (values.isEmpty()) {
+            throw new CustomException("RunPod output missing required field: " + fieldName, ErrorCode.INTERNAL_SERVER_ERROR);
+        }
+        return values;
+    }
+
+    private List<String> readTextList(JsonNode output, String fieldName) {
+        JsonNode value = output.path(fieldName);
+        if (value.isMissingNode() || value.isNull()) {
+            return List.of();
+        }
+
+        Set<String> values = new LinkedHashSet<>();
+        if (value.isArray()) {
+            value.forEach(item -> addTextValue(values, item.asText(null)));
+        } else {
+            String text = value.asText(null);
+            if (text != null && text.contains(",")) {
+                for (String item : text.split(",")) {
+                    addTextValue(values, item);
+                }
+            } else {
+                addTextValue(values, text);
+            }
+        }
+        return List.copyOf(values);
+    }
+
+    private void addTextValue(Set<String> values, String value) {
+        if (StringUtils.hasText(value)) {
+            values.add(value.trim());
+        }
+    }
+
+    private void saveConversationKeywords(UUID analysisId, UUID userId, List<String> keywords) {
+        for (String keywordText : keywords) {
+            AnalysisKeyword keyword = saveAnalysisKeyword(keywordText);
+
+            conversationKeywordRepository.save(ConversationKeyword.builder()
+                .id(new ConversationKeywordId(keyword.getKeywordId(), analysisId, userId))
+                .build());
+        }
+    }
+
+    private void saveDiaryKeywords(UUID analysisId, UUID userId, List<String> keywords) {
+        for (String keywordText : keywords) {
+            AnalysisKeyword keyword = saveAnalysisKeyword(keywordText);
+
+            diaryKeywordRepository.save(DiaryKeyword.builder()
+                .id(new DiaryKeywordId(keyword.getKeywordId(), analysisId, userId))
+                .build());
+        }
+    }
+
+    private AnalysisKeyword saveAnalysisKeyword(String keywordText) {
+        return analysisKeywordRepository.findByKeyword(keywordText)
+            .orElseGet(() -> analysisKeywordRepository.save(AnalysisKeyword.builder()
+                .keyword(keywordText)
+                .build()));
+    }
+
+    private UUID parseSessionId(String sessionId) {
+        try {
+            return UUID.fromString(sessionId);
+        } catch (IllegalArgumentException e) {
+            throw new CustomException("session_id must be UUID.", ErrorCode.INVALID_PARAMETER);
+        }
     }
 
     private String readText(JsonNode output, String fieldName, String defaultValue) {

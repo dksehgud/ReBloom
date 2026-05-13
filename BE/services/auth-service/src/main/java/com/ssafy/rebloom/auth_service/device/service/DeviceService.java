@@ -23,4 +23,6 @@ public interface DeviceService {
     ListResponseDto<DeviceResponseDto> getDevicesByParent(UUID parentId, UUID childrenId);
 
     ListResponseDto<DeviceResponseDto> getMyDevices(UUID childrenId);
+
+    UUID getChildrenIdBySerialNumber(String serialNumber);
 }

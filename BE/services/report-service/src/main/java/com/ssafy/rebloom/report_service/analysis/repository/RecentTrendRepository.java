@@ -1,7 +1,7 @@
-package com.ssafy.rebloom.report_service.report.repository;
+package com.ssafy.rebloom.report_service.analysis.repository;
 
-import com.ssafy.rebloom.report_service.report.domain.entity.RecentTrend;
-import com.ssafy.rebloom.report_service.report.domain.entity.RecentTrendId;
+import com.ssafy.rebloom.report_service.analysis.domain.entity.RecentTrend;
+import com.ssafy.rebloom.report_service.analysis.domain.entity.RecentTrendId;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;

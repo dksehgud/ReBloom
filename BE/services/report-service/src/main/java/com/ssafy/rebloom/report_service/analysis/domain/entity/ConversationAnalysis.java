@@ -31,9 +31,6 @@ public class ConversationAnalysis extends BaseTime {
     @Column(name = "ended_at", nullable = false)
     private LocalDateTime endedAt;
 
-    @Column(name = "emotion_icon", nullable = false)
-    private String emotionIcon;
-
     @Column(name = "embedding_text", nullable = false)
     private String embeddingText;
 
