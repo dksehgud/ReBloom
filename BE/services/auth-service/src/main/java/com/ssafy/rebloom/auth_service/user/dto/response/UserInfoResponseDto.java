@@ -19,9 +19,6 @@ public record UserInfoResponseDto(
     UserRole role,
     UserStatus status,
 
-    // PARENT
-    String parentCode,
-
     // CHILDREN
     String birth,
     Gender gender,
