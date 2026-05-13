@@ -16,15 +16,6 @@ function resolveApiBaseUrl() {
   const configuredBaseUrl = import.meta.env.VITE_API_BASE_URL?.trim().replace(/\/$/, '')
 
   if (configuredBaseUrl) {
-    if (
-      import.meta.env.DEV &&
-      configuredBaseUrl.includes('10.0.2.2') &&
-      typeof window !== 'undefined' &&
-      ['localhost', '127.0.0.1'].includes(window.location.hostname)
-    ) {
-      return configuredBaseUrl.replace('10.0.2.2', window.location.hostname)
-    }
-
     return configuredBaseUrl
   }
 
@@ -32,11 +23,7 @@ function resolveApiBaseUrl() {
     return ''
   }
 
-  if (typeof window !== 'undefined' && window.location.hostname === '10.0.2.2') {
-    return 'http://10.0.2.2:8080'
-  }
-
-  return 'http://localhost:8080'
+  throw new Error('VITE_API_BASE_URL is required in development.')
 }
 
 const API_BASE_URL = resolveApiBaseUrl()

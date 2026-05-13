@@ -29,7 +29,9 @@ import java.time.LocalDateTime;
 import java.time.Period;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -435,14 +437,17 @@ public class UserServiceImpl implements UserService {
     }
 
     private void validateUpdateRequest(UserUpdateRequestDto request) {
-        validateNotBlankIfPresent(request.email(), "email");
-        validateNotBlankIfPresent(request.name(), "name");
-        validateNotBlankIfPresent(request.phone(), "phone");
-        validateNotBlankIfPresent(request.hospitalName(), "hospitalName");
-        validateNotBlankIfPresent(request.hospitalAddress(), "hospitalAddress");
-        validateNotBlankIfPresent(request.hospitalAddressDetail(), "hospitalAddressDetail");
-        validateNotBlankIfPresent(request.address(), "address");
-        validateNotBlankIfPresent(request.addressDetail(), "addressDetail");
+        Map<String, String> fields = new LinkedHashMap<>();
+        fields.put("email", request.email());
+        fields.put("name", request.name());
+        fields.put("phone", request.phone());
+        fields.put("hospitalName", request.hospitalName());
+        fields.put("hospitalAddress", request.hospitalAddress());
+        fields.put("hospitalAddressDetail", request.hospitalAddressDetail());
+        fields.put("address", request.address());
+        fields.put("addressDetail", request.addressDetail());
+
+        fields.forEach((fieldName, value) -> validateNotBlankIfPresent(value, fieldName));
     }
 
     private void validateChildrenLocationUpdate(UserUpdateRequestDto request) {
