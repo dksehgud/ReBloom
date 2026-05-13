@@ -39,7 +39,7 @@ public interface UserService {
 
     void rejectCounselorRelation(UUID counselorId, UUID parentId);
 
-    ParentCounselorResponseDto getParentCounselor(UUID parentId, String counselorEmail);
+    ParentCounselorResponseDto getParentCounselor(UUID parentId);
 
     CounselorRelationResponseDto requestCounselorRelation(
         UUID parentId,

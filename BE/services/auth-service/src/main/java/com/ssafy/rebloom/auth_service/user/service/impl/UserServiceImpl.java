@@ -244,15 +244,8 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public ParentCounselorResponseDto getParentCounselor(UUID parentId, String counselorEmail) {
-        validateCounselorEmail(counselorEmail);
-
-        return parentCounselorRelationRepository.findByParentIdAndCounselorEmailAndRelationStatusIn(
-                parentId,
-                counselorEmail,
-                List.of(RelationStatus.ACTIVE, RelationStatus.PENDING)
-            )
-            .map(this::toParentCounselorResponse)
+    public ParentCounselorResponseDto getParentCounselor(UUID parentId) {
+        return parentCounselorRelationRepository.findByParentId(parentId)
             .orElseGet(ParentCounselorResponseDto::disconnected);
     }
 
@@ -396,7 +389,9 @@ public class UserServiceImpl implements UserService {
     @Override
     public ListResponseDto<UserProfileResponseDto> searchProfiles(String email, UserRole userRole) {
 
-        List<User> profiles = userRepository.findAllByEmailAndRole(email, userRole);
+        List<User> profiles = userRole == null
+            ? userRepository.findByEmail(email).stream().toList()
+            : userRepository.findAllByEmailAndRole(email, userRole);
         return ListResponseDto.from(profiles.stream().map(UserProfileResponseDto::from).toList());
     }
 
