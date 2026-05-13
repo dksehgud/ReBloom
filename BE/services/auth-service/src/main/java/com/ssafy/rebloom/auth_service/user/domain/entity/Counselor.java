@@ -66,11 +66,13 @@ public class Counselor extends User {
         String name,
         String phone,
         String hospitalName,
-        String hospitalAddress
+        String hospitalAddress,
+        String hospitalAddressDetail
     ) {
         updateProfile(email, name);
         this.hospitalName = hospitalName;
         this.hospitalAddress = hospitalAddress;
+        this.hospitalAddressDetail = hospitalAddressDetail;
         this.phone = phone;
     }
 }
