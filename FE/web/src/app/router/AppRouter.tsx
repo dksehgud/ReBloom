@@ -27,6 +27,7 @@ import ParentReportPage from '../../pages/parent/ParentReportPage'
 import ParentSettingsPage from '../../pages/parent/ParentSettingsPage'
 import { authApi, toAppRole } from '../../features/auth/api/authApi'
 import { useAppSessionStore } from '../../features/auth/store/useAppSessionStore'
+import { isCounselorMockModeSearch } from '../../features/counselor/hooks/useCounselorMockMode'
 import { useSelectedChildStore } from '../../features/student/store/useSelectedChildStore'
 import type { ChildAddress } from '../../shared/types/childAddress'
 import {
@@ -101,15 +102,28 @@ function CounselorAuthRouteLayout() {
 }
 
 function CounselorRouteLayout() {
+  const location = useLocation()
+  const accessToken = useAppSessionStore((state) => state.accessToken)
   const setActiveRole = useAppSessionStore((state) => state.setActiveRole)
   const clearSelectedChild = useSelectedChildStore(
     (state) => state.clearSelectedChild,
   )
+  const isMockMode = isCounselorMockModeSearch(location.search)
 
   useEffect(() => {
+    if (!accessToken && !isMockMode) {
+      setActiveRole(null)
+      clearSelectedChild()
+      return
+    }
+
     setActiveRole('counselor')
     clearSelectedChild()
-  }, [clearSelectedChild, setActiveRole])
+  }, [accessToken, clearSelectedChild, isMockMode, setActiveRole])
+
+  if (!accessToken && !isMockMode) {
+    return <Navigate replace to="/counselor/login" />
+  }
 
   return <Outlet />
 }

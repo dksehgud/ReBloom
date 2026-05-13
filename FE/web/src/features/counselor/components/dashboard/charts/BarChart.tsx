@@ -1,16 +1,14 @@
-import { sleepScoreBars } from '../../../mocks/dashboardMockData'
-import { getWeekAdjustedValue } from '../../../utils/dashboardMetrics'
+import type { DashboardMetricPoint } from '../../../types/dashboard'
 
 type BarChartProps = {
-  weekIndex: number
-  childId: number
+  data: DashboardMetricPoint[]
 }
 
-function BarChart({ weekIndex, childId }: BarChartProps) {
+function BarChart({ data }: BarChartProps) {
   return (
     <div className="counselor-bar-chart" aria-label="수면 점수 추이">
-      {sleepScoreBars.map((bar, index) => {
-        const adjustedValue = getWeekAdjustedValue(bar.value, weekIndex, index, childId)
+      {data.map((bar) => {
+        const adjustedValue = bar.value
         const isWarning = bar.variant === 'warning'
 
         return (

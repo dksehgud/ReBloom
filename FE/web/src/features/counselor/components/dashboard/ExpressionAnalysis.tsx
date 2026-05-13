@@ -4,11 +4,9 @@ import DiaryEmotionIcon from '../../../diary/components/DiaryEmotionIcon'
 import {
   dashboardInfoMessages,
   expressionTabs,
-  expressionWeeks,
 } from '../../mocks/dashboardMockData'
-import type { ExpressionFilter } from '../../types/dashboard'
+import type { DashboardExpressionAnalysis, ExpressionFilter } from '../../types/dashboard'
 import { getFilteredTimelineDays } from '../../utils/dashboardTimeline'
-import { getWeekAdjustedLineData } from '../../utils/dashboardMetrics'
 import DashboardCard from './DashboardCard'
 import EmotionFlowModal from './EmotionFlowModal'
 import MetricTag from './MetricTag'
@@ -16,31 +14,37 @@ import WeekNavigator from './WeekNavigator'
 import LineChart from './charts/LineChart'
 
 type ExpressionAnalysisProps = {
+  analysis: DashboardExpressionAnalysis
+  error?: string
+  isFirstWeek: boolean
+  isLastWeek: boolean
+  isLoading?: boolean
   maxHeight?: number
-  weekIndex: number
-  childId: number
+  weekLabel: string
+  childId: string
   onPrevWeek: () => void
   onNextWeek: () => void
 }
 
 function ExpressionAnalysis({
+  analysis,
+  error,
+  isFirstWeek,
+  isLastWeek,
+  isLoading = false,
   maxHeight,
-  weekIndex,
+  weekLabel,
   childId,
   onPrevWeek,
   onNextWeek,
 }: ExpressionAnalysisProps) {
   const [activeFilter, setActiveFilter] = useState<ExpressionFilter>('all')
   const [isEmotionFlowOpen, setIsEmotionFlowOpen] = useState(false)
-  const currentWeek = expressionWeeks[weekIndex]
-  const currentTrend = getWeekAdjustedLineData(
-    currentWeek.trend[activeFilter],
-    weekIndex,
-    childId,
-  )
-  const visibleTimelineDays = getFilteredTimelineDays(currentWeek.days, activeFilter)
-  const isFirstWeek = weekIndex === 0
-  const isLastWeek = weekIndex === expressionWeeks.length - 1
+  const currentTrend = analysis.trend[activeFilter]
+  const visibleTimelineDays = getFilteredTimelineDays(analysis.days, activeFilter)
+  const summary = isLoading
+    ? '분석 데이터를 불러오는 중입니다.'
+    : error ?? (analysis.insight || '표시할 분석 요약이 없습니다.')
 
   return (
     <DashboardCard
@@ -73,7 +77,7 @@ function ExpressionAnalysis({
       </div>
 
       <WeekNavigator
-        label={currentWeek.label}
+        label={weekLabel}
         isFirst={isFirstWeek}
         isLast={isLastWeek}
         onPrev={onPrevWeek}
@@ -82,16 +86,20 @@ function ExpressionAnalysis({
 
       <div className="counselor-ai-summary">
         <span>AI 분석 인사이트</span>
-        <p>{currentWeek.insight}</p>
+        <p>{summary}</p>
       </div>
 
       <div className="counselor-expression-chart">
-        <LineChart
-          data={currentTrend}
-          color="#88b5c4"
-          showLine={activeFilter !== 'diary'}
-          showEmoji={activeFilter !== 'conversation'}
-        />
+        {currentTrend.length > 0 ? (
+          <LineChart
+            data={currentTrend}
+            color="#88b5c4"
+            showLine={activeFilter !== 'diary'}
+            showEmoji={activeFilter !== 'conversation'}
+          />
+        ) : (
+          <p className="counselor-timeline-empty">표시할 감정 추이 데이터가 없습니다.</p>
+        )}
       </div>
 
       <div className="counselor-timeline">
@@ -135,7 +143,9 @@ function ExpressionAnalysis({
           <p className="counselor-timeline-empty">해당 주차에 표시할 표현 기록이 없습니다.</p>
         )}
       </div>
-      {isEmotionFlowOpen ? <EmotionFlowModal onClose={() => setIsEmotionFlowOpen(false)} /> : null}
+      {isEmotionFlowOpen ? (
+        <EmotionFlowModal childId={childId} onClose={() => setIsEmotionFlowOpen(false)} />
+      ) : null}
     </DashboardCard>
   )
 }

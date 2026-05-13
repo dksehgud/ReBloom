@@ -4,8 +4,11 @@ import type { CounselorConnectionRequest } from '../../types/dashboard'
 
 type CounselorConnectionModalProps = {
   requests: CounselorConnectionRequest[]
-  onAccept: (request: CounselorConnectionRequest) => void
-  onReject: (requestId: number) => void
+  canRejectRequests?: boolean
+  error?: string
+  isLoading?: boolean
+  onAccept: (request: CounselorConnectionRequest) => void | Promise<void>
+  onReject: (requestId: string) => void
   onClose: () => void
 }
 
@@ -26,6 +29,9 @@ function formatConnectionRequestedAt(requestedAt: string) {
 
 function CounselorConnectionModal({
   requests,
+  canRejectRequests = false,
+  error,
+  isLoading = false,
   onAccept,
   onReject,
   onClose,
@@ -57,7 +63,17 @@ function CounselorConnectionModal({
         </header>
 
         <div className="counselor-connection-modal-body">
-          {requests.length > 0 ? (
+          {isLoading ? (
+            <p className="counselor-connection-empty">
+              상담사 연결 신청을 불러오는 중입니다.
+            </p>
+          ) : null}
+
+          {!isLoading && error ? (
+            <p className="counselor-connection-empty is-error">{error}</p>
+          ) : null}
+
+          {!isLoading && !error && requests.length > 0 ? (
             requests.map((request) => (
               <article className="counselor-connection-card" key={request.id}>
                 <div className="counselor-connection-card-icon" aria-hidden="true">
@@ -76,24 +92,28 @@ function CounselorConnectionModal({
                   </small>
                 </div>
                 <div className="counselor-connection-card-actions">
-                  <button
-                    type="button"
-                    className="is-secondary"
-                    onClick={() => onReject(request.id)}
-                  >
-                    거절
-                  </button>
+                  {canRejectRequests ? (
+                    <button
+                      type="button"
+                      className="is-secondary"
+                      onClick={() => onReject(request.id)}
+                    >
+                      거절
+                    </button>
+                  ) : null}
                   <button type="button" onClick={() => onAccept(request)}>
                     <FiCheck aria-hidden="true" /> 수락
                   </button>
                 </div>
               </article>
             ))
-          ) : (
+          ) : null}
+
+          {!isLoading && !error && requests.length === 0 ? (
             <p className="counselor-connection-empty">
               확인할 상담사 연결 신청이 없습니다.
             </p>
-          )}
+          ) : null}
         </div>
       </section>
     </div>

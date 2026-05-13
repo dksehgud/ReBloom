@@ -7,23 +7,60 @@ import googleLogo from '../../assets/google-logo.svg'
 import kakaoLogo from '../../assets/kakao-logo.svg'
 import AuthInput from '../../components/auth/AuthInput'
 import CounselorAuthLayout from '../../components/templates/CounselorAuthLayout/CounselorAuthLayout'
+import { authApi, toAppRole } from '../../features/auth/api/authApi'
+import { useAppSessionStore } from '../../features/auth/store/useAppSessionStore'
+import { useSelectedChildStore } from '../../features/student/store/useSelectedChildStore'
 
 function CounselorLoginPage() {
   const navigate = useNavigate()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [isPasswordVisible, setIsPasswordVisible] = useState(false)
+  const [loginError, setLoginError] = useState<string | undefined>()
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const clearSession = useAppSessionStore((state) => state.clearSession)
+  const setActiveRole = useAppSessionStore((state) => state.setActiveRole)
+  const setCurrentUser = useAppSessionStore((state) => state.setCurrentUser)
+  const setSessionTokens = useAppSessionStore((state) => state.setSessionTokens)
+  const clearSelectedChild = useSelectedChildStore(
+    (state) => state.clearSelectedChild,
+  )
 
   const isSubmitEnabled = email.trim().length > 0 && password.trim().length > 0
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
 
-    if (!isSubmitEnabled) {
+    if (!isSubmitEnabled || isSubmitting) {
       return
     }
 
-    navigate('/counselor/dashboard')
+    try {
+      setIsSubmitting(true)
+      setLoginError(undefined)
+
+      const tokens = await authApi.login(email.trim().toLowerCase(), password)
+      const myInfo = await authApi.getMyInfo(tokens.accessToken)
+      const nextRole = toAppRole(myInfo.role)
+
+      if (nextRole !== 'counselor') {
+        clearSession()
+        throw new Error('상담사 계정으로 로그인해 주세요.')
+      }
+
+      setSessionTokens(tokens)
+      setCurrentUser(myInfo)
+      setActiveRole('counselor')
+      clearSelectedChild()
+      navigate('/counselor/dashboard', { replace: true })
+    } catch (error) {
+      clearSession()
+      setLoginError(
+        error instanceof Error ? error.message : '로그인 중 오류가 발생했습니다.',
+      )
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (
@@ -66,11 +103,13 @@ function CounselorLoginPage() {
           <button
             type="submit"
             className="counselor-auth-button counselor-auth-button--primary"
-            disabled={!isSubmitEnabled}
+            disabled={!isSubmitEnabled || isSubmitting}
           >
-            로그인
+            {isSubmitting ? '로그인 중' : '로그인'}
           </button>
         </form>
+
+        {loginError ? <p className="field-error">{loginError}</p> : null}
 
         <div className="counselor-social-divider" aria-hidden="true">
           <span />

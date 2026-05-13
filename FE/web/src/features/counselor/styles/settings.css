@@ -210,6 +210,12 @@
   background: #fafbfc;
 }
 
+.counselor-settings-field input:disabled {
+  cursor: not-allowed;
+  color: #718096;
+  background: #f3f5f7;
+}
+
 .counselor-settings-field input:focus {
   border-color: var(--dashboard-primary);
   box-shadow: 0 0 0 3px rgba(52, 73, 102, 0.1);
@@ -259,6 +265,23 @@
 
 .counselor-settings-field__help {
   color: #718096;
+}
+
+.counselor-settings-status {
+  margin: 0;
+  padding: 12px 14px;
+  color: #4a5568;
+  background: rgba(136, 181, 196, 0.12);
+  border: 1px solid rgba(136, 181, 196, 0.18);
+  border-radius: 12px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.counselor-settings-status.is-error {
+  color: #b45309;
+  background: rgba(217, 119, 69, 0.1);
+  border-color: rgba(217, 119, 69, 0.18);
 }
 
 .counselor-settings-actions {
