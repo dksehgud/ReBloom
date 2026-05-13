@@ -87,21 +87,4 @@ public class InternalUserServiceImpl implements InternalUserService {
             device.getSerialNumber()
         );
     }
-
-    private Children getChildren(UUID childId) {
-        User user = userRepository.findById(childId)
-            .orElseThrow(() -> new CustomException(
-                "사용자를 찾을 수 없습니다.",
-                ErrorCode.USER_NOT_FOUND
-            ));
-
-        if (!(user instanceof Children children)) {
-            throw new CustomException(
-                "아동 사용자가 아닙니다.",
-                ErrorCode.USER_ROLE_TYPE_MISMATCH
-            );
-        }
-
-        return children;
-    }
 }

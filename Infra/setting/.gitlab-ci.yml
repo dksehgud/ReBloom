@@ -6,8 +6,14 @@ services:
 variables:
   DOCKER_HOST: tcp://docker:2376
   DOCKER_TLS_CERTDIR: "/certs"
+  DOCKER_TLS_VERIFY: "1"
+  DOCKER_CERT_PATH: "$DOCKER_TLS_CERTDIR/client"
+  DOCKER_API_VERSION: "1.43"
+
   IMAGE_TAG: $CI_COMMIT_SHORT_SHA
   DOCKER_NAMESPACE: $DOCKER_USERNAME
+
+  GRADLE_USER_HOME: "$CI_PROJECT_DIR/.gradle"
 
 stages:
   - build
@@ -18,245 +24,204 @@ workflow:
     - if: '$CI_COMMIT_BRANCH == "develop"'
       changes:
         - "BE/**/*"
+    - when: never
+
+cache:
+  key: gradle-cache
+  paths:
+    - .gradle/caches/
+    - .gradle/wrapper/
 
 # ====================================================
-# [STAGE 1] Spring Boot 개별 빌드 (Java 21 환경)
+# 공통 템플릿
 # ====================================================
 
-build-auth-service:
+.build-template:
   image: eclipse-temurin:21-jdk-alpine
   stage: build
   tags:
     - rebloom-dev
+  script:
+    - echo "----- ${SERVICE_NAME} 빌드 검증 시작 -----"
+    - cd BE
+    - chmod +x ./gradlew
+    - ./gradlew :services:${SERVICE_NAME}:build -x test
+  # artifact 업로드 제거
+  # 이유: build/libs/*.jar 업로드 시 bootJar + plain.jar가 같이 올라가며 413 발생 가능
+
+.push-template:
+  image: eclipse-temurin:21-jdk-alpine
+  stage: docker-push
+  tags:
+    - rebloom-dev
+  before_script:
+    - apk add --no-cache docker-cli
+    - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+  script:
+    - echo "----- ${SERVICE_NAME} Docker 이미지 빌드 및 Push 시작 -----"
+    - cd BE
+    - chmod +x ./gradlew
+
+    # Docker build에 필요한 실행 jar만 생성
+    - ./gradlew :services:${SERVICE_NAME}:bootJar -x test
+
+    # plain jar 제거
+    - rm -f services/${SERVICE_NAME}/build/libs/*-plain.jar
+
+    # bootJar가 정확히 존재하는지 확인
+    - ls -lh services/${SERVICE_NAME}/build/libs/
+
+    # Docker 이미지 빌드 및 Push
+    - docker build
+      -t $DOCKER_NAMESPACE/${IMAGE_NAME}:$IMAGE_TAG
+      -t $DOCKER_NAMESPACE/${IMAGE_NAME}:latest
+      -f services/${SERVICE_NAME}/Dockerfile
+      .
+    - docker push $DOCKER_NAMESPACE/${IMAGE_NAME}:$IMAGE_TAG
+    - docker push $DOCKER_NAMESPACE/${IMAGE_NAME}:latest
+
+# ====================================================
+# [STAGE 1] Spring Boot 개별 빌드 검증
+# ====================================================
+
+build-auth-service:
+  extends: .build-template
+  variables:
+    SERVICE_NAME: auth-service
   rules:
     - changes:
         - "BE/services/auth-service/**/*"
         - "BE/modules/**/*"
         - "BE/*"
-  script:
-    - echo "----- Auth Service 빌드 시작 -----"
-    - cd BE
-    - chmod +x ./gradlew
-    - ./gradlew :services:auth-service:build -x test
-  artifacts:
-    paths:
-      - BE/services/auth-service/build/libs/*.jar
-    expire_in: 1 hour
 
 build-gateway-service:
-  image: eclipse-temurin:21-jdk-alpine
-  stage: build
-  tags:
-    - rebloom-dev
+  extends: .build-template
+  variables:
+    SERVICE_NAME: gateway-service
   rules:
     - changes:
         - "BE/services/gateway-service/**/*"
         - "BE/modules/**/*"
         - "BE/*"
-  script:
-    - echo "----- Gateway Service 빌드 시작 -----"
-    - cd BE
-    - chmod +x ./gradlew
-    - ./gradlew :services:gateway-service:build -x test
-  artifacts:
-    paths:
-      - BE/services/gateway-service/build/libs/*.jar
-    expire_in: 1 hour
 
 build-intake-service:
-  image: eclipse-temurin:21-jdk-alpine
-  stage: build
-  tags:
-    - rebloom-dev
+  extends: .build-template
+  variables:
+    SERVICE_NAME: intake-service
   rules:
     - changes:
         - "BE/services/intake-service/**/*"
         - "BE/modules/**/*"
         - "BE/*"
-  script:
-    - echo "----- Intake Service 빌드 시작 -----"
-    - cd BE
-    - chmod +x ./gradlew
-    - ./gradlew :services:intake-service:build -x test
-  artifacts:
-    paths:
-      - BE/services/intake-service/build/libs/*.jar
-    expire_in: 1 hour
 
 build-biometric-service:
-  image: eclipse-temurin:21-jdk-alpine
-  stage: build
-  tags:
-    - rebloom-dev
+  extends: .build-template
+  variables:
+    SERVICE_NAME: biometric-service
   rules:
     - changes:
         - "BE/services/biometric-service/**/*"
         - "BE/modules/**/*"
         - "BE/*"
-  script:
-    - echo "----- Biometric Service 빌드 시작 -----"
-    - cd BE
-    - chmod +x ./gradlew
-    - ./gradlew :services:biometric-service:build -x test
-  artifacts:
-    paths:
-      - BE/services/biometric-service/build/libs/*.jar
-    expire_in: 1 hour
 
 build-report-service:
-  image: eclipse-temurin:21-jdk-alpine
-  stage: build
-  tags:
-    - rebloom-dev
+  extends: .build-template
+  variables:
+    SERVICE_NAME: report-service
   rules:
     - changes:
         - "BE/services/report-service/**/*"
         - "BE/modules/**/*"
         - "BE/*"
-  script:
-    - echo "----- Report Service 빌드 시작 -----"
-    - cd BE
-    - chmod +x ./gradlew
-    - ./gradlew :services:report-service:build -x test
-  artifacts:
-    paths:
-      - BE/services/report-service/build/libs/*.jar
-    expire_in: 1 hour
 
 build-notification-service:
-  image: eclipse-temurin:21-jdk-alpine
-  stage: build
-  tags:
-    - rebloom-dev
+  extends: .build-template
+  variables:
+    SERVICE_NAME: notification-service
   rules:
     - changes:
         - "BE/services/notification-service/**/*"
         - "BE/modules/**/*"
         - "BE/*"
-  script:
-    - echo "----- Notification Service 빌드 시작 -----"
-    - cd BE
-    - chmod +x ./gradlew
-    - ./gradlew :services:notification-service:build -x test
-  artifacts:
-    paths:
-      - BE/services/notification-service/build/libs/*.jar
-    expire_in: 1 hour
 
 # ====================================================
 # [STAGE 2] Docker 이미지 빌드 및 Push
 # ====================================================
 
-# Auth Service
 push-auth-service:
-  stage: docker-push
-  tags:
-    - rebloom-dev
-  needs: [build-auth-service]
+  extends: .push-template
+  needs:
+    - build-auth-service
+  variables:
+    SERVICE_NAME: auth-service
+    IMAGE_NAME: rebloom-auth
   rules:
     - changes:
         - "BE/services/auth-service/**/*"
         - "BE/modules/**/*"
         - "BE/*"
-  before_script:
-    - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
-  script:
-    - cd BE
-    - docker build -t $DOCKER_NAMESPACE/rebloom-auth:$IMAGE_TAG -t $DOCKER_NAMESPACE/rebloom-auth:latest -f services/auth-service/Dockerfile .
-    - docker push $DOCKER_NAMESPACE/rebloom-auth:$IMAGE_TAG
-    - docker push $DOCKER_NAMESPACE/rebloom-auth:latest
 
-# Gateway Service
 push-gateway-service:
-  stage: docker-push
-  tags:
-    - rebloom-dev
-  needs: [build-gateway-service]
+  extends: .push-template
+  needs:
+    - build-gateway-service
+  variables:
+    SERVICE_NAME: gateway-service
+    IMAGE_NAME: rebloom-gateway
   rules:
     - changes:
         - "BE/services/gateway-service/**/*"
         - "BE/modules/**/*"
         - "BE/*"
-  before_script:
-    - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
-  script:
-    - cd BE
-    - docker build -t $DOCKER_NAMESPACE/rebloom-gateway:$IMAGE_TAG -t $DOCKER_NAMESPACE/rebloom-gateway:latest -f services/gateway-service/Dockerfile .
-    - docker push $DOCKER_NAMESPACE/rebloom-gateway:$IMAGE_TAG
-    - docker push $DOCKER_NAMESPACE/rebloom-gateway:latest
 
-# Intake Service
 push-intake-service:
-  stage: docker-push
-  tags:
-    - rebloom-dev
-  needs: [build-intake-service]
+  extends: .push-template
+  needs:
+    - build-intake-service
+  variables:
+    SERVICE_NAME: intake-service
+    IMAGE_NAME: rebloom-intake
   rules:
     - changes:
         - "BE/services/intake-service/**/*"
         - "BE/modules/**/*"
         - "BE/*"
-  before_script:
-    - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
-  script:
-    - cd BE
-    - docker build -t $DOCKER_NAMESPACE/rebloom-intake:$IMAGE_TAG -t $DOCKER_NAMESPACE/rebloom-intake:latest -f services/intake-service/Dockerfile .
-    - docker push $DOCKER_NAMESPACE/rebloom-intake:$IMAGE_TAG
-    - docker push $DOCKER_NAMESPACE/rebloom-intake:latest
 
-# Biometric Service
 push-biometric-service:
-  stage: docker-push
-  tags:
-    - rebloom-dev
-  needs: [build-biometric-service]
+  extends: .push-template
+  needs:
+    - build-biometric-service
+  variables:
+    SERVICE_NAME: biometric-service
+    IMAGE_NAME: rebloom-biometric
   rules:
     - changes:
         - "BE/services/biometric-service/**/*"
         - "BE/modules/**/*"
         - "BE/*"
-  before_script:
-    - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
-  script:
-    - cd BE
-    - docker build -t $DOCKER_NAMESPACE/rebloom-biometric:$IMAGE_TAG -t $DOCKER_NAMESPACE/rebloom-biometric:latest -f services/biometric-service/Dockerfile .
-    - docker push $DOCKER_NAMESPACE/rebloom-biometric:$IMAGE_TAG
-    - docker push $DOCKER_NAMESPACE/rebloom-biometric:latest
 
-# Report Service
 push-report-service:
-  stage: docker-push
-  tags:
-    - rebloom-dev
-  needs: [build-report-service]
+  extends: .push-template
+  needs:
+    - build-report-service
+  variables:
+    SERVICE_NAME: report-service
+    IMAGE_NAME: rebloom-report
   rules:
     - changes:
         - "BE/services/report-service/**/*"
         - "BE/modules/**/*"
         - "BE/*"
-  before_script:
-    - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
-  script:
-    - cd BE
-    - docker build -t $DOCKER_NAMESPACE/rebloom-report:$IMAGE_TAG -t $DOCKER_NAMESPACE/rebloom-report:latest -f services/report-service/Dockerfile .
-    - docker push $DOCKER_NAMESPACE/rebloom-report:$IMAGE_TAG
-    - docker push $DOCKER_NAMESPACE/rebloom-report:latest
 
-# Notification Service
 push-notification-service:
-  stage: docker-push
-  tags:
-    - rebloom-dev
-  needs: [build-notification-service]
+  extends: .push-template
+  needs:
+    - build-notification-service
+  variables:
+    SERVICE_NAME: notification-service
+    IMAGE_NAME: rebloom-notification
   rules:
     - changes:
         - "BE/services/notification-service/**/*"
         - "BE/modules/**/*"
         - "BE/*"
-  before_script:
-    - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
-  script:
-    - cd BE
-    - docker build -t $DOCKER_NAMESPACE/rebloom-notification:$IMAGE_TAG -t $DOCKER_NAMESPACE/rebloom-notification:latest -f services/notification-service/Dockerfile .
-    - docker push $DOCKER_NAMESPACE/rebloom-notification:$IMAGE_TAG
-    - docker push $DOCKER_NAMESPACE/rebloom-notification:latest
