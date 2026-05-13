@@ -72,10 +72,8 @@ cache:
     - ls -lh services/${SERVICE_NAME}/build/libs/
 
     # Docker 이미지 빌드 및 Push
-    - docker build \
-      -t $DOCKER_NAMESPACE/${IMAGE_NAME}:$IMAGE_TAG \
-      -t $DOCKER_NAMESPACE/${IMAGE_NAME}:latest \
-      -f services/${SERVICE_NAME}/Dockerfile \
+    # 가장 안전한 한 줄 명령어
+    - docker build -t $DOCKER_NAMESPACE/${IMAGE_NAME}:$IMAGE_TAG -t $DOCKER_NAMESPACE/${IMAGE_NAME}:latest -f services/${SERVICE_NAME}/Dockerfile .
       .
     - docker push $DOCKER_NAMESPACE/${IMAGE_NAME}:$IMAGE_TAG
     - docker push $DOCKER_NAMESPACE/${IMAGE_NAME}:latest
