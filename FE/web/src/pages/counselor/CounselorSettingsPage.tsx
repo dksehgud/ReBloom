@@ -30,8 +30,6 @@ import { openDaumPostcodePopup } from '../../shared/utils/daumPostcode'
 import { clearNativeAccessToken } from '../../shared/utils/nativeTokenBridge'
 
 const EMAIL_READONLY_HELP = '이메일은 로그인 아이디로 사용되어 수정할 수 없습니다.'
-const HOSPITAL_ADDRESS_DETAIL_HELP =
-  '현재 설정 API가 상담사 상세주소 조회/수정을 지원하지 않아 실API 저장 대상에서 제외됩니다.'
 const PROFILE_UPDATE_FIELDS: Array<keyof ProfileForm> = [
   'name',
   'phone',
@@ -74,6 +72,7 @@ function toProfileForm(user: UserInfoResponse): ProfileForm {
 function buildProfilePayload(profileForm: ProfileForm) {
   return {
     hospitalAddress: normalizeFormValue(profileForm.hospitalAddress),
+    hospitalAddressDetail: normalizeFormValue(profileForm.hospitalAddressDetail),
     hospitalName: normalizeFormValue(profileForm.hospitalName),
     name: normalizeFormValue(profileForm.name),
     phone: normalizeFormValue(profileForm.phone),
@@ -192,6 +191,7 @@ function CounselorSettingsPage() {
     profileForm.phone,
     profileForm.hospitalName,
     profileForm.hospitalAddress,
+    profileForm.hospitalAddressDetail,
   ]
   const isProfileChanged = PROFILE_UPDATE_FIELDS.some(
     (field) =>
@@ -473,8 +473,7 @@ function CounselorSettingsPage() {
                   label: '상세주소',
                   value: profileForm.hospitalAddressDetail,
                 }}
-                help={!isMockMode ? HOSPITAL_ADDRESS_DETAIL_HELP : undefined}
-                readOnly={!isMockMode || isProfileLoading || isProfileSubmitting}
+                disabled={isProfileLoading || isProfileSubmitting}
                 value={profileForm.hospitalAddressDetail}
                 onChange={(value) => updateProfileField('hospitalAddressDetail', value)}
               />

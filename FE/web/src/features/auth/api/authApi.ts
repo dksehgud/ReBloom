@@ -66,6 +66,7 @@ type UserUpdateRequest = {
   phone?: string
   hospitalName?: string
   hospitalAddress?: string
+  hospitalAddressDetail?: string
   address?: string
   addressDetail?: string
   latitude?: number
