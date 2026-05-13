@@ -1,5 +1,6 @@
 package com.ssafy.rebloom.auth_service.user.controller;
 
+import com.ssafy.rebloom.auth_service.user.dto.response.ChildAgeResponseDto;
 import com.ssafy.rebloom.auth_service.user.dto.response.ChildGpsResponseDto;
 import com.ssafy.rebloom.auth_service.user.service.InternalUserService;
 import com.ssafy.rebloom.common.dto.BaseResponse;
@@ -24,5 +25,13 @@ public class InternalUserController {
     ) {
         ChildGpsResponseDto response = internalUserService.getChildGpsInfo(childId);
         return ResponseEntity.ok(BaseResponse.success("아동 GPS 조회 성공", response));
+    }
+
+    @GetMapping("/users/{userId}/age")
+    public ResponseEntity<BaseResponse<ChildAgeResponseDto>> getChildAge(
+        @PathVariable UUID userId
+    ) {
+        ChildAgeResponseDto response = internalUserService.getChildAge(userId);
+        return ResponseEntity.ok(BaseResponse.success("아동 나이 조회 성공", response));
     }
 }
