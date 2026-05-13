@@ -8,6 +8,7 @@ import android.location.LocationListener
 import android.location.LocationManager
 import android.os.Bundle
 import android.os.Looper
+import android.util.Log
 import androidx.core.content.ContextCompat
 import com.rebloom.watch.model.LocationData
 
@@ -22,10 +23,25 @@ class LocationSensor(
     var onLocationReceived: ((LocationData) -> Unit)? = null
 
     fun connect() {
-        if (!hasLocationPermission()) return
+        if (!hasLocationPermission()) {
+            Log.w(TAG, "Location permission is not granted")
+            return
+        }
+
+        Log.d(
+            TAG,
+            "connect gpsEnabled=${isProviderEnabled(LocationManager.GPS_PROVIDER)} " +
+                "networkEnabled=${isProviderEnabled(LocationManager.NETWORK_PROVIDER)}"
+        )
 
         val locationListener = object : LocationListener {
             override fun onLocationChanged(location: Location) {
+                Log.d(
+                    TAG,
+                    "onLocationChanged provider=${location.provider} " +
+                        "lat=${location.latitude}, lon=${location.longitude}, " +
+                        "accuracy=${if (location.hasAccuracy()) location.accuracy else null}"
+                )
                 onLocationReceived?.invoke(
                     LocationData(
                         timestamp = location.time.takeIf { it > 0 } ?: System.currentTimeMillis(),
@@ -47,7 +63,13 @@ class LocationSensor(
         requestUpdates(LocationManager.GPS_PROVIDER, locationListener)
         requestUpdates(LocationManager.NETWORK_PROVIDER, locationListener)
 
-        getBestLastKnownLocation()?.let(locationListener::onLocationChanged)
+        val lastKnownLocation = getBestLastKnownLocation()
+        if (lastKnownLocation == null) {
+            Log.d(TAG, "No last known location available")
+        } else {
+            Log.d(TAG, "Using last known location provider=${lastKnownLocation.provider}")
+            locationListener.onLocationChanged(lastKnownLocation)
+        }
     }
 
     fun disconnect() {
@@ -56,7 +78,11 @@ class LocationSensor(
     }
 
     private fun requestUpdates(provider: String, listener: LocationListener) {
-        if (!hasLocationPermission() || !locationManager.isProviderEnabled(provider)) return
+        if (!hasLocationPermission()) return
+        if (!isProviderEnabled(provider)) {
+            Log.w(TAG, "Provider disabled: $provider")
+            return
+        }
 
         try {
             locationManager.requestLocationUpdates(
@@ -66,12 +92,22 @@ class LocationSensor(
                 listener,
                 Looper.getMainLooper()
             )
+            Log.d(TAG, "Requested location updates from $provider")
         } catch (_: SecurityException) {
+            Log.w(TAG, "Missing permission while requesting $provider")
             return
         } catch (_: IllegalArgumentException) {
+            Log.w(TAG, "Invalid provider while requesting $provider")
             return
         }
     }
+
+    private fun isProviderEnabled(provider: String): Boolean =
+        try {
+            locationManager.isProviderEnabled(provider)
+        } catch (_: IllegalArgumentException) {
+            false
+        }
 
     private fun getBestLastKnownLocation(): Location? {
         if (!hasLocationPermission()) return null
@@ -103,8 +139,8 @@ class LocationSensor(
     }
 
     companion object {
-        private const val LOCATION_INTERVAL_MS = 60_000L
-        private const val LOCATION_MIN_DISTANCE_METERS = 10f
+        private const val TAG = "LocationSensor"
+        private const val LOCATION_INTERVAL_MS = 10_000L
+        private const val LOCATION_MIN_DISTANCE_METERS = 0f
     }
 }
-
