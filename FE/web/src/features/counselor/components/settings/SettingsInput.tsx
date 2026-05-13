@@ -7,6 +7,7 @@ type SettingsInputProps = {
   value?: string
   onChange?: (value: string) => void
   readOnly?: boolean
+  disabled?: boolean
   action?: ReactNode
   error?: string
   help?: string
@@ -17,6 +18,7 @@ function SettingsInput({
   value,
   onChange,
   readOnly,
+  disabled,
   action,
   error,
   help,
@@ -35,6 +37,7 @@ function SettingsInput({
           defaultValue={value === undefined ? field.value : undefined}
           onChange={onChange ? (event) => onChange(event.target.value) : undefined}
           readOnly={readOnly}
+          disabled={disabled}
           placeholder={field.type === 'password' ? '비밀번호를 입력하세요' : undefined}
         />
         {action}

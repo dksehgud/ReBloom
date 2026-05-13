@@ -39,6 +39,7 @@ type UserInfoResponse = {
   longitude?: number
   hospitalName?: string
   hospitalAddress?: string
+  hospitalAddressDetail?: string
 }
 
 type SignupRequest = {
