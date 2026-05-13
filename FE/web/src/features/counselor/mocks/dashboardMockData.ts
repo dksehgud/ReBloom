@@ -2,7 +2,7 @@ import type { DiaryEmotionKey } from '../../diary/constants/diaryEmotions'
 import type {
   ChildListItem,
   CounselorConnectionRequest,
-  DashboardWeekIndexes,
+  DashboardWeekOffsets,
   EmotionFlowMode,
   EmotionFlowPeriod,
   ExpressionFilter,
@@ -288,13 +288,13 @@ const expressionTabs: Array<{ key: ExpressionFilter; label: string }> = [
 ]
 
 const DEFAULT_EXPRESSION_WEEK_INDEX = 1
-const INITIAL_DASHBOARD_WEEK_INDEXES: DashboardWeekIndexes = {
-  observation: DEFAULT_EXPRESSION_WEEK_INDEX,
-  sleepScore: DEFAULT_EXPRESSION_WEEK_INDEX,
-  sleepEfficiency: DEFAULT_EXPRESSION_WEEK_INDEX,
-  expression: DEFAULT_EXPRESSION_WEEK_INDEX,
-  biometricRatio: DEFAULT_EXPRESSION_WEEK_INDEX,
-  autonomic: DEFAULT_EXPRESSION_WEEK_INDEX,
+const INITIAL_DASHBOARD_WEEK_OFFSETS: DashboardWeekOffsets = {
+  observation: 0,
+  sleepScore: 0,
+  sleepEfficiency: 0,
+  expression: 0,
+  biometricRatio: 0,
+  autonomic: 0,
 }
 
 const biometricRatio = [
@@ -538,7 +538,7 @@ const emotionFlowPeriods: Record<EmotionFlowMode, EmotionFlowPeriod[]> = {
 
 export {
   DEFAULT_EXPRESSION_WEEK_INDEX,
-  INITIAL_DASHBOARD_WEEK_INDEXES,
+  INITIAL_DASHBOARD_WEEK_OFFSETS,
   biometricRatio,
   counselorProfile,
   createMockComment,

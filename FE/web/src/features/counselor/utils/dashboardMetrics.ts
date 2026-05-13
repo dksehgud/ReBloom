@@ -1,11 +1,5 @@
-import type { DiaryEmotionKey } from '../../diary/constants/diaryEmotions'
 import { DEFAULT_EXPRESSION_WEEK_INDEX } from '../mocks/dashboardMockData'
-
-type DashboardMetricPoint = {
-  label: string
-  value: number
-  emotionKey?: DiaryEmotionKey
-}
+import type { DashboardMetricPoint } from '../types/dashboard'
 
 function clampMetricValue(value: number) {
   return Math.max(0, Math.min(100, value))

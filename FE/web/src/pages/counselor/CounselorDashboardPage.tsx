@@ -17,26 +17,26 @@ import ObservationCommentModal from '../../features/counselor/components/dashboa
 import ObservationList from '../../features/counselor/components/dashboard/ObservationList'
 import WeekNavigator from '../../features/counselor/components/dashboard/WeekNavigator'
 import {
-  biometricRatio,
   counselorProfile,
   dashboardInfoMessages,
-  hrvTrend,
-  sleepEfficiency,
 } from '../../features/counselor/mocks/dashboardMockData'
 import useCounselorDashboardState from '../../features/counselor/hooks/useCounselorDashboardState'
-import { getWeekAdjustedLineData } from '../../features/counselor/utils/dashboardMetrics'
 
 function CounselorDashboardPage() {
   const navigate = useNavigate()
   const {
     analysisCardHeight,
+    autonomicData,
     autonomicWeek,
+    biometricRatioData,
     biometricRatioWeek,
     childItemsError,
     childItems,
     connectionRequests,
     connectionRequestsError,
     currentObservationRecords,
+    dashboardExpressionAnalysis,
+    dashboardMetricsError,
     expressionWeek,
     handleAcceptConnectionRequest,
     handleDeleteObservationComment,
@@ -44,6 +44,7 @@ function CounselorDashboardPage() {
     handleSaveObservationComment,
     handleSelectChild,
     isLoadingConnectionRequests,
+    isLoadingDashboardMetrics,
     isConnectionModalOpen,
     isLoadingChildItems,
     isSidebarCollapsed,
@@ -57,7 +58,9 @@ function CounselorDashboardPage() {
     setIsConnectionModalOpen,
     setIsSidebarCollapsed,
     setSelectedObservation,
+    sleepEfficiencyData,
     sleepEfficiencyWeek,
+    sleepScoreData,
     sleepScoreWeek,
     canRejectConnectionRequests,
   } = useCounselorDashboardState()
@@ -147,10 +150,7 @@ function CounselorDashboardPage() {
                       onPrev={sleepScoreWeek.goPrevWeek}
                       onNext={sleepScoreWeek.goNextWeek}
                     />
-                    <BarChart
-                      weekIndex={sleepScoreWeek.weekIndex}
-                      childId={selectedChildId}
-                    />
+                    <BarChart data={sleepScoreData} />
                   </DashboardCard>
 
                   <DashboardCard
@@ -165,11 +165,7 @@ function CounselorDashboardPage() {
                       onNext={sleepEfficiencyWeek.goNextWeek}
                     />
                     <LineChart
-                      data={getWeekAdjustedLineData(
-                        sleepEfficiency,
-                        sleepEfficiencyWeek.weekIndex,
-                        selectedChildId,
-                      )}
+                      data={sleepEfficiencyData}
                       color="#f2a57d"
                     />
                     <p className="counselor-card-note">
@@ -182,8 +178,13 @@ function CounselorDashboardPage() {
                   aria-label="대시보드 분석 정보"
                 >
                   <ExpressionAnalysis
+                    analysis={dashboardExpressionAnalysis}
+                    error={dashboardMetricsError}
+                    isLoading={isLoadingDashboardMetrics}
+                    isFirstWeek={expressionWeek.isFirstWeek}
+                    isLastWeek={expressionWeek.isLastWeek}
                     maxHeight={analysisCardHeight}
-                    weekIndex={expressionWeek.weekIndex}
+                    weekLabel={expressionWeek.currentWeek.label}
                     childId={selectedChildId}
                     onPrevWeek={expressionWeek.goPrevWeek}
                     onNextWeek={expressionWeek.goNextWeek}
@@ -208,11 +209,7 @@ function CounselorDashboardPage() {
                       onNext={biometricRatioWeek.goNextWeek}
                     />
                     <LineChart
-                      data={getWeekAdjustedLineData(
-                        biometricRatio,
-                        biometricRatioWeek.weekIndex,
-                        selectedChildId,
-                      )}
+                      data={biometricRatioData}
                       color="#6B9AC4"
                     />
                     <p className="counselor-card-note">
@@ -230,11 +227,7 @@ function CounselorDashboardPage() {
                       onNext={autonomicWeek.goNextWeek}
                     />
                     <LineChart
-                      data={getWeekAdjustedLineData(
-                        hrvTrend,
-                        autonomicWeek.weekIndex,
-                        selectedChildId,
-                      )}
+                      data={autonomicData}
                       color="#9b78f0"
                     />
                     <p className="counselor-card-note">

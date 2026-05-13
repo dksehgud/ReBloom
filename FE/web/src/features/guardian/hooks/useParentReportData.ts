@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import type { DiaryEmotionKey } from '../../diary/constants/diaryEmotions'
 import { useAppSessionStore } from '../../auth/store/useAppSessionStore'
+import { getWeekRangeByIndex } from '../../../shared/utils/weekRange'
 import {
   PARENT_REPORT_VISIBLE_WEEK_COUNT,
   reportWeekdays,
@@ -35,46 +36,6 @@ type UseParentReportDataResult = {
 type ReportWeekday = ParentReportWeek['moods'][number]['weekday']
 
 const CURRENT_REPORT_WEEK_INDEX = PARENT_REPORT_VISIBLE_WEEK_COUNT - 1
-const DAYS_PER_WEEK = 7
-
-function formatDateParam(date: Date) {
-  const year = date.getFullYear()
-  const month = `${date.getMonth() + 1}`.padStart(2, '0')
-  const day = `${date.getDate()}`.padStart(2, '0')
-
-  return `${year}-${month}-${day}`
-}
-
-function addDays(date: Date, days: number) {
-  const nextDate = new Date(date)
-  nextDate.setDate(nextDate.getDate() + days)
-
-  return nextDate
-}
-
-function getMondayOfWeek(date: Date) {
-  const monday = new Date(date)
-  monday.setHours(0, 0, 0, 0)
-
-  const dayOfWeek = monday.getDay()
-  const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek
-  monday.setDate(monday.getDate() + mondayOffset)
-
-  return monday
-}
-
-function getWeekLabelByEndDate(endDate: Date) {
-  const thursday = addDays(getMondayOfWeek(endDate), 3)
-  const firstDayOfLabelMonth = new Date(thursday.getFullYear(), thursday.getMonth(), 1)
-  const daysUntilFirstThursday =
-    (4 - firstDayOfLabelMonth.getDay() + DAYS_PER_WEEK) % DAYS_PER_WEEK
-  const firstThursday = addDays(firstDayOfLabelMonth, daysUntilFirstThursday)
-  const weekOfMonth =
-    Math.floor((thursday.getTime() - firstThursday.getTime()) / (DAYS_PER_WEEK * 24 * 60 * 60 * 1000)) +
-    1
-
-  return `${thursday.getFullYear()}년 ${thursday.getMonth() + 1}월 ${weekOfMonth}주차`
-}
 
 const dayOfWeekLabelMap: Record<string, ReportWeekday> = {
   FRIDAY: '금',
@@ -103,19 +64,7 @@ const emotionToneMap: Record<DiaryEmotionKey, ParentReportMoodTone> = {
 }
 
 function getReportRange(selectedWeekIndex: number) {
-  const weekOffset = selectedWeekIndex - CURRENT_REPORT_WEEK_INDEX
-  const startOfWeek = addDays(getMondayOfWeek(new Date()), weekOffset * DAYS_PER_WEEK)
-  const endOfWeek = addDays(startOfWeek, DAYS_PER_WEEK - 1)
-  const startDate = formatDateParam(startOfWeek)
-  const endDate = formatDateParam(endOfWeek)
-
-  return {
-    baseDate: startDate,
-    endDate,
-    id: `${startDate}_${endDate}`,
-    label: getWeekLabelByEndDate(endOfWeek),
-    startDate,
-  }
+  return getWeekRangeByIndex(selectedWeekIndex, CURRENT_REPORT_WEEK_INDEX)
 }
 
 function createEmptyReportWeek(

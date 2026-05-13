@@ -55,8 +55,8 @@ function LineChart({
         )
       })}
       {showLine ? <path d={path} style={{ stroke: color }} /> : null}
-      {points.map((point) => (
-        <g key={point.label}>
+      {points.map((point, index) => (
+        <g key={`${point.label}-${index}`}>
           {showLine ? <circle cx={point.x} cy={point.y} r={4.8} style={{ fill: color }} /> : null}
           {showEmoji && point.emotionKey ? (
             <foreignObject

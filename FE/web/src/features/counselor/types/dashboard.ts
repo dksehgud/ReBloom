@@ -59,6 +59,7 @@ type ExpressionTrendPoint = {
   label: string
   value: number
   emotionKey?: DiaryEmotionKey
+  variant?: string
 }
 
 type ExpressionWeek = {
@@ -85,7 +86,7 @@ type DashboardWeekSection =
   | 'biometricRatio'
   | 'autonomic'
 
-type DashboardWeekIndexes = Record<DashboardWeekSection, number>
+type DashboardWeekOffsets = Record<DashboardWeekSection, number>
 
 type EmotionFlowMode = 'monthly' | 'yearly'
 
@@ -103,10 +104,20 @@ type EmotionFlowPeriod = {
 
 type EmotionFlowSeries = 'diary' | 'conversation'
 
+type DashboardMetricPoint = ExpressionTrendPoint
+
+type DashboardExpressionAnalysis = {
+  insight: string
+  trend: Record<ExpressionFilter, DashboardMetricPoint[]>
+  days: TimelineDay[]
+}
+
 export type {
   ChildListItem,
   CounselorConnectionRequest,
-  DashboardWeekIndexes,
+  DashboardExpressionAnalysis,
+  DashboardMetricPoint,
+  DashboardWeekOffsets,
   DashboardWeekSection,
   EmotionFlowMode,
   EmotionFlowPeriod,

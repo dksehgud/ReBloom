@@ -5,27 +5,53 @@ import {
   type CounselorChildResponseDto,
 } from '../api/counselorChildrenApi'
 import {
+  getCounselorAnalysisContent,
+  type CounselorAnalysisContentResponseDto,
+  type CounselorConversationAnalysisCardDto,
+  type CounselorDiaryAnalysisCardDto,
+} from '../api/counselorDashboardApi'
+import {
   acceptCounselorParentRelation,
   getCounselorParentRelations,
   type CounselorParentRelationResponseDto,
 } from '../api/counselorParentRelationApi'
 import {
-  INITIAL_DASHBOARD_WEEK_INDEXES,
+  DEFAULT_EXPRESSION_WEEK_INDEX,
+  INITIAL_DASHBOARD_WEEK_OFFSETS,
+  biometricRatio,
   createMockComment,
   expressionWeeks,
+  hrvTrend,
   initialChildList,
   initialConnectionRequests,
   initialObservationComments,
   observationRecordsByWeek,
+  sleepEfficiency,
+  sleepScoreBars,
 } from '../mocks/dashboardMockData'
 import type {
   ChildListItem,
   CounselorConnectionRequest,
-  DashboardWeekIndexes,
+  DashboardExpressionAnalysis,
+  DashboardMetricPoint,
+  DashboardWeekOffsets,
   DashboardWeekSection,
+  ExpressionFilter,
   ObservationRecord,
+  TimelineDay,
+  TimelineEntry,
 } from '../types/dashboard'
+import { getWeekAdjustedLineData } from '../utils/dashboardMetrics'
+import {
+  getChildHrAccRatios,
+  getChildRmssds,
+  getChildSleepEfficiencies,
+  getChildSleepScores,
+  type ChildChartPointDto,
+} from '../../../shared/api/childChartApi'
+import { getWeekRangeByOffset } from '../../../shared/utils/weekRange'
 import { useAppSessionStore } from '../../auth/store/useAppSessionStore'
+import type { DiaryEmotionKey } from '../../diary/constants/diaryEmotions'
 import { useCounselorMockMode } from './useCounselorMockMode'
 
 function getCounselingStatusLabel(status: string) {
@@ -93,6 +119,351 @@ function mapParentRelationToConnectionRequest(
   }
 }
 
+const EXPRESSION_FILTERS: ExpressionFilter[] = ['all', 'diary', 'conversation']
+
+function parseDate(dateValue: string) {
+  const [year, month, day] = dateValue.split('-').map(Number)
+
+  if (!year || !month || !day) {
+    return null
+  }
+
+  return new Date(year, month - 1, day)
+}
+
+function clampMetricValue(value: number) {
+  return Math.max(0, Math.min(100, Math.round(value)))
+}
+
+function normalizeMetricValue(value?: number | null) {
+  return typeof value === 'number' && Number.isFinite(value)
+    ? clampMetricValue(value)
+    : 0
+}
+
+function formatWeekdayLabel(dateValue: string, fallback?: string | null) {
+  if (fallback) {
+    return fallback
+  }
+
+  const date = parseDate(dateValue)
+
+  if (!date) {
+    return dateValue
+  }
+
+  return new Intl.DateTimeFormat('ko-KR', { weekday: 'short' }).format(date)
+}
+
+function formatTimelineDate(dateValue: string) {
+  const date = parseDate(dateValue)
+
+  if (!date) {
+    return dateValue
+  }
+
+  return new Intl.DateTimeFormat('ko-KR', {
+    day: 'numeric',
+    month: 'long',
+    weekday: 'short',
+  }).format(date)
+}
+
+function formatTimelineTime(dateTimeValue?: string | null) {
+  if (!dateTimeValue) {
+    return null
+  }
+
+  const date = new Date(dateTimeValue)
+
+  if (Number.isNaN(date.getTime())) {
+    return null
+  }
+
+  return new Intl.DateTimeFormat('ko-KR', {
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(date)
+}
+
+function formatTimelineTimeRange(startedAt: string, endedAt?: string | null) {
+  const startTime = formatTimelineTime(startedAt)
+  const endTime = formatTimelineTime(endedAt)
+
+  if (startTime && endTime) {
+    return `${startTime} - ${endTime}`
+  }
+
+  return startTime ?? undefined
+}
+
+function mapEmotionIconToKey(
+  emotionIcon?: string | null,
+): DiaryEmotionKey | undefined {
+  const normalized = emotionIcon?.trim().toLowerCase()
+
+  if (!normalized) {
+    return undefined
+  }
+
+  if (
+    ['happy', 'calm', 'excited', 'sad', 'angry', 'tired'].includes(normalized)
+  ) {
+    return normalized as DiaryEmotionKey
+  }
+
+  if (
+    normalized.includes('positive') ||
+    normalized.includes('joy') ||
+    normalized.includes('happy') ||
+    normalized.includes('기쁨') ||
+    normalized.includes('긍정')
+  ) {
+    return 'happy'
+  }
+
+  if (
+    normalized.includes('neutral') ||
+    normalized.includes('calm') ||
+    normalized.includes('평온') ||
+    normalized.includes('보통')
+  ) {
+    return 'calm'
+  }
+
+  if (
+    normalized.includes('excited') ||
+    normalized.includes('신남') ||
+    normalized.includes('흥분')
+  ) {
+    return 'excited'
+  }
+
+  if (normalized.includes('sad') || normalized.includes('슬픔')) {
+    return 'sad'
+  }
+
+  if (normalized.includes('angry') || normalized.includes('분노')) {
+    return 'angry'
+  }
+
+  if (normalized.includes('tired') || normalized.includes('피곤')) {
+    return 'tired'
+  }
+
+  return undefined
+}
+
+function getFallbackPredictionValue(emotionKey?: DiaryEmotionKey) {
+  switch (emotionKey) {
+    case 'happy':
+    case 'excited':
+      return 82
+    case 'calm':
+      return 64
+    case 'sad':
+    case 'tired':
+      return 36
+    case 'angry':
+      return 28
+    default:
+      return 50
+  }
+}
+
+function parsePredictionValue(
+  prediction?: string | null,
+  emotionKey?: DiaryEmotionKey,
+) {
+  const match = prediction?.match(/-?\d+(\.\d+)?/)
+  const parsedValue = match ? Number(match[0]) : Number.NaN
+
+  if (Number.isFinite(parsedValue)) {
+    const normalizedValue =
+      parsedValue > 0 && parsedValue <= 1 ? parsedValue * 100 : parsedValue
+
+    return clampMetricValue(normalizedValue)
+  }
+
+  return getFallbackPredictionValue(emotionKey)
+}
+
+function mapDashboardChartPoints(
+  points: ChildChartPointDto[],
+  warningThreshold?: number,
+): DashboardMetricPoint[] {
+  return points.map((point) => {
+    const value = normalizeMetricValue(point.value)
+
+    return {
+      label: formatWeekdayLabel(point.date, point.dayLabel),
+      value,
+      variant:
+        typeof warningThreshold === 'number' &&
+        typeof point.value === 'number' &&
+        point.value < warningThreshold
+          ? 'warning'
+          : undefined,
+    }
+  })
+}
+
+function createEmptyExpressionAnalysis(): DashboardExpressionAnalysis {
+  return {
+    days: [],
+    insight: '',
+    trend: {
+      all: [],
+      conversation: [],
+      diary: [],
+    },
+  }
+}
+
+function createMockExpressionAnalysis(
+  weekIndex: number,
+  childId: string,
+): DashboardExpressionAnalysis {
+  const currentWeek = expressionWeeks[weekIndex] ?? expressionWeeks[0]
+
+  return {
+    days: currentWeek.days,
+    insight: currentWeek.insight,
+    trend: {
+      all: getWeekAdjustedLineData(currentWeek.trend.all, weekIndex, childId),
+      conversation: getWeekAdjustedLineData(
+        currentWeek.trend.conversation,
+        weekIndex,
+        childId,
+      ),
+      diary: getWeekAdjustedLineData(
+        currentWeek.trend.diary,
+        weekIndex,
+        childId,
+      ),
+    },
+  }
+}
+
+function clampWeekIndex(value: number) {
+  return Math.max(0, Math.min(expressionWeeks.length - 1, value))
+}
+
+function getMockWeekIndex(weekOffset: number) {
+  return clampWeekIndex(DEFAULT_EXPRESSION_WEEK_INDEX + weekOffset)
+}
+
+function getCardsAverageValue(
+  cards: Array<
+    CounselorDiaryAnalysisCardDto | CounselorConversationAnalysisCardDto
+  >,
+) {
+  if (cards.length === 0) {
+    return 0
+  }
+
+  const total = cards.reduce((sum, card) => {
+    const emotionKey =
+      'emotionIcon' in card ? mapEmotionIconToKey(card.emotionIcon) : undefined
+
+    return sum + parsePredictionValue(card.prediction, emotionKey)
+  }, 0)
+
+  return clampMetricValue(total / cards.length)
+}
+
+function mapAnalysisContentToExpressionAnalysis(
+  response: CounselorAnalysisContentResponseDto,
+): DashboardExpressionAnalysis {
+  const dailyGroups = response.dailyGroups ?? []
+  const trend = EXPRESSION_FILTERS.reduce<
+    Record<ExpressionFilter, DashboardMetricPoint[]>
+  >(
+    (nextTrend, filter) => {
+      nextTrend[filter] = dailyGroups.map((group) => {
+        const diaryCards = group.diaryList ?? []
+        const conversationCards = group.conversationList ?? []
+        const cards =
+          filter === 'diary'
+            ? diaryCards
+            : filter === 'conversation'
+              ? conversationCards
+              : [...diaryCards, ...conversationCards]
+        const firstDiaryEmotionKey = mapEmotionIconToKey(
+          diaryCards[0]?.emotionIcon,
+        )
+
+        return {
+          emotionKey:
+            filter !== 'conversation' ? firstDiaryEmotionKey : undefined,
+          label: formatWeekdayLabel(group.date),
+          value: getCardsAverageValue(cards),
+        }
+      })
+
+      return nextTrend
+    },
+    {
+      all: [],
+      conversation: [],
+      diary: [],
+    },
+  )
+
+  let entryId = 0
+  const days = dailyGroups
+    .map<TimelineDay>((group, index) => {
+      const diaryEntries = (group.diaryList ?? []).map<TimelineEntry>(
+        (diary) => {
+          entryId += 1
+
+          return {
+            content:
+              diary.embeddingText ??
+              diary.prediction ??
+              '표현 분석 내용이 없습니다.',
+            emotionKey: mapEmotionIconToKey(diary.emotionIcon),
+            id: entryId,
+            tags: diary.keywords ?? [],
+            type: 'diary',
+          }
+        },
+      )
+      const conversationEntries = (
+        group.conversationList ?? []
+      ).map<TimelineEntry>((conversation) => {
+        entryId += 1
+
+        return {
+          content:
+            conversation.embeddingText ??
+            conversation.prediction ??
+            '대화 분석 내용이 없습니다.',
+          id: entryId,
+          tags: conversation.keywords ?? [],
+          time: formatTimelineTimeRange(
+            conversation.startedAt,
+            conversation.endedAt,
+          ),
+          type: 'conversation',
+        }
+      })
+
+      return {
+        date: formatTimelineDate(group.date),
+        entries: [...diaryEntries, ...conversationEntries],
+        id: index + 1,
+      }
+    })
+    .filter((day) => day.entries.length > 0)
+
+  return {
+    days,
+    insight: response.summary ?? '',
+    trend,
+  }
+}
+
 function useCounselorDashboardState() {
   const accessToken = useAppSessionStore((state) => state.accessToken)
   const isMockMode = useCounselorMockMode()
@@ -101,7 +472,7 @@ function useCounselorDashboardState() {
     isMockMode ? initialChildList : [],
   )
   const [selectedChildId, setSelectedChildId] = useState<string | null>(() =>
-    isMockMode ? initialChildList[0]?.id ?? null : null,
+    isMockMode ? (initialChildList[0]?.id ?? null) : null,
   )
   const [isLoadingChildItems, setIsLoadingChildItems] = useState(!isMockMode)
   const [childItemsError, setChildItemsError] = useState<string>()
@@ -110,35 +481,107 @@ function useCounselorDashboardState() {
   )
   const [isLoadingConnectionRequests, setIsLoadingConnectionRequests] =
     useState(!isMockMode)
-  const [connectionRequestsError, setConnectionRequestsError] = useState<string>()
+  const [connectionRequestsError, setConnectionRequestsError] =
+    useState<string>()
   const [isConnectionModalOpen, setIsConnectionModalOpen] = useState(false)
-  const [weekIndexes, setWeekIndexes] = useState<DashboardWeekIndexes>(
-    INITIAL_DASHBOARD_WEEK_INDEXES,
+  const [weekOffsets, setWeekOffsets] = useState<DashboardWeekOffsets>(
+    INITIAL_DASHBOARD_WEEK_OFFSETS,
   )
+  const [sleepScoreData, setSleepScoreData] = useState<DashboardMetricPoint[]>(
+    () =>
+      isMockMode
+        ? getWeekAdjustedLineData(
+            sleepScoreBars,
+            DEFAULT_EXPRESSION_WEEK_INDEX,
+            initialChildList[0]?.id,
+          )
+        : [],
+  )
+  const [sleepEfficiencyData, setSleepEfficiencyData] = useState<
+    DashboardMetricPoint[]
+  >(() =>
+    isMockMode
+      ? getWeekAdjustedLineData(
+          sleepEfficiency,
+          DEFAULT_EXPRESSION_WEEK_INDEX,
+          initialChildList[0]?.id,
+        )
+      : [],
+  )
+  const [biometricRatioData, setBiometricRatioData] = useState<
+    DashboardMetricPoint[]
+  >(() =>
+    isMockMode
+      ? getWeekAdjustedLineData(
+          biometricRatio,
+          DEFAULT_EXPRESSION_WEEK_INDEX,
+          initialChildList[0]?.id,
+        )
+      : [],
+  )
+  const [autonomicData, setAutonomicData] = useState<DashboardMetricPoint[]>(
+    () =>
+      isMockMode
+        ? getWeekAdjustedLineData(
+            hrvTrend,
+            DEFAULT_EXPRESSION_WEEK_INDEX,
+            initialChildList[0]?.id,
+          )
+        : [],
+  )
+  const [dashboardExpressionAnalysis, setDashboardExpressionAnalysis] =
+    useState<DashboardExpressionAnalysis>(() =>
+      isMockMode
+        ? createMockExpressionAnalysis(
+            DEFAULT_EXPRESSION_WEEK_INDEX,
+            initialChildList[0]?.id ?? 'mock-child-1',
+          )
+        : createEmptyExpressionAnalysis(),
+    )
+  const [isLoadingDashboardMetrics, setIsLoadingDashboardMetrics] =
+    useState(!isMockMode)
+  const [dashboardMetricsError, setDashboardMetricsError] = useState<string>()
   const [analysisCardHeight, setAnalysisCardHeight] = useState<number>()
-  const [selectedObservation, setSelectedObservation] = useState<ObservationRecord | null>(null)
-  const [observationComments, setObservationComments] = useState(initialObservationComments)
+  const [selectedObservation, setSelectedObservation] =
+    useState<ObservationRecord | null>(null)
+  const [observationComments, setObservationComments] = useState(
+    initialObservationComments,
+  )
   const mainColumnRef = useRef<HTMLDivElement | null>(null)
 
   const getWeekControls = (section: DashboardWeekSection) => {
-    const weekIndex = weekIndexes[section]
-    const currentWeek = expressionWeeks[weekIndex]
+    const weekOffset = weekOffsets[section]
+    const mockWeekIndex = getMockWeekIndex(weekOffset)
+    const weekRange = getWeekRangeByOffset(weekOffset, {
+      baseDateStrategy: 'end',
+      clampEndDateToToday: true,
+    })
+    const currentWeek = isMockMode ? expressionWeeks[mockWeekIndex] : weekRange
+    const minMockWeekOffset = -DEFAULT_EXPRESSION_WEEK_INDEX
+    const maxMockWeekOffset =
+      expressionWeeks.length - 1 - DEFAULT_EXPRESSION_WEEK_INDEX
 
     return {
-      weekIndex,
+      weekIndex: isMockMode ? mockWeekIndex : weekOffset,
       currentWeek,
-      isFirstWeek: weekIndex === 0,
-      isLastWeek: weekIndex === expressionWeeks.length - 1,
+      isFirstWeek: isMockMode ? mockWeekIndex === 0 : false,
+      isLastWeek: isMockMode
+        ? mockWeekIndex === expressionWeeks.length - 1
+        : weekOffset >= 0,
       goPrevWeek: () => {
-        setWeekIndexes((current) => ({
+        setWeekOffsets((current) => ({
           ...current,
-          [section]: Math.max(0, current[section] - 1),
+          [section]: isMockMode
+            ? Math.max(minMockWeekOffset, current[section] - 1)
+            : current[section] - 1,
         }))
       },
       goNextWeek: () => {
-        setWeekIndexes((current) => ({
+        setWeekOffsets((current) => ({
           ...current,
-          [section]: Math.min(expressionWeeks.length - 1, current[section] + 1),
+          [section]: isMockMode
+            ? Math.min(maxMockWeekOffset, current[section] + 1)
+            : Math.min(0, current[section] + 1),
         }))
       },
     }
@@ -151,27 +594,41 @@ function useCounselorDashboardState() {
   const biometricRatioWeek = getWeekControls('biometricRatio')
   const autonomicWeek = getWeekControls('autonomic')
   const currentObservationRecords =
-    selectedChildId ? observationRecordsByWeek[observationWeek.currentWeek.id] ?? [] : []
+    selectedChildId && isMockMode
+      ? (observationRecordsByWeek[observationWeek.currentWeek.id] ?? [])
+      : []
   const selectedChildProfile =
-    childItems.find((child) => child.id === selectedChildId) ?? childItems[0] ?? null
+    childItems.find((child) => child.id === selectedChildId) ??
+    childItems[0] ??
+    null
   const selectedObservationComment = selectedObservation
-    ? observationComments[selectedObservation.reportId] ?? null
+    ? (observationComments[selectedObservation.reportId] ?? null)
     : null
 
   const handleSelectChild = (childId: string) => {
     setSelectedChildId(childId)
     setSelectedObservation(null)
-    setWeekIndexes(INITIAL_DASHBOARD_WEEK_INDEXES)
+    setWeekOffsets(INITIAL_DASHBOARD_WEEK_OFFSETS)
   }
 
-  const handleSaveObservationComment = (record: ObservationRecord, context: string) => {
+  const handleSaveObservationComment = (
+    record: ObservationRecord,
+    context: string,
+  ) => {
     setObservationComments((current) => ({
       ...current,
-      [record.reportId]: createMockComment(record.id, context, new Date().toISOString()),
+      [record.reportId]: createMockComment(
+        record.id,
+        context,
+        new Date().toISOString(),
+      ),
     }))
   }
 
-  const handleDeleteObservationComment = (reportId: string, commentId: string) => {
+  const handleDeleteObservationComment = (
+    reportId: string,
+    commentId: string,
+  ) => {
     void commentId
 
     setObservationComments((current) => ({
@@ -210,7 +667,7 @@ function useCounselorDashboardState() {
       setSelectedChildId((current) =>
         current && nextChildItems.some((child) => child.id === current)
           ? current
-          : nextChildItems[0]?.id ?? null,
+          : (nextChildItems[0]?.id ?? null),
       )
       setSelectedObservation(null)
     } catch (error) {
@@ -266,6 +723,151 @@ function useCounselorDashboardState() {
     }
   }, [accessToken, isMockMode])
 
+  const loadDashboardMetrics = useCallback(async () => {
+    const currentChildId =
+      selectedChildId ?? initialChildList[0]?.id ?? 'mock-child-1'
+
+    if (isMockMode) {
+      setSleepScoreData(
+        getWeekAdjustedLineData(
+          sleepScoreBars,
+          getMockWeekIndex(weekOffsets.sleepScore),
+          currentChildId,
+        ),
+      )
+      setSleepEfficiencyData(
+        getWeekAdjustedLineData(
+          sleepEfficiency,
+          getMockWeekIndex(weekOffsets.sleepEfficiency),
+          currentChildId,
+        ),
+      )
+      setBiometricRatioData(
+        getWeekAdjustedLineData(
+          biometricRatio,
+          getMockWeekIndex(weekOffsets.biometricRatio),
+          currentChildId,
+        ),
+      )
+      setAutonomicData(
+        getWeekAdjustedLineData(
+          hrvTrend,
+          getMockWeekIndex(weekOffsets.autonomic),
+          currentChildId,
+        ),
+      )
+      setDashboardExpressionAnalysis(
+        createMockExpressionAnalysis(
+          getMockWeekIndex(weekOffsets.expression),
+          currentChildId,
+        ),
+      )
+      setDashboardMetricsError(undefined)
+      setIsLoadingDashboardMetrics(false)
+      return
+    }
+
+    if (!accessToken || !selectedChildId) {
+      setSleepScoreData([])
+      setSleepEfficiencyData([])
+      setBiometricRatioData([])
+      setAutonomicData([])
+      setDashboardExpressionAnalysis(createEmptyExpressionAnalysis())
+      setDashboardMetricsError(undefined)
+      setIsLoadingDashboardMetrics(false)
+      return
+    }
+
+    const weekRangeOptions = {
+      baseDateStrategy: 'end' as const,
+      clampEndDateToToday: true,
+    }
+    const sleepScoreRange = getWeekRangeByOffset(
+      weekOffsets.sleepScore,
+      weekRangeOptions,
+    )
+    const sleepEfficiencyRange = getWeekRangeByOffset(
+      weekOffsets.sleepEfficiency,
+      weekRangeOptions,
+    )
+    const biometricRatioRange = getWeekRangeByOffset(
+      weekOffsets.biometricRatio,
+      weekRangeOptions,
+    )
+    const autonomicRange = getWeekRangeByOffset(
+      weekOffsets.autonomic,
+      weekRangeOptions,
+    )
+    const expressionRange = getWeekRangeByOffset(
+      weekOffsets.expression,
+      weekRangeOptions,
+    )
+
+    try {
+      setIsLoadingDashboardMetrics(true)
+      setDashboardMetricsError(undefined)
+
+      const [
+        sleepScores,
+        sleepEfficiencies,
+        hrAccRatios,
+        rmssds,
+        analysisContent,
+      ] = await Promise.all([
+        getChildSleepScores({
+          accessToken,
+          baseDate: sleepScoreRange.baseDate,
+          childrenId: selectedChildId,
+        }),
+        getChildSleepEfficiencies({
+          accessToken,
+          baseDate: sleepEfficiencyRange.baseDate,
+          childrenId: selectedChildId,
+        }),
+        getChildHrAccRatios({
+          accessToken,
+          baseDate: biometricRatioRange.baseDate,
+          childrenId: selectedChildId,
+        }),
+        getChildRmssds({
+          accessToken,
+          baseDate: autonomicRange.baseDate,
+          childrenId: selectedChildId,
+        }),
+        getCounselorAnalysisContent({
+          accessToken,
+          childId: selectedChildId,
+          endDate: expressionRange.endDate,
+          startDate: expressionRange.startDate,
+        }),
+      ])
+
+      setSleepScoreData(mapDashboardChartPoints(sleepScores.contents ?? [], 60))
+      setSleepEfficiencyData(
+        mapDashboardChartPoints(sleepEfficiencies.contents ?? []),
+      )
+      setBiometricRatioData(mapDashboardChartPoints(hrAccRatios.contents ?? []))
+      setAutonomicData(mapDashboardChartPoints(rmssds.contents ?? []))
+      setDashboardExpressionAnalysis(
+        mapAnalysisContentToExpressionAnalysis(analysisContent),
+      )
+    } catch (error) {
+      console.error(error)
+      setSleepScoreData([])
+      setSleepEfficiencyData([])
+      setBiometricRatioData([])
+      setAutonomicData([])
+      setDashboardExpressionAnalysis(createEmptyExpressionAnalysis())
+      setDashboardMetricsError(
+        error instanceof Error
+          ? error.message
+          : '상담사 대시보드 분석 데이터를 불러오지 못했습니다.',
+      )
+    } finally {
+      setIsLoadingDashboardMetrics(false)
+    }
+  }, [accessToken, isMockMode, selectedChildId, weekOffsets])
+
   const handleAcceptConnectionRequest = async (
     request: CounselorConnectionRequest,
   ) => {
@@ -276,9 +878,13 @@ function useCounselorDashboardState() {
       }
 
       setChildItems((current) =>
-        [acceptedChild, ...current.filter((child) => child.id !== acceptedChild.id)].sort(
+        [
+          acceptedChild,
+          ...current.filter((child) => child.id !== acceptedChild.id),
+        ].sort(
           (first, second) =>
-            new Date(second.registeredAt).getTime() - new Date(first.registeredAt).getTime(),
+            new Date(second.registeredAt).getTime() -
+            new Date(first.registeredAt).getTime(),
         ),
       )
       setConnectionRequests((current) =>
@@ -339,6 +945,14 @@ function useCounselorDashboardState() {
   }, [loadConnectionRequests])
 
   useEffect(() => {
+    const timeoutId = window.setTimeout(() => {
+      void loadDashboardMetrics()
+    }, 0)
+
+    return () => window.clearTimeout(timeoutId)
+  }, [loadDashboardMetrics])
+
+  useEffect(() => {
     const columnElement = mainColumnRef.current
 
     if (!columnElement) return undefined
@@ -351,7 +965,9 @@ function useCounselorDashboardState() {
         return
       }
 
-      setAnalysisCardHeight(Math.round(columnElement.getBoundingClientRect().height))
+      setAnalysisCardHeight(
+        Math.round(columnElement.getBoundingClientRect().height),
+      )
     }
 
     updateAnalysisHeight()
@@ -368,13 +984,17 @@ function useCounselorDashboardState() {
 
   return {
     analysisCardHeight,
+    autonomicData,
     autonomicWeek,
+    biometricRatioData,
     biometricRatioWeek,
     childItems,
     childItemsError,
     connectionRequests,
     connectionRequestsError,
     currentObservationRecords,
+    dashboardExpressionAnalysis,
+    dashboardMetricsError,
     expressionWeek,
     handleAcceptConnectionRequest,
     handleDeleteObservationComment,
@@ -382,6 +1002,7 @@ function useCounselorDashboardState() {
     handleSaveObservationComment,
     handleSelectChild,
     isLoadingConnectionRequests,
+    isLoadingDashboardMetrics,
     isConnectionModalOpen,
     isLoadingChildItems,
     isSidebarCollapsed,
@@ -395,7 +1016,9 @@ function useCounselorDashboardState() {
     setIsConnectionModalOpen,
     setIsSidebarCollapsed,
     setSelectedObservation,
+    sleepEfficiencyData,
     sleepEfficiencyWeek,
+    sleepScoreData,
     sleepScoreWeek,
     canRejectConnectionRequests: isMockMode,
   }
