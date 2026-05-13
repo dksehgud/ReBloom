@@ -53,28 +53,6 @@ class Settings(BaseSettings):
     # ---------- 연결/타임아웃 ----------
     LLM_TIMEOUT: float = Field(default=30.0, description="LLM API 호출 타임아웃 (초)")
 
-    # ---------- GPS 위치 판단 ----------
-    AUTH_SERVICE_BASE_URL: str = Field(
-        default="http://localhost:8081",
-        description="auth-service base URL",
-    )
-    AUTH_SERVICE_LOCATION_PATH: str = Field(
-        default="/api/v1/internal/children/{user_id}/target-location",
-        description="auth-service internal child GPS path template",
-    )
-    AUTH_SERVICE_TIMEOUT: float = Field(
-        default=3.0,
-        description="auth-service HTTP timeout seconds",
-    )
-    LOCATION_RADIUS_METERS: float = Field(
-        default=100.0,
-        description="location trigger radius in meters",
-    )
-    LOCATION_DEVICE_ID: str = Field(
-        default="rpi-001",
-        description="target Raspberry Pi device id for location trigger",
-    )
-
     # ---------- MQTT 브로커 설정 ----------
     MQTT_HOST: str = Field(default="localhost", description="MQTT broker host")
     MQTT_PORT: int = Field(default=7000, description="MQTT broker external port")
@@ -87,10 +65,6 @@ class Settings(BaseSettings):
     MQTT_TOPIC_CONVERSATION_START: str = Field(
         default="devices/{device_id}/conversation/start",
         description="대화 시작 명령용 topic template",
-    )
-    MQTT_TOPIC_LOCATION_SIGNAL: str = Field(
-        default="devices/{device_id}/location/trigger",
-        description="location trigger topic template",
     )
 
 
