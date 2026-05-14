@@ -1,5 +1,8 @@
 image: docker:24.0.5
 
+include:
+  - local: "Infra/setting/.gitlab-ci-fe.yml"
+
 services:
   - docker:24.0.5-dind
 
@@ -18,12 +21,15 @@ variables:
 stages:
   - build
   - docker-push
+  - web-deploy
 
 workflow:
   rules:
     - if: '$CI_COMMIT_BRANCH == "develop"'
       changes:
         - "BE/**/*"
+        - "FE/web/**/*"
+        - "FE/mobile-app/**/*"
     - when: never
 
 cache:
