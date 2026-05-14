@@ -1,0 +1,28 @@
+<!-- AndroidManifest.xml — BLE Provisioning 권한 스니펫 -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- ─── BLE 권한 ──────────────────────────────────── -->
+
+    <!-- Android 12+ (API 31+) -->
+    <uses-permission
+        android:name="android.permission.BLUETOOTH_SCAN"
+        android:usesPermissionFlags="neverForLocation"
+        android:required="false" />
+    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+
+    <!-- Android 11 이하 (API 30-) -->
+    <uses-permission android:name="android.permission.BLUETOOTH"
+        android:maxSdkVersion="30" />
+    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN"
+        android:maxSdkVersion="30" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"
+        android:maxSdkVersion="30" />
+
+    <!-- 현재 연결된 Wi-Fi SSID 읽기 (자동 입력 기능) -->
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
+    <!-- BLE 필수 기능 선언 -->
+    <uses-feature android:name="android.hardware.bluetooth_le" android:required="true" />
+
+</manifest>
