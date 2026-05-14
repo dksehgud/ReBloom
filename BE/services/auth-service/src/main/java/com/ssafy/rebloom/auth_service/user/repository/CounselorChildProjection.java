@@ -8,5 +8,11 @@ public interface CounselorChildProjection {
 
     String getName();
 
+    String getBirth();
+
+    String getGender();
+
+    String getParentName();
+
     String getCounselingStatus();
 }

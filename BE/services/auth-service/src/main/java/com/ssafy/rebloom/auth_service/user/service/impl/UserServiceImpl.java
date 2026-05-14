@@ -564,6 +564,9 @@ public class UserServiceImpl implements UserService {
         return new CounselorChildResponseDto(
             projection.getChildrenId(),
             projection.getName(),
+            calculateAge(projection.getBirth()),
+            projection.getGender(),
+            projection.getParentName(),
             projection.getCounselingStatus()
         );
     }
