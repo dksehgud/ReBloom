@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- BLE Provisioning 화면 전용 색상 — 기존 colors.xml과 이름 충돌 없음 -->
+<resources>
+    <color name="ble_accent_primary">#4361EE</color>
+    <color name="ble_accent_secondary">#6C757D</color>
+    <color name="ble_bg_primary">#F8F9FA</color>
+    <color name="ble_text_primary">#1A1A2E</color>
+    <color name="ble_text_secondary">#6C757D</color>
+</resources>

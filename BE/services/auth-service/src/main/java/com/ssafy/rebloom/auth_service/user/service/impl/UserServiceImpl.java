@@ -564,6 +564,9 @@ public class UserServiceImpl implements UserService {
         return new CounselorChildResponseDto(
             projection.getChildrenId(),
             projection.getName(),
+            calculateAge(projection.getBirth()),
+            normalizeGender(projection.getGender()),
+            projection.getParentName(),
             projection.getCounselingStatus()
         );
     }
@@ -606,8 +609,16 @@ public class UserServiceImpl implements UserService {
     }
 
     private Integer calculateAge(String birth) {
+        if (birth == null || birth.isBlank()) {
+            return null;
+        }
+
         LocalDate birthDate = parseBirthDate(birth);
         return Period.between(birthDate, LocalDate.now()).getYears();
+    }
+
+    private String normalizeGender(String gender) {
+        return gender == null || gender.isBlank() ? null : gender;
     }
 
     private LocalDate parseBirthDate(String birth) {

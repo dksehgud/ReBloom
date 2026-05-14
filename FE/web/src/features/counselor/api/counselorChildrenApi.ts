@@ -9,6 +9,9 @@ type BaseResponse<T> = {
 type CounselorChildResponseDto = {
   childrenId: string
   name: string
+  age?: number | null
+  gender?: string | null
+  parentName?: string | null
   counselingStatus: string
 }
 
