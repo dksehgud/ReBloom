@@ -8,6 +8,7 @@ import com.ssafy.rebloom.notification_service.dto.RealtimeNotificationMessage;
 import com.ssafy.rebloom.notification_service.repository.SseEmitterRepository;
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -43,6 +44,16 @@ public class NotificationSseService {
 
     public void send(RealtimeNotificationMessage message) {
         sendToUser(message.receiverId(), "notification", message);
+    }
+
+    public void sendHeartbeat() {
+        Map<UUID, List<SseEmitter>> emittersByUserId = sseEmitterRepository.findAll();
+
+        emittersByUserId.forEach((userId, emitters) -> {
+            for (SseEmitter emitter : emitters) {
+                sendToEmitter(userId, emitter, "ping", "pong");
+            }
+        });
     }
 
     private void sendToUser(UUID userId, String eventName, Object data) {

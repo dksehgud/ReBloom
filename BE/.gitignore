@@ -20,6 +20,7 @@ docker-compose.local.yml
 !**/.env.prod.example
 *.local
 
+**/resources/firebase/*.json
 
 # IntelliJ IDEA
 .idea/

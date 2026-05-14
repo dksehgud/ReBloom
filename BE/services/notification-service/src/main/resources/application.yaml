@@ -48,5 +48,5 @@ rebloom:
     conversation-start-topic-template: ${MQTT_CONVERSATION_START_TOPIC_TEMPLATE:devices/%s/conversation/start}
 
   firebase:
-    service-account-path: ${FIREBASE_SERVICE_ACCOUNT_PATH:}
+    service-account-path: ${FIREBASE_SERVICE_ACCOUNT_PATH:file:/app/resources/firebase/firebase-service-account.json}
     dry-run: ${FCM_DRY_RUN:false}

@@ -14,9 +14,9 @@ public final class Constants {
 
     public static final String ONLINE_KEY_PREFIX = "online:user:";
 
-    public static final long ONLINE_TTL = 60L;
     public static final String CHANNEL = "notification:events";
-
+    public static final long SSE_HEARTBEAT_INTERVAL_MS = 30_000L;
+    public static final long ONLINE_TTL = 90L;
     public static final long SSE_TIMEOUT = 30L * 60L * 1000L;
 
     public static final ZoneId SEOUL_ZONE_ID = ZoneId.of("Asia/Seoul");

@@ -1,0 +1,57 @@
+# Build FE/web once and pass the dist artifact to deploy-web.
+build-web:
+  image: node:22-alpine
+  stage: build
+  tags:
+    - rebloom-dev
+  services: [ ]
+  script:
+    - echo "----- FE web build start -----"
+    - cd FE/web
+    - npm ci
+    - npm run build
+  artifacts:
+    paths:
+      - FE/web/dist/
+    expire_in: 1 hour
+  rules:
+    - changes:
+        - "FE/web/**/*"
+
+deploy-web:
+  image: node:22-alpine
+  stage: web-deploy
+  tags:
+    - rebloom-dev
+  services: [ ]
+  needs:
+    - job: build-web
+      artifacts: true
+  before_script:
+    - apk add --no-cache aws-cli
+  script:
+    - echo "----- FE web deploy start -----"
+    - aws s3 sync FE/web/dist "s3://${DEPLOY_S3_BUCKET}" --delete
+    - aws cloudfront create-invalidation --distribution-id "${CLOUDFRONT_DISTRIBUTION_ID}" --paths "/*"
+  rules:
+    - changes:
+        - "FE/web/**/*"
+
+build-mobile-apk:
+  image: ghcr.io/cirruslabs/android-sdk:36
+  stage: build
+  tags:
+    - rebloom-dev
+  services: [ ]
+  script:
+    - echo "----- FE mobile debug APK build start -----"
+    - cd FE/mobile-app
+    - chmod +x ./gradlew
+    - ./gradlew :app:assembleDebug --no-daemon -PWEB_APP_BASE_URL="${MOBILE_WEB_APP_BASE_URL}" -PAPI_BASE_URL="${MOBILE_API_BASE_URL}" -PDIARY_ANALYSIS_API_URL="${MOBILE_DIARY_ANALYSIS_API_URL}"
+  artifacts:
+    paths:
+      - FE/mobile-app/app/build/outputs/apk/debug/*.apk
+    expire_in: 7 days
+  rules:
+    - changes:
+        - "FE/mobile-app/**/*"

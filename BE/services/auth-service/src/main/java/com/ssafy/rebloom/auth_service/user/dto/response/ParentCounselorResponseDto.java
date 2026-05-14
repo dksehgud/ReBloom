@@ -10,9 +10,10 @@ public record ParentCounselorResponseDto(
     UUID counselorId,
     String name,
     String email,
+    String hospitalName,
     RelationStatus relationStatus
 ) {
     public static ParentCounselorResponseDto disconnected() {
-        return new ParentCounselorResponseDto(null, null, null, null);
+        return new ParentCounselorResponseDto(null, null, null, null, null);
     }
 }

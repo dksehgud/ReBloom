@@ -6,6 +6,7 @@ import com.ssafy.rebloom.auth_service.user.dto.request.ParentConnectRequestDto;
 import com.ssafy.rebloom.auth_service.user.dto.request.PasswordChangeRequestDto;
 import com.ssafy.rebloom.auth_service.user.dto.request.UserCreateRequestDto;
 import com.ssafy.rebloom.auth_service.user.dto.request.UserUpdateRequestDto;
+import com.ssafy.rebloom.auth_service.user.dto.response.ChildConnectedCounselorResponseDto;
 import com.ssafy.rebloom.auth_service.user.dto.response.ChildConnectedParentResponseDto;
 import com.ssafy.rebloom.auth_service.user.dto.response.CounselorChildrenResponseDto;
 import com.ssafy.rebloom.auth_service.user.dto.response.CounselorParentRelationResponseDto;
@@ -51,6 +52,8 @@ public interface UserService {
     ParentConnectedChildResponseDto getConnectedChildByParent(UUID parentId);
 
     ChildConnectedParentResponseDto getConnectedParentByChild(UUID childrenId);
+
+    ChildConnectedCounselorResponseDto getConnectedCounselorByChild(UUID childrenId);
 
     ParentSummaryResponseDto getParentByEmail(String email);
 
