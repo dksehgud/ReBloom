@@ -12,9 +12,6 @@ import org.springframework.data.repository.query.Param;
 
 public interface BiometricRepository extends JpaRepository<Biometric, BiometricId> {
 
-    @Query("SELECT DISTINCT b.id.userId FROM Biometric b")
-    List<UUID> findDistinctUserIds();
-
     @Query("SELECT b FROM Biometric b " +
         "WHERE b.id.userId = :userId " +
         "AND b.id.tsStart BETWEEN :from AND :to " +

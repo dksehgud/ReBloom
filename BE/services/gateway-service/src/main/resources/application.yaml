@@ -25,6 +25,7 @@ spring:
             allowedOrigins:
               - "${FRONTEND_URL:http://localhost:5173}"
               - "${FRONTEND_REDIRECT_URL:http://localhost:3000}"
+              - "${FRONTEND_WEBVIEW_URL:http://10.0.2.2:5174}"
               # TODO: 배포 주소 추가
             allowedMethods:
               - GET

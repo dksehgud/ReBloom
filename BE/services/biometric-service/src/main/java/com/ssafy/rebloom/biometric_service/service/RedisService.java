@@ -1,6 +1,7 @@
 package com.ssafy.rebloom.biometric_service.service;
 
 import java.time.Duration;
+import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
@@ -18,6 +19,10 @@ public class RedisService {
 
     public String get(String key) {
         return redisTemplate.opsForValue().get(key);
+    }
+
+    public Set<String> keys(String pattern) {
+        return redisTemplate.keys(pattern);
     }
 
     public void set(String key, String value) {
