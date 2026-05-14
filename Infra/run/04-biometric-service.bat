@@ -5,3 +5,4 @@ call "%ROOT_DIR%\BE\gradlew.bat" -p "%ROOT_DIR%\BE" :services:biometric-service:
 docker compose -f "BE\docker-compose.yml" --profile infra --profile app up -d --build biometric-service
 echo Done.
 exit /b 0
+
