@@ -8,6 +8,7 @@ import android.location.LocationListener
 import android.location.LocationManager
 import android.os.Bundle
 import android.os.Looper
+import android.util.Log
 import androidx.core.content.ContextCompat
 import com.rebloom.watch.model.LocationData
 
@@ -22,10 +23,18 @@ class LocationSensor(
     var onLocationReceived: ((LocationData) -> Unit)? = null
 
     fun connect() {
-        if (!hasLocationPermission()) return
+        Log.d(TAG, "connect() called")
+        if (!hasLocationPermission()) {
+            Log.e(TAG, "Location permission is not granted")
+            return
+        }
 
         val locationListener = object : LocationListener {
             override fun onLocationChanged(location: Location) {
+                Log.d(
+                    TAG,
+                    "Location changed: provider=${location.provider}, lat=${location.latitude}, lon=${location.longitude}, accuracy=${location.accuracy}"
+                )
                 onLocationReceived?.invoke(
                     LocationData(
                         timestamp = location.time.takeIf { it > 0 } ?: System.currentTimeMillis(),
@@ -47,16 +56,31 @@ class LocationSensor(
         requestUpdates(LocationManager.GPS_PROVIDER, locationListener)
         requestUpdates(LocationManager.NETWORK_PROVIDER, locationListener)
 
-        getBestLastKnownLocation()?.let(locationListener::onLocationChanged)
+        val lastKnownLocation = getBestLastKnownLocation()
+        if (lastKnownLocation == null) {
+            Log.d(TAG, "No last known location")
+        } else {
+            Log.d(TAG, "Using last known location from ${lastKnownLocation.provider}")
+            locationListener.onLocationChanged(lastKnownLocation)
+        }
     }
 
     fun disconnect() {
+        Log.d(TAG, "disconnect() called")
         listener?.let { locationManager.removeUpdates(it) }
         listener = null
     }
 
     private fun requestUpdates(provider: String, listener: LocationListener) {
-        if (!hasLocationPermission() || !locationManager.isProviderEnabled(provider)) return
+        if (!hasLocationPermission()) {
+            Log.e(TAG, "Cannot request $provider updates: permission is not granted")
+            return
+        }
+
+        if (!locationManager.isProviderEnabled(provider)) {
+            Log.e(TAG, "Cannot request $provider updates: provider is disabled")
+            return
+        }
 
         try {
             locationManager.requestLocationUpdates(
@@ -66,9 +90,12 @@ class LocationSensor(
                 listener,
                 Looper.getMainLooper()
             )
+            Log.d(TAG, "Requested $provider updates")
         } catch (_: SecurityException) {
+            Log.e(TAG, "Cannot request $provider updates: security exception")
             return
-        } catch (_: IllegalArgumentException) {
+        } catch (error: IllegalArgumentException) {
+            Log.e(TAG, "Cannot request $provider updates: ${error.message}")
             return
         }
     }
@@ -99,12 +126,14 @@ class LocationSensor(
             Manifest.permission.ACCESS_COARSE_LOCATION
         ) == PackageManager.PERMISSION_GRANTED
 
+        Log.d(TAG, "Location permission fine=$fineGranted, coarse=$coarseGranted")
         return fineGranted || coarseGranted
     }
 
     companion object {
-        private const val LOCATION_INTERVAL_MS = 60_000L
-        private const val LOCATION_MIN_DISTANCE_METERS = 10f
+        private const val TAG = "LocationSensor"
+        private const val LOCATION_INTERVAL_MS = 10_000L
+        private const val LOCATION_MIN_DISTANCE_METERS = 0f
     }
 }
 

@@ -15,6 +15,7 @@ from app.core.config import settings
 from app.schemas.location import LocationEvaluateRequest, LocationEvaluateResponse
 from app.services.auth_location_client import (
     AuthLocationClientError,
+    AuthLocationInvalidResponseError,
     fetch_user_target_location,
 )
 from app.services.location_judgement import Coordinate, is_within_target_location
@@ -42,6 +43,8 @@ async def evaluate_location(
 
     try:
         target = await fetch_user_target_location(request.user_id)
+    except AuthLocationInvalidResponseError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
     except AuthLocationClientError as exc:
         raise HTTPException(status_code=502, detail=str(exc)) from exc
 

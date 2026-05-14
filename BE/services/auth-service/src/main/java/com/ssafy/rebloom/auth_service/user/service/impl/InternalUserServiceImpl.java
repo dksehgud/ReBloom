@@ -41,10 +41,20 @@ public class InternalUserServiceImpl implements InternalUserService {
             );
         }
 
+        Device device = deviceRepository.findByChildrenIdAndDeviceType(
+                childId,
+                DeviceType.IOT
+            )
+            .orElseThrow(() -> new CustomException(
+                "Child IOT device not found.",
+                ErrorCode.NOT_FOUND
+            ));
+
         return new ChildGpsResponseDto(
             children.getId(),
             children.getLatitude().setScale(10, java.math.RoundingMode.HALF_UP),
-            children.getLongitude().setScale(10, java.math.RoundingMode.HALF_UP)
+            children.getLongitude().setScale(10, java.math.RoundingMode.HALF_UP),
+            device.getSerialNumber()
         );
     }
 
