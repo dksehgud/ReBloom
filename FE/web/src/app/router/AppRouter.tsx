@@ -30,6 +30,10 @@ import { consumeOAuthIntent, saveOAuthIntent } from '../../features/auth/oauth/o
 import { useAppSessionStore } from '../../features/auth/store/useAppSessionStore'
 import { isCounselorMockModeSearch } from '../../features/counselor/hooks/useCounselorMockMode'
 import { useSelectedChildStore } from '../../features/student/store/useSelectedChildStore'
+import {
+  getChildConnectedCounselor,
+  type ChildConnectedCounselor,
+} from '../../features/user/api/childRelationApi'
 import type { ChildAddress } from '../../shared/types/childAddress'
 import {
   clearNativeAccessToken,
@@ -383,6 +387,8 @@ function ChildSettingsRoute() {
   const clearSession = useAppSessionStore((state) => state.clearSession)
   const currentUser = useAppSessionStore((state) => state.currentUser)
   const setCurrentUser = useAppSessionStore((state) => state.setCurrentUser)
+  const [connectedCounselor, setConnectedCounselor] =
+    useState<ChildConnectedCounselor | null>(null)
   const clearSelectedChild = useSelectedChildStore(
     (state) => state.clearSelectedChild,
   )
@@ -399,6 +405,17 @@ function ChildSettingsRoute() {
     })
   }, [accessToken, clearSession, currentUser, navigate, setCurrentUser])
 
+  useEffect(() => {
+    if (!accessToken) {
+      setConnectedCounselor(null)
+      return
+    }
+
+    void getChildConnectedCounselor(accessToken)
+      .then(setConnectedCounselor)
+      .catch(() => setConnectedCounselor(null))
+  }, [accessToken])
+
   const childProfileAddress: ChildAddress = {
     baseAddress: currentUser?.address ?? profileAddress.baseAddress,
     detailAddress: currentUser?.addressDetail ?? profileAddress.detailAddress,
@@ -412,6 +429,14 @@ function ChildSettingsRoute() {
         profileAddress={childProfileAddress}
         profileEmail={currentUser?.email ?? ''}
         profileName={currentUser?.name ?? ''}
+        counselorName={
+          connectedCounselor?.connected
+            ? `${connectedCounselor.name ?? ''} 상담사`.trim()
+            : null
+        }
+        counselorSubtitle={
+          connectedCounselor?.connected ? connectedCounselor.email : null
+        }
         onBack={() => navigate('/child/diary')}
         onLogout={() => {
           clearSession()

@@ -109,6 +109,15 @@ public class UserRelationController {
         return ResponseEntity.ok(BaseResponse.success("연결된 부모 조회 성공", response));
     }
 
+    @GetMapping("/children/counselor")
+    @PreAuthorize("hasRole('CHILDREN')")
+    public ResponseEntity<BaseResponse<ChildConnectedCounselorResponseDto>> getConnectedCounselorByChild(
+        @LoginUserId UUID childrenId
+    ) {
+        ChildConnectedCounselorResponseDto response = userService.getConnectedCounselorByChild(childrenId);
+        return ResponseEntity.ok(BaseResponse.success("연결된 상담사 조회 성공", response));
+    }
+
     @GetMapping("/parents/search")
     public ResponseEntity<BaseResponse<ParentSummaryResponseDto>> getParentByEmail(
         @RequestParam String email

@@ -17,10 +17,13 @@ public interface ParentCounselorRelationRepository extends JpaRepository<ParentC
         SELECT pcr.counselor_id AS "counselorId",
                u.name AS "name",
                u.email AS "email",
+               c.hospital_name AS "hospitalName",
                pcr.relation_status AS "relationStatus"
         FROM parent_counselor_relations pcr
         JOIN users u
           ON u.id = pcr.counselor_id
+        JOIN counselors c
+          ON c.id = pcr.counselor_id
         WHERE pcr.parent_id = :parentId
           AND pcr.relation_status IN ('ACTIVE', 'PENDING')
         ORDER BY

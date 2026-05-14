@@ -5,8 +5,10 @@ import com.ssafy.rebloom.auth_service.user.domain.enums.RelationStatus;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -59,6 +61,12 @@ public interface ChildrenCounselorRelationRepository extends JpaRepository<Child
 
     boolean existsByCounselor_IdAndChildren_IdAndRelationStatus(
         UUID counselorId,
+        UUID childrenId,
+        RelationStatus relationStatus
+    );
+
+    @EntityGraph(attributePaths = "counselor")
+    Optional<ChildrenCounselorRelation> findFirstByChildren_IdAndRelationStatus(
         UUID childrenId,
         RelationStatus relationStatus
     );

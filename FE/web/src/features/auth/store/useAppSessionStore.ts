@@ -44,7 +44,7 @@ export const useAppSessionStore = create<AppSessionState>()(
     }),
     {
       name: SESSION_STORAGE_KEY,
-      storage: createJSONStorage(() => localStorage),
+      storage: createJSONStorage(() => sessionStorage),
     },
   ),
 )
