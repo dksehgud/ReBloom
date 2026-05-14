@@ -1,6 +1,9 @@
 package com.ssafy.rebloom.auth_service.user.service.impl;
 
 import com.ssafy.rebloom.auth_service.auth.constants.Constants;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ssafy.rebloom.auth_service.auth.dto.OAuth2SignupInfo;
 import com.ssafy.rebloom.auth_service.user.domain.entity.*;
 import com.ssafy.rebloom.auth_service.user.domain.enums.RelationStatus;
 import com.ssafy.rebloom.auth_service.user.domain.enums.UserRole;
@@ -46,9 +49,11 @@ public class UserServiceImpl implements UserService {
     private final ChildrenParentRelationRepository childrenParentRelationRepository;
     private final ChildrenCounselorRelationRepository childrenCounselorRelationRepository;
     private final ParentCounselorRelationRepository parentCounselorRelationRepository;
+    private final SocialUserRepository socialUserRepository;
 
     private final RedisService redisService;
     private final PasswordEncoder passwordEncoder;
+    private final ObjectMapper objectMapper;
 
     @Override
     public boolean isAlreadyExistsEmail(String email) {
@@ -64,13 +69,23 @@ public class UserServiceImpl implements UserService {
 
         String registerUUID = userCreateRequestDto.registerUUID();
         boolean isSocialSignup = StringUtils.hasText(registerUUID);
+        OAuth2SignupInfo oauth2SignupInfo = isSocialSignup
+            ? getOAuth2SignupInfo(registerUUID)
+            : null;
+
+        if (isSocialSignup) {
+            validateOAuth2SignupRequest(userCreateRequestDto, oauth2SignupInfo);
+        }
 
         if (!isSocialSignup) {
+            validatePasswordRequired(userCreateRequestDto.password());
             validateEmailVerification(userCreateRequestDto.email());
         }
 
-        String encryptedPassword = passwordEncoder.encode(userCreateRequestDto.password());
+        String rawPassword = isSocialSignup ? UUID.randomUUID().toString() : userCreateRequestDto.password();
+        String encryptedPassword = passwordEncoder.encode(rawPassword);
 
+        User savedUser = null;
         switch (userCreateRequestDto.role()) {
             case PARENT -> {
                 Parent parent = Parent.createParent(
@@ -78,7 +93,7 @@ public class UserServiceImpl implements UserService {
                     encryptedPassword,
                     userCreateRequestDto.name()
                 );
-                userRepository.save(parent);
+                savedUser = userRepository.save(parent);
             }
             case CHILDREN -> {
                 Parent parent = parentRepository.findByEmail(userCreateRequestDto.parentEmail())
@@ -95,7 +110,7 @@ public class UserServiceImpl implements UserService {
                     userCreateRequestDto.latitude(),
                     userCreateRequestDto.longitude()
                 );
-                userRepository.save(child);
+                savedUser = userRepository.save(child);
 
                 ChildrenParentRelation relation = ChildrenParentRelation.builder()
                     .children(child)
@@ -114,11 +129,14 @@ public class UserServiceImpl implements UserService {
                     userCreateRequestDto.hospitalAddress(),
                     userCreateRequestDto.hospitalAddressDetail()
                 );
-                userRepository.save(counselor);
+                savedUser = userRepository.save(counselor);
             }
         }
 
-        if (!isSocialSignup) {
+        if (isSocialSignup) {
+            saveSocialUser(oauth2SignupInfo, savedUser);
+            deleteOAuth2SignupInfo(registerUUID);
+        } else {
             deleteVerificationData(userCreateRequestDto.email());
         }
     }
@@ -607,6 +625,47 @@ public class UserServiceImpl implements UserService {
         }
 
         throw new CustomException("아이 생년월일 형식이 올바르지 않습니다.", ErrorCode.INVALID_PARAMETER);
+    }
+
+    private OAuth2SignupInfo getOAuth2SignupInfo(String registerUUID) {
+        String signupInfoJson = redisService.getData(Constants.OAUTH2_SIGNUP_PREFIX + registerUUID);
+
+        if (!StringUtils.hasText(signupInfoJson)) {
+            throw new CustomException("소셜 회원가입 정보가 만료되었거나 존재하지 않습니다.", ErrorCode.INVALID_PARAMETER);
+        }
+
+        try {
+            return objectMapper.readValue(signupInfoJson, OAuth2SignupInfo.class);
+        } catch (JsonProcessingException e) {
+            throw new CustomException("소셜 회원가입 정보를 불러올 수 없습니다.", ErrorCode.OAUTH_TEMP_LOAD_FAILED);
+        }
+    }
+
+    private void validateOAuth2SignupRequest(
+        UserCreateRequestDto request,
+        OAuth2SignupInfo signupInfo
+    ) {
+        if (!request.email().equalsIgnoreCase(signupInfo.email())) {
+            throw new CustomException("소셜 인증 이메일과 가입 이메일이 일치하지 않습니다.", ErrorCode.INVALID_PARAMETER);
+        }
+    }
+
+    private void validatePasswordRequired(String password) {
+        if (!StringUtils.hasText(password)) {
+            throw new CustomException("비밀번호는 필수입니다.", ErrorCode.INVALID_PARAMETER);
+        }
+    }
+
+    private void saveSocialUser(OAuth2SignupInfo signupInfo, User user) {
+        socialUserRepository.save(SocialUser.builder()
+            .provider(signupInfo.provider())
+            .providerUserId(signupInfo.providerUserId())
+            .user(user)
+            .build());
+    }
+
+    private void deleteOAuth2SignupInfo(String registerUUID) {
+        redisService.deleteData(Constants.OAUTH2_SIGNUP_PREFIX + registerUUID);
     }
 
     private void validateEmailVerification(String email) {

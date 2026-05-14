@@ -1,7 +1,7 @@
 import type { ChangeEvent, FormEvent, KeyboardEvent } from 'react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { FiEye, FiEyeOff } from 'react-icons/fi'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 
 import AuthModal from '../../components/auth/AuthModal'
 import AuthInput from '../../components/auth/AuthInput'
@@ -46,8 +46,12 @@ function formatPhoneNumber(value: string) {
 
 function CounselorSignUpPage() {
   const navigate = useNavigate()
-  const [step, setStep] = useState<SignUpStep>('email')
-  const [email, setEmail] = useState('')
+  const [searchParams] = useSearchParams()
+  const registerUUID = searchParams.get('registerUUID') ?? undefined
+  const oauthEmail = searchParams.get('email') ?? ''
+  const isOAuthSignup = Boolean(registerUUID)
+  const [step, setStep] = useState<SignUpStep>(isOAuthSignup ? 'profile' : 'email')
+  const [email, setEmail] = useState(oauthEmail)
   const [emailStatus, setEmailStatus] = useState<EmailStatus>('idle')
   const [emailError, setEmailError] = useState<string | undefined>()
   const [isCheckingEmail, setIsCheckingEmail] = useState(false)
@@ -115,7 +119,7 @@ function CounselorSignUpPage() {
     [password],
   )
 
-  const isNameValid = KOREAN_NAME_PATTERN.test(name)
+  const isNameValid = KOREAN_NAME_PATTERN.test(name.trim())
   const isPhoneValid = PHONE_NUMBER_PATTERN.test(phone)
 
   const isProfileStepComplete =
@@ -124,12 +128,13 @@ function CounselorSignUpPage() {
     hospitalName.trim().length > 0 &&
     hospitalAddress.trim().length > 0 &&
     hospitalAddressDetail.trim().length > 0 &&
-    passwordRuleStates.length &&
-    passwordRuleStates.letter &&
-    passwordRuleStates.number &&
-    passwordRuleStates.allowedCharacters &&
-    passwordConfirm.length > 0 &&
-    password === passwordConfirm
+    (isOAuthSignup ||
+      (passwordRuleStates.length &&
+        passwordRuleStates.letter &&
+        passwordRuleStates.number &&
+        passwordRuleStates.allowedCharacters &&
+        passwordConfirm.length > 0 &&
+        password === passwordConfirm))
 
   const titleMap: Record<SignUpStep, string> = {
     email: '회원가입',
@@ -313,22 +318,61 @@ function CounselorSignUpPage() {
     }
   }
 
+  const getProfileValidationMessage = () => {
+    if (!isNameValid) {
+      return '이름은 한글 2~10자로 입력해주세요.'
+    }
+
+    if (!isPhoneValid) {
+      return '휴대폰 번호를 010-1234-5678 형식으로 입력해주세요.'
+    }
+
+    if (!hospitalName.trim()) {
+      return '병원명을 입력해주세요.'
+    }
+
+    if (!hospitalAddress.trim()) {
+      return '병원 주소를 입력해주세요.'
+    }
+
+    if (!hospitalAddressDetail.trim()) {
+      return '병원 상세 주소를 입력해주세요.'
+    }
+
+    if (
+      !isOAuthSignup &&
+      !(
+        passwordRuleStates.length &&
+        passwordRuleStates.letter &&
+        passwordRuleStates.number &&
+        passwordRuleStates.allowedCharacters &&
+        passwordConfirm.length > 0 &&
+        password === passwordConfirm
+      )
+    ) {
+      return '비밀번호 조건과 비밀번호 확인을 다시 확인해주세요.'
+    }
+
+    return '회원가입 정보를 다시 확인해주세요.'
+  }
+
   const handleProfileSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
 
     if (!isProfileStepComplete || isSubmitting) {
+      setSubmitError(getProfileValidationMessage())
       return
     }
 
     const request: SignupRequest = {
       email: email.trim().toLowerCase(),
-      password,
       name: name.trim(),
       phone: phone.trim(),
       role: 'COUNSELOR',
       hospitalName: hospitalName.trim(),
       hospitalAddress: hospitalAddress.trim(),
       hospitalAddressDetail: hospitalAddressDetail.trim(),
+      ...(isOAuthSignup ? { registerUUID } : { password }),
     }
 
     try {
@@ -538,6 +582,8 @@ function CounselorSignUpPage() {
                 onChange={(event) => setHospitalAddressDetail(event.target.value)}
               />
             </div>
+            {!isOAuthSignup ? (
+              <>
             <AuthInput
               label="비밀번호"
               type={isPasswordVisible ? 'text' : 'password'}
@@ -602,13 +648,15 @@ function CounselorSignUpPage() {
                   : undefined
               }
             />
+              </>
+            ) : null}
 
             {submitError ? <p className="field-error">{submitError}</p> : null}
 
             <button
               type="submit"
               className="counselor-auth-button counselor-auth-button--primary"
-              disabled={!isProfileStepComplete || isSubmitting}
+              disabled={isSubmitting}
             >
               {isSubmitting ? '가입 중' : '다음 →'}
             </button>

@@ -1,10 +1,15 @@
-import { apiRequest } from '../../../shared/api/client'
+import { API_BASE_URL, apiRequest } from '../../../shared/api/client'
 import type { AppRole } from '../../../shared/types/appRole'
 
 type BaseResponse<T> = {
   code?: string | null
   message?: string | null
   data?: T | null
+}
+
+type ListResponse<T> = {
+  count: number
+  contents: T[]
 }
 
 type LoginResponse = {
@@ -44,10 +49,11 @@ type UserInfoResponse = {
 
 type SignupRequest = {
   email: string
-  password: string
+  password?: string
   name: string
   phone?: string
   role: BackendRole
+  registerUUID?: string
   parentEmail?: string
   birth?: string
   gender?: BackendGender
@@ -142,6 +148,16 @@ async function login(email: string, password: string) {
   return response.data
 }
 
+type UserProfileResponse = {
+  email: string
+  name: string
+  userRole: BackendRole
+}
+
+function beginOAuthLogin(provider: 'google' | 'kakao') {
+  window.location.href = `${API_BASE_URL}/auth/oauth2/authorization/${provider}`
+}
+
 async function getMyInfo(accessToken?: string | null) {
   const response = await request<UserInfoResponse>(`${AUTH_API_PREFIX}/users`, {
     accessToken,
@@ -152,6 +168,34 @@ async function getMyInfo(accessToken?: string | null) {
   }
 
   return response.data
+}
+
+async function searchUserProfiles(email: string, role?: BackendRole) {
+  const params = new URLSearchParams({ email })
+
+  if (role) {
+    params.set('role', role)
+  }
+
+  const response = await request<ListResponse<UserProfileResponse>>(
+    `${AUTH_API_PREFIX}/users/profiles?${params.toString()}`,
+    {
+      withAuth: false,
+    },
+  )
+
+  return response.data?.contents ?? []
+}
+
+async function findParentProfile(email: string) {
+  const profiles = await searchUserProfiles(email.trim().toLowerCase(), 'PARENT')
+  const parent = profiles[0]
+
+  if (!parent) {
+    throw new AuthApiError('부모 이메일로 가입된 계정을 찾을 수 없습니다.')
+  }
+
+  return parent
 }
 
 async function checkEmailDuplicate(email: string) {
@@ -238,8 +282,10 @@ async function changePassword(
 }
 
 const authApi = {
+  beginOAuthLogin,
   changePassword,
   checkEmailDuplicate,
+  findParentProfile,
   getMyInfo,
   login,
   resetPassword,
@@ -256,6 +302,7 @@ export type {
   PasswordChangeRequest,
   SignupRequest,
   UserInfoResponse,
+  UserProfileResponse,
   UserUpdateRequest,
 }
 export { AuthApiError, authApi, toAppRole }
