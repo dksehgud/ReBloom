@@ -17,6 +17,8 @@ hs_err_pid*
 !**/.env.prod.example
 *.local
 
+**/resources/firebase/*.json
+
 # IntelliJ IDEA
 .idea/
 *.iml

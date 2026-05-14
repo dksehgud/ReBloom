@@ -122,24 +122,38 @@ public class FcmServiceImpl implements FcmService {
     }
 
     private Map<String, String> buildData(Notification notification) {
-        NotificationPayload payload = notification.getNotificationPayload();
         Map<String, String> data = new LinkedHashMap<>();
 
         put(data, "notificationId", notification.getId());
-        put(data, "receiverId", notification.getReceiverId());
         put(data, "notificationType", notification.getNotificationType().getName());
-        put(data, "title", payload.getTitle());
-        put(data, "content", payload.getContent());
-        put(data, "childrenId", payload.getChildrenId());
-        put(data, "childrenName", payload.getChildrenName());
-        put(data, "childrenReportId", payload.getChildrenReportId());
-        put(data, "parentId", payload.getParentId());
-        put(data, "counselorId", payload.getCounselorId());
-        put(data, "counselorName", payload.getCounselorName());
-        put(data, "depressionScore", payload.getDepressionScore());
-        put(data, "depressionScoreText", payload.getDepressionScoreText());
+        put(data, "route", resolveRoute(notification));
 
         return data;
+    }
+
+    // TODO: 앱의 라우팅 경로와 맞춰야함. 아니면 그냥 알림창으로만 가거나
+    private String resolveRoute(Notification notification) {
+        NotificationPayload payload = notification.getNotificationPayload();
+        String notificationType = notification.getNotificationType().getName();
+
+        return switch (notificationType) {
+            case "RISK_ALERT" -> route("/children/%s/risk", payload.getChildrenId());
+            case "CONVERSATION_ALERT" -> route("/children/%s/conversation", payload.getChildrenId());
+            case "DIARY_REPORT" -> route("/children/%s/reports/diary", payload.getChildrenId());
+            case "CONVERSATION_REPORT" -> route("/children/%s/reports/conversation", payload.getChildrenId());
+            case "PARENT_REPORT_NEW" -> route("/reports/%s", payload.getChildrenReportId());
+            case "PARENT_REPORT_REPLY" -> route("/reports/%s", payload.getChildrenReportId());
+            case "DIARY_REMINDER" -> "/diary/write";
+            default -> "/notifications";
+        };
+    }
+
+    private String route(String template, Object value) {
+        if (value == null) {
+            return "/notifications";
+        }
+
+        return String.format(template, value);
     }
 
     private void handleFirebaseMessagingException(
