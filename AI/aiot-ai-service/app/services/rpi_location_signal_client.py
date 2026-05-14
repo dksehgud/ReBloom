@@ -22,7 +22,7 @@ class RPILocationSignalPublishError(Exception):
 
 def build_location_signal_topic(device_id: str) -> str:
     """Build MQTT topic for a location trigger."""
-    topic_template = settings.MQTT_TOPIC_LOCATION_SIGNAL
+    topic_template = settings.MQTT_LOCATION_TOPIC_SIGNAL
     return topic_template.replace("{device_id}", device_id).replace("{deviceId}", device_id)
 
 
