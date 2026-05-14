@@ -66,7 +66,9 @@ spring:
             user-info-uri: https://kapi.kakao.com/v2/user/me
             user-name-attribute: id
 oauth2:
-  success-redirect-url: ${OAUTH2_SUCCESS_REDIRECT_URL:http://localhost:5173/oauth/callback}
+  success-redirect-url: ${OAUTH2_SUCCESS_REDIRECT_URL:http://localhost:5174/oauth/callback}
+  allowed-success-redirect-origins: ${OAUTH2_ALLOWED_SUCCESS_REDIRECT_ORIGINS:http://localhost:5174,http://10.0.2.2:5174}
+  gateway-prefix: ${OAUTH2_GATEWAY_PREFIX:/auth}
 
 server:
   port: ${SERVER_PORT:8081}
