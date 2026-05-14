@@ -1,4 +1,5 @@
 import { useEffect, useState, type ChangeEvent, type KeyboardEvent } from 'react'
+import { useSearchParams } from 'react-router-dom'
 
 import SignUpModals from '../../components/auth/signup/SignUpModals'
 import SignUpStepDetails from '../../components/auth/signup/SignUpStepDetails'
@@ -7,13 +8,14 @@ import SignUpStepRole from '../../components/auth/signup/SignUpStepRole'
 import {
   authApi,
   type SignupRequest,
+  type UserProfileResponse,
 } from '../../features/auth/api/authApi'
 import { openDaumPostcodePopup } from '../../shared/utils/daumPostcode'
 import { geocodeAddress } from '../../shared/utils/kakaoGeocoder'
 
 type UserRole = 'child' | 'parent'
 type SignUpStep = 'role' | 'email' | 'code' | 'details'
-type ModalType = 'complete' | null
+type ModalType = 'complete' | 'parent-confirm' | 'parent-missing' | null
 type EmailStatus = 'idle' | 'available' | 'duplicate' | 'invalid'
 type CodeStatus = 'idle' | 'error' | 'expired'
 type Gender = 'male' | 'female' | null
@@ -28,10 +30,14 @@ type SignUpPageProps = {
 }
 
 function SignUpPage({ onBackToLogin }: SignUpPageProps) {
+  const [searchParams] = useSearchParams()
+  const registerUUID = searchParams.get('registerUUID') ?? undefined
+  const oauthEmail = searchParams.get('email') ?? ''
+  const isOAuthSignup = Boolean(registerUUID)
   const [step, setStep] = useState<SignUpStep>('role')
   const [role, setRole] = useState<UserRole | null>(null)
 
-  const [email, setEmail] = useState('')
+  const [email, setEmail] = useState(oauthEmail)
   const [emailStatus, setEmailStatus] = useState<EmailStatus>('idle')
   const [emailError, setEmailError] = useState<string | undefined>()
   const [isCheckingEmail, setIsCheckingEmail] = useState(false)
@@ -61,6 +67,11 @@ function SignUpPage({ onBackToLogin }: SignUpPageProps) {
   const [modal, setModal] = useState<ModalType>(null)
   const [submitError, setSubmitError] = useState<string | undefined>()
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isCheckingParent, setIsCheckingParent] = useState(false)
+  const [parentProfile, setParentProfile] = useState<UserProfileResponse | null>(null)
+  const [pendingChildCoords, setPendingChildCoords] = useState<
+    { latitude: number; longitude: number } | undefined
+  >()
 
   const codeValue = codeDigits.join('')
   const isCodeExpired = step === 'code' && remainingSeconds === 0
@@ -69,7 +80,7 @@ function SignUpPage({ onBackToLogin }: SignUpPageProps) {
   ).padStart(2, '0')}`
   const hasEmailValue = email.trim().length > 0
   const isEmailAvailable = emailStatus === 'available'
-  const isNameValid = KOREAN_NAME_PATTERN.test(name)
+  const isNameValid = KOREAN_NAME_PATTERN.test(name.trim())
   const nameError =
     name.length > 0 && !isNameValid
       ? '이름은 한글 2~10자로 입력해주세요.'
@@ -102,16 +113,14 @@ function SignUpPage({ onBackToLogin }: SignUpPageProps) {
     password === passwordConfirm
   const parentFormValid =
     isNameValid &&
-    hasPasswordRuleMatch &&
-    passwordsMatch
+    (isOAuthSignup || (hasPasswordRuleMatch && passwordsMatch))
   const childFormValid =
     isNameValid &&
     gender !== null &&
     birthDate.trim().length > 0 &&
     baseAddress.trim().length > 0 &&
     detailAddress.trim().length > 0 &&
-    hasPasswordRuleMatch &&
-    passwordsMatch &&
+    (isOAuthSignup || (hasPasswordRuleMatch && passwordsMatch)) &&
     hasParentEmailValue &&
     isParentEmailValid
 
@@ -331,8 +340,8 @@ function SignUpPage({ onBackToLogin }: SignUpPageProps) {
 
     const common = {
       email: email.trim().toLowerCase(),
-      password,
       name: name.trim(),
+      ...(isOAuthSignup ? { registerUUID } : { password }),
     }
 
     if (role === 'parent') {
@@ -382,11 +391,90 @@ function SignUpPage({ onBackToLogin }: SignUpPageProps) {
     }
   }
 
+  const openParentConfirmModal = async (coords?: {
+    latitude: number
+    longitude: number
+  }) => {
+    try {
+      setIsCheckingParent(true)
+      setSubmitError(undefined)
+
+      const parent = await authApi.findParentProfile(parentEmail.trim().toLowerCase())
+
+      setParentProfile(parent)
+      setPendingChildCoords(coords)
+      setModal('parent-confirm')
+    } catch (error) {
+      setParentProfile(null)
+      setPendingChildCoords(undefined)
+      setSubmitError(undefined)
+      setModal('parent-missing')
+    } finally {
+      setIsCheckingParent(false)
+    }
+  }
+
+  const handleConfirmParent = async () => {
+    const isSuccess = await submitSignup(pendingChildCoords)
+
+    if (isSuccess) {
+      setModal('complete')
+      setParentProfile(null)
+      setPendingChildCoords(undefined)
+      return
+    }
+
+    setModal(null)
+  }
+
+  const getDetailsValidationMessage = () => {
+    if (!role) {
+      return '가입 유형을 선택해주세요.'
+    }
+
+    if (!isNameValid) {
+      return '이름은 한글 2~10자로 입력해주세요.'
+    }
+
+    if (!isOAuthSignup && !(hasPasswordRuleMatch && passwordsMatch)) {
+      return '비밀번호 조건과 비밀번호 확인을 다시 확인해주세요.'
+    }
+
+    if (role === 'child') {
+      if (!gender) {
+        return '성별을 선택해주세요.'
+      }
+
+      if (!birthDate.trim()) {
+        return '생년월일을 입력해주세요.'
+      }
+
+      if (!baseAddress.trim()) {
+        return '기본 주소를 입력해주세요.'
+      }
+
+      if (!detailAddress.trim()) {
+        return '상세 주소를 입력해주세요.'
+      }
+
+      if (!hasParentEmailValue) {
+        return '부모 이메일을 입력해주세요.'
+      }
+
+      if (!isParentEmailValid) {
+        return '부모 이메일 형식을 다시 확인해주세요.'
+      }
+    }
+
+    return '회원가입 정보를 다시 확인해주세요.'
+  }
+
   const handleDetailsSubmit = async () => {
     setSubmitError(undefined)
 
     if (role === 'parent') {
       if (!parentFormValid) {
+        setSubmitError(getDetailsValidationMessage())
         return
       }
 
@@ -397,16 +485,12 @@ function SignUpPage({ onBackToLogin }: SignUpPageProps) {
       return
     }
 
-    if (!baseAddress.trim()) {
-      setAddressError('기본 주소는 필수 입력 값이에요.')
-      return
-    }
-
-    if (!detailAddress.trim()) {
-      return
-    }
-
     if (!childFormValid) {
+      const message = getDetailsValidationMessage()
+      setSubmitError(message)
+      if (!baseAddress.trim()) {
+        setAddressError('기본 주소는 필수 입력 값이에요.')
+      }
       return
     }
 
@@ -433,10 +517,7 @@ function SignUpPage({ onBackToLogin }: SignUpPageProps) {
       }
     }
 
-    const isSuccess = await submitSignup(coords)
-    if (isSuccess) {
-      setModal('complete')
-    }
+    await openParentConfirmModal(coords)
   }
 
   const handleComplete = () => {
@@ -469,6 +550,9 @@ function SignUpPage({ onBackToLogin }: SignUpPageProps) {
     setShowPasswordConfirm(false)
     setSubmitError(undefined)
     setIsSubmitting(false)
+    setIsCheckingParent(false)
+    setParentProfile(null)
+    setPendingChildCoords(undefined)
     onBackToLogin()
   }
 
@@ -496,7 +580,7 @@ function SignUpPage({ onBackToLogin }: SignUpPageProps) {
       {step === 'role' ? (
         <SignUpStepRole
           onBackToLogin={onBackToLogin}
-          onNext={() => setStep('email')}
+          onNext={() => setStep(isOAuthSignup ? 'details' : 'email')}
           onSelectRole={setRole}
           role={role}
         />
@@ -577,7 +661,8 @@ function SignUpPage({ onBackToLogin }: SignUpPageProps) {
           hasPasswordNumberRule={hasPasswordNumberRule}
           hasPasswordSpecialRule={hasPasswordSpecialRule}
           isLoadingAddressSearch={isLoadingAddressSearch}
-          isSubmitting={isSubmitting}
+          isSubmitting={isSubmitting || isCheckingParent}
+          isPasswordRequired={!isOAuthSignup}
           name={name}
           nameError={nameError}
           onBaseAddressChange={(event) => {
@@ -592,7 +677,14 @@ function SignUpPage({ onBackToLogin }: SignUpPageProps) {
           onParentEmailChange={(event) => setParentEmail(event.target.value)}
           onPasswordChange={(event) => setPassword(event.target.value)}
           onPasswordConfirmChange={(event) => setPasswordConfirm(event.target.value)}
-          onPrevious={returnToCodeStep}
+          onPrevious={() => {
+            if (isOAuthSignup) {
+              setStep('role')
+              return
+            }
+
+            returnToCodeStep()
+          }}
           onSearchAddress={handleSearchAddress}
           onSelectGender={setGender}
           onSubmit={handleDetailsSubmit}
@@ -613,8 +705,17 @@ function SignUpPage({ onBackToLogin }: SignUpPageProps) {
       ) : null}
 
       <SignUpModals
+        isConfirmingParent={isSubmitting}
         modal={modal}
+        onClose={() => setModal(null)}
         onComplete={handleComplete}
+        onConfirmParent={handleConfirmParent}
+        onResetMissingParent={() => {
+          setModal(null)
+          setParentEmail('')
+        }}
+        parentEmail={parentEmail}
+        parentProfile={parentProfile}
         role={role}
       />
     </>
