@@ -1,11 +1,13 @@
 package com.ssafy.rebloom.auth_service.auth.security;
 
+import com.ssafy.rebloom.auth_service.auth.constants.Constants;
 import com.ssafy.rebloom.auth_service.auth.dto.OAuth2LoginResult;
 import com.ssafy.rebloom.auth_service.auth.dto.TokenDto;
 import com.ssafy.rebloom.auth_service.auth.service.OAuth2LoginService;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
@@ -26,7 +28,7 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
 
     private final OAuth2LoginService oAuth2LoginService;
 
-    @Value("${oauth2.success-redirect-url:http://localhost:5173/oauth/callback}")
+    @Value("${oauth2.success-redirect-url:http://localhost:5174/oauth/callback}")
     private String successRedirectUrl;
 
     @Override
@@ -47,11 +49,11 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
             profile.name()
         );
 
-        response.sendRedirect(createRedirectUrl(result));
+        response.sendRedirect(createRedirectUrl(request, result));
     }
 
-    private String createRedirectUrl(OAuth2LoginResult result) {
-        UriComponentsBuilder builder = UriComponentsBuilder.fromUriString(successRedirectUrl);
+    private String createRedirectUrl(HttpServletRequest request, OAuth2LoginResult result) {
+        UriComponentsBuilder builder = UriComponentsBuilder.fromUriString(resolveSuccessRedirectUrl(request));
 
         if (result.registered()) {
             TokenDto tokenDto = result.tokenDto();
@@ -72,6 +74,21 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
             .build()
             .encode()
             .toUriString();
+    }
+
+    private String resolveSuccessRedirectUrl(HttpServletRequest request) {
+        HttpSession session = request.getSession(false);
+
+        if (session == null) {
+            return successRedirectUrl;
+        }
+
+        Object successRedirectUri = session.getAttribute(
+            Constants.OAUTH2_SUCCESS_REDIRECT_URI_SESSION_ATTRIBUTE
+        );
+        session.removeAttribute(Constants.OAUTH2_SUCCESS_REDIRECT_URI_SESSION_ATTRIBUTE);
+
+        return successRedirectUri instanceof String redirectUri ? redirectUri : successRedirectUrl;
     }
 
     private OAuth2UserProfile extractProfile(String provider, OAuth2User oauthUser) {

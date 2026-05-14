@@ -23,7 +23,7 @@ spring:
         cors-configurations:
           '[/**]':
             allowedOrigins:
-              - "${FRONTEND_URL:http://localhost:5173}"
+              - "${FRONTEND_URL:http://localhost:5174}"
               - "${FRONTEND_REDIRECT_URL:http://localhost:3000}"
               - "${FRONTEND_WEBVIEW_URL:http://10.0.2.2:5174}"
               # TODO: 배포 주소 추가
@@ -43,7 +43,9 @@ spring:
           uri: ${AUTH_SERVICE_URI:http://localhost:8081}
           predicates:
             - Path=/auth/oauth2/**,/auth/login/oauth2/code/**
-          filters: *public-filters
+          filters:
+            - StripPrefix=1
+            - PreserveHostHeader
 
         # ==========================================
         # AUTH SERVICE - Public

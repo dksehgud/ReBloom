@@ -155,7 +155,10 @@ type UserProfileResponse = {
 }
 
 function beginOAuthLogin(provider: 'google' | 'kakao') {
-  window.location.href = `${API_BASE_URL}/auth/oauth2/authorization/${provider}`
+  const redirectUri = `${window.location.origin}/oauth/callback`
+  const params = new URLSearchParams({ redirect_uri: redirectUri })
+
+  window.location.href = `${API_BASE_URL}/auth/oauth2/authorization/${provider}?${params.toString()}`
 }
 
 async function getMyInfo(accessToken?: string | null) {
