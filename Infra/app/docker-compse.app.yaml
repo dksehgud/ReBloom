@@ -97,6 +97,8 @@ services:
       AIOT_AI_SERVICE_URI: http://host.docker.internal:8001
       BIO_ML_SERVICE_URI: http://host.docker.internal:8002
       EMOTION_INFERENCE_SERVICE_URI: http://host.docker.internal:8003
+      FRONTEND_URL: ${FRONTEND_URL:-https://d1zs5r6o9orkcb.cloudfront.net}
+      FRONTEND_REDIRECT_URL: ${FRONTEND_REDIRECT_URL:-https://d1zs5r6o9orkcb.cloudfront.net}
       TZ: Asia/Seoul
       JAVA_TOOL_OPTIONS: -Duser.timezone=Asia/Seoul
     extra_hosts:
