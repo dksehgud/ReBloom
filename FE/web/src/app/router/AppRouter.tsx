@@ -26,6 +26,7 @@ import ParentObservationsPage from '../../pages/parent/ParentObservationsPage'
 import ParentReportPage from '../../pages/parent/ParentReportPage'
 import ParentSettingsPage from '../../pages/parent/ParentSettingsPage'
 import { authApi, toAppRole } from '../../features/auth/api/authApi'
+import { consumeOAuthIntent, saveOAuthIntent } from '../../features/auth/oauth/oauthIntent'
 import { useAppSessionStore } from '../../features/auth/store/useAppSessionStore'
 import { isCounselorMockModeSearch } from '../../features/counselor/hooks/useCounselorMockMode'
 import { useSelectedChildStore } from '../../features/student/store/useSelectedChildStore'
@@ -225,6 +226,11 @@ function LoginRoute() {
     }
   }
 
+  const handleSocialLogin = (provider: 'google' | 'kakao') => {
+    saveOAuthIntent('default')
+    authApi.beginOAuthLogin(provider)
+  }
+
   return (
     <LoginPage
       email={email}
@@ -238,8 +244,103 @@ function LoginRoute() {
       onSubmit={handleLoginSubmit}
       onStartChildClick={() => navigate('/child/diary')}
       onStartParentClick={() => navigate('/parent/home')}
+      onSocialLoginClick={handleSocialLogin}
     />
   )
+}
+
+function OAuthCallbackRoute() {
+  const navigate = useNavigate()
+  const location = useLocation()
+  const clearSession = useAppSessionStore((state) => state.clearSession)
+  const setActiveRole = useAppSessionStore((state) => state.setActiveRole)
+  const setCurrentUser = useAppSessionStore((state) => state.setCurrentUser)
+  const setSessionTokens = useAppSessionStore((state) => state.setSessionTokens)
+  const clearSelectedChild = useSelectedChildStore(
+    (state) => state.clearSelectedChild,
+  )
+
+  useEffect(() => {
+    const searchParams = new URLSearchParams(location.search)
+    const status = searchParams.get('status')
+
+    if (status === 'LOGIN') {
+      const accessToken = searchParams.get('accessToken')
+      const refreshToken = searchParams.get('refreshToken')
+
+      if (!accessToken || !refreshToken) {
+        clearSession()
+        navigate('/login', { replace: true })
+        return
+      }
+
+      setSessionTokens({ accessToken, refreshToken })
+      saveNativeAccessToken(accessToken)
+
+      void authApi.getMyInfo(accessToken)
+        .then((myInfo) => {
+          const nextRole = toAppRole(myInfo.role)
+
+          setCurrentUser(myInfo)
+          setActiveRole(nextRole)
+          clearSelectedChild()
+
+          if (nextRole === 'child') {
+            navigate('/child/diary', { replace: true })
+            return
+          }
+
+          if (nextRole === 'parent') {
+            navigate('/parent/home', { replace: true })
+            return
+          }
+
+          navigate('/counselor/dashboard', { replace: true })
+        })
+        .catch(() => {
+          clearSession()
+          clearNativeAccessToken()
+          navigate('/login', { replace: true })
+        })
+      return
+    }
+
+    if (status === 'SIGNUP_REQUIRED') {
+      const registerUUID = searchParams.get('registerUUID')
+      const email = searchParams.get('email')
+      const intent = consumeOAuthIntent()
+
+      if (!registerUUID || !email) {
+        navigate('/login', { replace: true })
+        return
+      }
+
+      const signupSearchParams = new URLSearchParams({
+        registerUUID,
+        email,
+      })
+
+      navigate(
+        intent === 'counselor'
+          ? `/counselor/signup?${signupSearchParams.toString()}`
+          : `/signup?${signupSearchParams.toString()}`,
+        { replace: true },
+      )
+      return
+    }
+
+    navigate('/login', { replace: true })
+  }, [
+    clearSelectedChild,
+    clearSession,
+    location.search,
+    navigate,
+    setActiveRole,
+    setCurrentUser,
+    setSessionTokens,
+  ])
+
+  return null
 }
 
 function FindPasswordRoute() {
@@ -361,6 +462,7 @@ function AppRouter() {
       <Route element={<AuthRouteLayout />}>
         <Route path="/" element={<LandingRoute />} />
         <Route path="/login" element={<LoginRoute />} />
+        <Route path="/oauth/callback" element={<OAuthCallbackRoute />} />
         <Route path="/signup" element={<SignUpRoute />} />
         <Route path="/find-password" element={<FindPasswordRoute />} />
       </Route>

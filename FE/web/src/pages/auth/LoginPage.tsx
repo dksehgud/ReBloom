@@ -15,6 +15,7 @@ type LoginPageProps = {
   onSubmit: () => void
   onStartChildClick: () => void
   onStartParentClick: () => void
+  onSocialLoginClick: (provider: 'google' | 'kakao') => void
 }
 
 function LoginPage({
@@ -29,6 +30,7 @@ function LoginPage({
   onSubmit,
   onStartChildClick,
   onStartParentClick,
+  onSocialLoginClick,
 }: LoginPageProps) {
   const isLoginEnabled = email.trim().length > 0 && password.trim().length > 0
 
@@ -115,6 +117,7 @@ function LoginPage({
           <button
             type="button"
             className="social-icon-button social-icon-button--kakao"
+            onClick={() => onSocialLoginClick('kakao')}
             aria-label="카카오 로그인"
           >
             <img src={kakaoLogo} alt="" aria-hidden="true" />
@@ -122,6 +125,7 @@ function LoginPage({
           <button
             type="button"
             className="social-icon-button social-icon-button--google"
+            onClick={() => onSocialLoginClick('google')}
             aria-label="구글 로그인"
           >
             <img src={googleLogo} alt="" aria-hidden="true" />

@@ -34,6 +34,7 @@ type SignUpStepDetailsProps = {
   passwordsMatch: boolean
   submitError?: string
   isSubmitting: boolean
+  isPasswordRequired?: boolean
   onPrevious: () => void
   onSubmit: () => void
   onNameChange: (event: ChangeEvent<HTMLInputElement>) => void
@@ -101,8 +102,6 @@ function SignUpStepDetails({
   isLoadingAddressSearch,
   showPassword,
   showPasswordConfirm,
-  childFormValid,
-  parentFormValid,
   hasPasswordAllowedCharacters,
   hasPasswordLetterRule,
   hasPasswordLengthRule,
@@ -124,6 +123,7 @@ function SignUpStepDetails({
   onSearchAddress,
   onTogglePassword,
   onTogglePasswordConfirm,
+  isPasswordRequired = true,
 }: SignUpStepDetailsProps) {
   return (
     <AuthShell
@@ -135,9 +135,7 @@ function SignUpStepDetails({
           </button>
           <button
             className="auth-button is-primary"
-            disabled={
-              isSubmitting || (role === 'child' ? !childFormValid : !parentFormValid)
-            }
+            disabled={isSubmitting}
             onClick={onSubmit}
             type="button"
           >
@@ -224,6 +222,8 @@ function SignUpStepDetails({
         </>
       ) : null}
 
+      {isPasswordRequired ? (
+        <>
       <AuthInput
         action={
           <button
@@ -281,10 +281,13 @@ function SignUpStepDetails({
         type={showPasswordConfirm ? 'text' : 'password'}
         value={passwordConfirm}
       />
+        </>
+      ) : null}
 
       {role === 'child' ? (
         <AuthInput
           error={parentEmailError}
+          help={!parentEmail ? '아이 가입에는 부모 이메일까지 입력해야 해요.' : undefined}
           label="부모 연결"
           onChange={onParentEmailChange}
           placeholder="부모 이메일"

@@ -7,3 +7,11 @@ openwakeword>=0.4.0
 
 # TTS_ENGINE=edge 사용 시 필요
 edge-tts>=7.0
+
+# TTS_ENGINE=huggingface 사용 시 필요
+transformers>=4.50.0
+torch>=2.2.0
+
+# TTS_ENGINE=melotts 사용 시 필요
+# PyPI melotts 0.1.1 sdist is missing requirements.txt; install from the upstream repo instead.
+git+https://github.com/myshell-ai/MeloTTS.git

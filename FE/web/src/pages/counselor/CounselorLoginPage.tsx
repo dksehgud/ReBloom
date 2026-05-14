@@ -8,6 +8,7 @@ import kakaoLogo from '../../assets/kakao-logo.svg'
 import AuthInput from '../../components/auth/AuthInput'
 import CounselorAuthLayout from '../../components/templates/CounselorAuthLayout/CounselorAuthLayout'
 import { authApi, toAppRole } from '../../features/auth/api/authApi'
+import { saveOAuthIntent } from '../../features/auth/oauth/oauthIntent'
 import { useAppSessionStore } from '../../features/auth/store/useAppSessionStore'
 import { useSelectedChildStore } from '../../features/student/store/useSelectedChildStore'
 
@@ -27,6 +28,11 @@ function CounselorLoginPage() {
   )
 
   const isSubmitEnabled = email.trim().length > 0 && password.trim().length > 0
+
+  const handleSocialLogin = (provider: 'google' | 'kakao') => {
+    saveOAuthIntent('counselor')
+    authApi.beginOAuthLogin(provider)
+  }
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -121,6 +127,7 @@ function CounselorLoginPage() {
           <button
             type="button"
             className="counselor-social-icon-button counselor-social-icon-button--kakao"
+            onClick={() => handleSocialLogin('kakao')}
             aria-label="카카오 로그인"
           >
             <img src={kakaoLogo} alt="" aria-hidden="true" />
@@ -128,6 +135,7 @@ function CounselorLoginPage() {
           <button
             type="button"
             className="counselor-social-icon-button counselor-social-icon-button--google"
+            onClick={() => handleSocialLogin('google')}
             aria-label="구글 로그인"
           >
             <img src={googleLogo} alt="" aria-hidden="true" />
