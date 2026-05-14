@@ -1,8 +1,5 @@
 image: docker:24.0.5
 
-include:
-  - local: "Infra/setting/.gitlab-ci-fe.yml"
-
 services:
   - docker:24.0.5-dind
 
@@ -21,15 +18,12 @@ variables:
 stages:
   - build
   - docker-push
-  - web-deploy
 
 workflow:
   rules:
     - if: '$CI_COMMIT_BRANCH == "develop"'
       changes:
         - "BE/**/*"
-        - "FE/web/**/*"
-        - "FE/mobile-app/**/*"
     - when: never
 
 cache:
@@ -94,8 +88,14 @@ build-auth-service:
   rules:
     - changes:
         - "BE/services/auth-service/**/*"
-        - "BE/modules/**/*"
-        - "BE/*"
+        - "BE/modules/common-module/**/*"
+        - "BE/modules/security-module/**/*"
+        - "BE/build.gradle"
+        - "BE/common-service.gradle"
+        - "BE/settings.gradle"
+        - "BE/gradlew"
+        - "BE/gradlew.bat"
+        - "BE/gradle/**/*"
 
 build-gateway-service:
   extends: .build-template
@@ -104,8 +104,14 @@ build-gateway-service:
   rules:
     - changes:
         - "BE/services/gateway-service/**/*"
-        - "BE/modules/**/*"
-        - "BE/*"
+        - "BE/modules/common-module/**/*"
+        - "BE/modules/security-module/**/*"
+        - "BE/build.gradle"
+        - "BE/common-service.gradle"
+        - "BE/settings.gradle"
+        - "BE/gradlew"
+        - "BE/gradlew.bat"
+        - "BE/gradle/**/*"
 
 build-intake-service:
   extends: .build-template
@@ -114,8 +120,14 @@ build-intake-service:
   rules:
     - changes:
         - "BE/services/intake-service/**/*"
-        - "BE/modules/**/*"
-        - "BE/*"
+        - "BE/modules/common-module/**/*"
+        - "BE/modules/event-module/**/*"
+        - "BE/build.gradle"
+        - "BE/common-service.gradle"
+        - "BE/settings.gradle"
+        - "BE/gradlew"
+        - "BE/gradlew.bat"
+        - "BE/gradle/**/*"
 
 build-biometric-service:
   extends: .build-template
@@ -124,8 +136,14 @@ build-biometric-service:
   rules:
     - changes:
         - "BE/services/biometric-service/**/*"
-        - "BE/modules/**/*"
-        - "BE/*"
+        - "BE/modules/common-module/**/*"
+        - "BE/modules/event-module/**/*"
+        - "BE/build.gradle"
+        - "BE/common-service.gradle"
+        - "BE/settings.gradle"
+        - "BE/gradlew"
+        - "BE/gradlew.bat"
+        - "BE/gradle/**/*"
 
 build-report-service:
   extends: .build-template
@@ -134,8 +152,14 @@ build-report-service:
   rules:
     - changes:
         - "BE/services/report-service/**/*"
-        - "BE/modules/**/*"
-        - "BE/*"
+        - "BE/modules/common-module/**/*"
+        - "BE/modules/event-module/**/*"
+        - "BE/build.gradle"
+        - "BE/common-service.gradle"
+        - "BE/settings.gradle"
+        - "BE/gradlew"
+        - "BE/gradlew.bat"
+        - "BE/gradle/**/*"
 
 build-notification-service:
   extends: .build-template
@@ -144,8 +168,14 @@ build-notification-service:
   rules:
     - changes:
         - "BE/services/notification-service/**/*"
-        - "BE/modules/**/*"
-        - "BE/*"
+        - "BE/modules/common-module/**/*"
+        - "BE/modules/event-module/**/*"
+        - "BE/build.gradle"
+        - "BE/common-service.gradle"
+        - "BE/settings.gradle"
+        - "BE/gradlew"
+        - "BE/gradlew.bat"
+        - "BE/gradle/**/*"
 
 # ====================================================
 # [STAGE 2] Docker 이미지 빌드 및 Push
@@ -161,8 +191,14 @@ push-auth-service:
   rules:
     - changes:
         - "BE/services/auth-service/**/*"
-        - "BE/modules/**/*"
-        - "BE/*"
+        - "BE/modules/common-module/**/*"
+        - "BE/modules/security-module/**/*"
+        - "BE/build.gradle"
+        - "BE/common-service.gradle"
+        - "BE/settings.gradle"
+        - "BE/gradlew"
+        - "BE/gradlew.bat"
+        - "BE/gradle/**/*"
 
 push-gateway-service:
   extends: .push-template
@@ -174,8 +210,14 @@ push-gateway-service:
   rules:
     - changes:
         - "BE/services/gateway-service/**/*"
-        - "BE/modules/**/*"
-        - "BE/*"
+        - "BE/modules/common-module/**/*"
+        - "BE/modules/security-module/**/*"
+        - "BE/build.gradle"
+        - "BE/common-service.gradle"
+        - "BE/settings.gradle"
+        - "BE/gradlew"
+        - "BE/gradlew.bat"
+        - "BE/gradle/**/*"
 
 push-intake-service:
   extends: .push-template
@@ -187,8 +229,14 @@ push-intake-service:
   rules:
     - changes:
         - "BE/services/intake-service/**/*"
-        - "BE/modules/**/*"
-        - "BE/*"
+        - "BE/modules/common-module/**/*"
+        - "BE/modules/event-module/**/*"
+        - "BE/build.gradle"
+        - "BE/common-service.gradle"
+        - "BE/settings.gradle"
+        - "BE/gradlew"
+        - "BE/gradlew.bat"
+        - "BE/gradle/**/*"
 
 push-biometric-service:
   extends: .push-template
@@ -200,8 +248,14 @@ push-biometric-service:
   rules:
     - changes:
         - "BE/services/biometric-service/**/*"
-        - "BE/modules/**/*"
-        - "BE/*"
+        - "BE/modules/common-module/**/*"
+        - "BE/modules/event-module/**/*"
+        - "BE/build.gradle"
+        - "BE/common-service.gradle"
+        - "BE/settings.gradle"
+        - "BE/gradlew"
+        - "BE/gradlew.bat"
+        - "BE/gradle/**/*"
 
 push-report-service:
   extends: .push-template
@@ -213,8 +267,14 @@ push-report-service:
   rules:
     - changes:
         - "BE/services/report-service/**/*"
-        - "BE/modules/**/*"
-        - "BE/*"
+        - "BE/modules/common-module/**/*"
+        - "BE/modules/event-module/**/*"
+        - "BE/build.gradle"
+        - "BE/common-service.gradle"
+        - "BE/settings.gradle"
+        - "BE/gradlew"
+        - "BE/gradlew.bat"
+        - "BE/gradle/**/*"
 
 push-notification-service:
   extends: .push-template
@@ -226,5 +286,11 @@ push-notification-service:
   rules:
     - changes:
         - "BE/services/notification-service/**/*"
-        - "BE/modules/**/*"
-        - "BE/*"
+        - "BE/modules/common-module/**/*"
+        - "BE/modules/event-module/**/*"
+        - "BE/build.gradle"
+        - "BE/common-service.gradle"
+        - "BE/settings.gradle"
+        - "BE/gradlew"
+        - "BE/gradlew.bat"
+        - "BE/gradle/**/*"
