@@ -89,16 +89,36 @@ function getRelationStatusLabel(status: string) {
   return status || '연결 상태 확인 중'
 }
 
+function getGenderLabel(gender?: string | null) {
+  if (gender === 'MALE') {
+    return '남'
+  }
+
+  if (gender === 'FEMALE') {
+    return '여'
+  }
+
+  return null
+}
+
 function mapCounselorChildToListItem(
   child: CounselorChildResponseDto,
 ): ChildListItem {
   const statusLabel = getCounselingStatusLabel(child.counselingStatus)
+  const genderLabel = getGenderLabel(child.gender)
+  const metaParts = [
+    typeof child.age === 'number' ? `${child.age}세` : null,
+    genderLabel,
+  ].filter(Boolean)
 
   return {
     id: child.childrenId,
     name: child.name,
-    meta: statusLabel,
-    subText: '연결된 상담 아동',
+    meta: metaParts.length > 0 ? metaParts.join(' · ') : statusLabel,
+    subText: child.parentName ? `보호자: ${child.parentName}` : '보호자 미연결',
+    age: typeof child.age === 'number' ? `${child.age}세` : undefined,
+    gender: genderLabel ?? undefined,
+    guardianName: child.parentName ?? undefined,
     registeredAt: '1970-01-01T00:00:00.000Z',
     counselingStatus: child.counselingStatus,
   }

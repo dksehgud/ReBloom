@@ -32,6 +32,9 @@ public interface ChildrenCounselorRelationRepository extends JpaRepository<Child
     @Query(value = """
         SELECT c.id AS "childrenId",
                u.name AS "name",
+               c.birth AS "birth",
+               c.gender AS "gender",
+               pu.name AS "parentName",
                CASE
                    WHEN ccr.ended_at IS NULL THEN 'IN_PROGRESS'
                    ELSE 'ENDED'
@@ -41,6 +44,11 @@ public interface ChildrenCounselorRelationRepository extends JpaRepository<Child
           ON c.id = ccr.children_id
         JOIN users u
           ON u.id = c.id
+        LEFT JOIN children_parent_relations cpr
+          ON cpr.children_id = c.id
+         AND cpr.relation_status = 'ACTIVE'
+        LEFT JOIN users pu
+          ON pu.id = cpr.parent_id
         WHERE ccr.counselor_id = :counselorId
           AND ccr.relation_status = 'ACTIVE'
         ORDER BY u.name ASC
