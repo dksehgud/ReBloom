@@ -13,23 +13,24 @@
 @import './features/user/styles/settings.css';
 @import './features/diary/styles/diary.css';
 
+
 @media (max-width: 480px) {
-  .app-shell {
-    padding: 0;
-  }
+    .app-shell {
+        padding: 0;
+    }
 
-  .phone-shell {
-    width: 100%;
-    min-height: 100svh;
-    border-radius: 0;
-    box-shadow: none;
-  }
+    .phone-shell {
+        width: 100%;
+        min-height: 100svh;
+        border-radius: 0;
+        box-shadow: none;
+    }
 
-  .phone-shell--signup {
-    height: 100svh;
-  }
+    .phone-shell--signup {
+        height: 100svh;
+    }
 
-  .auth-screen {
-    min-height: 100svh;
-  }
+    .auth-screen {
+        min-height: 100svh;
+    }
 }
