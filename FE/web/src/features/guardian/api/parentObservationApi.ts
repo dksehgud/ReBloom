@@ -1,5 +1,4 @@
 import { apiRequest } from '../../../shared/api/client'
-import { PARENT_OBSERVATION_PREVIEW_LIMIT } from '../constants/parentObservation'
 import type {
   ParentObservationBaseResponseDto,
   ParentObservationDailyGroupDto,
@@ -22,9 +21,7 @@ type ParentObservationQueryParams = {
   year?: number
 }
 
-type GetParentObservationPreviewParams = ParentObservationQueryParams & {
-  limit?: number
-}
+type GetParentObservationPreviewParams = ParentObservationQueryParams
 
 type ParentObservationDetailParams = {
   accessToken: string
@@ -49,7 +46,7 @@ type ParentObservationDeleteParams = {
 }
 
 const REPORT_API_PREFIX = '/report/api/v1'
-const OBSERVATION_PREVIEW_LOOKBACK_MONTHS = 12
+const OBSERVATION_PREVIEW_LOOKBACK_DAYS = 7
 
 const parentObservationApiPaths = {
   list: (childrenId: string) =>
@@ -239,12 +236,14 @@ function createObservationListSearchParams({
   return query ? `?${query}` : ''
 }
 
-function getObservationPreviewDateRange() {
+export function getObservationPreviewDateRange() {
   const today = new Date()
   today.setHours(0, 0, 0, 0)
 
   const startDate = new Date(today)
-  startDate.setMonth(startDate.getMonth() - OBSERVATION_PREVIEW_LOOKBACK_MONTHS)
+  startDate.setDate(
+    startDate.getDate() - (OBSERVATION_PREVIEW_LOOKBACK_DAYS - 1),
+  )
 
   return {
     endDate: formatDateParam(today),
@@ -386,7 +385,6 @@ export async function getParentObservationPreview({
   endDate,
   year,
   month,
-  limit = PARENT_OBSERVATION_PREVIEW_LIMIT,
   startDate,
 }: GetParentObservationPreviewParams = {}): Promise<ParentObservationPreviewResponse> {
   const hasMonthRange = typeof year === 'number' && typeof month === 'number'
@@ -407,7 +405,7 @@ export async function getParentObservationPreview({
   })
 
   return {
-    records: response.records.slice(0, limit),
+    records: response.records,
   }
 }
 

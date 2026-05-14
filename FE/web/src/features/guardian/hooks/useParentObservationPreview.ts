@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
 
 import { useAppSessionStore } from '../../auth/store/useAppSessionStore'
-import { PARENT_OBSERVATION_PREVIEW_LIMIT } from '../constants/parentObservation'
 import {
+  getObservationPreviewDateRange,
   getParentObservationPreview,
   mapObservationListItemToRecord,
   sortObservationRecords,
@@ -15,6 +15,14 @@ type UseParentObservationPreviewResult = {
   records: ParentObservationPreviewItem[]
   isLoading: boolean
   isError: boolean
+}
+
+function filterRecentPreviewRecords(records: ParentObservationPreviewItem[]) {
+  const { startDate, endDate } = getObservationPreviewDateRange()
+
+  return records.filter(
+    (record) => record.reportDate >= startDate && record.reportDate <= endDate,
+  )
 }
 
 export function useParentObservationPreview(
@@ -40,9 +48,11 @@ export function useParentObservationPreview(
           }
 
           setRecords(
-            sortObservationRecords(
-              parentObservationListMock.map(mapObservationListItemToRecord),
-            ).slice(0, PARENT_OBSERVATION_PREVIEW_LIMIT),
+            filterRecentPreviewRecords(
+              sortObservationRecords(
+                parentObservationListMock.map(mapObservationListItemToRecord),
+              ),
+            ),
           )
           return
         }
@@ -50,7 +60,6 @@ export function useParentObservationPreview(
         const response = await getParentObservationPreview({
           accessToken,
           childrenId,
-          limit: PARENT_OBSERVATION_PREVIEW_LIMIT,
         })
 
         if (!isMounted) {
