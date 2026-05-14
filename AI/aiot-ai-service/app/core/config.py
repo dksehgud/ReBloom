@@ -88,6 +88,7 @@ class Settings(BaseSettings):
         default="devices/{device_id}/conversation/start",
         description="대화 시작 명령용 topic template",
     )
+    
     MQTT_LOCATION_TOPIC_SIGNAL: str = Field(
         default="devices/{device_id}/location/trigger",
         description="location trigger topic template",
