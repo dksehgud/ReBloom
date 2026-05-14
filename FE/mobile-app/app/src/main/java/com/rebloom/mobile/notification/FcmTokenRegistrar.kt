@@ -6,6 +6,7 @@ import com.google.firebase.messaging.FirebaseMessaging
 import com.rebloom.mobile.network.ApiClient
 import com.rebloom.mobile.network.FcmTokenRequest
 import kotlin.coroutines.resume
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.suspendCancellableCoroutine
 
 object FcmTokenRegistrar {
@@ -16,13 +17,23 @@ object FcmTokenRegistrar {
     }
 
     suspend fun registerToken(context: Context, fcmToken: String) {
-        runCatching {
-            ApiClient.create(context).registerFcmToken(FcmTokenRequest(fcmToken))
-        }.onSuccess {
-            Log.d(TAG, "FCM token registered")
-        }.onFailure { exception ->
-            Log.w(TAG, "Failed to register FCM token", exception)
+        var lastException: Throwable? = null
+
+        repeat(REGISTER_RETRY_COUNT) { attempt ->
+            runCatching {
+                ApiClient.create(context).registerFcmToken(FcmTokenRequest(fcmToken))
+            }.onSuccess {
+                Log.d(TAG, "FCM token registered")
+                return
+            }.onFailure { exception ->
+                lastException = exception
+                if (attempt < REGISTER_RETRY_COUNT - 1) {
+                    delay(REGISTER_RETRY_DELAY_MS)
+                }
+            }
         }
+
+        Log.w(TAG, "Failed to register FCM token", lastException)
     }
 
     suspend fun deactivateCurrentToken(context: Context, accessToken: String?) {
@@ -56,4 +67,6 @@ object FcmTokenRegistrar {
         }
 
     private const val TAG = "FcmTokenRegistrar"
+    private const val REGISTER_RETRY_COUNT = 3
+    private const val REGISTER_RETRY_DELAY_MS = 1_000L
 }

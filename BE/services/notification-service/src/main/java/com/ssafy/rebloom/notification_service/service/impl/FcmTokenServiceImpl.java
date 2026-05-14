@@ -15,6 +15,8 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class FcmTokenServiceImpl implements FcmTokenService {
 
+    private static final int TOKEN_LOOKUP_RETRY_COUNT = 3;
+
     private final UserFcmTokenRepository userFcmTokenRepository;
 
     @Override
@@ -42,8 +44,21 @@ public class FcmTokenServiceImpl implements FcmTokenService {
         try {
             return userFcmTokenRepository.saveAndFlush(UserFcmToken.create(userId, fcmToken));
         } catch (DataIntegrityViolationException exception) {
-            return userFcmTokenRepository.findByFcmToken(fcmToken)
-                .orElseThrow(() -> exception);
+            return findExistingTokenWithRetry(fcmToken, exception);
         }
+    }
+
+    private UserFcmToken findExistingTokenWithRetry(
+        String fcmToken,
+        DataIntegrityViolationException originalException
+    ) {
+        for (int attempt = 0; attempt < TOKEN_LOOKUP_RETRY_COUNT; attempt++) {
+            var token = userFcmTokenRepository.findByFcmToken(fcmToken);
+            if (token.isPresent()) {
+                return token.get();
+            }
+        }
+
+        throw originalException;
     }
 }

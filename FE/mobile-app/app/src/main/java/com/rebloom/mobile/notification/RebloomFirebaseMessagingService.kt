@@ -30,7 +30,9 @@ class RebloomFirebaseMessagingService : FirebaseMessagingService() {
         super.onMessageReceived(message)
 
         val title = message.notification?.title ?: message.data["title"] ?: DEFAULT_TITLE
-        val body = message.notification?.body ?: message.data["content"] ?: return
+        val body = message.notification?.body
+            ?: message.data.getOrDefault("content", DEFAULT_BODY)
+                .ifBlank { DEFAULT_BODY }
 
         showNotification(title, body)
     }
@@ -81,5 +83,6 @@ class RebloomFirebaseMessagingService : FirebaseMessagingService() {
         private const val CHANNEL_ID = "rebloom_notification"
         private const val CHANNEL_NAME = "Re:Bloom notification"
         private const val DEFAULT_TITLE = "Re:Bloom"
+        private const val DEFAULT_BODY = "You have a new notification."
     }
 }
