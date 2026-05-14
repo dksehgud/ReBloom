@@ -73,8 +73,7 @@ public class RelationAccessController {
     private void validateParentChildRelation(UUID parentId, UUID childrenId) {
         boolean hasAccess = childrenParentRelationRepository.existsActiveRelation(
             parentId,
-            childrenId,
-            RelationStatus.ACTIVE
+            childrenId
         );
 
         if (!hasAccess) {

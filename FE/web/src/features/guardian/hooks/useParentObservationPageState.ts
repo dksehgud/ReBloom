@@ -1,8 +1,16 @@
 import { useMemo, useState } from 'react'
 
+import { useAppSessionStore } from '../../auth/store/useAppSessionStore'
+import {
+  createParentObservationReport,
+  deleteParentObservationReport,
+  getParentObservationDetail,
+  updateParentObservationReport,
+} from '../api/parentObservationApi'
 import { type ParentObservationMood } from '../constants/parentObservationMoods'
 import type { ParentObservationRecord } from '../types/parentObservation'
 import { useParentObservationList } from './useParentObservationList'
+import { useParentMockMode } from './useParentMockMode'
 
 type ParentObservationModalMode = 'detail' | 'create' | 'edit' | 'delete' | null
 
@@ -14,6 +22,17 @@ type DraftDate = {
 
 function getDaysInMonth(year: number, month: number) {
   return new Date(year, month, 0).getDate()
+}
+
+function getMaxSelectableDay(year: number, month: number) {
+  const daysInMonth = getDaysInMonth(year, month)
+  const today = new Date()
+
+  if (year === today.getFullYear() && month === today.getMonth() + 1) {
+    return Math.min(daysInMonth, today.getDate())
+  }
+
+  return daysInMonth
 }
 
 function padNumber(value: number) {
@@ -28,8 +47,28 @@ function formatModalDateLabel(month: number, day: number, weekday: string) {
   return `${padNumber(month)}/${padNumber(day)} ${weekday}`
 }
 
-function createRecordId({ year, month, day, recordedAt }: DraftDate & { recordedAt: string }) {
+function createRecordId({
+  year,
+  month,
+  day,
+  recordedAt,
+}: DraftDate & { recordedAt: string }) {
   return `observation-${year}-${padNumber(month)}-${padNumber(day)}-${recordedAt.replace(':', '')}`
+}
+
+function getCurrentTimeLabel() {
+  const now = new Date()
+  return `${padNumber(now.getHours())}:${padNumber(now.getMinutes())}`
+}
+
+function createReportDateTime(
+  { year, month, day }: DraftDate,
+  recordedAt: string,
+) {
+  const timeWithSeconds =
+    recordedAt.split(':').length === 2 ? `${recordedAt}:00` : recordedAt
+
+  return `${year}-${padNumber(month)}-${padNumber(day)}T${timeWithSeconds}`
 }
 
 function getMonthKey(year: number, month: number) {
@@ -44,16 +83,19 @@ function sortRecords(records: ParentObservationRecord[]) {
   })
 }
 
-export function useParentObservationPageState() {
+export function useParentObservationPageState(childrenId?: string) {
+  const accessToken = useAppSessionStore((state) => state.accessToken)
+  const isMockMode = useParentMockMode()
   const {
     currentYear,
     currentMonth,
     records,
     isLoading,
     isError,
+    refetch: refetchRecords,
     handlePreviousMonth,
     handleNextMonth,
-  } = useParentObservationList()
+  } = useParentObservationList(childrenId)
 
   const [selectedDay, setSelectedDay] = useState<number | null>(null)
   const [recordsOverrideByMonth, setRecordsOverrideByMonth] = useState<
@@ -61,6 +103,8 @@ export function useParentObservationPageState() {
   >({})
   const [modalMode, setModalMode] = useState<ParentObservationModalMode>(null)
   const [selectedRecordId, setSelectedRecordId] = useState<string | null>(null)
+  const [selectedRecordDetail, setSelectedRecordDetail] =
+    useState<ParentObservationRecord | null>(null)
   const [draftDate, setDraftDate] = useState<DraftDate>({
     year: currentYear,
     month: currentMonth,
@@ -68,8 +112,24 @@ export function useParentObservationPageState() {
   })
   const [draftMood, setDraftMood] = useState<ParentObservationMood | null>(null)
   const [draftDescription, setDraftDescription] = useState('')
+  const [isMutating, setIsMutating] = useState(false)
 
   const monthKey = getMonthKey(currentYear, currentMonth)
+  const canUseObservationApi = Boolean(!isMockMode && accessToken && childrenId)
+  const canUseLocalMock = isMockMode
+  const canMutateObservation = canUseObservationApi || canUseLocalMock
+
+  const clearCurrentMonthOverride = () => {
+    setRecordsOverrideByMonth((previous) => {
+      if (!previous[monthKey]) {
+        return previous
+      }
+
+      const next = { ...previous }
+      delete next[monthKey]
+      return next
+    })
+  }
 
   const localRecords = useMemo(
     () => recordsOverrideByMonth[monthKey] ?? sortRecords(records),
@@ -100,10 +160,13 @@ export function useParentObservationPageState() {
     return formatBannerDateLabel(currentMonth, selectedDay)
   }, [currentMonth, selectedDay])
 
-  const selectedRecord = useMemo(
-    () => localRecords.find((record) => record.id === selectedRecordId) ?? null,
-    [localRecords, selectedRecordId],
-  )
+  const selectedRecord = useMemo(() => {
+    if (selectedRecordDetail?.id === selectedRecordId) {
+      return selectedRecordDetail
+    }
+
+    return localRecords.find((record) => record.id === selectedRecordId) ?? null
+  }, [localRecords, selectedRecordDetail, selectedRecordId])
 
   const detailRecords = useMemo(() => {
     if (!selectedRecord) {
@@ -141,11 +204,6 @@ export function useParentObservationPageState() {
     return formatModalDateLabel(draftDate.month, draftDate.day, draftWeekday)
   }, [draftDate])
 
-  const openDetailModal = (recordId: string) => {
-    setSelectedRecordId(recordId)
-    setModalMode('detail')
-  }
-
   const handleSelectDay = (day: number) => {
     setSelectedDay((previousDay) => (previousDay === day ? null : day))
   }
@@ -154,6 +212,7 @@ export function useParentObservationPageState() {
     setSelectedDay(null)
     setModalMode(null)
     setSelectedRecordId(null)
+    setSelectedRecordDetail(null)
     handlePreviousMonth()
   }
 
@@ -161,11 +220,35 @@ export function useParentObservationPageState() {
     setSelectedDay(null)
     setModalMode(null)
     setSelectedRecordId(null)
+    setSelectedRecordDetail(null)
     handleNextMonth()
   }
 
   const handleSelectRecord = (recordId: string) => {
-    openDetailModal(recordId)
+    const fallbackRecord =
+      localRecords.find((record) => record.id === recordId) ?? null
+
+    setSelectedRecordId(recordId)
+    setSelectedRecordDetail(fallbackRecord)
+    setModalMode('detail')
+
+    if (isMockMode || !accessToken || !childrenId) {
+      return
+    }
+
+    void getParentObservationDetail({
+      accessToken,
+      childrenId,
+      reportId: recordId,
+    })
+      .then((record) => {
+        setSelectedRecordDetail((currentRecord) =>
+          currentRecord?.id === recordId ? record : currentRecord,
+        )
+      })
+      .catch((error) => {
+        console.error(error)
+      })
   }
 
   const handleCloseModal = () => {
@@ -173,15 +256,37 @@ export function useParentObservationPageState() {
   }
 
   const handleOpenDelete = () => {
-    if (!selectedRecord) {
+    if (!selectedRecord || !canMutateObservation) {
       return
     }
 
     setModalMode('delete')
   }
 
-  const handleConfirmDelete = () => {
-    if (!selectedRecord) {
+  const handleConfirmDelete = async () => {
+    if (!selectedRecord || !canMutateObservation) {
+      return
+    }
+
+    if (canUseObservationApi && accessToken && childrenId) {
+      try {
+        setIsMutating(true)
+        await deleteParentObservationReport({
+          accessToken,
+          childrenId,
+          reportId: selectedRecord.id,
+        })
+        clearCurrentMonthOverride()
+        refetchRecords()
+        setModalMode(null)
+        setSelectedRecordId(null)
+        setSelectedRecordDetail(null)
+      } catch (error) {
+        console.error(error)
+      } finally {
+        setIsMutating(false)
+      }
+
       return
     }
 
@@ -197,10 +302,11 @@ export function useParentObservationPageState() {
     })
     setModalMode(null)
     setSelectedRecordId(null)
+    setSelectedRecordDetail(null)
   }
 
   const handleOpenEdit = () => {
-    if (!selectedRecord) {
+    if (!selectedRecord || !canMutateObservation) {
       return
     }
 
@@ -225,14 +331,20 @@ export function useParentObservationPageState() {
       return
     }
 
-    setSelectedRecordId(nextRecord.id)
+    handleSelectRecord(nextRecord.id)
   }
 
   const handleOpenCreate = () => {
+    if (!canMutateObservation) {
+      return
+    }
+
     const today = new Date()
     const isViewingTodayMonth =
       currentYear === today.getFullYear() && currentMonth === today.getMonth() + 1
-    const fallbackDay = selectedDay ?? (isViewingTodayMonth ? today.getDate() : localRecords[0]?.day ?? 1)
+    const fallbackDay =
+      selectedDay ??
+      (isViewingTodayMonth ? today.getDate() : localRecords[0]?.day ?? 1)
 
     setDraftDate({
       year: currentYear,
@@ -246,9 +358,12 @@ export function useParentObservationPageState() {
 
   const handleShiftDraftDate = (diff: -1 | 1) => {
     setDraftDate((previousDate) => {
-      const daysInMonth = getDaysInMonth(previousDate.year, previousDate.month)
+      const maxSelectableDay = getMaxSelectableDay(
+        previousDate.year,
+        previousDate.month,
+      )
       const nextDay = Math.min(
-        daysInMonth,
+        maxSelectableDay,
         Math.max(1, previousDate.day + diff),
       )
 
@@ -259,13 +374,11 @@ export function useParentObservationPageState() {
     })
   }
 
-  const handleSubmitDraft = () => {
-    if (!draftMood || draftDescription.trim().length === 0) {
-      return
-    }
-
-    const recordedAt =
-      modalMode === 'edit' && selectedRecord ? selectedRecord.recordedAt : '21:00'
+  const applyLocalDraft = (
+    recordedAt: string,
+    nextDescription: string,
+    nextMood: ParentObservationMood,
+  ) => {
     const nextRecord: ParentObservationRecord = {
       id:
         modalMode === 'edit' && selectedRecord
@@ -278,8 +391,8 @@ export function useParentObservationPageState() {
       weekday: ['일', '월', '화', '수', '목', '금', '토'][
         new Date(draftDate.year, draftDate.month - 1, draftDate.day).getDay()
       ],
-      mood: draftMood,
-      description: draftDescription.trim(),
+      mood: nextMood,
+      description: nextDescription,
       counselorComment:
         modalMode === 'edit' && selectedRecord
           ? selectedRecord.counselorComment ?? null
@@ -300,7 +413,65 @@ export function useParentObservationPageState() {
     })
     setSelectedDay(draftDate.day)
     setSelectedRecordId(nextRecord.id)
+    setSelectedRecordDetail(nextRecord)
     setModalMode('detail')
+  }
+
+  const handleSubmitDraft = async () => {
+    const nextDescription = draftDescription.trim()
+
+    if (!draftMood || nextDescription.length === 0 || !canMutateObservation) {
+      return
+    }
+
+    const recordedAt =
+      modalMode === 'edit' && selectedRecord
+        ? selectedRecord.recordedAt
+        : getCurrentTimeLabel()
+
+    if (canUseObservationApi && accessToken && childrenId) {
+      const payload = {
+        context: nextDescription,
+        emotionTag: draftMood,
+        reportDate: createReportDateTime(draftDate, recordedAt),
+      }
+
+      try {
+        setIsMutating(true)
+
+        if (modalMode === 'edit' && selectedRecord) {
+          await updateParentObservationReport({
+            accessToken,
+            childrenId,
+            reportId: selectedRecord.id,
+            payload,
+          })
+          setSelectedRecordId(selectedRecord.id)
+          setModalMode('detail')
+        } else {
+          await createParentObservationReport({
+            accessToken,
+            childrenId,
+            payload,
+          })
+          setSelectedRecordId(null)
+          setSelectedRecordDetail(null)
+          setModalMode(null)
+        }
+
+        clearCurrentMonthOverride()
+        setSelectedDay(draftDate.day)
+        refetchRecords()
+      } catch (error) {
+        console.error(error)
+      } finally {
+        setIsMutating(false)
+      }
+
+      return
+    }
+
+    applyLocalDraft(recordedAt, nextDescription, draftMood)
   }
 
   return {
@@ -324,7 +495,7 @@ export function useParentObservationPageState() {
     hasNextDetailRecord:
       selectedRecordIndex > -1 && selectedRecordIndex < detailRecords.length - 1,
     isDraftSubmitDisabled:
-      !draftMood || draftDescription.trim().length === 0,
+      isMutating || !draftMood || draftDescription.trim().length === 0,
     handlePreviousMonth: handleObservationPreviousMonth,
     handleNextMonth: handleObservationNextMonth,
     handleSelectDay,

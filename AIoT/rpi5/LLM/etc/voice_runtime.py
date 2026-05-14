@@ -9,6 +9,8 @@ import subprocess
 import sys
 import tempfile
 import time
+import urllib.error
+import urllib.request
 import wave
 from pathlib import Path
 
@@ -200,6 +202,7 @@ def play_start_sound(args):
 
     if getattr(args, "start_sound", "on") == "off":
         return
+    start_sound_file = getattr(args, "start_sound_file", "")
     start_sound_player = getattr(args, "start_sound_player", "auto")
     aplay_bin = getattr(args, "aplay_bin", "aplay")
     command = None
@@ -219,9 +222,17 @@ def play_start_sound(args):
         return
 
     with tempfile.TemporaryDirectory(prefix="rebloom_start_sound_") as temp_dir:
-        wav_path = Path(temp_dir) / "start.wav"
-        write_start_chime_wav(wav_path)
-        command.append(str(wav_path))
+        sound_path = Path(start_sound_file).expanduser() if start_sound_file else None
+        if sound_path is None:
+            sound_path = Path(temp_dir) / "start.wav"
+            write_start_chime_wav(sound_path)
+        elif not sound_path.exists():
+            if not START_SOUND_WARNING_SHOWN:
+                print(f"[sound] 시작 알림음 파일을 찾지 못해 건너뜁니다: {sound_path}", file=sys.stderr)
+                START_SOUND_WARNING_SHOWN = True
+            return
+
+        command.append(str(sound_path))
         result = None
         for attempt in range(3):
             result = subprocess.run(command, text=True, capture_output=True)
@@ -402,6 +413,129 @@ def speak_piper(text, piper_bin, piper_model, aplay_bin):
         subprocess.run([aplay_bin, "-q", str(wav_path)], check=True)
 
 
+HF_TTS_PIPELINES = {}
+MELOTTS_MODELS = {}
+
+
+def _torch_dtype_from_name(dtype_name):
+    if not dtype_name or dtype_name == "auto":
+        return "auto"
+    try:
+        import torch
+    except ImportError as exc:
+        raise RuntimeError("Hugging Face TTS는 torch가 필요합니다. `python -m pip install torch transformers`를 실행하세요.") from exc
+
+    dtype = getattr(torch, dtype_name, None)
+    if dtype is None:
+        raise RuntimeError(f"지원하지 않는 torch dtype입니다: {dtype_name}")
+    return dtype
+
+
+def _hf_device_arg(device):
+    if not device or device == "cpu":
+        return -1
+    if device.startswith("cuda"):
+        if ":" in device:
+            return int(device.split(":", 1)[1])
+        return 0
+    return device
+
+
+def _load_hf_tts_pipeline(model_id, device, torch_dtype):
+    key = (model_id, device, torch_dtype)
+    if key in HF_TTS_PIPELINES:
+        return HF_TTS_PIPELINES[key]
+
+    try:
+        from transformers import pipeline
+    except ImportError as exc:
+        raise RuntimeError("Hugging Face TTS는 transformers가 필요합니다. `python -m pip install transformers torch`를 실행하세요.") from exc
+
+    kwargs = {
+        "model": model_id,
+        "device": _hf_device_arg(device),
+    }
+    if torch_dtype:
+        kwargs["torch_dtype"] = _torch_dtype_from_name(torch_dtype)
+    try:
+        pipe = pipeline("text-to-speech", **kwargs)
+    except ValueError:
+        kwargs["trust_remote_code"] = True
+        pipe = pipeline("text-to-speech", **kwargs)
+    HF_TTS_PIPELINES[key] = pipe
+    return pipe
+
+
+def _write_tts_audio_wav(output_path, audio, sample_rate):
+    import numpy as np
+
+    samples = np.asarray(audio)
+    if samples.ndim > 1:
+        samples = samples.squeeze()
+    if samples.dtype.kind == "f":
+        samples = np.clip(samples, -1.0, 1.0)
+        samples = (samples * 32767).astype(np.int16)
+    else:
+        samples = samples.astype(np.int16)
+    if sys.byteorder != "little":
+        samples = samples.byteswap()
+    write_pcm_wav(output_path, [samples.tobytes()], sample_rate=sample_rate)
+
+
+def speak_huggingface_tts(text, model_id, device, torch_dtype, aplay_bin, tts_output_file=""):
+    if not tts_output_file:
+        require_command(aplay_bin)
+
+    pipe = _load_hf_tts_pipeline(model_id, device, torch_dtype)
+    result = pipe(text)
+    audio = result.get("audio")
+    sample_rate = int(result.get("sampling_rate", 16000))
+    if audio is None:
+        raise RuntimeError("Hugging Face TTS 결과에 audio가 없습니다.")
+
+    with tempfile.TemporaryDirectory(prefix="rebloom_hf_tts_") as temp_dir:
+        wav_path = Path(tts_output_file) if tts_output_file else Path(temp_dir) / "answer.wav"
+        _write_tts_audio_wav(wav_path, audio, sample_rate)
+        if tts_output_file:
+            print(f"[tts] WAV 저장됨: {wav_path}")
+            return
+        subprocess.run([aplay_bin, "-q", str(wav_path)], check=True)
+
+
+def _load_melotts_model(language, device):
+    key = (language, device)
+    if key in MELOTTS_MODELS:
+        return MELOTTS_MODELS[key]
+
+    try:
+        from melo.api import TTS
+    except ImportError as exc:
+        raise RuntimeError("MeloTTS가 설치되어 있지 않습니다. `python -m pip install melotts`를 실행하세요.") from exc
+
+    model = TTS(language=language, device=device)
+    MELOTTS_MODELS[key] = model
+    return model
+
+
+def speak_melotts(text, language, speaker, speed, device, aplay_bin, tts_output_file=""):
+    if not tts_output_file:
+        require_command(aplay_bin)
+
+    model = _load_melotts_model(language, device)
+    speaker_ids = getattr(model.hps.data, "spk2id", {})
+    if speaker not in speaker_ids:
+        available = ", ".join(sorted(speaker_ids)) or "없음"
+        raise RuntimeError(f"MeloTTS speaker를 찾지 못했습니다: {speaker}. 사용 가능: {available}")
+
+    with tempfile.TemporaryDirectory(prefix="rebloom_melotts_") as temp_dir:
+        wav_path = Path(tts_output_file) if tts_output_file else Path(temp_dir) / "answer.wav"
+        model.tts_to_file(text, speaker_ids[speaker], str(wav_path), speed=speed)
+        if tts_output_file:
+            print(f"[tts] WAV 저장됨: {wav_path}")
+            return
+        subprocess.run([aplay_bin, "-q", str(wav_path)], check=True)
+
+
 async def save_edge_tts_mp3(text, output_path, voice, rate, volume):
     try:
         import edge_tts
@@ -423,6 +557,96 @@ def speak_edge(text, edge_voice, edge_rate, edge_volume, mp3_player, mp3_player_
     with tempfile.TemporaryDirectory(prefix="rebloom_edge_tts_") as temp_dir:
         mp3_path = Path(tts_output_file) if tts_output_file else Path(temp_dir) / "answer.mp3"
         asyncio.run(save_edge_tts_mp3(text, mp3_path, edge_voice, edge_rate, edge_volume))
+        if tts_output_file:
+            print(f"[tts] MP3 저장됨: {mp3_path}")
+            return
+        subprocess.run([mp3_player, *split_command_args(mp3_player_args), "-q", str(mp3_path)], check=True)
+
+
+def save_elevenlabs_tts_mp3(
+    text,
+    output_path,
+    api_key,
+    voice_id,
+    model_id,
+    output_format,
+    voice_settings,
+    timeout_seconds=30.0,
+):
+    if not api_key:
+        raise RuntimeError("ElevenLabs API 키가 필요합니다. ELEVENLABS_API_KEY 값을 지정하세요.")
+    if not voice_id:
+        raise RuntimeError("ElevenLabs voice id가 필요합니다. ELEVENLABS_VOICE_ID 값을 지정하세요.")
+
+    url = f"https://api.elevenlabs.io/v1/text-to-speech/{voice_id}?output_format={output_format}"
+    payload = json_dumps_bytes(
+        {
+            "text": text,
+            "model_id": model_id,
+            "voice_settings": voice_settings,
+        }
+    )
+    request = urllib.request.Request(
+        url,
+        data=payload,
+        headers={
+            "Content-Type": "application/json",
+            "Accept": "audio/mpeg",
+            "xi-api-key": api_key,
+        },
+        method="POST",
+    )
+    try:
+        with urllib.request.urlopen(request, timeout=timeout_seconds) as response:
+            Path(output_path).write_bytes(response.read())
+    except urllib.error.HTTPError as exc:
+        detail = exc.read().decode("utf-8", errors="replace").strip()
+        raise RuntimeError(f"ElevenLabs TTS 요청 실패: HTTP {exc.code} {detail}") from exc
+
+
+def json_dumps_bytes(value):
+    import json
+
+    return json.dumps(value, ensure_ascii=False).encode("utf-8")
+
+
+def speak_elevenlabs(
+    text,
+    api_key,
+    voice_id,
+    model_id,
+    output_format,
+    stability,
+    similarity_boost,
+    style,
+    use_speaker_boost,
+    speed,
+    mp3_player,
+    mp3_player_args="",
+    tts_output_file="",
+    timeout_seconds=30.0,
+):
+    if not tts_output_file:
+        require_command(mp3_player)
+
+    with tempfile.TemporaryDirectory(prefix="rebloom_elevenlabs_tts_") as temp_dir:
+        mp3_path = Path(tts_output_file) if tts_output_file else Path(temp_dir) / "answer.mp3"
+        save_elevenlabs_tts_mp3(
+            text,
+            mp3_path,
+            api_key,
+            voice_id,
+            model_id,
+            output_format,
+            {
+                "stability": stability,
+                "similarity_boost": similarity_boost,
+                "style": style,
+                "use_speaker_boost": use_speaker_boost,
+                "speed": speed,
+            },
+            timeout_seconds,
+        )
         if tts_output_file:
             print(f"[tts] MP3 저장됨: {mp3_path}")
             return
@@ -476,6 +700,27 @@ def speak(text, args):
     if args.tts == "piper":
         speak_piper(text, args.piper_bin, args.piper_model, args.aplay_bin)
         return
+    if args.tts in ("huggingface", "hf", "hf_melotts", "melotts"):
+        if args.tts == "melotts":
+            speak_melotts(
+                text,
+                args.melotts_language,
+                args.melotts_speaker,
+                args.melotts_speed,
+                args.hf_tts_device,
+                args.aplay_bin,
+                args.tts_output_file,
+            )
+            return
+        speak_huggingface_tts(
+            text,
+            args.hf_tts_model,
+            args.hf_tts_device,
+            args.hf_tts_torch_dtype,
+            args.aplay_bin,
+            args.tts_output_file,
+        )
+        return
     if args.tts == "edge":
         speak_edge(
             text,
@@ -485,6 +730,24 @@ def speak(text, args):
             args.mp3_player,
             args.mp3_player_args,
             args.tts_output_file,
+        )
+        return
+    if args.tts == "elevenlabs":
+        speak_elevenlabs(
+            text,
+            args.elevenlabs_api_key,
+            args.elevenlabs_voice_id,
+            args.elevenlabs_model_id,
+            args.elevenlabs_output_format,
+            args.elevenlabs_stability,
+            args.elevenlabs_similarity_boost,
+            args.elevenlabs_style,
+            args.elevenlabs_use_speaker_boost,
+            args.elevenlabs_speed,
+            args.mp3_player,
+            args.mp3_player_args,
+            args.tts_output_file,
+            args.elevenlabs_timeout_seconds,
         )
         return
     raise RuntimeError(f"지원하지 않는 TTS 엔진입니다: {args.tts}")

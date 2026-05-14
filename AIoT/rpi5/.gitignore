@@ -38,6 +38,9 @@ logs/
 *.raw
 recordings/
 
+# Exception: Track the serverchatting feedback chime
+!serverchatting/music/feedback.mp3
+
 # Local model and generated ML artifacts
 *.onnx
 *.tflite
@@ -48,6 +51,8 @@ recordings/
 
 # Exception: Track the custom WakeOnWord models
 !WakeOnWord/models/hi_blooming*
+!serverchatting/Wake_Model/
+!serverchatting/Wake_Model/hi_blooming*
 
 # Raspberry Pi / provisioning local state
 wpa_supplicant.conf

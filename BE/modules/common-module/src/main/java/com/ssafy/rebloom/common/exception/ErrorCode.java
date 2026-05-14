@@ -64,8 +64,11 @@ public enum ErrorCode {
     // 3. CHILDREN(자녀)
     // ============================================================
     PARENT_RELATION_NOT_FOUND(HttpStatus.NOT_FOUND, "부모님과의 관계를 찾을 수 없습니다."),
+    USER_ADDRESS_NOT_CONFIGURED(HttpStatus.CONFLICT, "사용자 주소가 설정되지 않았습니다."),
 
 
+
+    TARGET_LOCATION_NOT_CONFIGURED(HttpStatus.BAD_REQUEST, "아이의 목표 위치가 설정되지 않았습니다."),
 
     // ============================================================
     // 4.

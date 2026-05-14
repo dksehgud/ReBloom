@@ -6,6 +6,7 @@ import java.util.UUID;
 public record ChildGpsResponseDto(
     UUID childId,
     BigDecimal latitude,
-    BigDecimal longitude
+    BigDecimal longitude,
+    String deviceId
 ) {
 }

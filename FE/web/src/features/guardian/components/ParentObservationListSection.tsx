@@ -4,6 +4,8 @@ type ParentObservationListSectionProps = {
   records: ParentObservationRecord[]
   selectedDateLabel?: string | null
   currentMonthLabel: string
+  emptyDescription?: string
+  emptyMessage?: string
   isLoading?: boolean
   isError?: boolean
   onAddRecord?: () => void
@@ -88,12 +90,21 @@ function ParentObservationListSection({
   records,
   selectedDateLabel = null,
   currentMonthLabel,
+  emptyDescription,
+  emptyMessage,
   isLoading = false,
   isError = false,
   onAddRecord,
   onSelectRecord,
 }: ParentObservationListSectionProps) {
   const showEmptyBanner = !isLoading && !isError && records.length === 0
+  const defaultEmptyMessage = selectedDateLabel
+    ? `${selectedDateLabel}에는 아직 기록된 관찰 내용이 없어요.`
+    : `${currentMonthLabel}에는 아직 기록된 관찰 내용이 없어요.`
+  const defaultEmptyDescription = selectedDateLabel
+    ? '오늘 아이의 모습을 기록해보세요.'
+    : null
+  const emptyDescriptionText = emptyDescription ?? defaultEmptyDescription
 
   return (
     <section className="parent-home-page__records-card" aria-label="아이 관찰 기록 영역">
@@ -119,12 +130,12 @@ function ParentObservationListSection({
             <PromptIcon />
             <div className="parent-home-page__empty-copy">
               <p className="parent-home-page__empty-copy-line">
-                {selectedDateLabel
-                  ? `${selectedDateLabel}에는 아직 기록된 관찰 내용이 없어요.`
-                  : `${currentMonthLabel}에는 아직 기록된 관찰 내용이 없어요.`}
+                {emptyMessage ?? defaultEmptyMessage}
               </p>
-              {selectedDateLabel ? (
-                <p className="parent-home-page__empty-copy-line">오늘 아이의 모습을 기록해보세요.</p>
+              {emptyDescriptionText ? (
+                <p className="parent-home-page__empty-copy-line">
+                  {emptyDescriptionText}
+                </p>
               ) : null}
             </div>
           </div>

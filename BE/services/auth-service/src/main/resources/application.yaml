@@ -32,6 +32,44 @@ spring:
           starttls:
             enable: true
 
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: ${GOOGLE_CLIENT_ID}
+            client-secret: ${GOOGLE_CLIENT_SECRET}
+            redirect-uri: ${GOOGLE_REDIRECT_URI:{baseUrl}/login/oauth2/code/{registrationId}}
+            scope:
+              - openid
+              - profile
+              - email
+          kakao:
+            client-id: ${KAKAO_CLIENT_ID}
+            client-secret: ${KAKAO_CLIENT_SECRET}
+            redirect-uri: ${KAKAO_REDIRECT_URI:{baseUrl}/login/oauth2/code/{registrationId}}
+            authorization-grant-type: authorization_code
+            client-authentication-method: client_secret_post
+            scope:
+              - profile_nickname
+              - account_email
+
+        provider:
+          google:
+            authorization-uri: https://accounts.google.com/o/oauth2/v2/auth
+            token-uri: https://oauth2.googleapis.com/token
+            user-info-uri: https://www.googleapis.com/oauth2/v3/userinfo
+            user-name-attribute: sub
+          kakao:
+            authorization-uri: https://kauth.kakao.com/oauth/authorize
+            token-uri: https://kauth.kakao.com/oauth/token
+            user-info-uri: https://kapi.kakao.com/v2/user/me
+            user-name-attribute: id
+oauth2:
+  success-redirect-url: ${OAUTH2_SUCCESS_REDIRECT_URL:http://localhost:5174/oauth/callback}
+  allowed-success-redirect-origins: ${OAUTH2_ALLOWED_SUCCESS_REDIRECT_ORIGINS:http://localhost:5174,http://10.0.2.2:5174}
+  gateway-prefix: ${OAUTH2_GATEWAY_PREFIX:/auth}
+
 server:
   port: ${SERVER_PORT:8081}
 
@@ -50,7 +88,11 @@ rebloom:
       - "/api/v1/auth/passwords/resets"
       - "/api/v1/auth/emails/**"
       - "/api/v1/auth/*/callback"
+      - "/oauth2/**"
+      - "/login/oauth2/code/**"
       - "/api/v1/users"
       - "/api/v1/users/profiles"
       - "/api/v1/internal/children/*/target-location"
+      - "/api/v1/internal/users/*/age"
+      - "/api/v1/internal/devices/serial/*/children-id"
       - "/api/v1/internal/children/*/iot-info"

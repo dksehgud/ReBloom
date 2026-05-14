@@ -5,10 +5,12 @@ import type { ChildListItem } from '../../types/dashboard'
 type CounselorSidebarProps = {
   isCollapsed: boolean
   childItems: ChildListItem[]
-  selectedChildId: number
+  selectedChildId: string | null
   counselorName: string
+  isLoadingChildren?: boolean
+  childrenError?: string
   onToggle: () => void
-  onSelectChild: (childId: number) => void
+  onSelectChild: (childId: string) => void
   onOpenSettings: () => void
 }
 
@@ -17,6 +19,8 @@ function CounselorSidebar({
   childItems,
   selectedChildId,
   counselorName,
+  isLoadingChildren = false,
+  childrenError,
   onToggle,
   onSelectChild,
   onOpenSettings,
@@ -44,31 +48,42 @@ function CounselorSidebar({
       </header>
 
       <nav className="counselor-child-list" aria-label="상담 아동 목록">
-        {childItems.map((child) => (
-          <button
-            type="button"
-            className={child.id === selectedChildId ? 'is-selected' : undefined}
-            key={child.id}
-            onClick={() => onSelectChild(child.id)}
-          >
-            <span className="counselor-child-avatar" aria-hidden="true">
-              {child.name.slice(0, 1)}
-            </span>
-            <span className="counselor-child-summary">
-              <strong>{child.name}</strong>
-              <em>{child.meta}</em>
-            </span>
-            <small className="counselor-child-subtext">{child.subText}</small>
-          </button>
-        ))}
+        {isLoadingChildren ? (
+          <p className="counselor-child-list-state">상담 아동을 불러오는 중입니다.</p>
+        ) : null}
+
+        {!isLoadingChildren && childrenError ? (
+          <p className="counselor-child-list-state is-error">{childrenError}</p>
+        ) : null}
+
+        {!isLoadingChildren && !childrenError && childItems.length === 0 ? (
+          <p className="counselor-child-list-state">연결된 상담 아동이 없습니다.</p>
+        ) : null}
+
+        {!isLoadingChildren && !childrenError
+          ? childItems.map((child) => (
+              <button
+                type="button"
+                className={child.id === selectedChildId ? 'is-selected' : undefined}
+                key={child.id}
+                onClick={() => onSelectChild(child.id)}
+              >
+                <span className="counselor-child-avatar" aria-hidden="true">
+                  {child.name.slice(0, 1)}
+                </span>
+                <span className="counselor-child-summary">
+                  <strong>{child.name}</strong>
+                  <em>{child.meta}</em>
+                </span>
+                <small className="counselor-child-subtext">{child.subText}</small>
+              </button>
+            ))
+          : null}
       </nav>
 
       <footer className="counselor-dashboard-sidebar-footer">
         <div className="counselor-dashboard-sidebar-profile">
-          <span className="counselor-dashboard-sidebar-avatar" aria-hidden="true">
-            {counselorName.slice(0, 1)}
-          </span>
-          <strong>{counselorName} 상담자님</strong>
+          <strong>{counselorName} 상담사님</strong>
         </div>
         <button
           type="button"

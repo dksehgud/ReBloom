@@ -36,7 +36,7 @@ public class FcmServiceImpl implements FcmService {
     @Transactional
     public boolean send(Notification notification) {
         List<UserFcmToken> tokens =
-            userFcmTokenRepository.findAllByUserIdAndActiveTrue(notification.getReceiverId());
+            userFcmTokenRepository.findAllByUserIdAndIsActiveTrue(notification.getReceiverId());
 
         if (tokens.isEmpty()) {
             log.info(

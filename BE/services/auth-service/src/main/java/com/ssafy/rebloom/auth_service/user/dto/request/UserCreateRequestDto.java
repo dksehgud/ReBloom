@@ -14,7 +14,6 @@ public record UserCreateRequestDto (
     @NotBlank @Email
     String email,
 
-    @NotBlank
     String password,
 
     @NotBlank

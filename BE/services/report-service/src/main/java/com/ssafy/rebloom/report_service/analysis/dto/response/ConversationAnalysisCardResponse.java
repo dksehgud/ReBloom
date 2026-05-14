@@ -11,7 +11,6 @@ public record ConversationAnalysisCardResponse(
     UUID analysisId,
     LocalDateTime startedAt,
     LocalDateTime endedAt,
-    String emotionIcon,
     String embeddingText,
     String prediction,
     boolean aiInitiated,

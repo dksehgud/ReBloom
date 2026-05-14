@@ -230,10 +230,14 @@ function useChildDiaryPageState() {
   }, [])
 
   useEffect(() => {
-    setRecordsByMonth(diaryBridge.isAvailable() ? {} : cloneSampleRecords())
-    setSelectedDiaryId(null)
-    setEditingDiaryId(null)
-    setViewMode('calendar')
+    const timeoutId = window.setTimeout(() => {
+      setRecordsByMonth(diaryBridge.isAvailable() ? {} : cloneSampleRecords())
+      setSelectedDiaryId(null)
+      setEditingDiaryId(null)
+      setViewMode('calendar')
+    }, 0)
+
+    return () => window.clearTimeout(timeoutId)
   }, [currentUserId])
 
   const currentYear = currentDate.getFullYear()

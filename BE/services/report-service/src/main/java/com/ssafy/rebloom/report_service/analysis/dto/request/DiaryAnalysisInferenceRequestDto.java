@@ -21,6 +21,10 @@ public record DiaryAnalysisInferenceRequestDto(
     LocalDate targetDate,
 
     @NotBlank
+    @JsonProperty("emotion_icon")
+    String emotionIcon,
+
+    @NotBlank
     String content
 ) {
 }

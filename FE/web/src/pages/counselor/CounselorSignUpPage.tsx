@@ -1,10 +1,15 @@
 import type { ChangeEvent, FormEvent, KeyboardEvent } from 'react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { FiEye, FiEyeOff } from 'react-icons/fi'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 
+import AuthModal from '../../components/auth/AuthModal'
 import AuthInput from '../../components/auth/AuthInput'
 import CounselorAuthLayout from '../../components/templates/CounselorAuthLayout/CounselorAuthLayout'
+import {
+  authApi,
+  type SignupRequest,
+} from '../../features/auth/api/authApi'
 import { openDaumPostcodePopup } from '../../shared/utils/daumPostcode'
 
 type SignUpStep = 'email' | 'verification' | 'profile'
@@ -12,10 +17,11 @@ type EmailStatus = 'idle' | 'success' | 'error'
 type VerificationStatus = 'idle' | 'error'
 
 const INITIAL_CODE_LENGTH = 6
-const INITIAL_TIME_LEFT = 4 * 60 + 58
+const INITIAL_TIME_LEFT = 5 * 60
 const KOREAN_NAME_PATTERN = /^[가-힣]{2,10}$/
 const PHONE_NUMBER_PATTERN = /^010-\d{4}-\d{4}$/
 const PASSWORD_ALLOWED_PATTERN = /^[!-~]+$/
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 function formatTimeLeft(timeLeft: number) {
   const minutes = Math.floor(timeLeft / 60)
@@ -40,14 +46,23 @@ function formatPhoneNumber(value: string) {
 
 function CounselorSignUpPage() {
   const navigate = useNavigate()
-  const [step, setStep] = useState<SignUpStep>('email')
-  const [email, setEmail] = useState('')
+  const [searchParams] = useSearchParams()
+  const registerUUID = searchParams.get('registerUUID') ?? undefined
+  const oauthEmail = searchParams.get('email') ?? ''
+  const isOAuthSignup = Boolean(registerUUID)
+  const [step, setStep] = useState<SignUpStep>(isOAuthSignup ? 'profile' : 'email')
+  const [email, setEmail] = useState(oauthEmail)
   const [emailStatus, setEmailStatus] = useState<EmailStatus>('idle')
+  const [emailError, setEmailError] = useState<string | undefined>()
+  const [isCheckingEmail, setIsCheckingEmail] = useState(false)
+  const [isSendingCode, setIsSendingCode] = useState(false)
   const [verificationDigits, setVerificationDigits] = useState<string[]>(
     Array.from({ length: INITIAL_CODE_LENGTH }, () => ''),
   )
   const [verificationStatus, setVerificationStatus] =
     useState<VerificationStatus>('idle')
+  const [verificationError, setVerificationError] = useState<string | undefined>()
+  const [isVerifyingCode, setIsVerifyingCode] = useState(false)
   const [timeLeft, setTimeLeft] = useState(INITIAL_TIME_LEFT)
   const [name, setName] = useState('')
   const [phone, setPhone] = useState('')
@@ -63,6 +78,9 @@ function CounselorSignUpPage() {
   const [isPasswordVisible, setIsPasswordVisible] = useState(false)
   const [isPasswordConfirmVisible, setIsPasswordConfirmVisible] =
     useState(false)
+  const [submitError, setSubmitError] = useState<string | undefined>()
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isCompleteModalOpen, setIsCompleteModalOpen] = useState(false)
 
   const verificationInputRefs = useRef<Array<HTMLInputElement | null>>([])
 
@@ -101,7 +119,7 @@ function CounselorSignUpPage() {
     [password],
   )
 
-  const isNameValid = KOREAN_NAME_PATTERN.test(name)
+  const isNameValid = KOREAN_NAME_PATTERN.test(name.trim())
   const isPhoneValid = PHONE_NUMBER_PATTERN.test(phone)
 
   const isProfileStepComplete =
@@ -110,12 +128,13 @@ function CounselorSignUpPage() {
     hospitalName.trim().length > 0 &&
     hospitalAddress.trim().length > 0 &&
     hospitalAddressDetail.trim().length > 0 &&
-    passwordRuleStates.length &&
-    passwordRuleStates.letter &&
-    passwordRuleStates.number &&
-    passwordRuleStates.allowedCharacters &&
-    passwordConfirm.length > 0 &&
-    password === passwordConfirm
+    (isOAuthSignup ||
+      (passwordRuleStates.length &&
+        passwordRuleStates.letter &&
+        passwordRuleStates.number &&
+        passwordRuleStates.allowedCharacters &&
+        passwordConfirm.length > 0 &&
+        password === passwordConfirm))
 
   const titleMap: Record<SignUpStep, string> = {
     email: '회원가입',
@@ -129,34 +148,62 @@ function CounselorSignUpPage() {
     profile: 'Sign in',
   }
 
-  const handleDuplicateCheck = () => {
-    if (email.trim().length === 0) {
+  const handleDuplicateCheck = async () => {
+    const normalizedEmail = email.trim().toLowerCase()
+
+    setEmailError(undefined)
+
+    if (normalizedEmail.length === 0 || !EMAIL_PATTERN.test(normalizedEmail)) {
       setEmailStatus('error')
+      setEmailError('올바른 이메일 형식으로 입력해주세요.')
       return
     }
 
-    if (
-      email.toLowerCase().includes('exist') ||
-      email.toLowerCase().includes('taken')
-    ) {
-      setEmailStatus('error')
-      return
-    }
+    try {
+      setIsCheckingEmail(true)
+      const isDuplicate = await authApi.checkEmailDuplicate(normalizedEmail)
 
-    setEmailStatus('success')
+      if (isDuplicate) {
+        setEmailStatus('error')
+        setEmailError('이미 존재하는 이메일입니다.')
+        return
+      }
+
+      setEmail(normalizedEmail)
+      setEmailStatus('success')
+    } catch (error) {
+      setEmailStatus('error')
+      setEmailError(
+        error instanceof Error ? error.message : '이메일 중복 확인에 실패했습니다.',
+      )
+    } finally {
+      setIsCheckingEmail(false)
+    }
   }
 
-  const handleEmailSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleEmailSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
 
-    if (emailStatus !== 'success') {
+    if (emailStatus !== 'success' || isSendingCode) {
       return
     }
 
-    setStep('verification')
-    setVerificationStatus('idle')
-    setVerificationDigits(Array.from({ length: INITIAL_CODE_LENGTH }, () => ''))
-    setTimeLeft(INITIAL_TIME_LEFT)
+    try {
+      setIsSendingCode(true)
+      setEmailError(undefined)
+      setVerificationError(undefined)
+      await authApi.sendEmailVerificationCode(email.trim().toLowerCase())
+      setStep('verification')
+      setVerificationStatus('idle')
+      setVerificationDigits(Array.from({ length: INITIAL_CODE_LENGTH }, () => ''))
+      setTimeLeft(INITIAL_TIME_LEFT)
+    } catch (error) {
+      setEmailError(
+        error instanceof Error ? error.message : '인증코드 전송에 실패했습니다.',
+      )
+    } finally {
+      setIsSendingCode(false)
+    }
   }
 
   const handleVerificationChange = (
@@ -170,6 +217,8 @@ function CounselorSignUpPage() {
       nextDigits[index] = nextValue
       return nextDigits
     })
+    setVerificationStatus('idle')
+    setVerificationError(undefined)
 
     if (nextValue && index < INITIAL_CODE_LENGTH - 1) {
       verificationInputRefs.current[index + 1]?.focus()
@@ -185,27 +234,66 @@ function CounselorSignUpPage() {
     }
   }
 
-  const handleVerificationSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleVerificationSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
 
-    if (!isVerificationComplete) {
+    if (!isVerificationComplete || isVerifyingCode) {
       return
     }
 
-    if (verificationCode === '123456') {
-      setVerificationStatus('idle')
-      setStep('profile')
+    if (timeLeft === 0) {
+      setVerificationStatus('error')
+      setVerificationError('인증 시간이 만료되었습니다. 인증코드를 다시 받아주세요.')
       return
     }
 
-    setVerificationStatus('error')
+    try {
+      setIsVerifyingCode(true)
+      setVerificationError(undefined)
+      const isVerified = await authApi.verifyEmailCode(
+        email.trim().toLowerCase(),
+        verificationCode,
+      )
+
+      if (isVerified) {
+        setVerificationStatus('idle')
+        setStep('profile')
+        return
+      }
+
+      setVerificationStatus('error')
+      setVerificationError('인증코드가 올바르지 않습니다.')
+    } catch (error) {
+      setVerificationStatus('error')
+      setVerificationError(
+        error instanceof Error ? error.message : '인증코드 확인에 실패했습니다.',
+      )
+    } finally {
+      setIsVerifyingCode(false)
+    }
   }
 
-  const handleResend = () => {
-    setVerificationDigits(Array.from({ length: INITIAL_CODE_LENGTH }, () => ''))
-    setVerificationStatus('idle')
-    setTimeLeft(INITIAL_TIME_LEFT)
-    verificationInputRefs.current[0]?.focus()
+  const handleResend = async () => {
+    if (isSendingCode) {
+      return
+    }
+
+    try {
+      setIsSendingCode(true)
+      setVerificationError(undefined)
+      await authApi.sendEmailVerificationCode(email.trim().toLowerCase())
+      setVerificationDigits(Array.from({ length: INITIAL_CODE_LENGTH }, () => ''))
+      setVerificationStatus('idle')
+      setTimeLeft(INITIAL_TIME_LEFT)
+      verificationInputRefs.current[0]?.focus()
+    } catch (error) {
+      setVerificationStatus('error')
+      setVerificationError(
+        error instanceof Error ? error.message : '인증코드 재전송에 실패했습니다.',
+      )
+    } finally {
+      setIsSendingCode(false)
+    }
   }
 
   const handleSearchHospitalAddress = async () => {
@@ -230,14 +318,80 @@ function CounselorSignUpPage() {
     }
   }
 
-  const handleProfileSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const getProfileValidationMessage = () => {
+    if (!isNameValid) {
+      return '이름은 한글 2~10자로 입력해주세요.'
+    }
+
+    if (!isPhoneValid) {
+      return '휴대폰 번호를 010-1234-5678 형식으로 입력해주세요.'
+    }
+
+    if (!hospitalName.trim()) {
+      return '병원명을 입력해주세요.'
+    }
+
+    if (!hospitalAddress.trim()) {
+      return '병원 주소를 입력해주세요.'
+    }
+
+    if (!hospitalAddressDetail.trim()) {
+      return '병원 상세 주소를 입력해주세요.'
+    }
+
+    if (
+      !isOAuthSignup &&
+      !(
+        passwordRuleStates.length &&
+        passwordRuleStates.letter &&
+        passwordRuleStates.number &&
+        passwordRuleStates.allowedCharacters &&
+        passwordConfirm.length > 0 &&
+        password === passwordConfirm
+      )
+    ) {
+      return '비밀번호 조건과 비밀번호 확인을 다시 확인해주세요.'
+    }
+
+    return '회원가입 정보를 다시 확인해주세요.'
+  }
+
+  const handleProfileSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
 
-    if (!isProfileStepComplete) {
+    if (!isProfileStepComplete || isSubmitting) {
+      setSubmitError(getProfileValidationMessage())
       return
     }
 
-    navigate('/counselor/login')
+    const request: SignupRequest = {
+      email: email.trim().toLowerCase(),
+      name: name.trim(),
+      phone: phone.trim(),
+      role: 'COUNSELOR',
+      hospitalName: hospitalName.trim(),
+      hospitalAddress: hospitalAddress.trim(),
+      hospitalAddressDetail: hospitalAddressDetail.trim(),
+      ...(isOAuthSignup ? { registerUUID } : { password }),
+    }
+
+    try {
+      setIsSubmitting(true)
+      setSubmitError(undefined)
+      await authApi.signup(request)
+      setIsCompleteModalOpen(true)
+    } catch (error) {
+      setSubmitError(
+        error instanceof Error ? error.message : '회원가입에 실패했습니다.',
+      )
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  const handleCompleteSignup = () => {
+    setIsCompleteModalOpen(false)
+    navigate('/counselor/login', { replace: true })
   }
 
   return (
@@ -257,6 +411,7 @@ function CounselorSignUpPage() {
               onChange={(event) => {
                 setEmail(event.target.value)
                 setEmailStatus('idle')
+                setEmailError(undefined)
               }}
               action={
                 <button
@@ -264,28 +419,29 @@ function CounselorSignUpPage() {
                   className={`counselor-inline-action${
                     emailStatus === 'success' ? ' is-success' : ''
                   }`}
+                  disabled={isCheckingEmail}
                   onClick={handleDuplicateCheck}
                 >
-                  {emailStatus === 'success' ? '확인 완료' : '중복 확인'}
+                  {isCheckingEmail
+                    ? '확인 중'
+                    : emailStatus === 'success'
+                      ? '확인 완료'
+                      : '중복 확인'}
                 </button>
               }
               help="* 이메일 중복 확인 후 인증번호를 전송할 수 있습니다."
               success={
                 emailStatus === 'success' ? '사용 가능한 이메일입니다.' : undefined
               }
-              error={
-                emailStatus === 'error'
-                  ? '이미 존재하는 이메일입니다.'
-                  : undefined
-              }
+              error={emailStatus === 'error' ? emailError : undefined}
             />
 
             <button
               type="submit"
               className="counselor-auth-button counselor-auth-button--primary"
-              disabled={emailStatus !== 'success'}
+              disabled={emailStatus !== 'success' || isSendingCode}
             >
-              다음 →
+              {isSendingCode ? '전송 중' : '다음 →'}
             </button>
           </form>
         </div>
@@ -331,22 +487,25 @@ function CounselorSignUpPage() {
               <button
                 type="button"
                 className="counselor-auth-link counselor-code-resend"
+                disabled={isSendingCode}
                 onClick={handleResend}
               >
-                재전송
+                {isSendingCode ? '재전송 중' : '재전송'}
               </button>
             </div>
 
             {verificationStatus === 'error' ? (
-              <p className="counselor-code-error">인증코드가 올바르지 않습니다.</p>
+              <p className="counselor-code-error">
+                {verificationError ?? '인증코드가 올바르지 않습니다.'}
+              </p>
             ) : null}
 
             <button
               type="submit"
               className="counselor-auth-button counselor-auth-button--primary"
-              disabled={!isVerificationComplete}
+              disabled={!isVerificationComplete || isVerifyingCode}
             >
-              다음 →
+              {isVerifyingCode ? '확인 중' : '다음 →'}
             </button>
           </form>
         </div>
@@ -423,6 +582,8 @@ function CounselorSignUpPage() {
                 onChange={(event) => setHospitalAddressDetail(event.target.value)}
               />
             </div>
+            {!isOAuthSignup ? (
+              <>
             <AuthInput
               label="비밀번호"
               type={isPasswordVisible ? 'text' : 'password'}
@@ -487,16 +648,39 @@ function CounselorSignUpPage() {
                   : undefined
               }
             />
+              </>
+            ) : null}
+
+            {submitError ? <p className="field-error">{submitError}</p> : null}
 
             <button
               type="submit"
               className="counselor-auth-button counselor-auth-button--primary"
-              disabled={!isProfileStepComplete}
+              disabled={isSubmitting}
             >
-              다음 →
+              {isSubmitting ? '가입 중' : '다음 →'}
             </button>
           </form>
         </div>
+      ) : null}
+
+      {isCompleteModalOpen ? (
+        <AuthModal
+          actions={
+            <button
+              className="auth-button is-primary"
+              onClick={handleCompleteSignup}
+              type="button"
+            >
+              확인
+            </button>
+          }
+          title="회원가입 완료"
+        >
+          <div className="auth-modal-panel">
+            상담사 회원가입이 완료되었습니다.
+          </div>
+        </AuthModal>
       ) : null}
     </CounselorAuthLayout>
   )

@@ -23,8 +23,9 @@ spring:
         cors-configurations:
           '[/**]':
             allowedOrigins:
-              - "${FRONTEND_URL:http://localhost:5173}"
+              - "${FRONTEND_URL:http://localhost:5174}"
               - "${FRONTEND_REDIRECT_URL:http://localhost:3000}"
+              - "${FRONTEND_WEBVIEW_URL:http://10.0.2.2:5174}"
               # TODO: 배포 주소 추가
             allowedMethods:
               - GET
@@ -37,19 +38,30 @@ spring:
             allowCredentials: true
 
       routes:
+        - id: auth-service-oauth
+          order: -3
+          uri: ${AUTH_SERVICE_URI:http://localhost:8081}
+          predicates:
+            - Path=/auth/oauth2/**,/auth/login/oauth2/code/**
+          filters:
+            - StripPrefix=1
+            - PreserveHostHeader
+
         # ==========================================
         # AUTH SERVICE - Public
         # 인증 불필요
         # ==========================================
         - id: auth-service-public
+          order: -2
           uri: ${AUTH_SERVICE_URI:http://localhost:8081}
           predicates:
             # 로그인, 토큰 재발급, 이메일 관련 API, OAuth 로그인/가입, 비밀번호 재발급
-            - Path=/auth/api/v1/auth/login, /auth/api/v1/auth/passwords/resets, /auth/api/v1/auth/reissue, /auth/api/v1/auth/emails/**, /auth/api/v1/users/profiles, /auth/api/v1/auth/*/callback
+            - Path=/auth/api/v1/auth/login,/auth/api/v1/auth/passwords/resets,/auth/api/v1/auth/reissue,/auth/api/v1/auth/emails/**,/auth/api/v1/users/profiles,/auth/api/v1/auth/*/callback
           filters: *public-filters
 
         # 회원가입: POST /auth/api/v1/users - 인증 불필요
         - id: auth-service-signup
+          order: -1
           uri: ${AUTH_SERVICE_URI:http://localhost:8081}
           predicates:
             - Path=/auth/api/v1/users
@@ -62,6 +74,7 @@ spring:
         # 로그아웃, 회원탈퇴 등 나머지 /auth/** 요청
         # ==========================================
         - id: auth-service-secured
+          order: 0
           uri: ${AUTH_SERVICE_URI:http://localhost:8081}
           predicates:
             - Path=/auth/**

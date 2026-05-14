@@ -7,5 +7,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface UserFcmTokenRepository extends JpaRepository<UserFcmToken, Long> {
 
-    List<UserFcmToken> findAllByUserIdAndActiveTrue(UUID userId);
+    List<UserFcmToken> findAllByUserIdAndIsActiveTrue(UUID userId);
 }

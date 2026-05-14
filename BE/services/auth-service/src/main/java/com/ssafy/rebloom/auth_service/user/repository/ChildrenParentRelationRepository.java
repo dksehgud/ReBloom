@@ -23,8 +23,7 @@ public interface ChildrenParentRelationRepository extends JpaRepository<Children
         """, nativeQuery = true)
     boolean existsActiveRelation(
         @Param("parentId") UUID parentId,
-        @Param("childrenId") UUID childrenId,
-        @Param("relationStatus") RelationStatus relationStatus
+        @Param("childrenId") UUID childrenId
     );
 
     @Query(value = """
@@ -73,5 +72,17 @@ public interface ChildrenParentRelationRepository extends JpaRepository<Children
     boolean existsRelation(
         @Param("parentId") UUID parentId,
         @Param("childrenId") UUID childrenId
+    );
+
+    @Query("""
+        SELECT cpr
+        FROM ChildrenParentRelation cpr
+        JOIN FETCH cpr.children
+        WHERE cpr.parent.id = :parentId
+          AND cpr.relationStatus = :relationStatus
+        """)
+    Optional<ChildrenParentRelation> findFirstByParentIdAndRelationStatus(
+        @Param("parentId") UUID parentId,
+        @Param("relationStatus") RelationStatus relationStatus
     );
 }

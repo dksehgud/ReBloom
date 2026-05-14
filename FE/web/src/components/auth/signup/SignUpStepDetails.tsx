@@ -10,9 +10,11 @@ type SignUpStepDetailsProps = {
   role: UserRole | null
   email: string
   name: string
+  nameError?: string
   gender: Gender
   birthDate: string
   password: string
+  passwordError?: string
   passwordConfirm: string
   parentEmail: string
   parentEmailError?: string
@@ -24,12 +26,15 @@ type SignUpStepDetailsProps = {
   showPasswordConfirm: boolean
   childFormValid: boolean
   parentFormValid: boolean
+  hasPasswordAllowedCharacters: boolean
+  hasPasswordLetterRule: boolean
   hasPasswordLengthRule: boolean
   hasPasswordNumberRule: boolean
   hasPasswordSpecialRule: boolean
   passwordsMatch: boolean
   submitError?: string
   isSubmitting: boolean
+  isPasswordRequired?: boolean
   onPrevious: () => void
   onSubmit: () => void
   onNameChange: (event: ChangeEvent<HTMLInputElement>) => void
@@ -83,9 +88,11 @@ function SignUpStepDetails({
   role,
   email,
   name,
+  nameError,
   gender,
   birthDate,
   password,
+  passwordError,
   passwordConfirm,
   parentEmail,
   parentEmailError,
@@ -95,8 +102,8 @@ function SignUpStepDetails({
   isLoadingAddressSearch,
   showPassword,
   showPasswordConfirm,
-  childFormValid,
-  parentFormValid,
+  hasPasswordAllowedCharacters,
+  hasPasswordLetterRule,
   hasPasswordLengthRule,
   hasPasswordNumberRule,
   hasPasswordSpecialRule,
@@ -116,6 +123,7 @@ function SignUpStepDetails({
   onSearchAddress,
   onTogglePassword,
   onTogglePasswordConfirm,
+  isPasswordRequired = true,
 }: SignUpStepDetailsProps) {
   return (
     <AuthShell
@@ -127,9 +135,7 @@ function SignUpStepDetails({
           </button>
           <button
             className="auth-button is-primary"
-            disabled={
-              isSubmitting || (role === 'child' ? !childFormValid : !parentFormValid)
-            }
+            disabled={isSubmitting}
             onClick={onSubmit}
             type="button"
           >
@@ -140,7 +146,13 @@ function SignUpStepDetails({
       title="정보 입력"
     >
       <AuthInput label="이메일" readOnly value={email} />
-      <AuthInput label="이름" onChange={onNameChange} placeholder="이름" value={name} />
+      <AuthInput
+        error={nameError}
+        label="이름"
+        onChange={onNameChange}
+        placeholder="이름"
+        value={name}
+      />
 
       {role === 'child' ? (
         <>
@@ -210,6 +222,8 @@ function SignUpStepDetails({
         </>
       ) : null}
 
+      {isPasswordRequired ? (
+        <>
       <AuthInput
         action={
           <button
@@ -221,6 +235,7 @@ function SignUpStepDetails({
             <EyeIcon closed={!showPassword} />
           </button>
         }
+        error={passwordError}
         label="비밀번호"
         onChange={onPasswordChange}
         placeholder="비밀번호"
@@ -228,9 +243,20 @@ function SignUpStepDetails({
         value={password}
       />
       <div className="password-rules">
-        <span className={hasPasswordLengthRule ? 'is-valid' : ''}>8-20자 사용</span>
+        <span className={hasPasswordLetterRule ? 'is-valid' : ''}>영문 사용</span>
         <span className={hasPasswordNumberRule ? 'is-valid' : ''}>숫자 사용</span>
-        <span className={hasPasswordSpecialRule ? 'is-valid' : ''}>특수문자 사용</span>
+        <span className={hasPasswordLengthRule ? 'is-valid' : ''}>8-20자</span>
+        <span
+          className={
+            hasPasswordSpecialRule
+              ? 'is-valid'
+              : hasPasswordAllowedCharacters
+                ? 'is-optional'
+                : ''
+          }
+        >
+          특수문자 가능
+        </span>
       </div>
 
       <AuthInput
@@ -255,10 +281,13 @@ function SignUpStepDetails({
         type={showPasswordConfirm ? 'text' : 'password'}
         value={passwordConfirm}
       />
+        </>
+      ) : null}
 
       {role === 'child' ? (
         <AuthInput
           error={parentEmailError}
+          help={!parentEmail ? '아이 가입에는 부모 이메일까지 입력해야 해요.' : undefined}
           label="부모 연결"
           onChange={onParentEmailChange}
           placeholder="부모 이메일"

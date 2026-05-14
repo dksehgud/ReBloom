@@ -1,10 +1,14 @@
 package com.ssafy.rebloom.auth_service.user.service.impl;
 
 import com.ssafy.rebloom.auth_service.auth.constants.Constants;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ssafy.rebloom.auth_service.auth.dto.OAuth2SignupInfo;
 import com.ssafy.rebloom.auth_service.user.domain.entity.*;
 import com.ssafy.rebloom.auth_service.user.domain.enums.RelationStatus;
 import com.ssafy.rebloom.auth_service.user.domain.enums.UserRole;
 import com.ssafy.rebloom.auth_service.user.dto.query.ParentReceiverDto;
+import com.ssafy.rebloom.auth_service.user.dto.request.CounselorRelationRequestDto;
 import com.ssafy.rebloom.auth_service.user.dto.request.PasswordChangeRequestDto;
 import com.ssafy.rebloom.auth_service.user.dto.request.ParentConnectRequestDto;
 import com.ssafy.rebloom.auth_service.user.dto.request.UserCreateRequestDto;
@@ -24,10 +28,13 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.Period;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -38,12 +45,15 @@ public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
     private final ParentRepository parentRepository;
+    private final CounselorRepository counselorRepository;
     private final ChildrenParentRelationRepository childrenParentRelationRepository;
     private final ChildrenCounselorRelationRepository childrenCounselorRelationRepository;
     private final ParentCounselorRelationRepository parentCounselorRelationRepository;
+    private final SocialUserRepository socialUserRepository;
 
     private final RedisService redisService;
     private final PasswordEncoder passwordEncoder;
+    private final ObjectMapper objectMapper;
 
     @Override
     public boolean isAlreadyExistsEmail(String email) {
@@ -54,18 +64,28 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public void signupUser(UserCreateRequestDto userCreateRequestDto) {
         if (userRepository.existsByEmail(userCreateRequestDto.email())) {
-            throw new CustomException("이미 사용 중인 이메일입니다.", ErrorCode.EMAIL_ALREADY_EXISTS);
+            throw new CustomException("이미 존재하는 이메일입니다.", ErrorCode.EMAIL_ALREADY_EXISTS);
         }
 
         String registerUUID = userCreateRequestDto.registerUUID();
         boolean isSocialSignup = StringUtils.hasText(registerUUID);
+        OAuth2SignupInfo oauth2SignupInfo = isSocialSignup
+            ? getOAuth2SignupInfo(registerUUID)
+            : null;
+
+        if (isSocialSignup) {
+            validateOAuth2SignupRequest(userCreateRequestDto, oauth2SignupInfo);
+        }
 
         if (!isSocialSignup) {
+            validatePasswordRequired(userCreateRequestDto.password());
             validateEmailVerification(userCreateRequestDto.email());
         }
 
-        String encryptedPassword = passwordEncoder.encode(userCreateRequestDto.password());
+        String rawPassword = isSocialSignup ? UUID.randomUUID().toString() : userCreateRequestDto.password();
+        String encryptedPassword = passwordEncoder.encode(rawPassword);
 
+        User savedUser = null;
         switch (userCreateRequestDto.role()) {
             case PARENT -> {
                 Parent parent = Parent.createParent(
@@ -73,7 +93,7 @@ public class UserServiceImpl implements UserService {
                     encryptedPassword,
                     userCreateRequestDto.name()
                 );
-                userRepository.save(parent);
+                savedUser = userRepository.save(parent);
             }
             case CHILDREN -> {
                 Parent parent = parentRepository.findByEmail(userCreateRequestDto.parentEmail())
@@ -90,12 +110,12 @@ public class UserServiceImpl implements UserService {
                     userCreateRequestDto.latitude(),
                     userCreateRequestDto.longitude()
                 );
-                userRepository.save(child);
+                savedUser = userRepository.save(child);
 
                 ChildrenParentRelation relation = ChildrenParentRelation.builder()
                     .children(child)
                     .parent(parent)
-                    .relationStatus(RelationStatus.PENDING)
+                    .relationStatus(RelationStatus.ACTIVE)
                     .build();
                 childrenParentRelationRepository.save(relation);
             }
@@ -109,11 +129,14 @@ public class UserServiceImpl implements UserService {
                     userCreateRequestDto.hospitalAddress(),
                     userCreateRequestDto.hospitalAddressDetail()
                 );
-                userRepository.save(counselor);
+                savedUser = userRepository.save(counselor);
             }
         }
 
-        if (!isSocialSignup) {
+        if (isSocialSignup) {
+            saveSocialUser(oauth2SignupInfo, savedUser);
+            deleteOAuth2SignupInfo(registerUUID);
+        } else {
             deleteVerificationData(userCreateRequestDto.email());
         }
     }
@@ -139,7 +162,7 @@ public class UserServiceImpl implements UserService {
 
         String email = resolveUpdateValue(request.email(), user.getEmail());
         if (!user.getEmail().equals(email) && userRepository.existsByEmail(email)) {
-            throw new CustomException("이미 사용 중인 이메일입니다.", ErrorCode.EMAIL_ALREADY_EXISTS);
+            throw new CustomException("이미 존재하는 이메일입니다.", ErrorCode.EMAIL_ALREADY_EXISTS);
         }
 
         return switch (user.getRole()) {
@@ -150,7 +173,8 @@ public class UserServiceImpl implements UserService {
                     resolveUpdateValue(request.name(), counselor.getName()),
                     resolveUpdateValue(request.phone(), counselor.getPhone()),
                     resolveUpdateValue(request.hospitalName(), counselor.getHospitalName()),
-                    resolveUpdateValue(request.hospitalAddress(), counselor.getHospitalAddress())
+                    resolveUpdateValue(request.hospitalAddress(), counselor.getHospitalAddress()),
+                    resolveUpdateValue(request.hospitalAddressDetail(), counselor.getHospitalAddressDetail())
                 );
                 yield toUserInfoResponse(counselor);
             }
@@ -184,9 +208,134 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    public ListResponseDto<CounselorParentRelationResponseDto> getCounselorParentRelations(UUID counselorId) {
+        List<CounselorParentRelationResponseDto> relations = parentCounselorRelationRepository
+            .findAllByCounselorIdAndRelationStatusIn(
+                counselorId,
+                List.of(RelationStatus.ACTIVE, RelationStatus.PENDING)
+            )
+            .stream()
+            .map(parentCounselorRelation -> CounselorParentRelationResponseDto.from(
+                parentCounselorRelation,
+                getActiveChildRelationByParentId(parentCounselorRelation.getParent().getId())
+            ))
+            .toList();
+
+        return ListResponseDto.from(relations);
+    }
+
+    @Override
+    @Transactional
+    public CounselorParentRelationResponseDto acceptCounselorRelation(UUID counselorId, UUID parentId) {
+        ParentCounselorRelation parentCounselorRelation = parentCounselorRelationRepository
+            .findByParentIdAndCounselorIdAndRelationStatusIn(
+                parentId,
+                counselorId,
+                List.of(RelationStatus.PENDING)
+            )
+            .orElseThrow(() -> new CustomException(
+                "상담사 연결 신청을 찾을 수 없습니다.",
+                ErrorCode.NOT_FOUND
+            ));
+
+        ChildrenParentRelation childrenParentRelation = getActiveChildRelationByParentId(parentId);
+        parentCounselorRelation.activate();
+
+        boolean hasActiveChildCounselorRelation =
+            childrenCounselorRelationRepository.existsByCounselor_IdAndChildren_IdAndRelationStatus(
+                counselorId,
+                childrenParentRelation.getChildren().getId(),
+                RelationStatus.ACTIVE
+            );
+
+        if (!hasActiveChildCounselorRelation) {
+            ChildrenCounselorRelation childrenCounselorRelation = ChildrenCounselorRelation.builder()
+                .counselor(parentCounselorRelation.getCounselor())
+                .children(childrenParentRelation.getChildren())
+                .startedAt(LocalDateTime.now())
+                .relationStatus(RelationStatus.ACTIVE)
+                .build();
+            childrenCounselorRelationRepository.save(childrenCounselorRelation);
+        }
+
+        return CounselorParentRelationResponseDto.from(parentCounselorRelation, childrenParentRelation);
+    }
+
+    @Override
     public ParentCounselorResponseDto getParentCounselor(UUID parentId) {
         return parentCounselorRelationRepository.findByParentId(parentId)
             .orElseGet(ParentCounselorResponseDto::disconnected);
+    }
+
+    @Override
+    @Transactional
+    public void rejectCounselorRelation(UUID counselorId, UUID parentId) {
+        ParentCounselorRelation relation = parentCounselorRelationRepository
+            .findByParentIdAndCounselorIdAndRelationStatusIn(
+                parentId,
+                counselorId,
+                List.of(RelationStatus.PENDING)
+            )
+            .orElseThrow(() -> new CustomException(
+                "상담사 연결 신청을 찾을 수 없습니다.",
+                ErrorCode.NOT_FOUND
+            ));
+
+        parentCounselorRelationRepository.delete(relation);
+    }
+
+    @Override
+    @Transactional
+    public CounselorRelationResponseDto requestCounselorRelation(
+        UUID parentId,
+        CounselorRelationRequestDto request
+    ) {
+        Parent parent = parentRepository.findById(parentId)
+            .orElseThrow(() -> new CustomException("부모를 찾을 수 없습니다.", ErrorCode.USER_NOT_FOUND));
+        Counselor counselor = counselorRepository.findByEmail(request.counselorEmail())
+            .orElseThrow(() -> new CustomException("상담사를 찾을 수 없습니다.", ErrorCode.USER_NOT_FOUND));
+
+        boolean hasActiveOrPendingRelation =
+            parentCounselorRelationRepository.existsByParentIdAndRelationStatusIn(
+                parentId,
+                List.of(RelationStatus.ACTIVE, RelationStatus.PENDING)
+            );
+
+        if (hasActiveOrPendingRelation) {
+            throw new CustomException(
+                "이미 상담사 등록 신청 또는 연결이 존재합니다.",
+                ErrorCode.DUPLICATE_RESOURCE
+            );
+        }
+
+        ParentCounselorRelation relation = ParentCounselorRelation.builder()
+            .parent(parent)
+            .counselor(counselor)
+            .relationStatus(RelationStatus.PENDING)
+            .startedAt(LocalDateTime.now())
+            .endedAt(LocalDateTime.of(2038, 1, 19, 3, 14, 7))
+            .build();
+
+        return CounselorRelationResponseDto.from(parentCounselorRelationRepository.save(relation));
+    }
+
+    @Override
+    @Transactional
+    public void deleteCounselorRelation(UUID parentId, String counselorEmail) {
+        validateCounselorEmail(counselorEmail);
+
+        ParentCounselorRelation relation = parentCounselorRelationRepository
+            .findByParentIdAndCounselorEmailAndRelationStatusIn(
+                parentId,
+                counselorEmail,
+                List.of(RelationStatus.ACTIVE, RelationStatus.PENDING)
+            )
+            .orElseThrow(() -> new CustomException(
+                "상담사 연결을 찾을 수 없습니다.",
+                ErrorCode.NOT_FOUND
+            ));
+
+        parentCounselorRelationRepository.delete(relation);
     }
 
     @Override
@@ -201,6 +350,14 @@ public class UserServiceImpl implements UserService {
         return childrenParentRelationRepository.findActiveParentByChildrenId(childrenId)
             .map(this::toChildConnectedParentResponse)
             .orElseGet(ChildConnectedParentResponseDto::disconnected);
+    }
+
+    @Override
+    public ChildConnectedCounselorResponseDto getConnectedCounselorByChild(UUID childrenId) {
+        return childrenCounselorRelationRepository
+            .findFirstByChildren_IdAndRelationStatus(childrenId, RelationStatus.ACTIVE)
+            .map(this::toChildConnectedCounselorResponse)
+            .orElseGet(ChildConnectedCounselorResponseDto::disconnected);
     }
 
     @Override
@@ -258,7 +415,9 @@ public class UserServiceImpl implements UserService {
     @Override
     public ListResponseDto<UserProfileResponseDto> searchProfiles(String email, UserRole userRole) {
 
-        List<User> profiles = userRepository.findAllByEmailAndRole(email, userRole);
+        List<User> profiles = userRole == null
+            ? userRepository.findByEmail(email).stream().toList()
+            : userRepository.findAllByEmailAndRole(email, userRole);
         return ListResponseDto.from(profiles.stream().map(UserProfileResponseDto::from).toList());
     }
 
@@ -276,6 +435,15 @@ public class UserServiceImpl implements UserService {
             parentReceiverDto.childrenId(),
             parentReceiverDto.childrenName()
         );
+    }
+
+    private ChildrenParentRelation getActiveChildRelationByParentId(UUID parentId) {
+        return childrenParentRelationRepository
+            .findFirstByParentIdAndRelationStatus(parentId, RelationStatus.ACTIVE)
+            .orElseThrow(() -> new CustomException(
+                "부모와 연결된 아이를 찾을 수 없습니다.",
+                ErrorCode.NOT_FOUND
+            ));
     }
 
     private User getUser(UUID userId) {
@@ -299,13 +467,17 @@ public class UserServiceImpl implements UserService {
     }
 
     private void validateUpdateRequest(UserUpdateRequestDto request) {
-        validateNotBlankIfPresent(request.email(), "email");
-        validateNotBlankIfPresent(request.name(), "name");
-        validateNotBlankIfPresent(request.phone(), "phone");
-        validateNotBlankIfPresent(request.hospitalName(), "hospitalName");
-        validateNotBlankIfPresent(request.hospitalAddress(), "hospitalAddress");
-        validateNotBlankIfPresent(request.address(), "address");
-        validateNotBlankIfPresent(request.addressDetail(), "addressDetail");
+        Map<String, String> fields = new LinkedHashMap<>();
+        fields.put("email", request.email());
+        fields.put("name", request.name());
+        fields.put("phone", request.phone());
+        fields.put("hospitalName", request.hospitalName());
+        fields.put("hospitalAddress", request.hospitalAddress());
+        fields.put("hospitalAddressDetail", request.hospitalAddressDetail());
+        fields.put("address", request.address());
+        fields.put("addressDetail", request.addressDetail());
+
+        fields.forEach((fieldName, value) -> validateNotBlankIfPresent(value, fieldName));
     }
 
     private void validateChildrenLocationUpdate(UserUpdateRequestDto request) {
@@ -313,7 +485,13 @@ public class UserServiceImpl implements UserService {
         boolean locationChanged = request.latitude() != null || request.longitude() != null;
 
         if ((addressChanged || locationChanged) && (request.latitude() == null || request.longitude() == null)) {
-            throw new CustomException("주소 변경 시 위도와 경도는 함께 전달해야 합니다.", ErrorCode.INVALID_PARAMETER);
+            throw new CustomException("주소 변경 시 위도와 경도를 함께 전달해야 합니다.", ErrorCode.INVALID_PARAMETER);
+        }
+    }
+
+    private void validateCounselorEmail(String counselorEmail) {
+        if (!StringUtils.hasText(counselorEmail)) {
+            throw new CustomException("counselorEmail은(는) 공백일 수 없습니다.", ErrorCode.INVALID_PARAMETER);
         }
     }
 
@@ -355,7 +533,6 @@ public class UserServiceImpl implements UserService {
                     .name(parent.getName())
                     .role(parent.getRole())
                     .status(parent.getStatus())
-                    .parentCode(parent.getCode())
                     .build();
             }
             case CHILDREN -> {
@@ -385,6 +562,7 @@ public class UserServiceImpl implements UserService {
                     .status(counselor.getStatus())
                     .hospitalName(counselor.getHospitalName())
                     .hospitalAddress(counselor.getHospitalAddress())
+                    .hospitalAddressDetail(counselor.getHospitalAddressDetail())
                     .build();
             }
         };
@@ -394,6 +572,9 @@ public class UserServiceImpl implements UserService {
         return new CounselorChildResponseDto(
             projection.getChildrenId(),
             projection.getName(),
+            calculateAge(projection.getBirth()),
+            normalizeGender(projection.getGender()),
+            projection.getParentName(),
             projection.getCounselingStatus()
         );
     }
@@ -417,6 +598,28 @@ public class UserServiceImpl implements UserService {
         );
     }
 
+    private ChildConnectedCounselorResponseDto toChildConnectedCounselorResponse(ChildrenCounselorRelation relation) {
+        Counselor counselor = relation.getCounselor();
+        return new ChildConnectedCounselorResponseDto(
+            true,
+            counselor.getId(),
+            counselor.getName(),
+            counselor.getEmail(),
+            counselor.getHospitalName()
+        );
+    }
+
+    private ParentCounselorResponseDto toParentCounselorResponse(ParentCounselorRelation relation) {
+        Counselor counselor = relation.getCounselor();
+        return new ParentCounselorResponseDto(
+            counselor.getId(),
+            counselor.getName(),
+            counselor.getEmail(),
+            counselor.getHospitalName(),
+            relation.getRelationStatus()
+        );
+    }
+
     private ParentSummaryResponseDto toParentSummaryResponse(Parent parent) {
         return new ParentSummaryResponseDto(
             parent.getId(),
@@ -426,8 +629,16 @@ public class UserServiceImpl implements UserService {
     }
 
     private Integer calculateAge(String birth) {
+        if (birth == null || birth.isBlank()) {
+            return null;
+        }
+
         LocalDate birthDate = parseBirthDate(birth);
         return Period.between(birthDate, LocalDate.now()).getYears();
+    }
+
+    private String normalizeGender(String gender) {
+        return gender == null || gender.isBlank() ? null : gender;
     }
 
     private LocalDate parseBirthDate(String birth) {
@@ -445,6 +656,47 @@ public class UserServiceImpl implements UserService {
         }
 
         throw new CustomException("아이 생년월일 형식이 올바르지 않습니다.", ErrorCode.INVALID_PARAMETER);
+    }
+
+    private OAuth2SignupInfo getOAuth2SignupInfo(String registerUUID) {
+        String signupInfoJson = redisService.getData(Constants.OAUTH2_SIGNUP_PREFIX + registerUUID);
+
+        if (!StringUtils.hasText(signupInfoJson)) {
+            throw new CustomException("소셜 회원가입 정보가 만료되었거나 존재하지 않습니다.", ErrorCode.INVALID_PARAMETER);
+        }
+
+        try {
+            return objectMapper.readValue(signupInfoJson, OAuth2SignupInfo.class);
+        } catch (JsonProcessingException e) {
+            throw new CustomException("소셜 회원가입 정보를 불러올 수 없습니다.", ErrorCode.OAUTH_TEMP_LOAD_FAILED);
+        }
+    }
+
+    private void validateOAuth2SignupRequest(
+        UserCreateRequestDto request,
+        OAuth2SignupInfo signupInfo
+    ) {
+        if (!request.email().equalsIgnoreCase(signupInfo.email())) {
+            throw new CustomException("소셜 인증 이메일과 가입 이메일이 일치하지 않습니다.", ErrorCode.INVALID_PARAMETER);
+        }
+    }
+
+    private void validatePasswordRequired(String password) {
+        if (!StringUtils.hasText(password)) {
+            throw new CustomException("비밀번호는 필수입니다.", ErrorCode.INVALID_PARAMETER);
+        }
+    }
+
+    private void saveSocialUser(OAuth2SignupInfo signupInfo, User user) {
+        socialUserRepository.save(SocialUser.builder()
+            .provider(signupInfo.provider())
+            .providerUserId(signupInfo.providerUserId())
+            .user(user)
+            .build());
+    }
+
+    private void deleteOAuth2SignupInfo(String registerUUID) {
+        redisService.deleteData(Constants.OAUTH2_SIGNUP_PREFIX + registerUUID);
     }
 
     private void validateEmailVerification(String email) {

@@ -22,6 +22,11 @@ public interface BiometricRepository extends JpaRepository<Biometric, BiometricI
         @Param("to") LocalDateTime to
     );
 
+    @Query("SELECT b FROM Biometric b " +
+        "WHERE b.id.userId = :userId " +
+        "ORDER BY b.id.tsStart ASC")
+    List<Biometric> findAllByUserIdOrderByTsStart(@Param("userId") UUID userId);
+
     @Query(value = """
         SELECT CAST(b.ts_start AS date) AS date,
                percentile_cont(0.5) WITHIN GROUP (ORDER BY b.hr_acc_ratio) AS value

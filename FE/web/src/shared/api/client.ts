@@ -12,31 +12,58 @@ type ApiRequestOptions = {
 
 const SESSION_STORAGE_KEY = 'rebloom-app-session'
 
+function isWebViewMode() {
+  if (typeof window === 'undefined') return false
+
+  const searchParams = new URLSearchParams(window.location.search)
+
+  return (
+    searchParams.get('mode') === 'webview' ||
+    window.__REBLOOM_SHELL_MODE__ === 'webview'
+  )
+}
+
+function resolveWebViewHostUrl(baseUrl: string) {
+  if (typeof window === 'undefined' || !isWebViewMode()) {
+    return baseUrl
+  }
+
+  const currentHost = window.location.hostname
+
+  if (
+    currentHost === 'localhost' ||
+    currentHost === '127.0.0.1' ||
+    currentHost === '::1'
+  ) {
+    return baseUrl
+  }
+
+  try {
+    const url = new URL(baseUrl)
+
+    if (url.hostname === 'localhost' || url.hostname === '127.0.0.1') {
+      url.hostname = currentHost
+      return url.toString().replace(/\/$/, '')
+    }
+  } catch {
+    return baseUrl
+  }
+
+  return baseUrl
+}
+
 function resolveApiBaseUrl() {
   const configuredBaseUrl = import.meta.env.VITE_API_BASE_URL?.trim().replace(/\/$/, '')
 
   if (configuredBaseUrl) {
-    if (
-      import.meta.env.DEV &&
-      configuredBaseUrl.includes('10.0.2.2') &&
-      typeof window !== 'undefined' &&
-      ['localhost', '127.0.0.1'].includes(window.location.hostname)
-    ) {
-      return configuredBaseUrl.replace('10.0.2.2', window.location.hostname)
-    }
-
-    return configuredBaseUrl
+    return resolveWebViewHostUrl(configuredBaseUrl)
   }
 
   if (!import.meta.env.DEV) {
     return ''
   }
 
-  if (typeof window !== 'undefined' && window.location.hostname === '10.0.2.2') {
-    return 'http://10.0.2.2:8080'
-  }
-
-  return 'http://localhost:8080'
+  throw new Error('VITE_API_BASE_URL is required in development.')
 }
 
 const API_BASE_URL = resolveApiBaseUrl()
@@ -56,7 +83,7 @@ class ApiError extends Error {
 function getStoredAccessToken() {
   if (typeof window === 'undefined') return null
 
-  const rawSession = window.localStorage.getItem(SESSION_STORAGE_KEY)
+  const rawSession = window.sessionStorage.getItem(SESSION_STORAGE_KEY)
 
   if (!rawSession) {
     return null

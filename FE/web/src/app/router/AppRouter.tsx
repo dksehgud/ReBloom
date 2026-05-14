@@ -26,8 +26,14 @@ import ParentObservationsPage from '../../pages/parent/ParentObservationsPage'
 import ParentReportPage from '../../pages/parent/ParentReportPage'
 import ParentSettingsPage from '../../pages/parent/ParentSettingsPage'
 import { authApi, toAppRole } from '../../features/auth/api/authApi'
+import { consumeOAuthIntent, saveOAuthIntent } from '../../features/auth/oauth/oauthIntent'
 import { useAppSessionStore } from '../../features/auth/store/useAppSessionStore'
+import { isCounselorMockModeSearch } from '../../features/counselor/hooks/useCounselorMockMode'
 import { useSelectedChildStore } from '../../features/student/store/useSelectedChildStore'
+import {
+  getChildConnectedCounselor,
+  type ChildConnectedCounselor,
+} from '../../features/user/api/childRelationApi'
 import type { ChildAddress } from '../../shared/types/childAddress'
 import {
   clearNativeAccessToken,
@@ -101,15 +107,28 @@ function CounselorAuthRouteLayout() {
 }
 
 function CounselorRouteLayout() {
+  const location = useLocation()
+  const accessToken = useAppSessionStore((state) => state.accessToken)
   const setActiveRole = useAppSessionStore((state) => state.setActiveRole)
   const clearSelectedChild = useSelectedChildStore(
     (state) => state.clearSelectedChild,
   )
+  const isMockMode = isCounselorMockModeSearch(location.search)
 
   useEffect(() => {
+    if (!accessToken && !isMockMode) {
+      setActiveRole(null)
+      clearSelectedChild()
+      return
+    }
+
     setActiveRole('counselor')
     clearSelectedChild()
-  }, [clearSelectedChild, setActiveRole])
+  }, [accessToken, clearSelectedChild, isMockMode, setActiveRole])
+
+  if (!accessToken && !isMockMode) {
+    return <Navigate replace to="/counselor/login" />
+  }
 
   return <Outlet />
 }
@@ -211,6 +230,11 @@ function LoginRoute() {
     }
   }
 
+  const handleSocialLogin = (provider: 'google' | 'kakao') => {
+    saveOAuthIntent('default')
+    authApi.beginOAuthLogin(provider)
+  }
+
   return (
     <LoginPage
       email={email}
@@ -224,8 +248,103 @@ function LoginRoute() {
       onSubmit={handleLoginSubmit}
       onStartChildClick={() => navigate('/child/diary')}
       onStartParentClick={() => navigate('/parent/home')}
+      onSocialLoginClick={handleSocialLogin}
     />
   )
+}
+
+function OAuthCallbackRoute() {
+  const navigate = useNavigate()
+  const location = useLocation()
+  const clearSession = useAppSessionStore((state) => state.clearSession)
+  const setActiveRole = useAppSessionStore((state) => state.setActiveRole)
+  const setCurrentUser = useAppSessionStore((state) => state.setCurrentUser)
+  const setSessionTokens = useAppSessionStore((state) => state.setSessionTokens)
+  const clearSelectedChild = useSelectedChildStore(
+    (state) => state.clearSelectedChild,
+  )
+
+  useEffect(() => {
+    const searchParams = new URLSearchParams(location.search)
+    const status = searchParams.get('status')
+
+    if (status === 'LOGIN') {
+      const accessToken = searchParams.get('accessToken')
+      const refreshToken = searchParams.get('refreshToken')
+
+      if (!accessToken || !refreshToken) {
+        clearSession()
+        navigate('/login', { replace: true })
+        return
+      }
+
+      setSessionTokens({ accessToken, refreshToken })
+      saveNativeAccessToken(accessToken)
+
+      void authApi.getMyInfo(accessToken)
+        .then((myInfo) => {
+          const nextRole = toAppRole(myInfo.role)
+
+          setCurrentUser(myInfo)
+          setActiveRole(nextRole)
+          clearSelectedChild()
+
+          if (nextRole === 'child') {
+            navigate('/child/diary', { replace: true })
+            return
+          }
+
+          if (nextRole === 'parent') {
+            navigate('/parent/home', { replace: true })
+            return
+          }
+
+          navigate('/counselor/dashboard', { replace: true })
+        })
+        .catch(() => {
+          clearSession()
+          clearNativeAccessToken()
+          navigate('/login', { replace: true })
+        })
+      return
+    }
+
+    if (status === 'SIGNUP_REQUIRED') {
+      const registerUUID = searchParams.get('registerUUID')
+      const email = searchParams.get('email')
+      const intent = consumeOAuthIntent()
+
+      if (!registerUUID || !email) {
+        navigate('/login', { replace: true })
+        return
+      }
+
+      const signupSearchParams = new URLSearchParams({
+        registerUUID,
+        email,
+      })
+
+      navigate(
+        intent === 'counselor'
+          ? `/counselor/signup?${signupSearchParams.toString()}`
+          : `/signup?${signupSearchParams.toString()}`,
+        { replace: true },
+      )
+      return
+    }
+
+    navigate('/login', { replace: true })
+  }, [
+    clearSelectedChild,
+    clearSession,
+    location.search,
+    navigate,
+    setActiveRole,
+    setCurrentUser,
+    setSessionTokens,
+  ])
+
+  return null
 }
 
 function FindPasswordRoute() {
@@ -268,6 +387,8 @@ function ChildSettingsRoute() {
   const clearSession = useAppSessionStore((state) => state.clearSession)
   const currentUser = useAppSessionStore((state) => state.currentUser)
   const setCurrentUser = useAppSessionStore((state) => state.setCurrentUser)
+  const [connectedCounselor, setConnectedCounselor] =
+    useState<ChildConnectedCounselor | null>(null)
   const clearSelectedChild = useSelectedChildStore(
     (state) => state.clearSelectedChild,
   )
@@ -284,6 +405,17 @@ function ChildSettingsRoute() {
     })
   }, [accessToken, clearSession, currentUser, navigate, setCurrentUser])
 
+  useEffect(() => {
+    if (!accessToken) {
+      setConnectedCounselor(null)
+      return
+    }
+
+    void getChildConnectedCounselor(accessToken)
+      .then(setConnectedCounselor)
+      .catch(() => setConnectedCounselor(null))
+  }, [accessToken])
+
   const childProfileAddress: ChildAddress = {
     baseAddress: currentUser?.address ?? profileAddress.baseAddress,
     detailAddress: currentUser?.addressDetail ?? profileAddress.detailAddress,
@@ -297,6 +429,14 @@ function ChildSettingsRoute() {
         profileAddress={childProfileAddress}
         profileEmail={currentUser?.email ?? ''}
         profileName={currentUser?.name ?? ''}
+        counselorName={
+          connectedCounselor?.connected
+            ? `${connectedCounselor.name ?? ''} 상담사`.trim()
+            : null
+        }
+        counselorSubtitle={
+          connectedCounselor?.connected ? connectedCounselor.email : null
+        }
         onBack={() => navigate('/child/diary')}
         onLogout={() => {
           clearSession()
@@ -347,6 +487,7 @@ function AppRouter() {
       <Route element={<AuthRouteLayout />}>
         <Route path="/" element={<LandingRoute />} />
         <Route path="/login" element={<LoginRoute />} />
+        <Route path="/oauth/callback" element={<OAuthCallbackRoute />} />
         <Route path="/signup" element={<SignUpRoute />} />
         <Route path="/find-password" element={<FindPasswordRoute />} />
       </Route>

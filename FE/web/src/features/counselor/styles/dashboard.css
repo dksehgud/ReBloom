@@ -166,6 +166,38 @@
   display: none;
 }
 
+.counselor-dashboard-empty {
+  display: flex;
+  min-height: calc(100svh - 112px);
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 48px 24px;
+  text-align: center;
+}
+
+.counselor-dashboard-empty h2 {
+  margin: 0;
+  color: #1f2b3a;
+  font-size: 22px;
+  font-weight: 800;
+  line-height: 1.45;
+}
+
+.counselor-dashboard-empty p {
+  max-width: 440px;
+  margin: 0;
+  color: var(--dashboard-muted);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.7;
+}
+
+.counselor-dashboard-empty.is-error p {
+  color: #b45353;
+}
+
 @media (max-width: 1180px) {
   .counselor-dashboard {
     flex-direction: column;

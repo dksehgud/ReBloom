@@ -2,7 +2,7 @@ import type { DiaryEmotionKey } from '../../diary/constants/diaryEmotions'
 import type {
   ChildListItem,
   CounselorConnectionRequest,
-  DashboardWeekIndexes,
+  DashboardWeekOffsets,
   EmotionFlowMode,
   EmotionFlowPeriod,
   ExpressionFilter,
@@ -35,16 +35,16 @@ const counselorProfile = {
 const MOCK_CHILDREN_ID = '22222222-2222-2222-2222-222222222222'
 const MOCK_COUNSELOR_ID = '55555555-5555-5555-5555-555555555555'
 
-function getMockReportId(recordId: number) {
+function getMockReportId(recordId: number | string) {
   return `11111111-1111-4111-8111-${String(recordId).padStart(12, '0')}`
 }
 
-function getMockCommentId(recordId: number) {
+function getMockCommentId(recordId: number | string) {
   return `44444444-4444-4444-8444-${String(recordId).padStart(12, '0')}`
 }
 
 function createMockComment(
-  recordId: number,
+  recordId: number | string,
   context: string,
   createdAt = '2026-05-07T21:00:00',
 ): ObservationComment {
@@ -67,7 +67,7 @@ function createObservationRecord(record: ObservationRecordSeed): ObservationReco
 
 const initialChildList: ChildListItem[] = [
   {
-    id: 1,
+    id: 'mock-child-1',
     name: '김주연',
     meta: '13세(남)',
     subText: '보호자 : 유주경',
@@ -77,7 +77,7 @@ const initialChildList: ChildListItem[] = [
     registeredAt: '2026-05-08T09:20:00',
   },
   {
-    id: 2,
+    id: 'mock-child-2',
     name: '이온준',
     meta: '12세(남)',
     subText: '보호자 : 한서윤',
@@ -87,7 +87,7 @@ const initialChildList: ChildListItem[] = [
     registeredAt: '2026-05-06T14:12:00',
   },
   {
-    id: 3,
+    id: 'mock-child-3',
     name: '박민서',
     meta: '14세(여)',
     subText: '보호자 : 박지현',
@@ -97,7 +97,7 @@ const initialChildList: ChildListItem[] = [
     registeredAt: '2026-05-05T10:45:00',
   },
   {
-    id: 4,
+    id: 'mock-child-4',
     name: '정민지',
     meta: '11세(여)',
     subText: '보호자 : 정하늘',
@@ -107,7 +107,7 @@ const initialChildList: ChildListItem[] = [
     registeredAt: '2026-05-03T17:30:00',
   },
   {
-    id: 5,
+    id: 'mock-child-5',
     name: '김나영',
     meta: '13세(여)',
     subText: '보호자 : 김도윤',
@@ -120,12 +120,12 @@ const initialChildList: ChildListItem[] = [
 
 const initialConnectionRequests: CounselorConnectionRequest[] = [
   {
-    id: 101,
+    id: 'mock-request-101',
     parentName: '최유리',
     parentEmail: 'yuri.choi@example.com',
     requestedAt: '2026-05-11T09:18:00',
     child: {
-      id: 8,
+      id: 'mock-child-8',
       name: '최하린',
       meta: '10세(여)',
       subText: '보호자 : 최유리',
@@ -136,12 +136,12 @@ const initialConnectionRequests: CounselorConnectionRequest[] = [
     },
   },
   {
-    id: 102,
+    id: 'mock-request-102',
     parentName: '문정우',
     parentEmail: 'jungwoo.moon@example.com',
     requestedAt: '2026-05-10T18:42:00',
     child: {
-      id: 9,
+      id: 'mock-child-9',
       name: '문시온',
       meta: '12세(남)',
       subText: '보호자 : 문정우',
@@ -288,13 +288,13 @@ const expressionTabs: Array<{ key: ExpressionFilter; label: string }> = [
 ]
 
 const DEFAULT_EXPRESSION_WEEK_INDEX = 1
-const INITIAL_DASHBOARD_WEEK_INDEXES: DashboardWeekIndexes = {
-  observation: DEFAULT_EXPRESSION_WEEK_INDEX,
-  sleepScore: DEFAULT_EXPRESSION_WEEK_INDEX,
-  sleepEfficiency: DEFAULT_EXPRESSION_WEEK_INDEX,
-  expression: DEFAULT_EXPRESSION_WEEK_INDEX,
-  biometricRatio: DEFAULT_EXPRESSION_WEEK_INDEX,
-  autonomic: DEFAULT_EXPRESSION_WEEK_INDEX,
+const INITIAL_DASHBOARD_WEEK_OFFSETS: DashboardWeekOffsets = {
+  observation: 0,
+  sleepScore: 0,
+  sleepEfficiency: 0,
+  expression: 0,
+  biometricRatio: 0,
+  autonomic: 0,
 }
 
 const biometricRatio = [
@@ -538,7 +538,7 @@ const emotionFlowPeriods: Record<EmotionFlowMode, EmotionFlowPeriod[]> = {
 
 export {
   DEFAULT_EXPRESSION_WEEK_INDEX,
-  INITIAL_DASHBOARD_WEEK_INDEXES,
+  INITIAL_DASHBOARD_WEEK_OFFSETS,
   biometricRatio,
   counselorProfile,
   createMockComment,

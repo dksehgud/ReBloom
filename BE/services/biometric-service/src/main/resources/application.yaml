@@ -26,6 +26,10 @@ server:
 rebloom:
   client:
     auth-service-url: ${AUTH_SERVICE_URL:http://localhost:8081}
+  scheduler:
+    daily-retraining:
+      cron: ${DAILY_RETRAINING_CRON:0 0 0 * * *}
+      zone: ${DAILY_RETRAINING_ZONE:Asia/Seoul}
   kafka:
     producer-name: biometric-service
     topics:

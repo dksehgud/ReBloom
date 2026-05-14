@@ -2,32 +2,35 @@ import type { CounselorCommentResponseDto } from '../api/counselorCommentApi'
 import type { DiaryEmotionKey } from '../../diary/constants/diaryEmotions'
 
 type ChildListItem = {
-  id: number
+  id: string
   name: string
   meta: string
   subText: string
-  age: string
-  gender: string
-  guardianName: string
+  age?: string
+  gender?: string
+  guardianName?: string
   registeredAt: string
+  counselingStatus?: string
 }
 
 type CounselorConnectionRequest = {
-  id: number
+  id: string
   parentName: string
   parentEmail: string
   child: ChildListItem
   requestedAt: string
+  relationStatus?: string
 }
 
 type ObservationComment = CounselorCommentResponseDto
 
 type ObservationRecord = {
-  id: number
+  id: number | string
   childrenId: string
   reportId: string
   date: string
   day: string
+  hasComment?: boolean
   mood: string
   text: string
   comment?: ObservationComment | null
@@ -57,6 +60,7 @@ type ExpressionTrendPoint = {
   label: string
   value: number
   emotionKey?: DiaryEmotionKey
+  variant?: string
 }
 
 type ExpressionWeek = {
@@ -83,7 +87,7 @@ type DashboardWeekSection =
   | 'biometricRatio'
   | 'autonomic'
 
-type DashboardWeekIndexes = Record<DashboardWeekSection, number>
+type DashboardWeekOffsets = Record<DashboardWeekSection, number>
 
 type EmotionFlowMode = 'monthly' | 'yearly'
 
@@ -101,10 +105,20 @@ type EmotionFlowPeriod = {
 
 type EmotionFlowSeries = 'diary' | 'conversation'
 
+type DashboardMetricPoint = ExpressionTrendPoint
+
+type DashboardExpressionAnalysis = {
+  insight: string
+  trend: Record<ExpressionFilter, DashboardMetricPoint[]>
+  days: TimelineDay[]
+}
+
 export type {
   ChildListItem,
   CounselorConnectionRequest,
-  DashboardWeekIndexes,
+  DashboardExpressionAnalysis,
+  DashboardMetricPoint,
+  DashboardWeekOffsets,
   DashboardWeekSection,
   EmotionFlowMode,
   EmotionFlowPeriod,

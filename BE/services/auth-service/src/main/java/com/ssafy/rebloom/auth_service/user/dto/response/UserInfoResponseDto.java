@@ -19,9 +19,6 @@ public record UserInfoResponseDto(
     UserRole role,
     UserStatus status,
 
-    // PARENT
-    String parentCode,
-
     // CHILDREN
     String birth,
     Gender gender,
@@ -32,6 +29,7 @@ public record UserInfoResponseDto(
 
     // COUNSELOR
     String hospitalName,
-    String hospitalAddress
+    String hospitalAddress,
+    String hospitalAddressDetail
 ) {
 }

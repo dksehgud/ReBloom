@@ -79,12 +79,4 @@ public class User extends BaseTime {
     public void changePassword(String password) {
         this.password = password;
     }
-
-    public String getCode() {
-        return switch (this) {
-            case Parent parent -> parent.getCode();
-            case Counselor counselor -> counselor.getCode();
-            default -> null;
-        };
-    }
 }
