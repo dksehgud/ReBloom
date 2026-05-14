@@ -1,12 +1,10 @@
 package com.ssafy.rebloom.biometric_service.scheduler.steps;
 
 import com.ssafy.rebloom.biometric_service.client.AuthAccessClient;
-import com.ssafy.rebloom.biometric_service.constants.Constants;
 import com.ssafy.rebloom.biometric_service.domain.entity.Biometric;
 import com.ssafy.rebloom.biometric_service.domain.entity.Sleep;
 import com.ssafy.rebloom.biometric_service.repository.BiometricRepository;
 import com.ssafy.rebloom.biometric_service.repository.SleepRepository;
-import com.ssafy.rebloom.biometric_service.service.RedisService;
 import com.ssafy.rebloom.event.config.property.KafkaCommonProperties;
 import com.ssafy.rebloom.event.core.EventTypes;
 import com.ssafy.rebloom.event.dto.AiModelRetrainRequestedEvent;
@@ -34,7 +32,6 @@ public class DailyRetrainingUserStep {
 
     private final SleepRepository sleepRepository;
     private final BiometricRepository biometricRepository;
-    private final RedisService redisService;
     private final AuthAccessClient authAccessClient;
     private final KafkaCommonProperties kafkaProperties;
     private final EventKeyGenerator eventKeyGenerator;
@@ -56,20 +53,11 @@ public class DailyRetrainingUserStep {
         sleepRepository.clearMainSleepByDate(userId, yesterday);
         sleepRepository.markLongestSleepAsMainByDate(userId, yesterday);
 
-        if (!isInitialTrainingRequested(userId)) {
-            log.debug("Skip daily retraining. userId={} has not reached initial training threshold.", userId);
-            return null;
-        }
-
         boolean phqReady = isPhqReady(userId);
         List<BiometricDataEvent> biometrics = findBiometrics(userId, phqReady);
         List<SleepDataEvent> sleeps = phqReady ? findRecentMainSleeps(userId) : List.of();
 
         return new RetrainingPayload(phqReady, biometrics, sleeps);
-    }
-
-    private boolean isInitialTrainingRequested(UUID userId) {
-        return redisService.exists(Constants.TRAIN_REQUESTED_KEY_PREFIX + userId);
     }
 
     private boolean isPhqReady(UUID userId) {
