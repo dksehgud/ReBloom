@@ -353,6 +353,14 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    public ChildConnectedCounselorResponseDto getConnectedCounselorByChild(UUID childrenId) {
+        return childrenCounselorRelationRepository
+            .findFirstByChildren_IdAndRelationStatus(childrenId, RelationStatus.ACTIVE)
+            .map(this::toChildConnectedCounselorResponse)
+            .orElseGet(ChildConnectedCounselorResponseDto::disconnected);
+    }
+
+    @Override
     public ParentSummaryResponseDto getParentByEmail(String email) {
         return toParentSummaryResponse(getParentByEmailOrThrow(email));
     }
@@ -590,12 +598,24 @@ public class UserServiceImpl implements UserService {
         );
     }
 
+    private ChildConnectedCounselorResponseDto toChildConnectedCounselorResponse(ChildrenCounselorRelation relation) {
+        Counselor counselor = relation.getCounselor();
+        return new ChildConnectedCounselorResponseDto(
+            true,
+            counselor.getId(),
+            counselor.getName(),
+            counselor.getEmail(),
+            counselor.getHospitalName()
+        );
+    }
+
     private ParentCounselorResponseDto toParentCounselorResponse(ParentCounselorRelation relation) {
         Counselor counselor = relation.getCounselor();
         return new ParentCounselorResponseDto(
             counselor.getId(),
             counselor.getName(),
             counselor.getEmail(),
+            counselor.getHospitalName(),
             relation.getRelationStatus()
         );
     }

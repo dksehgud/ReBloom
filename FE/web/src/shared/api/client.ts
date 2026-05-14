@@ -83,7 +83,7 @@ class ApiError extends Error {
 function getStoredAccessToken() {
   if (typeof window === 'undefined') return null
 
-  const rawSession = window.localStorage.getItem(SESSION_STORAGE_KEY)
+  const rawSession = window.sessionStorage.getItem(SESSION_STORAGE_KEY)
 
   if (!rawSession) {
     return null

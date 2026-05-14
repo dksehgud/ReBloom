@@ -101,17 +101,24 @@ public class CounselorCommentService {
     }
 
     private void validateReadAccess(UUID userId, String role, ChildrenReport childrenReport) {
-        if ("PARENT".equals(role)) {
+        String normalizedRole = normalizeRole(role);
+        if ("PARENT".equals(normalizedRole)) {
             authAccessClient.validateParentChildAccess(userId, childrenReport.getChildrenId());
             return;
         }
 
-        if ("COUNSELOR".equals(role)) {
+        if ("COUNSELOR".equals(normalizedRole)) {
             authAccessClient.validateCounselorChildAccess(userId, childrenReport.getChildrenId());
             return;
         }
 
         throw new CustomException("상담사 코멘트를 조회할 권한이 없습니다.", ErrorCode.FORBIDDEN);
+    }
+
+    private String normalizeRole(String role) {
+        return role != null && role.startsWith("ROLE_")
+            ? role.substring("ROLE_".length())
+            : role;
     }
 
     private CounselorCommentResponseDto toResponse(CounselorComment counselorComment) {
