@@ -64,7 +64,9 @@ const emotionToneMap: Record<DiaryEmotionKey, ParentReportMoodTone> = {
 }
 
 function getReportRange(selectedWeekIndex: number) {
-  return getWeekRangeByIndex(selectedWeekIndex, CURRENT_REPORT_WEEK_INDEX)
+  return getWeekRangeByIndex(selectedWeekIndex, CURRENT_REPORT_WEEK_INDEX, {
+    clampEndDateToToday: true,
+  })
 }
 
 function createEmptyReportWeek(
@@ -98,7 +100,9 @@ function normalizeEmotionIcon(value?: string | null): DiaryEmotionKey | null {
 
   const normalized = value.trim().toLowerCase()
 
-  if (['happy', 'positive', 'joy', '기쁨', '행복', '긍정'].includes(normalized)) {
+  if (
+    ['happy', 'positive', 'joy', '기쁨', '행복', '긍정'].includes(normalized)
+  ) {
     return 'happy'
   }
 
@@ -142,7 +146,10 @@ function getWeekdayFromDate(dateValue: string): ReportWeekday | null {
 }
 
 function getWeekdayFromChartPoint(point: ParentChartPointDto) {
-  if (point.dayLabel && reportWeekdays.includes(point.dayLabel as ReportWeekday)) {
+  if (
+    point.dayLabel &&
+    reportWeekdays.includes(point.dayLabel as ReportWeekday)
+  ) {
     return point.dayLabel as ReportWeekday
   }
 
@@ -213,9 +220,15 @@ function mergeReportWeekWithApiData({
 }): ParentReportWeek {
   return {
     ...currentWeek,
-    moods: diaryEmotions ? mapDiaryEmotionsToMoods(diaryEmotions) : currentWeek.moods,
-    sleepScores: sleepScores ? mapChartPointsToScores(sleepScores) : currentWeek.sleepScores,
-    stabilityScores: rmssds ? mapChartPointsToScores(rmssds) : currentWeek.stabilityScores,
+    moods: diaryEmotions
+      ? mapDiaryEmotionsToMoods(diaryEmotions)
+      : currentWeek.moods,
+    sleepScores: sleepScores
+      ? mapChartPointsToScores(sleepScores)
+      : currentWeek.sleepScores,
+    stabilityScores: rmssds
+      ? mapChartPointsToScores(rmssds)
+      : currentWeek.stabilityScores,
   }
 }
 
@@ -228,7 +241,10 @@ export function useParentReportData({
   const [apiWeek, setApiWeek] = useState<ParentReportWeek | null>(null)
   const [isError, setIsError] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
-  const reportRange = useMemo(() => getReportRange(selectedWeekIndex), [selectedWeekIndex])
+  const reportRange = useMemo(
+    () => getReportRange(selectedWeekIndex),
+    [selectedWeekIndex],
+  )
   const currentFallbackWeek = useMemo(
     () => createEmptyReportWeek(reportRange),
     [reportRange],
@@ -257,38 +273,47 @@ export function useParentReportData({
       setIsLoading(true)
       setIsError(false)
 
-      const [emotionResult, sleepResult, rmssdResult] = await Promise.allSettled([
-        getParentDiaryEmotions({
-          accessToken,
-          childrenId,
-          endDate,
-          startDate,
-        }),
-        getParentSleepScores({
-          accessToken,
-          baseDate,
-          childrenId,
-        }),
-        getParentRmssds({
-          accessToken,
-          baseDate,
-          childrenId,
-        }),
-      ])
+      const [emotionResult, sleepResult, rmssdResult] =
+        await Promise.allSettled([
+          getParentDiaryEmotions({
+            accessToken,
+            childrenId,
+            endDate,
+            startDate,
+          }),
+          getParentSleepScores({
+            accessToken,
+            baseDate,
+            childrenId,
+          }),
+          getParentRmssds({
+            accessToken,
+            baseDate,
+            childrenId,
+          }),
+        ])
 
       setApiWeek(
         mergeReportWeekWithApiData({
           currentWeek: currentFallbackWeek,
           diaryEmotions:
-            emotionResult.status === 'fulfilled' ? emotionResult.value.emotionList ?? [] : undefined,
+            emotionResult.status === 'fulfilled'
+              ? (emotionResult.value.emotionList ?? [])
+              : undefined,
           rmssds:
-            rmssdResult.status === 'fulfilled' ? rmssdResult.value.contents ?? [] : undefined,
+            rmssdResult.status === 'fulfilled'
+              ? (rmssdResult.value.contents ?? [])
+              : undefined,
           sleepScores:
-            sleepResult.status === 'fulfilled' ? sleepResult.value.contents ?? [] : undefined,
+            sleepResult.status === 'fulfilled'
+              ? (sleepResult.value.contents ?? [])
+              : undefined,
         }),
       )
       setIsError(
-        [emotionResult, sleepResult, rmssdResult].some((result) => result.status === 'rejected'),
+        [emotionResult, sleepResult, rmssdResult].some(
+          (result) => result.status === 'rejected',
+        ),
       )
     } catch (error) {
       console.error(error)
@@ -309,8 +334,8 @@ export function useParentReportData({
 
   return {
     currentWeek: isMockMode
-      ? currentMockWeek ?? currentFallbackWeek
-      : apiWeek ?? currentFallbackWeek,
+      ? (currentMockWeek ?? currentFallbackWeek)
+      : (apiWeek ?? currentFallbackWeek),
     isError,
     isLoading,
   }

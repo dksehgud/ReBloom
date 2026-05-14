@@ -16,8 +16,10 @@ import type {
 type ParentObservationQueryParams = {
   accessToken?: string | null
   childrenId?: string
-  year?: number
+  endDate?: string
   month?: number
+  startDate?: string
+  year?: number
 }
 
 type GetParentObservationPreviewParams = ParentObservationQueryParams & {
@@ -47,14 +49,18 @@ type ParentObservationDeleteParams = {
 }
 
 const REPORT_API_PREFIX = '/report/api/v1'
+const OBSERVATION_PREVIEW_LOOKBACK_MONTHS = 12
 
 const parentObservationApiPaths = {
-  list: (childrenId: string) => `${REPORT_API_PREFIX}/children/${childrenId}/reports`,
+  list: (childrenId: string) =>
+    `${REPORT_API_PREFIX}/children/${childrenId}/reports`,
   detail: (childrenId: string, reportId: string) =>
     `${REPORT_API_PREFIX}/children/${childrenId}/reports/${reportId}`,
 }
 
-function unwrapApiData<T>(response: ParentObservationBaseResponseDto<T> | T): T {
+function unwrapApiData<T>(
+  response: ParentObservationBaseResponseDto<T> | T,
+): T {
   if (response && typeof response === 'object' && 'data' in response) {
     return ((response as ParentObservationBaseResponseDto<T>).data ?? null) as T
   }
@@ -76,6 +82,12 @@ const dayOfWeekLabelMap: Record<string, string> = {
 
 function padNumber(value: number) {
   return String(value).padStart(2, '0')
+}
+
+function formatDateParam(date: Date) {
+  return `${date.getFullYear()}-${padNumber(date.getMonth() + 1)}-${padNumber(
+    date.getDate(),
+  )}`
 }
 
 function getDatePart(reportDate: string) {
@@ -132,8 +144,7 @@ function mapCounselorComment(item: ParentObservationListItemDto) {
   if (typeof item.counselorComment === 'string') {
     return {
       content: item.counselorComment,
-      relativeTimeLabel:
-        item.counselorCommentRelativeTime ?? '상담사 코멘트',
+      relativeTimeLabel: item.counselorCommentRelativeTime ?? '상담사 코멘트',
     }
   }
 
@@ -204,10 +215,21 @@ function getMonthDateRange(year: number, month: number) {
   }
 }
 
-function createObservationListSearchParams({ year, month }: Pick<ParentObservationQueryParams, 'year' | 'month'>) {
+function createObservationListSearchParams({
+  endDate,
+  month,
+  startDate,
+  year,
+}: Pick<
+  ParentObservationQueryParams,
+  'endDate' | 'month' | 'startDate' | 'year'
+>) {
   const searchParams = new URLSearchParams()
 
-  if (typeof year === 'number' && typeof month === 'number') {
+  if (startDate && endDate) {
+    searchParams.set('startDate', startDate)
+    searchParams.set('endDate', endDate)
+  } else if (typeof year === 'number' && typeof month === 'number') {
     const { startDate, endDate } = getMonthDateRange(year, month)
     searchParams.set('startDate', startDate)
     searchParams.set('endDate', endDate)
@@ -217,7 +239,22 @@ function createObservationListSearchParams({ year, month }: Pick<ParentObservati
   return query ? `?${query}` : ''
 }
 
-function flattenDailyReportGroups(groups: ParentObservationDailyGroupDto[] = []) {
+function getObservationPreviewDateRange() {
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+
+  const startDate = new Date(today)
+  startDate.setMonth(startDate.getMonth() - OBSERVATION_PREVIEW_LOOKBACK_MONTHS)
+
+  return {
+    endDate: formatDateParam(today),
+    startDate: formatDateParam(startDate),
+  }
+}
+
+function flattenDailyReportGroups(
+  groups: ParentObservationDailyGroupDto[] = [],
+) {
   return groups.flatMap((group) =>
     group.reportList.map((report) => ({
       ...report,
@@ -229,8 +266,10 @@ function flattenDailyReportGroups(groups: ParentObservationDailyGroupDto[] = [])
 export async function getParentObservationList({
   accessToken,
   childrenId,
+  endDate,
   year,
   month,
+  startDate,
 }: ParentObservationQueryParams = {}): Promise<ParentObservationListResponse> {
   if (!childrenId || !accessToken) {
     return {
@@ -241,12 +280,15 @@ export async function getParentObservationList({
   const requestPath = `${parentObservationApiPaths.list(
     childrenId,
   )}${createObservationListSearchParams({
+    endDate,
     year,
     month,
+    startDate,
   })}`
 
   const result = await apiRequest<
-    ParentObservationBaseResponseDto<ParentObservationListResponseDto> | ParentObservationListResponseDto
+    | ParentObservationBaseResponseDto<ParentObservationListResponseDto>
+    | ParentObservationListResponseDto
   >(requestPath, {
     accessToken,
     errorMessage: '보호자 관찰 기록 목록을 불러오지 못했습니다.',
@@ -256,7 +298,9 @@ export async function getParentObservationList({
   const reports = flattenDailyReportGroups(data?.dailyReports)
 
   return {
-    records: sortObservationRecords(reports.map(mapObservationListItemToRecord)),
+    records: sortObservationRecords(
+      reports.map(mapObservationListItemToRecord),
+    ),
   }
 }
 
@@ -266,14 +310,12 @@ export async function getParentObservationDetail({
   reportId,
 }: ParentObservationDetailParams): Promise<ParentObservationRecord> {
   const result = await apiRequest<
-    ParentObservationBaseResponseDto<ParentObservationDetailResponseDto> | ParentObservationDetailResponseDto
-  >(
-    parentObservationApiPaths.detail(childrenId, reportId),
-    {
-      accessToken,
-      errorMessage: '보호자 관찰 기록을 불러오지 못했습니다.',
-    },
-  )
+    | ParentObservationBaseResponseDto<ParentObservationDetailResponseDto>
+    | ParentObservationDetailResponseDto
+  >(parentObservationApiPaths.detail(childrenId, reportId), {
+    accessToken,
+    errorMessage: '보호자 관찰 기록을 불러오지 못했습니다.',
+  })
 
   return mapObservationListItemToRecord(unwrapApiData(result))
 }
@@ -341,13 +383,25 @@ export async function deleteParentObservationReport({
 export async function getParentObservationPreview({
   accessToken,
   childrenId,
+  endDate,
   year,
   month,
   limit = PARENT_OBSERVATION_PREVIEW_LIMIT,
+  startDate,
 }: GetParentObservationPreviewParams = {}): Promise<ParentObservationPreviewResponse> {
+  const hasMonthRange = typeof year === 'number' && typeof month === 'number'
+  const fallbackRange =
+    startDate && endDate
+      ? { endDate, startDate }
+      : hasMonthRange
+        ? null
+        : getObservationPreviewDateRange()
+
   const response = await getParentObservationList({
     accessToken,
     childrenId,
+    endDate: fallbackRange?.endDate,
+    startDate: fallbackRange?.startDate,
     year,
     month,
   })
