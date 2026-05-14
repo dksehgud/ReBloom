@@ -13,9 +13,9 @@ object ApiClient {
 
     private val baseUrl = BuildConfig.API_BASE_URL.trimEnd('/') + "/"
 
-    fun create(context: Context): ApiService {
+    fun create(context: Context, accessTokenOverride: String? = null): ApiService {
         val tokenInterceptor = Interceptor { chain ->
-            val token = runBlocking { TokenDataStore.getToken(context) }
+            val token = accessTokenOverride ?: runBlocking { TokenDataStore.getToken(context) }
             val request = chain.request().newBuilder()
                 .apply {
                     if (token != null) {
