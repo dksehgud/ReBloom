@@ -22,6 +22,7 @@ import android.webkit.WebView
 import android.webkit.WebView.WebViewTransport
 import android.webkit.WebViewClient
 import android.widget.FrameLayout
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContracts
@@ -44,6 +45,13 @@ class MainActivity : ComponentActivity() {
     private val notificationPermissionLauncher =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
             Log.d(TAG, "Notification permission granted=$granted")
+            if (!granted) {
+                Toast.makeText(
+                    this,
+                    "Notification permission is required to receive push alerts.",
+                    Toast.LENGTH_LONG
+                ).show()
+            }
         }
 
     private val diaryBridge: DiaryJavascriptBridge by lazy {

@@ -26,6 +26,11 @@ object FcmTokenRegistrar {
     }
 
     suspend fun deactivateCurrentToken(context: Context, accessToken: String?) {
+        if (accessToken.isNullOrBlank()) {
+            Log.w(TAG, "Skip FCM token deactivation because access token is missing")
+            return
+        }
+
         val token = getCurrentToken() ?: return
         runCatching {
             ApiClient.create(context, accessToken).deactivateFcmToken(FcmTokenRequest(token))

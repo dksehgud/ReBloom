@@ -7,6 +7,7 @@ import com.ssafy.rebloom.notification_service.repository.UserFcmTokenRepository;
 import com.ssafy.rebloom.notification_service.service.FcmTokenService;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,10 +20,7 @@ public class FcmTokenServiceImpl implements FcmTokenService {
     @Override
     @Transactional
     public void register(UUID userId, FcmTokenRegisterRequestDto request) {
-        UserFcmToken token = userFcmTokenRepository.findByFcmToken(request.fcmToken())
-            .orElseGet(() -> userFcmTokenRepository.save(
-                UserFcmToken.create(userId, request.fcmToken())
-            ));
+        UserFcmToken token = findOrCreateToken(userId, request.fcmToken());
 
         token.changeUser(userId);
         token.activate();
@@ -33,5 +31,19 @@ public class FcmTokenServiceImpl implements FcmTokenService {
     public void deactivate(UUID userId, FcmTokenDeactivateRequestDto request) {
         userFcmTokenRepository.findByUserIdAndFcmToken(userId, request.fcmToken())
             .ifPresent(UserFcmToken::deactivate);
+    }
+
+    private UserFcmToken findOrCreateToken(UUID userId, String fcmToken) {
+        return userFcmTokenRepository.findByFcmToken(fcmToken)
+            .orElseGet(() -> saveNewToken(userId, fcmToken));
+    }
+
+    private UserFcmToken saveNewToken(UUID userId, String fcmToken) {
+        try {
+            return userFcmTokenRepository.saveAndFlush(UserFcmToken.create(userId, fcmToken));
+        } catch (DataIntegrityViolationException exception) {
+            return userFcmTokenRepository.findByFcmToken(fcmToken)
+                .orElseThrow(() -> exception);
+        }
     }
 }
