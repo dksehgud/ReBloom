@@ -7,6 +7,7 @@ import android.location.Location
 import android.location.LocationListener
 import android.location.LocationManager
 import android.os.Bundle
+import android.os.Handler
 import android.os.Looper
 import android.util.Log
 import androidx.core.content.ContextCompat
@@ -19,6 +20,9 @@ class LocationSensor(
         context.getSystemService(Context.LOCATION_SERVICE) as LocationManager
 
     private var listener: LocationListener? = null
+    private val retryHandler = Handler(Looper.getMainLooper())
+    private var retryCount = 0
+    private var hasReceivedLocation = false
 
     var onLocationReceived: ((LocationData) -> Unit)? = null
 
@@ -31,6 +35,9 @@ class LocationSensor(
 
         val locationListener = object : LocationListener {
             override fun onLocationChanged(location: Location) {
+                hasReceivedLocation = true
+                retryCount = 0
+                retryHandler.removeCallbacksAndMessages(null)
                 Log.d(
                     TAG,
                     "Location changed: provider=${location.provider}, lat=${location.latitude}, lon=${location.longitude}, accuracy=${location.accuracy}"
@@ -59,6 +66,7 @@ class LocationSensor(
         val lastKnownLocation = getBestLastKnownLocation()
         if (lastKnownLocation == null) {
             Log.d(TAG, "No last known location")
+            scheduleLocationRetry()
         } else {
             Log.d(TAG, "Using last known location from ${lastKnownLocation.provider}")
             locationListener.onLocationChanged(lastKnownLocation)
@@ -67,6 +75,7 @@ class LocationSensor(
 
     fun disconnect() {
         Log.d(TAG, "disconnect() called")
+        retryHandler.removeCallbacksAndMessages(null)
         listener?.let { locationManager.removeUpdates(it) }
         listener = null
     }
@@ -74,11 +83,13 @@ class LocationSensor(
     private fun requestUpdates(provider: String, listener: LocationListener) {
         if (!hasLocationPermission()) {
             Log.e(TAG, "Cannot request $provider updates: permission is not granted")
+            scheduleLocationRetry()
             return
         }
 
         if (!locationManager.isProviderEnabled(provider)) {
             Log.e(TAG, "Cannot request $provider updates: provider is disabled")
+            scheduleLocationRetry()
             return
         }
 
@@ -93,11 +104,28 @@ class LocationSensor(
             Log.d(TAG, "Requested $provider updates")
         } catch (_: SecurityException) {
             Log.e(TAG, "Cannot request $provider updates: security exception")
+            scheduleLocationRetry()
             return
         } catch (error: IllegalArgumentException) {
             Log.e(TAG, "Cannot request $provider updates: ${error.message}")
+            scheduleLocationRetry()
             return
         }
+    }
+
+    private fun scheduleLocationRetry() {
+        if (hasReceivedLocation || retryCount >= MAX_LOCATION_RETRY_COUNT) return
+
+        retryCount += 1
+        Log.d(TAG, "Scheduling location retry $retryCount/$MAX_LOCATION_RETRY_COUNT")
+        retryHandler.removeCallbacksAndMessages(null)
+        retryHandler.postDelayed({
+            if (!hasReceivedLocation && listener != null) {
+                listener?.let { locationManager.removeUpdates(it) }
+                listener = null
+                connect()
+            }
+        }, LOCATION_RETRY_DELAY_MS)
     }
 
     private fun getBestLastKnownLocation(): Location? {
@@ -134,6 +162,8 @@ class LocationSensor(
         private const val TAG = "LocationSensor"
         private const val LOCATION_INTERVAL_MS = 10_000L
         private const val LOCATION_MIN_DISTANCE_METERS = 0f
+        private const val LOCATION_RETRY_DELAY_MS = 15_000L
+        private const val MAX_LOCATION_RETRY_COUNT = 3
     }
 }
 

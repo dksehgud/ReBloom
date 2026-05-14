@@ -23,6 +23,9 @@ class WearDataListenerService : WearableListenerService() {
     private val scope = CoroutineScope(Dispatchers.IO)
     private val dateFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.getDefault())
 
+    private class AuthTokenException(message: String, cause: Throwable? = null) :
+        Exception(message, cause)
+
     override fun onDataChanged(dataEvents: DataEventBuffer) {
         dataEvents.forEach { event ->
             if (event.type != DataEvent.TYPE_CHANGED) return@forEach
@@ -95,10 +98,6 @@ class WearDataListenerService : WearableListenerService() {
         scope.launch {
             try {
                 val userId = getUserIdFromToken()
-                if (userId == null) {
-                    Log.e(TAG, "Biometric send skipped: user id is missing from token")
-                    return@launch
-                }
 
                 val request = BiometricRequest(
                     userId = userId,
@@ -119,6 +118,8 @@ class WearDataListenerService : WearableListenerService() {
 
                 val response = ApiClient.create(applicationContext).sendBiometric(request)
                 Log.d(TAG, "Biometric send success: ${response.message}")
+            } catch (e: AuthTokenException) {
+                handleAuthTokenFailure("Biometric", e)
             } catch (e: Exception) {
                 Log.e(TAG, "Biometric send failed: ${e.message}")
             }
@@ -129,10 +130,6 @@ class WearDataListenerService : WearableListenerService() {
         scope.launch {
             try {
                 val userId = getUserIdFromToken()
-                if (userId == null) {
-                    Log.e(TAG, "Location evaluate skipped: user id is missing from token")
-                    return@launch
-                }
 
                 val request = LocationEvaluateRequest(
                     user_id = userId,
@@ -146,15 +143,19 @@ class WearDataListenerService : WearableListenerService() {
                     TAG,
                     "Location evaluate success: matched=${response.matched}, action=${response.action}"
                 )
+            } catch (e: AuthTokenException) {
+                handleAuthTokenFailure("Location evaluate", e)
             } catch (e: Exception) {
                 Log.e(TAG, "Location evaluate failed: ${e.message}")
             }
         }
     }
 
-    private suspend fun getUserIdFromToken(): String? {
-        val token = TokenDataStore.getToken(applicationContext) ?: return null
-        val payload = token.split(".").getOrNull(1) ?: return null
+    private suspend fun getUserIdFromToken(): String {
+        val token = TokenDataStore.getToken(applicationContext)
+            ?: throw AuthTokenException("token is missing")
+        val payload = token.split(".").getOrNull(1)
+            ?: throw AuthTokenException("token payload is missing")
 
         return runCatching {
             val decoded = Base64.decode(
@@ -164,9 +165,16 @@ class WearDataListenerService : WearableListenerService() {
             JSONObject(String(decoded, Charsets.UTF_8))
                 .optString("sub")
                 .takeIf { it.isNotBlank() }
-        }.onFailure { error ->
-            Log.e(TAG, "Failed to extract user id from token: ${error.message}")
-        }.getOrNull()
+                ?: throw AuthTokenException("token subject is missing")
+        }.getOrElse { error ->
+            if (error is AuthTokenException) throw error
+            throw AuthTokenException("failed to parse token", error)
+        }
+    }
+
+    private suspend fun handleAuthTokenFailure(action: String, error: AuthTokenException) {
+        TokenDataStore.clearToken(applicationContext)
+        Log.e(TAG, "$action skipped: invalid token, re-login required. ${error.message}")
     }
 
     private companion object {

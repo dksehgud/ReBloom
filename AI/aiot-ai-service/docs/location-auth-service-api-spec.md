@@ -110,7 +110,7 @@ These can be added later without changing the BE contract.
 
 | Name | Default | Description |
 | --- | --- | --- |
-| `AUTH_SERVICE_BASE_URL` | `http://localhost:8080` | Base URL for auth-service |
+| `AUTH_SERVICE_BASE_URL` | Required | Base URL for auth-service |
 | `AUTH_SERVICE_LOCATION_PATH` | `/api/v1/users/{user_id}/target-location` | Path template for target location lookup |
 | `AUTH_SERVICE_TIMEOUT` | `3.0` | HTTP timeout in seconds |
 | `LOCATION_TARGET_NAME` | `registered_location` | Target name used by aiot-ai-service responses/logs/MQTT payload |

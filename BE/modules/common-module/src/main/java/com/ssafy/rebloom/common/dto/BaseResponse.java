@@ -3,14 +3,7 @@ package com.ssafy.rebloom.common.dto;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import java.util.Map;
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
 
-@Getter
-@NoArgsConstructor(access = AccessLevel.PRIVATE)
-@AllArgsConstructor(access = AccessLevel.PRIVATE)
 @JsonInclude(Include.NON_NULL)
 public class BaseResponse<T> {
 
@@ -18,6 +11,27 @@ public class BaseResponse<T> {
     private String code;
     private String message;
     private T data;
+
+    private BaseResponse() {
+    }
+
+    private BaseResponse(String code, String message, T data) {
+        this.code = code;
+        this.message = message;
+        this.data = data;
+    }
+
+    public String getCode() {
+        return code;
+    }
+
+    public String getMessage() {
+        return message;
+    }
+
+    public T getData() {
+        return data;
+    }
 
     /**
      * 성공 시 응답 200 OK, 201 Created

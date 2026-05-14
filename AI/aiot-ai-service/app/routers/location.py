@@ -9,8 +9,6 @@ a Raspberry Pi signal when the user is inside the target radius.
 import logging
 
 from fastapi import APIRouter, HTTPException
-from fastapi.concurrency import run_in_threadpool
-
 from app.core.config import settings
 from app.schemas.location import LocationEvaluateRequest, LocationEvaluateResponse
 from app.services.auth_location_client import (
@@ -21,7 +19,7 @@ from app.services.auth_location_client import (
 from app.services.location_judgement import Coordinate, is_within_target_location
 from app.services.rpi_location_signal_client import (
     RPILocationSignalPublishError,
-    publish_location_signal,
+    publish_location_signal_async,
 )
 
 logger = logging.getLogger(__name__)
@@ -78,8 +76,7 @@ async def evaluate_location(
         )
 
     try:
-        topic, request_id, _payload = await run_in_threadpool(
-            publish_location_signal,
+        topic, request_id, _payload = await publish_location_signal_async(
             device_id,
             request.user_id,
             target_name,

@@ -5,6 +5,7 @@ This is separate from the existing mqtt_client.py because that file currently
 owns conversation-start messages.
 """
 
+import asyncio
 import json
 import logging
 from datetime import datetime
@@ -95,3 +96,23 @@ def publish_location_signal(
     )
 
     return topic, resolved_request_id, payload
+
+
+async def publish_location_signal_async(
+    device_id: str,
+    user_id: str,
+    target_name: str | None,
+    distance_meters: float,
+    threshold_meters: float,
+    request_id: str | None = None,
+) -> tuple[str, str, dict]:
+    """Publish a location trigger without blocking the event loop."""
+    return await asyncio.to_thread(
+        publish_location_signal,
+        device_id,
+        user_id,
+        target_name,
+        distance_meters,
+        threshold_meters,
+        request_id,
+    )
