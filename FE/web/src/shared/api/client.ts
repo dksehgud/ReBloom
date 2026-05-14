@@ -12,11 +12,51 @@ type ApiRequestOptions = {
 
 const SESSION_STORAGE_KEY = 'rebloom-app-session'
 
+function isWebViewMode() {
+  if (typeof window === 'undefined') return false
+
+  const searchParams = new URLSearchParams(window.location.search)
+
+  return (
+    searchParams.get('mode') === 'webview' ||
+    window.__REBLOOM_SHELL_MODE__ === 'webview'
+  )
+}
+
+function resolveWebViewHostUrl(baseUrl: string) {
+  if (typeof window === 'undefined' || !isWebViewMode()) {
+    return baseUrl
+  }
+
+  const currentHost = window.location.hostname
+
+  if (
+    currentHost === 'localhost' ||
+    currentHost === '127.0.0.1' ||
+    currentHost === '::1'
+  ) {
+    return baseUrl
+  }
+
+  try {
+    const url = new URL(baseUrl)
+
+    if (url.hostname === 'localhost' || url.hostname === '127.0.0.1') {
+      url.hostname = currentHost
+      return url.toString().replace(/\/$/, '')
+    }
+  } catch {
+    return baseUrl
+  }
+
+  return baseUrl
+}
+
 function resolveApiBaseUrl() {
   const configuredBaseUrl = import.meta.env.VITE_API_BASE_URL?.trim().replace(/\/$/, '')
 
   if (configuredBaseUrl) {
-    return configuredBaseUrl
+    return resolveWebViewHostUrl(configuredBaseUrl)
   }
 
   if (!import.meta.env.DEV) {
