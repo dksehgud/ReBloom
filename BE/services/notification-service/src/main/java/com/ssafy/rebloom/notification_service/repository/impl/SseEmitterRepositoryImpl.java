@@ -1,6 +1,7 @@
 package com.ssafy.rebloom.notification_service.repository.impl;
 
 import com.ssafy.rebloom.notification_service.repository.SseEmitterRepository;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -29,6 +30,17 @@ public class SseEmitterRepositoryImpl implements SseEmitterRepository {
     @Override
     public List<SseEmitter> findAllByUserId(UUID userId) {
         return emitters.getOrDefault(userId, List.of());
+    }
+
+    @Override
+    public Map<UUID, List<SseEmitter>> findAll() {
+        Map<UUID, List<SseEmitter>> snapshot = new HashMap<>();
+
+        emitters.forEach((userId, userEmitters) ->
+            snapshot.put(userId, List.copyOf(userEmitters))
+        );
+
+        return snapshot;
     }
 
     @Override
