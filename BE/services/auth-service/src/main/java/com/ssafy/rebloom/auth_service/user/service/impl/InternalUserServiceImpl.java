@@ -26,6 +26,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class InternalUserServiceImpl implements InternalUserService {
 
     private static final DateTimeFormatter BIRTH_FORMATTER = DateTimeFormatter.ofPattern("yyyy.MM.dd");
+    private static final DeviceType CHILD_IOT_DEVICE_TYPE = DeviceType.IOT;
 
     private final UserRepository userRepository;
     private final DeviceRepository deviceRepository;
@@ -41,10 +42,20 @@ public class InternalUserServiceImpl implements InternalUserService {
             );
         }
 
+        Device device = deviceRepository.findByChildrenIdAndDeviceType(
+                childId,
+                CHILD_IOT_DEVICE_TYPE
+            )
+            .orElseThrow(() -> new CustomException(
+                "Child IOT device not found.",
+                ErrorCode.NOT_FOUND
+            ));
+
         return new ChildGpsResponseDto(
             children.getId(),
             children.getLatitude().setScale(10, java.math.RoundingMode.HALF_UP),
-            children.getLongitude().setScale(10, java.math.RoundingMode.HALF_UP)
+            children.getLongitude().setScale(10, java.math.RoundingMode.HALF_UP),
+            device.getSerialNumber()
         );
     }
 
@@ -72,7 +83,7 @@ public class InternalUserServiceImpl implements InternalUserService {
 
         Device device = deviceRepository.findByChildrenIdAndDeviceType(
                 childrenId,
-                DeviceType.IOT
+                CHILD_IOT_DEVICE_TYPE
             )
             .orElseThrow(() -> new CustomException(
                 "자녀 IOT 디바이스를 찾을 수 없습니다.",

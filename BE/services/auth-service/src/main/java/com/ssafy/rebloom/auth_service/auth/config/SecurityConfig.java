@@ -1,6 +1,7 @@
 package com.ssafy.rebloom.auth_service.auth.config;
 
 import com.ssafy.rebloom.auth_service.auth.security.OAuth2LoginSuccessHandler;
+import org.springframework.security.oauth2.client.web.OAuth2AuthorizationRequestResolver;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
@@ -19,14 +20,18 @@ public class SecurityConfig {
     @Order(0)
     public SecurityFilterChain oauth2SecurityFilterChain(
         HttpSecurity http,
-        OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler
+        OAuth2LoginSuccessHandler oAuth2LoginSuccessHandler,
+        OAuth2AuthorizationRequestResolver oAuth2AuthorizationRequestResolver
     ) throws Exception {
         http
             .securityMatcher("/oauth2/**", "/login/oauth2/**")
             .csrf(csrf -> csrf.disable())
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
             .authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
-            .oauth2Login(oauth2 -> oauth2.successHandler(oAuth2LoginSuccessHandler));
+            .oauth2Login(oauth2 -> oauth2
+                .authorizationEndpoint(authorization -> authorization
+                    .authorizationRequestResolver(oAuth2AuthorizationRequestResolver))
+                .successHandler(oAuth2LoginSuccessHandler));
 
         return http.build();
     }

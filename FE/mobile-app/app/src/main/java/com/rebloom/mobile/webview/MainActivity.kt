@@ -45,8 +45,14 @@ class MainActivity : ComponentActivity() {
         )
     }
 
+    private val webAppBaseUrl: String
+        get() = BuildConfig::class.java
+            .getField("WEB_APP_BASE_URL")
+            .get(null)
+            .toString()
+
     private val launchUrl: String
-        get() = BuildConfig.WEB_APP_BASE_URL.trimEnd('/') + "/?mode=webview"
+        get() = webAppBaseUrl.trimEnd('/') + "/?mode=webview"
 
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -64,6 +70,7 @@ class MainActivity : ComponentActivity() {
         webView = createConfiguredWebView().apply {
             addJavascriptInterface(TokenBridge(this@MainActivity), "Android")
             addJavascriptInterface(diaryBridge, DIARY_BRIDGE_NAME)
+            Log.d(TAG, "Loading WebView URL: $launchUrl")
             loadUrl(launchUrl)
         }
 
