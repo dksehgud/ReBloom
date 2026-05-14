@@ -1,3 +1,5 @@
+import type { ParentCounselorRelationStatus } from '../types/parentRelation'
+
 export type ParentSettingsProfile = {
   name: string
   email: string
@@ -20,6 +22,7 @@ export type ParentCounselorCandidate = {
   email: string
   clinicName: string
   phoneNumber: string
+  relationStatus?: ParentCounselorRelationStatus | null
 }
 
 export const parentSupportContacts: ParentSupportContact[] = [

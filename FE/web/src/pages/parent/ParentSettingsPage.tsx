@@ -1,9 +1,14 @@
 import { useEffect, useState, type ReactNode } from 'react'
+import { useNavigate } from 'react-router-dom'
 
 import MobilePageLayout from '../../components/templates/MobilePageLayout/MobilePageLayout'
 import { authApi, type PasswordChangeRequest } from '../../features/auth/api/authApi'
 import { useAppSessionStore } from '../../features/auth/store/useAppSessionStore'
-import { getParentConnectedCounselor } from '../../features/guardian/api/parentRelationApi'
+import {
+  getParentConnectedCounselor,
+  requestParentCounselorRelation,
+  searchParentCounselors,
+} from '../../features/guardian/api/parentRelationApi'
 import ParentBottomNavigation from '../../features/guardian/components/ParentBottomNavigation'
 import ParentCounselorConnectModal from '../../features/guardian/components/ParentCounselorConnectModal'
 import {
@@ -12,8 +17,14 @@ import {
 } from '../../features/guardian/constants/parentSettings'
 import { useParentConnectedChild } from '../../features/guardian/hooks/useParentConnectedChild'
 import { useParentMockMode } from '../../features/guardian/hooks/useParentMockMode'
-import { mockCounselorCandidate } from '../../features/guardian/mocks/parentSettings'
+import type {
+  ParentConnectedCounselor,
+  ParentCounselorProfileDto,
+} from '../../features/guardian/types/parentRelation'
+import { useSelectedChildStore } from '../../features/student/store/useSelectedChildStore'
+import ChildLogoutConfirmModal from '../../features/user/components/ChildLogoutConfirmModal'
 import ChildPasswordChangeModal from '../../features/user/components/ChildPasswordChangeModal'
+import { clearNativeAccessToken } from '../../shared/utils/nativeTokenBridge'
 
 type ParentSettingsRowProps = {
   title: ReactNode
@@ -226,13 +237,74 @@ function ContactRow({
   )
 }
 
+function getCounselorStatusLabel(
+  status: ParentCounselorCandidate['relationStatus'],
+) {
+  if (status === 'PENDING') return '요청중'
+  if (status === 'ACTIVE') return '연결'
+
+  return '연결'
+}
+
+function isCounselorProfile(profile: ParentCounselorProfileDto) {
+  return profile.userRole?.toUpperCase() === 'COUNSELOR'
+}
+
+function toCounselorCandidateFromProfile(
+  profile: ParentCounselorProfileDto,
+  relation?: ParentConnectedCounselor | null,
+): ParentCounselorCandidate {
+  return {
+    clinicName: profile.hospitalName?.trim() ?? '',
+    email: relation?.email ?? profile.email ?? '',
+    name: relation?.name ?? profile.name ?? '상담사',
+    phoneNumber: '',
+    relationStatus: relation?.relationStatus ?? null,
+  }
+}
+
+function toCounselorCandidateFromRelation(
+  counselor: ParentConnectedCounselor,
+  fallback: ParentCounselorCandidate,
+): ParentCounselorCandidate {
+  return {
+    clinicName: fallback.clinicName,
+    email: counselor.email ?? fallback.email,
+    name: counselor.name ?? fallback.name,
+    phoneNumber: fallback.phoneNumber,
+    relationStatus: counselor.relationStatus,
+  }
+}
+
+function toCounselorCandidateFromConnectedCounselor(
+  counselor: ParentConnectedCounselor,
+): ParentCounselorCandidate | null {
+  if (!counselor.connected) {
+    return null
+  }
+
+  return {
+    clinicName: '',
+    email: counselor.email ?? '',
+    name: counselor.name ?? '상담사',
+    phoneNumber: '',
+    relationStatus: counselor.relationStatus,
+  }
+}
+
 function ParentSettingsPage() {
   const accessToken = useAppSessionStore((state) => state.accessToken)
+  const clearSession = useAppSessionStore((state) => state.clearSession)
   const currentUser = useAppSessionStore((state) => state.currentUser)
+  const clearSelectedChild = useSelectedChildStore((state) => state.clearSelectedChild)
   const isMockMode = useParentMockMode()
+  const navigate = useNavigate()
   const { selectedChild } = useParentConnectedChild()
+  const [counselorLoadError, setCounselorLoadError] = useState('')
   const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false)
   const [isCounselorModalOpen, setIsCounselorModalOpen] = useState(false)
+  const [isCounselorLoading, setIsCounselorLoading] = useState(false)
+  const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false)
   const [connectedCounselor, setConnectedCounselor] =
     useState<ParentCounselorCandidate | null>(null)
 
@@ -248,33 +320,45 @@ function ParentSettingsPage() {
   const linkedChildEmail = selectedChild?.email ?? ''
 
   useEffect(() => {
+    let isCanceled = false
+
     const timeoutId = window.setTimeout(() => {
       if (isMockMode || !accessToken || !hasConnectedChild) {
         setConnectedCounselor(null)
+        setCounselorLoadError('')
+        setIsCounselorLoading(false)
         return
       }
 
+      setIsCounselorLoading(true)
+      setCounselorLoadError('')
+
       void getParentConnectedCounselor(accessToken)
         .then((counselor) => {
-          if (!counselor.connected) {
-            setConnectedCounselor(null)
-            return
-          }
+          if (isCanceled) return
 
-          setConnectedCounselor({
-            clinicName: '연결된 상담사',
-            email: counselor.email ?? '',
-            name: counselor.name ?? '상담사',
-            phoneNumber: '',
-          })
+          setConnectedCounselor(
+            toCounselorCandidateFromConnectedCounselor(counselor),
+          )
+          setCounselorLoadError('')
         })
-        .catch((error) => {
-          console.error(error)
+        .catch(() => {
+          if (isCanceled) return
+
           setConnectedCounselor(null)
+          setCounselorLoadError('상담사 연결 정보를 불러오지 못했습니다.')
+        })
+        .finally(() => {
+          if (isCanceled) return
+
+          setIsCounselorLoading(false)
         })
     }, 0)
 
-    return () => window.clearTimeout(timeoutId)
+    return () => {
+      isCanceled = true
+      window.clearTimeout(timeoutId)
+    }
   }, [accessToken, hasConnectedChild, isMockMode])
 
   const handleVerifyCurrentPassword = async (password: string) => {
@@ -291,6 +375,57 @@ function ParentSettingsPage() {
     }
 
     await authApi.changePassword(payload, accessToken)
+  }
+
+  const handleLogout = () => {
+    clearSession()
+    clearNativeAccessToken()
+    clearSelectedChild()
+    navigate('/login', { replace: true })
+  }
+
+  const handleSearchCounselor = async (email: string) => {
+    if (!accessToken) {
+      throw new Error('로그인 후 다시 시도해주세요.')
+    }
+
+    const counselors = await searchParentCounselors(email, accessToken)
+    const counselorProfiles = counselors.filter(isCounselorProfile)
+    const matchedCounselor =
+      counselorProfiles.find(
+        (counselor) =>
+          counselor.email?.toLowerCase() === email.trim().toLowerCase(),
+      ) ?? counselorProfiles[0]
+
+    if (!matchedCounselor) {
+      return null
+    }
+
+    const relation = await getParentConnectedCounselor(accessToken).catch(
+      () => null,
+    )
+    const matchedRelation =
+      relation?.email?.toLowerCase() ===
+      (matchedCounselor.email ?? email).toLowerCase()
+        ? relation
+        : null
+
+    return toCounselorCandidateFromProfile(matchedCounselor, matchedRelation)
+  }
+
+  const handleRequestCounselorRelation = async (
+    candidate: ParentCounselorCandidate,
+  ) => {
+    if (!accessToken) {
+      throw new Error('로그인 후 다시 시도해주세요.')
+    }
+
+    const counselor = await requestParentCounselorRelation(
+      candidate.email,
+      accessToken,
+    )
+
+    return toCounselorCandidateFromRelation(counselor, candidate)
   }
 
   return (
@@ -363,12 +498,29 @@ function ParentSettingsPage() {
                 icon={<PlusIcon />}
                 showDivider={false}
               />
+            ) : isCounselorLoading ? (
+              <ParentSettingsRow
+                title="상담사 연결 정보를 확인 중입니다."
+                icon={<UserIcon />}
+                showDivider={false}
+              />
+            ) : counselorLoadError ? (
+              <ParentSettingsRow
+                title={counselorLoadError}
+                description="잠시 후 다시 확인해 주세요."
+                icon={<UserIcon />}
+                showDivider={false}
+              />
             ) : isCounselorConnected && connectedCounselor ? (
               <ParentSettingsRow
                 title={connectedCounselor.name}
                 description={connectedCounselor.clinicName}
                 icon={<UserIcon />}
-                trailing={<span className="parent-settings-page__status-chip">연결</span>}
+                trailing={
+                  <span className="parent-settings-page__status-chip">
+                    {getCounselorStatusLabel(connectedCounselor.relationStatus)}
+                  </span>
+                }
                 showDivider={false}
               />
             ) : (
@@ -385,7 +537,9 @@ function ParentSettingsPage() {
         <section className="parent-settings-page__section">
           <h2 className="parent-settings-page__section-title">연락처</h2>
           <div className="parent-settings-page__box">
-            {hasConnectedChild && isCounselorConnected && connectedCounselor ? (
+            {hasConnectedChild &&
+            isCounselorConnected &&
+            connectedCounselor?.relationStatus === 'ACTIVE' ? (
               <ContactRow
                 title={connectedCounselor.name}
                 description={connectedCounselor.clinicName}
@@ -404,6 +558,14 @@ function ParentSettingsPage() {
             ))}
           </div>
         </section>
+
+        <button
+          type="button"
+          className="parent-settings-page__logout"
+          onClick={() => setIsLogoutModalOpen(true)}
+        >
+          로그아웃
+        </button>
       </div>
 
       {isPasswordModalOpen ? (
@@ -416,11 +578,22 @@ function ParentSettingsPage() {
 
       {isCounselorModalOpen ? (
         <ParentCounselorConnectModal
-          candidate={mockCounselorCandidate}
           onClose={() => setIsCounselorModalOpen(false)}
           onComplete={(candidate) => {
             setConnectedCounselor(candidate)
             setIsCounselorModalOpen(false)
+          }}
+          onRequest={handleRequestCounselorRelation}
+          onSearch={handleSearchCounselor}
+        />
+      ) : null}
+
+      {isLogoutModalOpen ? (
+        <ChildLogoutConfirmModal
+          onCancel={() => setIsLogoutModalOpen(false)}
+          onConfirm={() => {
+            setIsLogoutModalOpen(false)
+            handleLogout()
           }}
         />
       ) : null}
