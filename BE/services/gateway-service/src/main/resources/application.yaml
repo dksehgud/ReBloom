@@ -116,6 +116,8 @@ spring:
           predicates:
             - Path=/notification/**
           filters: *secured-filters
+          metadata:
+            response-timeout: 1860000
 
 jwt:
   secret: ${JWT_SECRET}
