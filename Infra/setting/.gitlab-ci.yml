@@ -21,6 +21,7 @@ variables:
 stages:
   - build
   - docker-push
+  - web-deploy
 
 workflow:
   rules:
