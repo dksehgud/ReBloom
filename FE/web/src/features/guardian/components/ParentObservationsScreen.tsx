@@ -41,6 +41,8 @@ function ParentObservationsScreen() {
     modalMode,
     isLoading,
     isError,
+    canDraftNextDate,
+    canDraftPreviousDate,
     hasPreviousDetailRecord,
     hasNextDetailRecord,
     isDraftSubmitDisabled,
@@ -118,6 +120,8 @@ function ParentObservationsScreen() {
           dateLabel={draftDateLabel}
           selectedMood={draftMood}
           content={draftDescription}
+          canGoNextDate={canDraftNextDate}
+          canGoPreviousDate={canDraftPreviousDate}
           isSubmitDisabled={isDraftSubmitDisabled}
           onClose={handleCloseModal}
           onPreviousDate={handleDraftPreviousDate}

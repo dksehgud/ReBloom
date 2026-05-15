@@ -50,9 +50,21 @@ function padNumber(value: number) {
   return String(value).padStart(2, '0')
 }
 
+function formatDateParam(date: Date) {
+  return [
+    date.getFullYear(),
+    padNumber(date.getMonth() + 1),
+    padNumber(date.getDate()),
+  ].join('-')
+}
+
 function getMonthDateRange(year: number, month: number) {
   const startDate = `${year}-${padNumber(month)}-01`
-  const endDate = `${year}-${padNumber(month)}-${padNumber(new Date(year, month, 0).getDate())}`
+  const monthEndDate = new Date(year, month, 0)
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  monthEndDate.setHours(0, 0, 0, 0)
+  const endDate = formatDateParam(monthEndDate > today ? today : monthEndDate)
 
   return {
     endDate,

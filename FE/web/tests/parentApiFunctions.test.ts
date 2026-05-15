@@ -194,6 +194,28 @@ describe('parent relation API functions', () => {
 })
 
 describe('parent observation API functions', () => {
+  it('caps current-month observation list range at today', async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date(2026, 4, 15, 12))
+    apiRequestMock.mockResolvedValueOnce({ dailyReports: [] })
+
+    try {
+      await getParentObservationList({
+        accessToken: 'token',
+        childrenId: 'child-1',
+        month: 5,
+        year: 2026,
+      })
+
+      expect(apiRequestMock).toHaveBeenCalledWith(
+        '/report/api/v1/children/child-1/reports?startDate=2026-05-01&endDate=2026-05-15',
+        expect.objectContaining({ accessToken: 'token' }),
+      )
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
   it('loads observation list, detail, and counselor comment', async () => {
     apiRequestMock
       .mockResolvedValueOnce({
