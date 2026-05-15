@@ -212,6 +212,52 @@ async def _filter_thinking(
 
 
 # ─────────────────────────────────────────────
+# 언어 필터 (한국어/ASCII 이외 문자 제거)
+# ─────────────────────────────────────────────
+
+
+def _is_allowed_char(ch: str) -> bool:
+    """한국어, ASCII 출력 가능 문자, 공백·줄바꿈만 허용한다."""
+    cp = ord(ch)
+    # ASCII 출력 가능 문자 (공백, 영문, 숫자, 기본 문장부호)
+    if 0x0020 <= cp <= 0x007E:
+        return True
+    # 줄바꿈·탭
+    if ch in ("\n", "\r", "\t"):
+        return True
+    # 한글 음절 (가~힣)
+    if 0xAC00 <= cp <= 0xD7A3:
+        return True
+    # 한글 자모
+    if 0x1100 <= cp <= 0x11FF:
+        return True
+    # 한글 호환 자모 (ㄱ~ㅣ)
+    if 0x3130 <= cp <= 0x318F:
+        return True
+    # 한글 자모 확장 A/B
+    if 0xA960 <= cp <= 0xA97F:
+        return True
+    if 0xD7B0 <= cp <= 0xD7FF:
+        return True
+    return False
+
+
+async def _filter_language(
+    raw_gen: AsyncGenerator[str, None],
+) -> AsyncGenerator[str, None]:
+    """
+    스트림에서 한국어·ASCII 이외의 문자(중국어·일본어 등)를 실시간으로 제거한다.
+    Qwen 모델이 간헐적으로 중국어 문자를 섞어 출력하는 현상을 방어한다.
+    """
+    async for token in raw_gen:
+        filtered = "".join(ch for ch in token if _is_allowed_char(ch))
+        if filtered:
+            yield filtered
+        elif token:
+            logger.debug(f"[lang-filter] 비허용 문자 제거됨: {repr(token)}")
+
+
+# ─────────────────────────────────────────────
 # 공개 인터페이스
 # ─────────────────────────────────────────────
 
@@ -240,12 +286,11 @@ async def stream_chat(
     if settings.USE_MOCK_LLM:
         logger.info("[MOCK] mock LLM 모드로 응답 생성")
         mock_text = _get_mock_response()
-        # mock은 thinking 없음 — 필터 통과시키지 않아도 되지만 일관성을 위해 적용
-        async for token in _filter_thinking(_mock_stream(mock_text)):
+        async for token in _filter_language(_filter_thinking(_mock_stream(mock_text))):
             yield token
     else:
         logger.info(f"[vLLM] 모델={settings.LLM_MODEL}, 위기모드={is_crisis}")
-        async for token in _filter_thinking(_vllm_stream(messages)):
+        async for token in _filter_language(_filter_thinking(_vllm_stream(messages))):
             yield token
 
 
