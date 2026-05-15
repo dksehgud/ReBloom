@@ -44,6 +44,7 @@ rebloom:
       group-id: notification-service
       retry-interval-ms: 1000
       retry-max-attempts: 3
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092,localhost:9093,localhost:9094}
 
   mqtt:
     broker-uri: ${MQTT_BROKER_URI}
