@@ -46,6 +46,7 @@ build-mobile-apk:
   script:
     - echo "----- FE mobile debug APK build start -----"
     - cd FE/mobile-app
+    - cp $FCM_CLIENT_JSON ./app/google-services.json
     - chmod +x ./gradlew
     - ./gradlew :app:assembleDebug --no-daemon -PWEB_APP_BASE_URL="${MOBILE_WEB_APP_BASE_URL}" -PAPI_BASE_URL="${MOBILE_API_BASE_URL}" -PDIARY_ANALYSIS_API_URL="${MOBILE_DIARY_ANALYSIS_API_URL}"
   artifacts:
