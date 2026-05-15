@@ -7,40 +7,51 @@ type FindPasswordPageProps = {
   initialEmail?: string
   onBackToLogin: () => void
   onMoveToLogin: (email: string) => void
+  onRequestTemporaryPassword: (email: string) => Promise<void>
 }
 
 function FindPasswordPage({
   initialEmail = '',
   onBackToLogin,
   onMoveToLogin,
+  onRequestTemporaryPassword,
 }: FindPasswordPageProps) {
   const [email, setEmail] = useState(initialEmail)
   const [temporaryPasswordSent, setTemporaryPasswordSent] = useState(false)
   const [emailError, setEmailError] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
   const [resent, setResent] = useState(false)
 
   const normalizedEmail = email.trim().toLowerCase()
   const hasEmailValue = normalizedEmail.length > 0
-  const isUnregisteredEmail =
-    normalizedEmail === 'missing@naver.com' ||
-    normalizedEmail === 'none@naver.com' ||
-    normalizedEmail === 'notfound@naver.com'
 
-  const handleSendTemporaryPassword = () => {
-    if (!hasEmailValue) {
+  const requestTemporaryPassword = async (isResend = false) => {
+    if (!hasEmailValue || isSubmitting) {
       return
     }
 
-    if (isUnregisteredEmail) {
-      setEmailError('가입된 이메일이 없습니다.')
+    try {
+      setIsSubmitting(true)
+      setEmailError('')
+      await onRequestTemporaryPassword(normalizedEmail)
+      setEmail(normalizedEmail)
+      setTemporaryPasswordSent(true)
+      setResent(isResend)
+    } catch (error) {
+      setEmailError(
+        error instanceof Error
+          ? error.message
+          : '임시 비밀번호 발급에 실패했습니다.',
+      )
       setTemporaryPasswordSent(false)
       setResent(false)
-      return
+    } finally {
+      setIsSubmitting(false)
     }
+  }
 
-    setEmailError('')
-    setTemporaryPasswordSent(true)
-    setResent(false)
+  const handleSendTemporaryPassword = () => {
+    void requestTemporaryPassword()
   }
 
   const handleResetEmailInput = () => {
@@ -50,9 +61,7 @@ function FindPasswordPage({
   }
 
   const handleResendTemporaryPassword = () => {
-    setTemporaryPasswordSent(true)
-    setEmailError('')
-    setResent(true)
+    void requestTemporaryPassword(true)
   }
 
   return (
@@ -81,10 +90,10 @@ function FindPasswordPage({
             <button
               type="button"
               className="auth-button is-primary"
-              disabled={!hasEmailValue}
+              disabled={!hasEmailValue || isSubmitting}
               onClick={handleSendTemporaryPassword}
             >
-              임시 비밀번호 받기
+              {isSubmitting ? '발급 중' : '임시 비밀번호 받기'}
             </button>
           </>
         )
@@ -111,7 +120,7 @@ function FindPasswordPage({
           type="email"
           placeholder="이메일"
           autoComplete="email"
-          readOnly={temporaryPasswordSent}
+          readOnly={temporaryPasswordSent || isSubmitting}
           value={email}
           error={emailError || undefined}
           onChange={
@@ -128,8 +137,12 @@ function FindPasswordPage({
         {temporaryPasswordSent ? (
           <div className="find-password-resend">
             <span>이메일을 받지 못하셨나요?</span>
-            <button type="button" onClick={handleResendTemporaryPassword}>
-              재전송
+            <button
+              type="button"
+              disabled={isSubmitting}
+              onClick={handleResendTemporaryPassword}
+            >
+              {isSubmitting ? '재전송 중' : '재전송'}
             </button>
             <button
               type="button"

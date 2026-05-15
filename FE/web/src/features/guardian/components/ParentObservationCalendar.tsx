@@ -84,6 +84,16 @@ function buildCalendarDays(year: number, month: number, markedDays: number[]) {
   })
 }
 
+function isFutureCalendarDay(year: number, month: number, day: number) {
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+
+  const targetDate = new Date(year, month - 1, day)
+  targetDate.setHours(0, 0, 0, 0)
+
+  return targetDate > today
+}
+
 function ParentObservationCalendar({
   year,
   month,
@@ -140,6 +150,7 @@ function ParentObservationCalendar({
           }
 
           const isSelected = selectedDay === entry.day
+          const isFutureDay = isFutureCalendarDay(year, month, entry.day)
 
           return (
             <button
@@ -147,8 +158,9 @@ function ParentObservationCalendar({
               type="button"
               className={`parent-observation-calendar__day${
                 isSelected ? ' is-selected' : ''
-              }`}
+              }${isFutureDay ? ' is-disabled' : ''}`}
               aria-pressed={isSelected}
+              disabled={isFutureDay}
               onClick={() => onSelectDay?.(entry.day!)}
             >
               <span className="parent-observation-calendar__day-number">{entry.day}</span>

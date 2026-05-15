@@ -9,6 +9,8 @@ type ParentObservationFormModalProps = {
   dateLabel: string
   selectedMood: string | null
   content: string
+  canGoNextDate?: boolean
+  canGoPreviousDate?: boolean
   isSubmitDisabled?: boolean
   onClose?: () => void
   onPreviousDate?: () => void
@@ -63,6 +65,8 @@ function ParentObservationFormModal({
   dateLabel,
   selectedMood,
   content,
+  canGoNextDate = true,
+  canGoPreviousDate = true,
   isSubmitDisabled = false,
   onClose,
   onPreviousDate,
@@ -86,6 +90,7 @@ function ParentObservationFormModal({
               type="button"
               className="parent-observation-form-modal__nav-button"
               aria-label="이전 날짜"
+              disabled={!canGoPreviousDate}
               onClick={onPreviousDate}
             >
               <ChevronLeftIcon />
@@ -97,6 +102,7 @@ function ParentObservationFormModal({
               type="button"
               className="parent-observation-form-modal__nav-button"
               aria-label="다음 날짜"
+              disabled={!canGoNextDate}
               onClick={onNextDate}
             >
               <ChevronRightIcon />

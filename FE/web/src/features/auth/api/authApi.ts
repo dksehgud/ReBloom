@@ -150,6 +150,7 @@ async function login(email: string, password: string) {
 
 type UserProfileResponse = {
   email: string
+  hospitalName?: string | null
   name: string
   userRole: BackendRole
 }

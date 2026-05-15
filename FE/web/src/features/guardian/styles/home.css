@@ -592,6 +592,12 @@ body[data-shell-mode='webview'] .parent-bottom-nav__indicator {
   background: rgba(136, 181, 196, 0.14);
 }
 
+.parent-observation-calendar__day.is-disabled,
+.parent-observation-calendar__day:disabled {
+  cursor: default;
+  opacity: 0.38;
+}
+
 .parent-observation-calendar__day-number {
   color: #4a5565;
   font-family: 'Inter', 'Noto Sans KR', sans-serif;
@@ -686,6 +692,11 @@ body[data-shell-mode='webview'] .parent-bottom-nav__indicator {
   align-items: center;
   justify-content: center;
   cursor: pointer;
+}
+
+.parent-observation-form-modal__nav-button:disabled {
+  cursor: default;
+  opacity: 0.38;
 }
 
 .parent-observation-detail-modal__nav-icon,

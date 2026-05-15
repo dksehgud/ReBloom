@@ -9,6 +9,7 @@ type UseParentObservationPreviewResult = {
   records: ParentObservationPreviewItem[]
   isLoading: boolean
   isError: boolean
+  refetch: () => void
 }
 
 export function useParentObservationPreview(
@@ -23,6 +24,7 @@ export function useParentObservationPreview(
   const [records, setRecords] = useState<ParentObservationPreviewItem[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isError, setIsError] = useState(false)
+  const [reloadKey, setReloadKey] = useState(0)
 
   useEffect(() => {
     let isMounted = true
@@ -62,11 +64,12 @@ export function useParentObservationPreview(
     return () => {
       isMounted = false
     }
-  }, [accessToken, childrenId, parentObservationApi])
+  }, [accessToken, childrenId, parentObservationApi, reloadKey])
 
   return {
     records,
     isLoading,
     isError,
+    refetch: () => setReloadKey((previous) => previous + 1),
   }
 }

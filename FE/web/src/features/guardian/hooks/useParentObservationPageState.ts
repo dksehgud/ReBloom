@@ -30,6 +30,23 @@ function getMaxSelectableDay(year: number, month: number) {
   return daysInMonth
 }
 
+function toDateOnly({ year, month, day }: DraftDate) {
+  return new Date(year, month - 1, day)
+}
+
+function getTodayDateOnly() {
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  return today
+}
+
+function isFutureDraftDate(date: DraftDate) {
+  const targetDate = toDateOnly(date)
+  targetDate.setHours(0, 0, 0, 0)
+
+  return targetDate > getTodayDateOnly()
+}
+
 function padNumber(value: number) {
   return String(value).padStart(2, '0')
 }
@@ -341,6 +358,7 @@ export function useParentObservationPageState(childrenId?: string) {
     const today = new Date()
     const isViewingTodayMonth =
       currentYear === today.getFullYear() && currentMonth === today.getMonth() + 1
+    const maxSelectableDay = getMaxSelectableDay(currentYear, currentMonth)
     const fallbackDay =
       selectedDay ??
       (isViewingTodayMonth ? today.getDate() : localRecords[0]?.day ?? 1)
@@ -348,7 +366,7 @@ export function useParentObservationPageState(childrenId?: string) {
     setDraftDate({
       year: currentYear,
       month: currentMonth,
-      day: fallbackDay,
+      day: Math.min(maxSelectableDay, fallbackDay),
     })
     setDraftMood(null)
     setDraftDescription('')
@@ -419,7 +437,12 @@ export function useParentObservationPageState(childrenId?: string) {
   const handleSubmitDraft = async () => {
     const nextDescription = draftDescription.trim()
 
-    if (!draftMood || nextDescription.length === 0 || !canMutateObservation) {
+    if (
+      !draftMood ||
+      nextDescription.length === 0 ||
+      !canMutateObservation ||
+      isFutureDraftDate(draftDate)
+    ) {
       return
     }
 
@@ -494,7 +517,13 @@ export function useParentObservationPageState(childrenId?: string) {
     hasNextDetailRecord:
       selectedRecordIndex > -1 && selectedRecordIndex < detailRecords.length - 1,
     isDraftSubmitDisabled:
-      isMutating || !draftMood || draftDescription.trim().length === 0,
+      isMutating ||
+      !draftMood ||
+      draftDescription.trim().length === 0 ||
+      isFutureDraftDate(draftDate),
+    canDraftNextDate:
+      draftDate.day < getMaxSelectableDay(draftDate.year, draftDate.month),
+    canDraftPreviousDate: draftDate.day > 1,
     handlePreviousMonth: handleObservationPreviousMonth,
     handleNextMonth: handleObservationNextMonth,
     handleSelectDay,
