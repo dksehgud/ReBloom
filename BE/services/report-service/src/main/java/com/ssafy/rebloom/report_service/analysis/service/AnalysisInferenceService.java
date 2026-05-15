@@ -14,6 +14,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -74,6 +75,7 @@ public class AnalysisInferenceService {
     private String recentInsightApiKey;
 
     @Transactional
+    @Async("analysisTaskExecutor")
     public void analyzeConversation(ConversationSessionCreateRequestDto request) {
         /*
          * 이 메서드는 IoT 기기에서 대화 세션이 끝난 뒤 호출됩니다.
@@ -145,6 +147,7 @@ public class AnalysisInferenceService {
     }
 
     @Transactional
+    @Async("analysisTaskExecutor")
     public void analyzeDiary(DiaryAnalysisInferenceRequestDto request) {
         /*
          * 이 메서드는 일기 분석 요청이 들어왔을 때 호출됩니다.
@@ -179,6 +182,7 @@ public class AnalysisInferenceService {
             .embeddingText(readRequiredText(output, "embedding_text"))
             .prediction(prediction)
             .build());
+        diaryKeywordRepository.deleteByAnalysisIdAndUserId(request.diaryId(), request.userId());
         saveDiaryKeywords(request.diaryId(), request.userId(), keywords);
 
         log.info(
@@ -192,6 +196,7 @@ public class AnalysisInferenceService {
     }
 
     @Transactional
+    @Async("analysisTaskExecutor")
     public void generateRecentInsight(RecentInsightInferenceRequestDto request) {
         /*
          * 이 메서드는 최근 우울 단계 추이를 한 문장으로 요약할 때 호출됩니다.

@@ -25,7 +25,7 @@ public class AnalysisInferenceController {
         @RequestBody @Valid ConversationSessionCreateRequestDto request
     ) {
         analysisInferenceService.analyzeConversation(request);
-        return ResponseEntity.ok(BaseResponse.success("conversation analysis requested"));
+        return ResponseEntity.accepted().body(BaseResponse.success("conversation analysis requested"));
     }
 
     @PostMapping("/diaries")
@@ -33,7 +33,7 @@ public class AnalysisInferenceController {
         @RequestBody @Valid DiaryAnalysisInferenceRequestDto request
     ) {
         analysisInferenceService.analyzeDiary(request);
-        return ResponseEntity.ok(BaseResponse.success("diary analysis requested"));
+        return ResponseEntity.accepted().body(BaseResponse.success("diary analysis requested"));
     }
 
     @PostMapping("/recent-insights")
@@ -41,6 +41,6 @@ public class AnalysisInferenceController {
         @RequestBody @Valid RecentInsightInferenceRequestDto request
     ) {
         analysisInferenceService.generateRecentInsight(request);
-        return ResponseEntity.ok(BaseResponse.success("recent insight requested"));
+        return ResponseEntity.accepted().body(BaseResponse.success("recent insight requested"));
     }
 }

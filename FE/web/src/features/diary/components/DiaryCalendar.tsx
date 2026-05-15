@@ -26,6 +26,15 @@ function getFirstDayOffset(year: number, month: number) {
   return new Date(year, month - 1, 1).getDay()
 }
 
+function isFutureDate(year: number, month: number, day: number) {
+  const today = new Date()
+  const targetDate = new Date(year, month - 1, day)
+  today.setHours(0, 0, 0, 0)
+  targetDate.setHours(0, 0, 0, 0)
+
+  return targetDate.getTime() > today.getTime()
+}
+
 function DiaryCalendar({
   year,
   month,
@@ -111,17 +120,21 @@ function DiaryCalendar({
           const day = index - firstDayOffset + 1
           const isInMonth = day > 0 && day <= daysInMonth
           const entry = isInMonth ? entryMap.get(day) : undefined
+          const isDisabled = isInMonth && isFutureDate(year, month, day)
 
           return (
             <div
               key={`calendar-cell-${index + 1}`}
-              className={`diary-calendar__cell${entry ? ' has-entry' : ''}`}
+              className={`diary-calendar__cell${entry ? ' has-entry' : ''}${
+                isDisabled ? ' is-disabled' : ''
+              }`}
             >
               {isInMonth ? (
                 <button
                   type="button"
                   className="diary-calendar__cell-button"
                   aria-label={entry ? `${month}월 ${day}일 일기 보기` : `${month}월 ${day}일 일기 작성`}
+                  disabled={isDisabled}
                   onClick={() => {
                     if (entry) {
                       onEntryClick?.(entry)

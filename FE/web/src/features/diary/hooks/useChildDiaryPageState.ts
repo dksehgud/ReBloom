@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 
 import { useAppSessionStore } from '../../auth/store/useAppSessionStore'
+import { requestDiaryAnalysis } from '../api/diaryAnalysisApi'
 import { diaryBridge, type NativeDiary } from '../bridge/diaryBridge'
 import type { DiaryCalendarEntry } from '../components/DiaryCalendar'
 import type { DiaryListItem } from '../components/DiaryListView'
@@ -146,8 +147,17 @@ function getMonthKey(year: number, month: number) {
   return `${year}-${String(month).padStart(2, '0')}`
 }
 
-function getRecordId(year: number, month: number, day: number) {
-  return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+function createDiaryRecordId() {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID()
+  }
+
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (token) => {
+    const value = Math.floor(Math.random() * 16)
+    const nextValue = token === 'x' ? value : (value & 0x3) | 0x8
+
+    return nextValue.toString(16)
+  })
 }
 
 function createSummary(content: string) {
@@ -372,6 +382,56 @@ function useChildDiaryPageState() {
 
   const handleOpenWrite = () => {
     setWritePreviousViewMode(viewMode === 'list' ? 'list' : 'calendar')
+
+    const todayYear = today.getFullYear()
+    const todayMonth = today.getMonth() + 1
+    const todayDay = today.getDate()
+    const todayMonthKey = getMonthKey(todayYear, todayMonth)
+    const todayDateText = getDateText(todayYear, todayMonth, todayDay)
+    const currentTodayRecord = recordsByMonth[todayMonthKey]?.find(
+      (record) => record.day === todayDay,
+    )
+
+    if (currentTodayRecord) {
+      setCurrentDate(new Date(todayYear, todayMonth - 1, 1))
+      setEditingDiaryId(currentTodayRecord.id)
+      setDraftDate(today)
+      setDraftEmotionKey(currentTodayRecord.emotionKey)
+      setDraftContent(currentTodayRecord.content)
+      setViewMode('write')
+      return
+    }
+
+    if (diaryBridge.isAvailable() && currentUserId) {
+      try {
+        const nativeDiary = diaryBridge.getDiaryByDate(currentUserId, todayDateText)
+
+        if (nativeDiary) {
+          const todayRecord = nativeDiaryToRecord(nativeDiary)
+
+          setRecordsByMonth((prev) => {
+            const existingRecords = prev[todayMonthKey] ?? []
+            const filteredRecords = existingRecords.filter((record) => record.id !== todayRecord.id)
+            const nextRecords = [...filteredRecords, todayRecord].sort((a, b) => a.day - b.day)
+
+            return {
+              ...prev,
+              [todayMonthKey]: nextRecords,
+            }
+          })
+          setCurrentDate(new Date(todayYear, todayMonth - 1, 1))
+          setEditingDiaryId(todayRecord.id)
+          setDraftDate(today)
+          setDraftEmotionKey(todayRecord.emotionKey)
+          setDraftContent(todayRecord.content)
+          setViewMode('write')
+          return
+        }
+      } catch (error) {
+        console.error('Failed to load native diary record by date', error)
+      }
+    }
+
     setEditingDiaryId(null)
     setDraftDate(today)
     setDraftEmotionKey(null)
@@ -472,7 +532,7 @@ function useChildDiaryPageState() {
     const diaryDate = getDateText(year, month, day)
     const trimmedContent = draftContent.trim()
     let nextRecord: DiaryRecord = {
-      id: editingDiaryId ?? getRecordId(year, month, day),
+      id: editingDiaryId ?? createDiaryRecordId(),
       day,
       summary: createSummary(trimmedContent),
       content: trimmedContent,
@@ -503,6 +563,16 @@ function useChildDiaryPageState() {
         console.error('Failed to save native diary record', error)
         return
       }
+    } else if (currentUserId) {
+      void requestDiaryAnalysis({
+        diary_id: nextRecord.id,
+        user_id: currentUserId,
+        target_date: diaryDate,
+        emotion_icon: draftEmotionKey,
+        content: trimmedContent,
+      }).catch((error) => {
+        console.error('Failed to request diary analysis', error)
+      })
     }
 
     setRecordsByMonth((prev) => {
