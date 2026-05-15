@@ -3,6 +3,7 @@ import logging
 
 from rpi_client.core.config import get_settings
 from rpi_client.services.conversation_manager import ConversationManager
+from rpi_client.services.ir_sensor_monitor import IRSensorMonitor
 from rpi_client.services.mqtt_conversation_subscriber import MQTTConversationSubscriber
 from rpi_client.services.session_event_sender import SessionEventSender
 from rpi_client.services.stt_service import LocalSTTService, MockSTTService
@@ -45,8 +46,14 @@ async def async_main() -> None:
         session_sender,
         wake_word_detector,
     )
+
+    ir_monitor: IRSensorMonitor | None = None
+    if config.ir_sensor_enabled:
+        ir_monitor = IRSensorMonitor(gpio_pin=config.ir_sensor_gpio_pin)
+        ir_monitor.start()
+
     trigger_http_server = ConversationTriggerHTTPServer(config, conversation_manager)
-    mqtt_subscriber = MQTTConversationSubscriber(config, conversation_manager)
+    mqtt_subscriber = MQTTConversationSubscriber(config, conversation_manager, ir_monitor)
 
     tts.start_worker()
     await trigger_http_server.start()
@@ -62,6 +69,8 @@ async def async_main() -> None:
         await session_sender.flush(force=True)
         await websocket_client.close()
         await tts.stop()
+        if ir_monitor is not None:
+            ir_monitor.stop()
         logger.info("앱 종료")
 
 

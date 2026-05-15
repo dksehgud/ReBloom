@@ -73,12 +73,12 @@ RECONNECT_INTERVAL_SECONDS=2
 LOG_LEVEL=WARNING
 
 LISTEN_MODE=vad
-AUDIO_DEVICE=auto
+AUDIO_DEVICE=plughw:CARD=Device,DEV=0
 STT_RETRY_SECONDS=5
 MIC_BUSY_RETRY_SECONDS=10
 START_SOUND=on
 START_SOUND_FILE=/home/ssafy/project/S14P31B109/AIoT/rpi5/serverchatting/music/feedback.mp3
-START_SOUND_PLAYER=ffplay
+START_SOUND_PLAYER=pw-play
 START_SOUND_DEVICE=
 WHISPER_BIN=/home/ssafy/whisper.cpp/build/bin/whisper-cli
 WHISPER_MODEL=/home/ssafy/whisper.cpp/models/ggml-base.bin
@@ -92,7 +92,8 @@ ELEVENLABS_SIMILARITY_BOOST=0.80
 ELEVENLABS_STYLE=0.25
 ELEVENLABS_USE_SPEAKER_BOOST=true
 ELEVENLABS_SPEED=0.95
-MP3_PLAYER=mpg123
+MP3_PLAYER=pw-play
+MP3_PLAYER_ARGS=
 APLAY_BIN=aplay
 HF_TTS_MODEL=myshell-ai/MeloTTS-Korean
 HF_TTS_DEVICE=cpu
@@ -259,7 +260,7 @@ USE_MOCK_TTS=false
 
 ```env
 LISTEN_MODE=vad
-AUDIO_DEVICE=auto
+AUDIO_DEVICE=plughw:CARD=Device,DEV=0
 START_TIMEOUT=8
 WAKE_WORD_START_TIMEOUT=2
 WHISPER_BIN=/home/ssafy/whisper.cpp/build/bin/whisper-cli
@@ -269,7 +270,7 @@ STT_RETRY_SECONDS=5
 MIC_BUSY_RETRY_SECONDS=10
 START_SOUND=on
 START_SOUND_FILE=/home/ssafy/project/S14P31B109/AIoT/rpi5/serverchatting/music/feedback.mp3
-START_SOUND_PLAYER=ffplay
+START_SOUND_PLAYER=pw-play
 START_SOUND_DEVICE=
 ```
 
@@ -288,7 +289,8 @@ ELEVENLABS_SIMILARITY_BOOST=0.80
 ELEVENLABS_STYLE=0.25
 ELEVENLABS_USE_SPEAKER_BOOST=true
 ELEVENLABS_SPEED=0.95
-MP3_PLAYER=mpg123
+MP3_PLAYER=pw-play
+MP3_PLAYER_ARGS=
 PIPER_MODEL=
 APLAY_BIN=aplay
 HF_TTS_MODEL=myshell-ai/MeloTTS-Korean
@@ -357,5 +359,9 @@ SESSION_SEND_TIMEOUT=5
 - `AUDIO_DEVICE=auto`가 실패하면 ALSA 기본 입력 장치로 fallback합니다.
 - 기본 입력 장치를 강제로 쓰려면 `AUDIO_DEVICE=default`로 지정합니다.
 - 특정 마이크를 고정하려면 `plughw:카드번호,장치번호` 형태로 직접 지정합니다.
+- 카드 이름으로 마이크를 고정하려면 `AUDIO_DEVICE=plughw:CARD=Device,DEV=0`처럼 지정합니다.
+- 블루투스/PipeWire 출력은 `MP3_PLAYER=pw-play`를 사용합니다.
+- 특정 PipeWire 출력으로 고정하려면 `wpctl status`와 `wpctl inspect <sink-id>`로 `node.name`을 확인한 뒤 `MP3_PLAYER_ARGS=--target <node.name>`처럼 지정합니다.
+- 알림음도 같은 출력으로 고정하려면 `START_SOUND_PLAYER=pw-play`, `START_SOUND_DEVICE=<node.name>`을 사용합니다.
 - whisper.cpp 실행 파일과 모델 파일 경로가 실제로 존재해야 합니다.
 - 장시간 실행 서비스로 만들 경우 systemd 서비스에서 `.env` 경로와 작업 디렉터리를 명확히 지정합니다.

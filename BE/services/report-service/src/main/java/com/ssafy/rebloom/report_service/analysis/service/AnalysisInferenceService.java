@@ -16,7 +16,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
@@ -31,6 +31,7 @@ import java.util.*;
 public class AnalysisInferenceService {
 
     private static final String RUNPOD_COMPLETED_STATUS = "COMPLETED";
+    private static final Set<String> RUNPOD_FAILED_STATUSES = Set.of("FAILED", "CANCELLED", "TIMED_OUT");
 
     /*
      * RestClient.Builder
@@ -48,6 +49,7 @@ public class AnalysisInferenceService {
     private final ConversationKeywordRepository conversationKeywordRepository;
     private final DiaryKeywordRepository diaryKeywordRepository;
     private final RecentTrendRepository recentTrendRepository;
+    private final TransactionTemplate transactionTemplate;
 
     /*
      * @Value("${...}")
@@ -68,13 +70,15 @@ public class AnalysisInferenceService {
     @Value("${RUNPOD_WAIT_MS}")
     private long runpodWaitMs;
 
+    @Value("${RUNPOD_POLL_INTERVAL_MS:2000}")
+    private long runpodPollIntervalMs;
+
     @Value("${RECENT_INSIGHT_API_URL}")
     private String recentInsightApiUrl;
 
     @Value("${RECENT_INSIGHT_API_KEY}")
     private String recentInsightApiKey;
 
-    @Transactional
     @Async("analysisTaskExecutor")
     public void analyzeConversation(ConversationSessionCreateRequestDto request) {
         /*
@@ -125,15 +129,17 @@ public class AnalysisInferenceService {
         String prediction = readRequiredText(output, "prediction");
         List<String> keywords = readRequiredTextList(output, "keywords");
 
-        conversationAnalysisRepository.save(ConversationAnalysis.builder()
-            .id(new ConversationAnalysisId(analysisId, childrenId))
-            .startedAt(request.startedAt().toLocalDateTime())
-            .endedAt(request.endedAt().toLocalDateTime())
-            .embeddingText(readRequiredText(output, "embedding_text"))
-            .prediction(prediction)
-            .aiInitiated(false)
-            .build());
-        saveConversationKeywords(analysisId, childrenId, keywords);
+        transactionTemplate.executeWithoutResult(status -> {
+            conversationAnalysisRepository.save(ConversationAnalysis.builder()
+                .id(new ConversationAnalysisId(analysisId, childrenId))
+                .startedAt(request.startedAt().toLocalDateTime())
+                .endedAt(request.endedAt().toLocalDateTime())
+                .embeddingText(readRequiredText(output, "embedding_text"))
+                .prediction(prediction)
+                .aiInitiated(false)
+                .build());
+            saveConversationKeywords(analysisId, childrenId, keywords);
+        });
 
         log.info(
             "conversation analysis completed. sessionId={}, raspberrypiId={}, userId={}, prediction={}, keywords={}, output={}",
@@ -146,7 +152,6 @@ public class AnalysisInferenceService {
         );
     }
 
-    @Transactional
     @Async("analysisTaskExecutor")
     public void analyzeDiary(DiaryAnalysisInferenceRequestDto request) {
         /*
@@ -175,15 +180,17 @@ public class AnalysisInferenceService {
         String prediction = readRequiredText(output, "prediction");
         List<String> keywords = readRequiredTextList(output, "keywords");
 
-        diaryAnalysisRepository.save(DiaryAnalysis.builder()
-            .id(new DiaryAnalysisId(request.diaryId(), request.userId()))
-            .targetDate(request.targetDate().atStartOfDay())
-            .emotionIcon(request.emotionIcon())
-            .embeddingText(readRequiredText(output, "embedding_text"))
-            .prediction(prediction)
-            .build());
-        diaryKeywordRepository.deleteByAnalysisIdAndUserId(request.diaryId(), request.userId());
-        saveDiaryKeywords(request.diaryId(), request.userId(), keywords);
+        transactionTemplate.executeWithoutResult(status -> {
+            diaryAnalysisRepository.save(DiaryAnalysis.builder()
+                .id(new DiaryAnalysisId(request.diaryId(), request.userId()))
+                .targetDate(request.targetDate().atStartOfDay())
+                .emotionIcon(request.emotionIcon())
+                .embeddingText(readRequiredText(output, "embedding_text"))
+                .prediction(prediction)
+                .build());
+            diaryKeywordRepository.deleteByAnalysisIdAndUserId(request.diaryId(), request.userId());
+            saveDiaryKeywords(request.diaryId(), request.userId(), keywords);
+        });
 
         log.info(
             "diary analysis completed. diaryId={}, userId={}, prediction={}, keywords={}, output={}",
@@ -195,7 +202,6 @@ public class AnalysisInferenceService {
         );
     }
 
-    @Transactional
     @Async("analysisTaskExecutor")
     public void generateRecentInsight(RecentInsightInferenceRequestDto request) {
         /*
@@ -246,15 +252,16 @@ public class AnalysisInferenceService {
         JsonNode output = requestRecentInsightApi(insightPrompt);
         String summary = readInsightText(output);
 
-        recentTrendRepository.findByUserIdAndReportDate(request.userId(), request.endDate())
-            .ifPresentOrElse(
-                recentTrend -> recentTrend.updateSummary(summary),
-                () -> recentTrendRepository.save(RecentTrend.builder()
-                    .id(new RecentTrendId(UUID.randomUUID(), request.userId()))
-                    .reportDate(request.endDate())
-                    .summary(summary)
-                    .build())
-            );
+        transactionTemplate.executeWithoutResult(status ->
+            recentTrendRepository.findByUserIdAndReportDate(request.userId(), request.endDate())
+                .ifPresentOrElse(
+                    recentTrend -> recentTrend.updateSummary(summary),
+                    () -> recentTrendRepository.save(RecentTrend.builder()
+                        .id(new RecentTrendId(UUID.randomUUID(), request.userId()))
+                        .reportDate(request.endDate())
+                        .summary(summary)
+                        .build())
+                ));
 
         log.info(
             "recent insight completed. userId={}, startDate={}, endDate={}, dayCount={}, summary={}",
@@ -288,11 +295,13 @@ public class AnalysisInferenceService {
              * response 전체에는 status, output 등이 들어옵니다.
              * 이 서비스는 status가 COMPLETED인지 확인한 뒤 output만 반환합니다.
              */
-            JsonNode response = restClientBuilder
+            RestClient runpodClient = restClientBuilder
                 .baseUrl(runpodBaseUrl)
-                .build()
+                .build();
+
+            JsonNode response = runpodClient
                 .post()
-                .uri("/{endpointId}/runsync?wait={waitMs}", runpodEndpointId, runpodWaitMs)
+                .uri("/{endpointId}/run", runpodEndpointId)
                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + runpodApiKey)
                 .contentType(MediaType.APPLICATION_JSON)
                 .accept(MediaType.APPLICATION_JSON)
@@ -304,20 +313,62 @@ public class AnalysisInferenceService {
                 throw new CustomException("RunPod returned empty response.", ErrorCode.INTERNAL_SERVER_ERROR);
             }
 
-            String status = response.path("status").asText();
-            if (!RUNPOD_COMPLETED_STATUS.equals(status)) {
-                throw new CustomException("RunPod inference failed. status=" + status, ErrorCode.INTERNAL_SERVER_ERROR);
+            String jobId = response.path("id").asText(null);
+            if (!StringUtils.hasText(jobId)) {
+                throw new CustomException("RunPod response does not contain job id.", ErrorCode.INTERNAL_SERVER_ERROR);
             }
 
-            JsonNode output = response.path("output");
-            if (output.isMissingNode() || output.isNull()) {
-                throw new CustomException("RunPod response does not contain output.", ErrorCode.INTERNAL_SERVER_ERROR);
+            log.info("RunPod async job submitted. jobId={}", jobId);
+            long deadline = System.currentTimeMillis() + runpodWaitMs;
+
+            while (System.currentTimeMillis() <= deadline) {
+                JsonNode statusResponse = runpodClient
+                    .get()
+                    .uri("/{endpointId}/status/{jobId}", runpodEndpointId, jobId)
+                    .header(HttpHeaders.AUTHORIZATION, "Bearer " + runpodApiKey)
+                    .accept(MediaType.APPLICATION_JSON)
+                    .retrieve()
+                    .body(JsonNode.class);
+
+                if (statusResponse == null) {
+                    throw new CustomException("RunPod returned empty status response.", ErrorCode.INTERNAL_SERVER_ERROR);
+                }
+
+                String status = statusResponse.path("status").asText();
+                if (RUNPOD_COMPLETED_STATUS.equals(status)) {
+                    JsonNode output = statusResponse.path("output");
+                    if (output.isMissingNode() || output.isNull()) {
+                        throw new CustomException("RunPod response does not contain output.", ErrorCode.INTERNAL_SERVER_ERROR);
+                    }
+
+                    log.info("RunPod async job completed. jobId={}", jobId);
+                    return output;
+                }
+
+                if (RUNPOD_FAILED_STATUSES.contains(status)) {
+                    throw new CustomException(
+                        "RunPod inference failed. jobId=" + jobId + ", status=" + status,
+                        ErrorCode.INTERNAL_SERVER_ERROR
+                    );
+                }
+
+                sleepBeforeNextRunpodPoll(jobId, status);
             }
 
-            return output;
+            throw new CustomException("RunPod inference timed out. jobId=" + jobId, ErrorCode.INTERNAL_SERVER_ERROR);
         } catch (RestClientException e) {
             log.error("RunPod inference request failed.", e);
             throw new CustomException("RunPod inference request failed.", ErrorCode.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    private void sleepBeforeNextRunpodPoll(String jobId, String status) {
+        try {
+            log.debug("RunPod async job pending. jobId={}, status={}", jobId, status);
+            Thread.sleep(runpodPollIntervalMs);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new CustomException("RunPod polling interrupted.", ErrorCode.INTERNAL_SERVER_ERROR);
         }
     }
 

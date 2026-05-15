@@ -39,6 +39,8 @@ class Settings(BaseModel):
     start_sound_file: str = ""
     start_sound_player: str = "auto"
     start_sound_device: str = ""
+    stt_sound: str = "on"
+    stt_sound_file: str = ""
     language: str = "ko"
     whisper_bin: str = "/home/ssafy/whisper.cpp/build/bin/whisper-cli"
     whisper_model: str = "/home/ssafy/whisper.cpp/models/ggml-base.bin"
@@ -47,10 +49,12 @@ class Settings(BaseModel):
     reprompt_on_empty: bool = True
     conversation_empty_turns_to_end: int = Field(default=1, ge=1)
     no_input_prompt: str = "잘 못 들었어요. 다시 한 번 말해 주세요."
-    tts_engine: str = "auto"
+    tts_engine: str = "melotts"
     edge_voice: str = "ko-KR-SunHiNeural"
     edge_rate: str = "+0%"
     edge_volume: str = "+0%"
+    edge_pitch: str = "+0Hz"
+    edge_emotion_auto: bool = True
     elevenlabs_api_key: str = ""
     elevenlabs_voice_id: str = "JBFqnCBsd6RMkjVDRZzb"
     elevenlabs_model_id: str = "eleven_multilingual_v2"
@@ -68,7 +72,7 @@ class Settings(BaseModel):
     piper_bin: str = "piper"
     piper_model: str = ""
     aplay_bin: str = "aplay"
-    hf_tts_model: str = "myshell-ai/MeloTTS-Korean"
+    hf_tts_model: str = "facebook/mms-tts-kor"
     hf_tts_device: str = "cpu"
     hf_tts_torch_dtype: str = "auto"
     melotts_language: str = "KR"
@@ -98,6 +102,9 @@ class Settings(BaseModel):
     mqtt_client_id: str = ""
     mqtt_conversation_start_topic: str = ""
     mqtt_keepalive_seconds: int = Field(default=60, ge=5)
+    ir_sensor_enabled: bool = False
+    ir_sensor_gpio_pin: int = Field(default=23, ge=1)
+    ir_motion_timeout_seconds: float = Field(default=30.0, ge=1.0)
 
 
 @lru_cache
@@ -130,6 +137,8 @@ def get_settings() -> Settings:
         start_sound_file=os.getenv("START_SOUND_FILE", "").strip(),
         start_sound_player=os.getenv("START_SOUND_PLAYER", "auto").strip(),
         start_sound_device=os.getenv("START_SOUND_DEVICE", "").strip(),
+        stt_sound=os.getenv("STT_SOUND", "on").strip(),
+        stt_sound_file=os.getenv("STT_SOUND_FILE", "").strip(),
         language=os.getenv("LANGUAGE", "ko").strip(),
         whisper_bin=os.getenv("WHISPER_BIN", "/home/ssafy/whisper.cpp/build/bin/whisper-cli").strip(),
         whisper_model=os.getenv("WHISPER_MODEL", "/home/ssafy/whisper.cpp/models/ggml-base.bin").strip(),
@@ -138,10 +147,12 @@ def get_settings() -> Settings:
         reprompt_on_empty=_get_bool_env("REPROMPT_ON_EMPTY", True),
         conversation_empty_turns_to_end=_get_int_env("CONVERSATION_EMPTY_TURNS_TO_END", 1),
         no_input_prompt=os.getenv("NO_INPUT_PROMPT", "잘 못 들었어요. 다시 한 번 말해 주세요.").strip(),
-        tts_engine=os.getenv("TTS_ENGINE", "auto").strip(),
+        tts_engine=os.getenv("TTS_ENGINE", "melotts").strip(),
         edge_voice=os.getenv("EDGE_VOICE", "ko-KR-SunHiNeural").strip(),
         edge_rate=os.getenv("EDGE_RATE", "+0%").strip(),
         edge_volume=os.getenv("EDGE_VOLUME", "+0%").strip(),
+        edge_pitch=os.getenv("EDGE_PITCH", "+0Hz").strip(),
+        edge_emotion_auto=_get_bool_env("EDGE_EMOTION_AUTO", True),
         elevenlabs_api_key=os.getenv("ELEVENLABS_API_KEY", "").strip(),
         elevenlabs_voice_id=os.getenv("ELEVENLABS_VOICE_ID", "JBFqnCBsd6RMkjVDRZzb").strip(),
         elevenlabs_model_id=os.getenv("ELEVENLABS_MODEL_ID", "eleven_multilingual_v2").strip(),
@@ -159,7 +170,7 @@ def get_settings() -> Settings:
         piper_bin=os.getenv("PIPER_BIN", "piper").strip(),
         piper_model=os.getenv("PIPER_MODEL", "").strip(),
         aplay_bin=os.getenv("APLAY_BIN", "aplay").strip(),
-        hf_tts_model=os.getenv("HF_TTS_MODEL", "myshell-ai/MeloTTS-Korean").strip(),
+        hf_tts_model=os.getenv("HF_TTS_MODEL", "facebook/mms-tts-kor").strip(),
         hf_tts_device=os.getenv("HF_TTS_DEVICE", "cpu").strip(),
         hf_tts_torch_dtype=os.getenv("HF_TTS_TORCH_DTYPE", "auto").strip(),
         melotts_language=os.getenv("MELOTTS_LANGUAGE", "KR").strip(),
@@ -189,6 +200,9 @@ def get_settings() -> Settings:
         mqtt_client_id=os.getenv("MQTT_CLIENT_ID", "").strip(),
         mqtt_conversation_start_topic=os.getenv("MQTT_CONVERSATION_START_TOPIC", "").strip(),
         mqtt_keepalive_seconds=_get_int_env("MQTT_KEEPALIVE_SECONDS", 60),
+        ir_sensor_enabled=_get_bool_env("IR_SENSOR_ENABLED", False),
+        ir_sensor_gpio_pin=_get_int_env("IR_SENSOR_GPIO_PIN", 23),
+        ir_motion_timeout_seconds=_get_float_env("IR_MOTION_TIMEOUT_SECONDS", 30.0),
     )
 
 
