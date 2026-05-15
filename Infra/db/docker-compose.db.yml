@@ -1,49 +1,52 @@
 services:
-  postgres:  # PostgreSQL (with TimescaleDB extension) 컨테이너
-    image: timescale/timescaledb:latest-pg16  # 일반 postgres 대신 TimescaleDB 엔진이 포함된 16 버전 사용 (biometric 서비스 필수)
-    container_name: rebloom-postgres  # 컨테이너 이름 고정
-    restart: unless-stopped  # 서버 재시작 또는 에러로 꺼졌을 때 자동 복구
-    ports:
-      - "5432:5432"  # 서버 5432 포트를 컨테이너 5432에 연결
+  postgres:
+    image: timescale/timescaledb:latest-pg16
+    container_name: rebloom-postgres
+    restart: unless-stopped
+    # ports: 대신 expose를 사용하여 내부망에서만 5432 포트 허용
+    expose:
+      - "5432"
     environment:
-      POSTGRES_DB: ${POSTGRES_DB:-postgres}  # 최초 기본 DB 이름
-      POSTGRES_USER: ${POSTGRES_USER:-rebloom}  # 공용 접속 계정
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}  # 실제 비밀번호는 .env에서 주입
-      TZ: ${TZ:-Asia/Seoul}  # DB 컨테이너 시간대 (한국 시간)
+      POSTGRES_DB: ${POSTGRES_DB:-rebloom}
+      POSTGRES_USER: ${POSTGRES_USER:-rebloom}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      TZ: ${TZ:-Asia/Seoul}
     volumes:
-      - postgres-data:/var/lib/postgresql/data  # DB 데이터를 컨테이너가 꺼져도 영구 저장
+      - postgres-data:/var/lib/postgresql/data
+      - ./postgres/init:/docker-entrypoint-initdb.d:ro  # 초기 DB 생성 SQL 마운트
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]  # DB가 정상적으로 켜졌는지 핑 테스트
-      interval: 10s  # 10초마다 점검
-      timeout: 5s  # 5초 안에 응답 없으면 실패로 간주
-      retries: 5  # 5번 연속 실패 시 비정상(Unhealthy) 처리
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     networks:
-      - rebloom-network  # 내부 Docker 네트워크 연결 (App 컨테이너들과 통신하기 위함)
+      - rebloom-network
 
-  redis:  # Redis (Pub/Sub, 캐싱, 알림용) 컨테이너
-    image: redis:7-alpine  # 가볍고 최적화된 Redis 7 버전(alpine) 사용
-    container_name: rebloom-redis  # 컨테이너 이름 고정
-    restart: unless-stopped  # 서버 재시작 시 자동 복구
-    ports:
-      - "6379:6379"  # 서버 6379 포트를 컨테이너 6379에 연결
+  redis:
+    image: redis:7-alpine
+    container_name: rebloom-redis
+    restart: unless-stopped
+    # 외부 접속이 필요 없는 Redis도 내부망 전용으로 설정
+    expose:
+      - "6379"
     environment:
-      TZ: ${TZ:-Asia/Seoul}  # Redis 컨테이너 시간대 (한국 시간)
-    command: redis-server --save 60 1 --loglevel warning  # 60초마다 최소 1번 변경사항이 있으면 데이터를 디스크에 저장 (영구 보존 설정)
+      TZ: ${TZ:-Asia/Seoul}
+    command: redis-server --save 60 1 --loglevel warning
     volumes:
-      - redis-data:/data  # Redis 캐시 데이터를 영구 저장
+      - redis-data:/data
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]  # Redis가 정상적으로 응답(PONG)하는지 핑 테스트
-      interval: 10s  # 10초마다 점검
-      timeout: 5s  # 5초 안에 응답 없으면 실패로 간주
-      retries: 5  # 5번 연속 실패 시 비정상(Unhealthy) 처리
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     networks:
-      - rebloom-network  # 내부 Docker 네트워크 연결
+      - rebloom-network
 
 networks:
   rebloom-network:
-    name: rebloom-network  # App 컨테이너(docker-compose.app.yml)들이 외부망으로 찾을 수 있도록 명시적 이름 부여
-    driver: bridge  # 기본 브리지 네트워크 사용
+    name: rebloom-network
+    driver: bridge
 
 volumes:
-  postgres-data:  # PostgreSQL 데이터가 저장될 도커 관리 볼륨
-  redis-data:     # Redis 데이터가 저장될 도커 관리 볼륨
+  postgres-data:
+  redis-data:
