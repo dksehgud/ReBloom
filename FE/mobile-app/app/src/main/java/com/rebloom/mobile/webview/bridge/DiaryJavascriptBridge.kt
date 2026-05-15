@@ -5,7 +5,10 @@ import com.google.gson.Gson
 import com.rebloom.mobile.diary.network.DiaryAnalysisClient
 import com.rebloom.mobile.diary.DiaryRepository
 import com.rebloom.mobile.diary.model.DiarySaveRequest
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 
 class DiaryJavascriptBridge(
@@ -13,6 +16,8 @@ class DiaryJavascriptBridge(
     private val diaryAnalysisClient: DiaryAnalysisClient,
     private val gson: Gson = Gson(),
 ) {
+    private val analysisScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+
     @JavascriptInterface
     fun getDiariesByMonth(userId: String, yearMonth: String): String =
         runBridge {
@@ -30,7 +35,9 @@ class DiaryJavascriptBridge(
         runBridge {
             val request = gson.fromJson(requestJson, DiarySaveRequest::class.java)
             val savedDiary = diaryRepository.save(request)
-            diaryAnalysisClient.requestAnalysis(savedDiary)
+            analysisScope.launch {
+                diaryAnalysisClient.requestAnalysis(savedDiary)
+            }
             savedDiary
         }
 
