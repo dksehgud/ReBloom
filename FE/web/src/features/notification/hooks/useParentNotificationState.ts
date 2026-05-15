@@ -1,39 +1,31 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import { useAppSessionStore } from '../../auth/store/useAppSessionStore'
-import {
-  getParentNotifications,
-  markParentNotificationAsRead,
-} from '../api/parentNotificationApi'
 import type { ParentNotificationItem } from '../constants/parentNotifications'
-import { parentNotificationsMock } from '../mocks/parentNotifications'
+import { getParentNotificationApi } from '../services/parentNotificationService'
 import type { ParentNotificationDto } from '../types/parentNotification'
-import { useParentMockMode } from './useParentMockMode'
+import { useParentMockMode } from '../../guardian/hooks/useParentMockMode'
 
 function useParentNotificationState(initialItems: ParentNotificationItem[] = []) {
   const [notifications, setNotifications] = useState<ParentNotificationItem[]>(() => initialItems)
   const accessToken = useAppSessionStore((state) => state.accessToken)
   const isMockMode = useParentMockMode()
+  const parentNotificationApi = useMemo(
+    () => getParentNotificationApi(isMockMode),
+    [isMockMode],
+  )
 
   const loadNotifications = useCallback(async () => {
-    if (isMockMode) {
-      setNotifications(parentNotificationsMock)
-      return
-    }
-
-    if (!accessToken) {
-      setNotifications([])
-      return
-    }
-
     try {
-      const response = await getParentNotifications({ accessToken })
+      const response = await parentNotificationApi.getParentNotifications({
+        accessToken,
+      })
       setNotifications((response.contents ?? []).map(mapNotificationDtoToItem))
     } catch (error) {
       console.error(error)
       setNotifications([])
     }
-  }, [accessToken, isMockMode])
+  }, [accessToken, parentNotificationApi])
 
   const markAsRead = useCallback((notificationId: string) => {
     setNotifications((currentItems) =>
@@ -44,17 +36,17 @@ function useParentNotificationState(initialItems: ParentNotificationItem[] = [])
 
     const apiNotificationId = Number(notificationId)
 
-    if (isMockMode || !accessToken || Number.isNaN(apiNotificationId)) {
+    if (Number.isNaN(apiNotificationId)) {
       return
     }
 
-    void markParentNotificationAsRead({
+    void parentNotificationApi.markParentNotificationAsRead({
       accessToken,
       notificationId: apiNotificationId,
     }).catch((error: unknown) => {
       console.error(error)
     })
-  }, [accessToken, isMockMode])
+  }, [accessToken, parentNotificationApi])
 
   const chooseAction = useCallback((notificationId: string, actionKey: string) => {
     setNotifications((currentItems) =>

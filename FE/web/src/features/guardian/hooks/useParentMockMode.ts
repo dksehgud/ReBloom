@@ -1,19 +1,42 @@
 import { useLocation } from 'react-router-dom'
 
 const PARENT_MOCK_QUERY_KEY = 'mock'
-const PARENT_MOCK_ENABLED_VALUES = new Set(['1', 'true', 'yes'])
+
+function isEnabledMockValue(value: string | null) {
+  const normalizedValue = value?.toLowerCase()
+
+  return (
+    normalizedValue === '1' ||
+    normalizedValue === 'true' ||
+    normalizedValue === 'yes'
+  )
+}
 
 export function isParentMockModeSearch(search: string) {
   const searchParams = new URLSearchParams(search)
-  const mockValue = searchParams.get(PARENT_MOCK_QUERY_KEY)
 
-  return mockValue
-    ? PARENT_MOCK_ENABLED_VALUES.has(mockValue.toLowerCase())
-    : false
+  return (
+    isEnabledMockValue(searchParams.get(PARENT_MOCK_QUERY_KEY)) ||
+    searchParams.get('mode') === PARENT_MOCK_QUERY_KEY
+  )
 }
 
 export function getParentMockSearch(search: string) {
-  return isParentMockModeSearch(search) ? `?${PARENT_MOCK_QUERY_KEY}=1` : ''
+  const currentParams = new URLSearchParams(search)
+  const nextParams = new URLSearchParams()
+  const mode = currentParams.get('mode')
+
+  if (isParentMockModeSearch(search)) {
+    nextParams.set(PARENT_MOCK_QUERY_KEY, '1')
+  }
+
+  if (mode === 'webview') {
+    nextParams.set('mode', mode)
+  }
+
+  const nextSearch = nextParams.toString()
+
+  return nextSearch ? `?${nextSearch}` : ''
 }
 
 export function useParentMockMode() {

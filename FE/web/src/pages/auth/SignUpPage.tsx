@@ -404,7 +404,7 @@ function SignUpPage({ onBackToLogin }: SignUpPageProps) {
       setParentProfile(parent)
       setPendingChildCoords(coords)
       setModal('parent-confirm')
-    } catch (error) {
+    } catch {
       setParentProfile(null)
       setPendingChildCoords(undefined)
       setSubmitError(undefined)

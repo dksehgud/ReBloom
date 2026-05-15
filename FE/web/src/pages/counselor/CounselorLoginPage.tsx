@@ -21,8 +21,7 @@ function CounselorLoginPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const clearSession = useAppSessionStore((state) => state.clearSession)
   const setActiveRole = useAppSessionStore((state) => state.setActiveRole)
-  const setCurrentUser = useAppSessionStore((state) => state.setCurrentUser)
-  const setSessionTokens = useAppSessionStore((state) => state.setSessionTokens)
+  const setRoleSession = useAppSessionStore((state) => state.setRoleSession)
   const clearSelectedChild = useSelectedChildStore(
     (state) => state.clearSelectedChild,
   )
@@ -50,17 +49,20 @@ function CounselorLoginPage() {
       const nextRole = toAppRole(myInfo.role)
 
       if (nextRole !== 'counselor') {
-        clearSession()
+        clearSession('counselor')
         throw new Error('상담사 계정으로 로그인해 주세요.')
       }
 
-      setSessionTokens(tokens)
-      setCurrentUser(myInfo)
+      setRoleSession('counselor', {
+        accessToken: tokens.accessToken,
+        currentUser: myInfo,
+        refreshToken: tokens.refreshToken,
+      })
       setActiveRole('counselor')
       clearSelectedChild()
       navigate('/counselor/dashboard', { replace: true })
     } catch (error) {
-      clearSession()
+      clearSession('counselor')
       setLoginError(
         error instanceof Error ? error.message : '로그인 중 오류가 발생했습니다.',
       )

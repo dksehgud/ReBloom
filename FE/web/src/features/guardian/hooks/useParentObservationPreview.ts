@@ -1,13 +1,7 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 
 import { useAppSessionStore } from '../../auth/store/useAppSessionStore'
-import {
-  getObservationPreviewDateRange,
-  getParentObservationPreview,
-  mapObservationListItemToRecord,
-  sortObservationRecords,
-} from '../api/parentObservationApi'
-import { parentObservationListMock } from '../mocks/parentObservationList'
+import { getParentObservationApi } from '../services/parentObservationService'
 import type { ParentObservationPreviewItem } from '../types/parentObservation'
 import { useParentMockMode } from './useParentMockMode'
 
@@ -17,19 +11,15 @@ type UseParentObservationPreviewResult = {
   isError: boolean
 }
 
-function filterRecentPreviewRecords(records: ParentObservationPreviewItem[]) {
-  const { startDate, endDate } = getObservationPreviewDateRange()
-
-  return records.filter(
-    (record) => record.reportDate >= startDate && record.reportDate <= endDate,
-  )
-}
-
 export function useParentObservationPreview(
   childrenId?: string,
 ): UseParentObservationPreviewResult {
   const accessToken = useAppSessionStore((state) => state.accessToken)
   const isMockMode = useParentMockMode()
+  const parentObservationApi = useMemo(
+    () => getParentObservationApi(isMockMode),
+    [isMockMode],
+  )
   const [records, setRecords] = useState<ParentObservationPreviewItem[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isError, setIsError] = useState(false)
@@ -42,22 +32,7 @@ export function useParentObservationPreview(
         setIsLoading(true)
         setIsError(false)
 
-        if (isMockMode) {
-          if (!isMounted) {
-            return
-          }
-
-          setRecords(
-            filterRecentPreviewRecords(
-              sortObservationRecords(
-                parentObservationListMock.map(mapObservationListItemToRecord),
-              ),
-            ),
-          )
-          return
-        }
-
-        const response = await getParentObservationPreview({
+        const response = await parentObservationApi.getParentObservationPreview({
           accessToken,
           childrenId,
         })
@@ -87,7 +62,7 @@ export function useParentObservationPreview(
     return () => {
       isMounted = false
     }
-  }, [accessToken, childrenId, isMockMode])
+  }, [accessToken, childrenId, parentObservationApi])
 
   return {
     records,

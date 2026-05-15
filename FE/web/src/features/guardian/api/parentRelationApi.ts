@@ -1,16 +1,19 @@
 import type {
   ParentConnectedCounselor,
-  ParentConnectedCounselorDto,
   ParentConnectedCounselorResponseDto,
   ParentConnectedChild,
-  ParentConnectedChildDto,
   ParentConnectedChildResponseDto,
   ParentCounselorProfileDto,
   ParentCounselorProfilesResponseDto,
   ParentCounselorRelationRequestDto,
   ParentCounselorRelationResponseDto,
+  ParentRelationBaseResponseDto,
 } from '../types/parentRelation'
 import { ApiError, apiRequest } from '../../../shared/api/client'
+import {
+  normalizeConnectedChild,
+  normalizeConnectedCounselor,
+} from '../services/parentRelationMapper'
 
 const AUTH_API_PREFIX = '/auth/api/v1'
 
@@ -27,6 +30,10 @@ class ParentRelationApiError extends Error {
 const parentRelationApiPaths = {
   connectedCounselor: `${AUTH_API_PREFIX}/parents/relations/counselors`,
   connectedChild: `${AUTH_API_PREFIX}/parents/children`,
+  deleteCounselorRelation: (counselorEmail: string) =>
+    `${AUTH_API_PREFIX}/parents/relations/counselors?counselorEmail=${encodeURIComponent(
+      counselorEmail,
+    )}`,
   requestCounselorRelation: `${AUTH_API_PREFIX}/parents/relations/counselors`,
   searchCounselors: (email: string) =>
     `${AUTH_API_PREFIX}/users/profiles?email=${encodeURIComponent(
@@ -48,52 +55,30 @@ function getResponseErrorMessage(error: unknown, fallback: string) {
   return fallback
 }
 
-function normalizeConnectedChild(
-  child?: ParentConnectedChildDto | null,
-): ParentConnectedChild {
-  if (!child?.connected || !child.childrenId) {
-    return {
-      age: null,
-      connected: false,
-      email: null,
-      id: null,
-      name: null,
-    }
-  }
-
-  return {
-    age: child.age ?? null,
-    connected: true,
-    email: child.email ?? null,
-    id: child.childrenId,
-    name: child.name ?? null,
-  }
+function isChildDisconnectedResponseCode(code?: string | null) {
+  return code === 'PARENT_RELATION_NOT_FOUND' || code === 'NOT_FOUND'
 }
 
-function normalizeConnectedCounselor(
-  counselor?: ParentConnectedCounselorDto | null,
-): ParentConnectedCounselor {
-  if (!counselor?.counselorId) {
-    return {
-      connected: false,
-      email: null,
-      id: null,
-      name: null,
-      relationStatus: null,
-    }
+function isChildDisconnectedResponse(data?: { code?: string | null } | null) {
+  return isChildDisconnectedResponseCode(data?.code)
+}
+
+function isChildDisconnectedApiError(error: unknown) {
+  if (!(error instanceof ApiError)) {
+    return false
   }
 
-  return {
-    connected: true,
-    email: counselor.email ?? null,
-    id: counselor.counselorId,
-    name: counselor.name ?? null,
-    relationStatus: counselor.relationStatus ?? null,
+  if (error.status === 404) {
+    return true
   }
+
+  const data = error.data as { code?: string | null } | null
+
+  return isChildDisconnectedResponse(data)
 }
 
 async function getParentConnectedChild(
-  accessToken: string,
+  accessToken?: string | null,
 ): Promise<ParentConnectedChild> {
   const fallbackMessage = '연결된 아이 정보를 불러오지 못했습니다.'
 
@@ -106,6 +91,10 @@ async function getParentConnectedChild(
       },
     )
 
+    if (isChildDisconnectedResponse(body)) {
+      return normalizeConnectedChild(null)
+    }
+
     if (body?.code) {
       throw new ParentRelationApiError(
         body?.message ?? fallbackMessage,
@@ -115,6 +104,10 @@ async function getParentConnectedChild(
 
     return normalizeConnectedChild(body?.data)
   } catch (error) {
+    if (isChildDisconnectedApiError(error)) {
+      return normalizeConnectedChild(null)
+    }
+
     if (error instanceof ParentRelationApiError) throw error
 
     throw new ParentRelationApiError(
@@ -124,7 +117,7 @@ async function getParentConnectedChild(
 }
 
 async function getParentConnectedCounselor(
-  accessToken: string,
+  accessToken?: string | null,
 ): Promise<ParentConnectedCounselor> {
   const fallbackMessage = '상담사 연결 정보를 불러오지 못했습니다.'
 
@@ -188,7 +181,7 @@ async function searchParentCounselors(
 
 async function requestParentCounselorRelation(
   counselorEmail: string,
-  accessToken: string,
+  accessToken?: string | null,
 ): Promise<ParentConnectedCounselor> {
   const fallbackMessage = '상담사 연결 신청에 실패했습니다.'
 
@@ -222,12 +215,51 @@ async function requestParentCounselorRelation(
   }
 }
 
+async function deleteParentCounselorRelation(
+  counselorEmail: string,
+  accessToken?: string | null,
+): Promise<void> {
+  const fallbackMessage = '상담사 연결 해제에 실패했습니다.'
+
+  try {
+    const body = await apiRequest<ParentRelationBaseResponseDto<void> | null>(
+      parentRelationApiPaths.deleteCounselorRelation(counselorEmail),
+      {
+        accessToken,
+        errorMessage: fallbackMessage,
+        method: 'DELETE',
+      },
+    )
+
+    if (body?.code) {
+      throw new ParentRelationApiError(
+        body?.message ?? fallbackMessage,
+        body?.code,
+      )
+    }
+  } catch (error) {
+    if (error instanceof ParentRelationApiError) throw error
+
+    throw new ParentRelationApiError(
+      getResponseErrorMessage(error, fallbackMessage),
+    )
+  }
+}
+
+const parentRelationApi = {
+  deleteParentCounselorRelation,
+  getParentConnectedCounselor,
+  getParentConnectedChild,
+  requestParentCounselorRelation,
+  searchParentCounselors,
+}
+
 export {
+  deleteParentCounselorRelation,
   ParentRelationApiError,
   getParentConnectedCounselor,
   getParentConnectedChild,
-  normalizeConnectedCounselor,
-  normalizeConnectedChild,
+  parentRelationApi,
   parentRelationApiPaths,
   requestParentCounselorRelation,
   searchParentCounselors,

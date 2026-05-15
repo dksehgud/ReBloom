@@ -10,17 +10,12 @@ import {
   type ParentReportMoodTone,
   type ParentReportWeek,
 } from '../constants/parentReport'
-import {
-  getParentDiaryEmotions,
-  getParentRmssds,
-  getParentSleepScores,
-} from '../api/parentReportApi'
-import { parentReportWeeksMock } from '../mocks/parentReport'
+import { getParentReportApi } from '../services/parentReportService'
 import type {
   ParentChartPointDto,
   ParentDiaryEmotionPointDto,
 } from '../types/parentReport'
-import { useParentMockMode } from './useParentMockMode'
+import { useParentMockMode } from '../../guardian/hooks/useParentMockMode'
 
 type UseParentReportDataParams = {
   childrenId?: string
@@ -238,6 +233,10 @@ export function useParentReportData({
 }: UseParentReportDataParams): UseParentReportDataResult {
   const accessToken = useAppSessionStore((state) => state.accessToken)
   const isMockMode = useParentMockMode()
+  const parentReportApi = useMemo(
+    () => getParentReportApi(isMockMode, selectedWeekIndex),
+    [isMockMode, selectedWeekIndex],
+  )
   const [apiWeek, setApiWeek] = useState<ParentReportWeek | null>(null)
   const [isError, setIsError] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
@@ -249,18 +248,8 @@ export function useParentReportData({
     () => createEmptyReportWeek(reportRange),
     [reportRange],
   )
-  const currentMockWeek =
-    parentReportWeeksMock[selectedWeekIndex] ?? parentReportWeeksMock.at(-1)
-
   const loadReportData = useCallback(async () => {
-    if (isMockMode) {
-      setApiWeek(null)
-      setIsError(false)
-      setIsLoading(false)
-      return
-    }
-
-    if (!accessToken || !childrenId) {
+    if (!childrenId) {
       setApiWeek(null)
       setIsError(false)
       setIsLoading(false)
@@ -275,18 +264,18 @@ export function useParentReportData({
 
       const [emotionResult, sleepResult, rmssdResult] =
         await Promise.allSettled([
-          getParentDiaryEmotions({
+          parentReportApi.getParentDiaryEmotions({
             accessToken,
             childrenId,
             endDate,
             startDate,
           }),
-          getParentSleepScores({
+          parentReportApi.getParentSleepScores({
             accessToken,
             baseDate,
             childrenId,
           }),
-          getParentRmssds({
+          parentReportApi.getParentRmssds({
             accessToken,
             baseDate,
             childrenId,
@@ -322,7 +311,13 @@ export function useParentReportData({
     } finally {
       setIsLoading(false)
     }
-  }, [accessToken, childrenId, currentFallbackWeek, isMockMode, reportRange])
+  }, [
+    accessToken,
+    childrenId,
+    currentFallbackWeek,
+    parentReportApi,
+    reportRange,
+  ])
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
@@ -333,9 +328,7 @@ export function useParentReportData({
   }, [loadReportData])
 
   return {
-    currentWeek: isMockMode
-      ? (currentMockWeek ?? currentFallbackWeek)
-      : (apiWeek ?? currentFallbackWeek),
+    currentWeek: apiWeek ?? currentFallbackWeek,
     isError,
     isLoading,
   }

@@ -1,58 +1,39 @@
 import { apiRequest } from '../../../shared/api/client'
+import {
+  getObservationPreviewDateRange,
+  mapObservationListItemToRecord,
+  sortObservationRecords,
+} from '../services/parentObservationMapper'
 import type {
   ParentObservationBaseResponseDto,
+  ParentObservationCounselorCommentDto,
   ParentObservationDailyGroupDto,
   ParentObservationDetailResponseDto,
-  ParentObservationListItemDto,
   ParentObservationListResponse,
   ParentObservationListResponseDto,
-  ParentObservationMutationRequest,
   ParentObservationMutationResponseDto,
   ParentObservationPreviewResponse,
   ParentObservationRecord,
 } from '../types/parentObservation'
-
-type ParentObservationQueryParams = {
-  accessToken?: string | null
-  childrenId?: string
-  endDate?: string
-  month?: number
-  startDate?: string
-  year?: number
-}
-
-type GetParentObservationPreviewParams = ParentObservationQueryParams
-
-type ParentObservationDetailParams = {
-  accessToken: string
-  childrenId: string
-  reportId: string
-}
-
-type ParentObservationMutationParams = {
-  accessToken: string
-  childrenId: string
-  payload: ParentObservationMutationRequest
-}
-
-type ParentObservationUpdateParams = ParentObservationMutationParams & {
-  reportId: string
-}
-
-type ParentObservationDeleteParams = {
-  accessToken: string
-  childrenId: string
-  reportId: string
-}
+import type {
+  GetParentObservationPreviewParams,
+  ParentObservationDeleteParams,
+  ParentObservationDetailParams,
+  ParentObservationMutationParams,
+  ParentObservationQueryParams,
+  ParentObservationUpdateParams,
+  ParentObservationCommentParams,
+} from '../types/parentObservationApi'
 
 const REPORT_API_PREFIX = '/report/api/v1'
-const OBSERVATION_PREVIEW_LOOKBACK_DAYS = 7
 
 const parentObservationApiPaths = {
   list: (childrenId: string) =>
     `${REPORT_API_PREFIX}/children/${childrenId}/reports`,
   detail: (childrenId: string, reportId: string) =>
     `${REPORT_API_PREFIX}/children/${childrenId}/reports/${reportId}`,
+  comment: (childrenId: string, reportId: string) =>
+    `${REPORT_API_PREFIX}/children/${childrenId}/reports/${reportId}/comments`,
 }
 
 function unwrapApiData<T>(
@@ -65,141 +46,8 @@ function unwrapApiData<T>(
   return response as T
 }
 
-const weekdayLabels = ['일', '월', '화', '수', '목', '금', '토']
-
-const dayOfWeekLabelMap: Record<string, string> = {
-  MON: '월',
-  TUE: '화',
-  WED: '수',
-  THU: '목',
-  FRI: '금',
-  SAT: '토',
-  SUN: '일',
-}
-
 function padNumber(value: number) {
   return String(value).padStart(2, '0')
-}
-
-function formatDateParam(date: Date) {
-  return `${date.getFullYear()}-${padNumber(date.getMonth() + 1)}-${padNumber(
-    date.getDate(),
-  )}`
-}
-
-function getDatePart(reportDate: string) {
-  return reportDate.split('T')[0] ?? reportDate
-}
-
-function getRecordedAt(item: ParentObservationListItemDto) {
-  if (item.recordedAt) {
-    return item.recordedAt
-  }
-
-  const timePart = item.reportDate.split('T')[1]
-  return timePart ? timePart.slice(0, 5) : '00:00'
-}
-
-function formatRelativeTimeLabel(createdAt?: string | null) {
-  if (!createdAt) {
-    return '상담사 코멘트'
-  }
-
-  const createdAtTime = new Date(createdAt).getTime()
-
-  if (Number.isNaN(createdAtTime)) {
-    return '상담사 코멘트'
-  }
-
-  const diffMinutes = Math.max(
-    0,
-    Math.floor((Date.now() - createdAtTime) / 1000 / 60),
-  )
-
-  if (diffMinutes < 1) {
-    return '방금 전'
-  }
-
-  if (diffMinutes < 60) {
-    return `${diffMinutes}분 전`
-  }
-
-  const diffHours = Math.floor(diffMinutes / 60)
-
-  if (diffHours < 24) {
-    return `${diffHours}시간 전`
-  }
-
-  return `${Math.floor(diffHours / 24)}일 전`
-}
-
-function mapCounselorComment(item: ParentObservationListItemDto) {
-  if (!item.counselorComment) {
-    return null
-  }
-
-  if (typeof item.counselorComment === 'string') {
-    return {
-      content: item.counselorComment,
-      relativeTimeLabel: item.counselorCommentRelativeTime ?? '상담사 코멘트',
-    }
-  }
-
-  return {
-    content: item.counselorComment.context,
-    relativeTimeLabel: formatRelativeTimeLabel(item.counselorComment.createdAt),
-  }
-}
-
-function formatReportDate(reportDate: string) {
-  const datePart = getDatePart(reportDate)
-  const [, month, day] = datePart.split('-')
-
-  if (!month || !day) {
-    return datePart
-  }
-
-  return `${month}/${day}`
-}
-
-function parseReportDay(reportDate: string) {
-  const datePart = getDatePart(reportDate)
-  const [, , day] = datePart.split('-')
-  return day ? Number(day) : 0
-}
-
-function getWeekdayLabel(item: ParentObservationListItemDto) {
-  if (item.dayOfWeek) {
-    return dayOfWeekLabelMap[item.dayOfWeek] ?? item.dayOfWeek
-  }
-
-  const date = new Date(`${getDatePart(item.reportDate)}T00:00:00`)
-  return weekdayLabels[date.getDay()] ?? ''
-}
-
-export function mapObservationListItemToRecord(
-  item: ParentObservationListItemDto,
-): ParentObservationRecord {
-  return {
-    id: item.reportId,
-    reportDate: getDatePart(item.reportDate),
-    recordedAt: getRecordedAt(item),
-    date: formatReportDate(item.reportDate),
-    day: parseReportDay(item.reportDate),
-    weekday: getWeekdayLabel(item),
-    mood: item.emotionTag,
-    description: item.context,
-    counselorComment: mapCounselorComment(item),
-  }
-}
-
-export function sortObservationRecords(records: ParentObservationRecord[]) {
-  return [...records].sort((left, right) => {
-    const leftKey = `${left.reportDate}T${left.recordedAt}`
-    const rightKey = `${right.reportDate}T${right.recordedAt}`
-
-    return rightKey.localeCompare(leftKey)
-  })
 }
 
 function getMonthDateRange(year: number, month: number) {
@@ -236,21 +84,6 @@ function createObservationListSearchParams({
   return query ? `?${query}` : ''
 }
 
-export function getObservationPreviewDateRange() {
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-
-  const startDate = new Date(today)
-  startDate.setDate(
-    startDate.getDate() - (OBSERVATION_PREVIEW_LOOKBACK_DAYS - 1),
-  )
-
-  return {
-    endDate: formatDateParam(today),
-    startDate: formatDateParam(startDate),
-  }
-}
-
 function flattenDailyReportGroups(
   groups: ParentObservationDailyGroupDto[] = [],
 ) {
@@ -262,7 +95,7 @@ function flattenDailyReportGroups(
   )
 }
 
-export async function getParentObservationList({
+async function getParentObservationList({
   accessToken,
   childrenId,
   endDate,
@@ -303,7 +136,7 @@ export async function getParentObservationList({
   }
 }
 
-export async function getParentObservationDetail({
+async function getParentObservationDetail({
   accessToken,
   childrenId,
   reportId,
@@ -319,7 +152,24 @@ export async function getParentObservationDetail({
   return mapObservationListItemToRecord(unwrapApiData(result))
 }
 
-export async function createParentObservationReport({
+async function getParentObservationCounselorComment({
+  accessToken,
+  childrenId,
+  reportId,
+}: ParentObservationCommentParams): Promise<ParentObservationCounselorCommentDto | null> {
+  const result = await apiRequest<
+    | ParentObservationBaseResponseDto<ParentObservationCounselorCommentDto>
+    | ParentObservationCounselorCommentDto
+    | null
+  >(parentObservationApiPaths.comment(childrenId, reportId), {
+    accessToken,
+    errorMessage: '상담사 코멘트를 불러오지 못했습니다.',
+  })
+
+  return unwrapApiData(result)
+}
+
+async function createParentObservationReport({
   accessToken,
   childrenId,
   payload,
@@ -339,7 +189,7 @@ export async function createParentObservationReport({
   }
 }
 
-export async function updateParentObservationReport({
+async function updateParentObservationReport({
   accessToken,
   childrenId,
   reportId,
@@ -360,7 +210,7 @@ export async function updateParentObservationReport({
   }
 }
 
-export async function deleteParentObservationReport({
+async function deleteParentObservationReport({
   accessToken,
   childrenId,
   reportId,
@@ -379,7 +229,7 @@ export async function deleteParentObservationReport({
   }
 }
 
-export async function getParentObservationPreview({
+async function getParentObservationPreview({
   accessToken,
   childrenId,
   endDate,
@@ -409,4 +259,34 @@ export async function getParentObservationPreview({
   }
 }
 
-export { parentObservationApiPaths }
+const parentObservationApi = {
+  createParentObservationReport,
+  deleteParentObservationReport,
+  getParentObservationCounselorComment,
+  getParentObservationDetail,
+  getParentObservationList,
+  getParentObservationPreview,
+  updateParentObservationReport,
+}
+
+export type {
+  GetParentObservationPreviewParams,
+  ParentObservationDeleteParams,
+  ParentObservationDetailParams,
+  ParentObservationCommentParams,
+  ParentObservationMutationParams,
+  ParentObservationQueryParams,
+  ParentObservationUpdateParams,
+}
+
+export {
+  createParentObservationReport,
+  deleteParentObservationReport,
+  getParentObservationCounselorComment,
+  getParentObservationDetail,
+  getParentObservationList,
+  getParentObservationPreview,
+  parentObservationApi,
+  parentObservationApiPaths,
+  updateParentObservationReport,
+}

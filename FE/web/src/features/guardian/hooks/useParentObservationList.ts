@@ -1,12 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 
 import { useAppSessionStore } from '../../auth/store/useAppSessionStore'
-import {
-  getParentObservationList,
-  mapObservationListItemToRecord,
-  sortObservationRecords,
-} from '../api/parentObservationApi'
-import { parentObservationListMock } from '../mocks/parentObservationList'
+import { getParentObservationApi } from '../services/parentObservationService'
 import type { ParentObservationRecord } from '../types/parentObservation'
 import { useParentMockMode } from './useParentMockMode'
 
@@ -44,8 +39,12 @@ export function useParentObservationList(
 ): UseParentObservationListResult {
   const accessToken = useAppSessionStore((state) => state.accessToken)
   const isMockMode = useParentMockMode()
-  const [currentYear, setCurrentYear] = useState(2026)
-  const [currentMonth, setCurrentMonth] = useState(4)
+  const parentObservationApi = useMemo(
+    () => getParentObservationApi(isMockMode),
+    [isMockMode],
+  )
+  const [currentYear, setCurrentYear] = useState(() => new Date().getFullYear())
+  const [currentMonth, setCurrentMonth] = useState(() => new Date().getMonth() + 1)
   const [records, setRecords] = useState<ParentObservationRecord[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isError, setIsError] = useState(false)
@@ -59,29 +58,7 @@ export function useParentObservationList(
         setIsLoading(true)
         setIsError(false)
 
-        if (isMockMode) {
-          const mockRecords = parentObservationListMock.filter((item) => {
-            const reportDate = new Date(`${item.reportDate.split('T')[0]}T00:00:00`)
-
-            return (
-              reportDate.getFullYear() === currentYear &&
-              reportDate.getMonth() + 1 === currentMonth
-            )
-          })
-
-          if (!isMounted) {
-            return
-          }
-
-          setRecords(
-            sortObservationRecords(
-              mockRecords.map(mapObservationListItemToRecord),
-            ),
-          )
-          return
-        }
-
-        const response = await getParentObservationList({
+        const response = await parentObservationApi.getParentObservationList({
           accessToken,
           childrenId,
           year: currentYear,
@@ -113,7 +90,14 @@ export function useParentObservationList(
     return () => {
       isMounted = false
     }
-  }, [accessToken, childrenId, currentMonth, currentYear, isMockMode, reloadKey])
+  }, [
+    accessToken,
+    childrenId,
+    currentMonth,
+    currentYear,
+    parentObservationApi,
+    reloadKey,
+  ])
 
   const markedDays = useMemo(
     () => Array.from(new Set(records.map((record) => record.day))).sort((a, b) => a - b),

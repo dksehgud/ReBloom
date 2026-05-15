@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from 'react'
 
 import CommonModalLayout from '../../../components/organisms/Modal/CommonModalLayout'
-import type { ParentCounselorCandidate } from '../constants/parentSettings'
+import type { ParentCounselorCandidate } from '../types/parentSettings'
 
 type ParentCounselorConnectModalProps = {
   onClose: () => void

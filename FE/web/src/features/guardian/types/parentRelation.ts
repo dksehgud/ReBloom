@@ -23,13 +23,20 @@ export type ParentConnectedChildResponseDto = {
 export type ParentConnectedCounselorDto = {
   counselorId?: string | null
   email?: string | null
+  hospitalName?: string | null
   name?: string | null
+  relationStatus?: ParentCounselorRelationStatus | null
+}
+
+export type ParentCounselorRelationDto = {
+  counselorId?: string | null
   relationStatus?: ParentCounselorRelationStatus | null
 }
 
 export type ParentConnectedCounselor = {
   connected: boolean
   email: string | null
+  hospitalName: string | null
   id: string | null
   name: string | null
   relationStatus: ParentCounselorRelationStatus | null
@@ -65,8 +72,14 @@ export type ParentCounselorRelationRequestDto = {
   counselorEmail: string
 }
 
+export type ParentRelationBaseResponseDto<T> = {
+  code?: string | null
+  data?: T | null
+  message?: string | null
+}
+
 export type ParentCounselorRelationResponseDto = {
   code?: string | null
-  data?: ParentConnectedCounselorDto | null
+  data?: ParentCounselorRelationDto | null
   message?: string | null
 }

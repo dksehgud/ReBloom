@@ -1,0 +1,126 @@
+import type {
+  ParentChartParams,
+  ParentDiaryEmotionParams,
+} from './parentReportApi'
+import { parentReportWeeksMock } from '../mocks/parentReport'
+import type {
+  ListResponseDto,
+  ParentChartPointDto,
+  ParentDiaryEmotionResponseDto,
+} from '../types/parentReport'
+
+type ParentMockDiaryEmotionParams = ParentDiaryEmotionParams & {
+  mockWeekIndex?: number
+}
+
+type ParentMockChartParams = ParentChartParams & {
+  mockWeekIndex?: number
+}
+
+function getMockWeek(mockWeekIndex?: number) {
+  return (
+    (typeof mockWeekIndex === 'number'
+      ? parentReportWeeksMock[mockWeekIndex]
+      : undefined) ??
+    parentReportWeeksMock.at(-1) ??
+    parentReportWeeksMock[0]
+  )
+}
+
+function addDays(dateValue: string, dayOffset: number) {
+  const date = new Date(`${dateValue}T00:00:00`)
+
+  if (Number.isNaN(date.getTime())) {
+    return dateValue
+  }
+
+  date.setDate(date.getDate() + dayOffset)
+
+  return date.toISOString().slice(0, 10)
+}
+
+async function getParentDiaryEmotions({
+  mockWeekIndex,
+  startDate,
+}: ParentMockDiaryEmotionParams): Promise<ParentDiaryEmotionResponseDto> {
+  const mockWeek = getMockWeek(mockWeekIndex)
+
+  return {
+    emotionList: mockWeek.moods
+      .map((mood, index) =>
+        mood.emotionKey
+          ? {
+              emotionIcon: mood.emotionKey,
+              targetDate: addDays(startDate, index),
+            }
+          : null,
+      )
+      .filter((point): point is NonNullable<typeof point> => point !== null),
+  }
+}
+
+async function getParentSleepScores({
+  baseDate,
+  mockWeekIndex,
+}: ParentMockChartParams): Promise<ListResponseDto<ParentChartPointDto>> {
+  const mockWeek = getMockWeek(mockWeekIndex)
+  const contents = mockWeek.sleepScores.map((point, index) => ({
+    date: addDays(baseDate, index),
+    dayLabel: point.weekday,
+    value: point.score,
+  }))
+
+  return {
+    contents,
+    count: contents.length,
+  }
+}
+
+async function getParentHrAccRatios({
+  baseDate,
+  mockWeekIndex,
+}: ParentMockChartParams): Promise<ListResponseDto<ParentChartPointDto>> {
+  const mockWeek = getMockWeek(mockWeekIndex)
+  const contents = mockWeek.stabilityScores.map((point, index) => ({
+    date: addDays(baseDate, index),
+    dayLabel: point.weekday,
+    value: point.score,
+  }))
+
+  return {
+    contents,
+    count: contents.length,
+  }
+}
+
+async function getParentRmssds({
+  baseDate,
+  mockWeekIndex,
+}: ParentMockChartParams): Promise<ListResponseDto<ParentChartPointDto>> {
+  const mockWeek = getMockWeek(mockWeekIndex)
+  const contents = mockWeek.stabilityScores.map((point, index) => ({
+    date: addDays(baseDate, index),
+    dayLabel: point.weekday,
+    value: point.score,
+  }))
+
+  return {
+    contents,
+    count: contents.length,
+  }
+}
+
+const parentReportMockApi = {
+  getParentDiaryEmotions,
+  getParentHrAccRatios,
+  getParentRmssds,
+  getParentSleepScores,
+}
+
+export {
+  getParentDiaryEmotions,
+  getParentHrAccRatios,
+  getParentRmssds,
+  getParentSleepScores,
+  parentReportMockApi,
+}

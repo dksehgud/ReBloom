@@ -1,12 +1,11 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import { useAppSessionStore } from '../../auth/store/useAppSessionStore'
 import {
   type SelectedChild,
   useSelectedChildStore,
 } from '../../student/store/useSelectedChildStore'
-import { getParentConnectedChild } from '../api/parentRelationApi'
-import { parentConnectedChildMock } from '../mocks/parentRelation'
+import { getParentRelationApi } from '../services/parentRelationService'
 import type { ParentConnectedChild } from '../types/parentRelation'
 import { useParentMockMode } from './useParentMockMode'
 
@@ -21,28 +20,19 @@ type UseParentConnectedChildResult = {
 export function useParentConnectedChild(): UseParentConnectedChildResult {
   const accessToken = useAppSessionStore((state) => state.accessToken)
   const isMockMode = useParentMockMode()
+  const parentRelationApi = useMemo(
+    () => getParentRelationApi(isMockMode),
+    [isMockMode],
+  )
   const clearSelectedChild = useSelectedChildStore((state) => state.clearSelectedChild)
   const selectedChild = useSelectedChildStore((state) => state.selectedChild)
   const setSelectedChild = useSelectedChildStore((state) => state.setSelectedChild)
   const [connectedChild, setConnectedChild] = useState<ParentConnectedChild | null>(null)
-  const [isLoading, setIsLoading] = useState(Boolean(accessToken || isMockMode))
+  const [isLoading, setIsLoading] = useState(true)
   const [isError, setIsError] = useState(false)
 
   const loadConnectedChild = useCallback(async () => {
-    if (isMockMode) {
-      setConnectedChild(parentConnectedChildMock)
-      setSelectedChild({
-        age: parentConnectedChildMock.age,
-        email: parentConnectedChildMock.email,
-        id: parentConnectedChildMock.id ?? 'mock-child',
-        name: parentConnectedChildMock.name ?? '자녀',
-      })
-      setIsError(false)
-      setIsLoading(false)
-      return
-    }
-
-    if (!accessToken) {
+    if (!accessToken && !isMockMode) {
       setConnectedChild(null)
       setIsError(false)
       setIsLoading(false)
@@ -54,7 +44,7 @@ export function useParentConnectedChild(): UseParentConnectedChildResult {
       setIsLoading(true)
       setIsError(false)
 
-      const child = await getParentConnectedChild(accessToken)
+      const child = await parentRelationApi.getParentConnectedChild(accessToken)
       setConnectedChild(child)
 
       if (child.connected && child.id) {
@@ -68,15 +58,20 @@ export function useParentConnectedChild(): UseParentConnectedChildResult {
       }
 
       clearSelectedChild()
-    } catch (error) {
-      console.error(error)
+    } catch {
       setConnectedChild(null)
       setIsError(true)
       clearSelectedChild()
     } finally {
       setIsLoading(false)
     }
-  }, [accessToken, clearSelectedChild, isMockMode, setSelectedChild])
+  }, [
+    accessToken,
+    clearSelectedChild,
+    isMockMode,
+    parentRelationApi,
+    setSelectedChild,
+  ])
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {

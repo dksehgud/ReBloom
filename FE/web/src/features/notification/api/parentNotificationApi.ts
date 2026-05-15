@@ -2,16 +2,11 @@ import { apiRequest } from '../../../shared/api/client'
 import type {
   ParentNotificationBaseResponseDto,
   ParentNotificationListDataDto,
+  ParentNotificationListRequest,
+  ParentNotificationReadRequest,
 } from '../types/parentNotification'
 
 const NOTIFICATION_API_PREFIX = '/notification/api/v1/notifications'
-
-type ParentNotificationListParams = {
-  accessToken: string
-  isRead?: boolean
-  page?: number
-  size?: number
-}
 
 const parentNotificationApiPaths = {
   list: NOTIFICATION_API_PREFIX,
@@ -57,7 +52,7 @@ async function getParentNotifications({
   isRead,
   page = 0,
   size = 20,
-}: ParentNotificationListParams) {
+}: ParentNotificationListRequest) {
   const body = await apiRequest<
     | ParentNotificationBaseResponseDto<ParentNotificationListDataDto>
     | ParentNotificationListDataDto
@@ -80,10 +75,7 @@ async function getParentNotifications({
 async function markParentNotificationAsRead({
   accessToken,
   notificationId,
-}: {
-  accessToken: string
-  notificationId: number | string
-}) {
+}: ParentNotificationReadRequest) {
   await apiRequest<ParentNotificationBaseResponseDto<null> | null>(
     parentNotificationApiPaths.markAsRead(notificationId),
     {
@@ -94,7 +86,7 @@ async function markParentNotificationAsRead({
   )
 }
 
-async function markAllParentNotificationsAsRead(accessToken: string) {
+async function markAllParentNotificationsAsRead(accessToken?: string | null) {
   await apiRequest<ParentNotificationBaseResponseDto<number> | null>(
     parentNotificationApiPaths.markAllAsRead,
     {
@@ -105,9 +97,16 @@ async function markAllParentNotificationsAsRead(accessToken: string) {
   )
 }
 
+const parentNotificationApi = {
+  getParentNotifications,
+  markAllParentNotificationsAsRead,
+  markParentNotificationAsRead,
+}
+
 export {
   getParentNotifications,
   markAllParentNotificationsAsRead,
   markParentNotificationAsRead,
+  parentNotificationApi,
   parentNotificationApiPaths,
 }

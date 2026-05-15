@@ -1,6 +1,7 @@
 import { apiRequest } from '../../../shared/api/client'
 import {
   childChartApiPaths,
+  getChildHrAccRatios,
   getChildRmssds,
   getChildSleepScores,
 } from '../../../shared/api/childChartApi'
@@ -10,7 +11,7 @@ import type {
 } from '../types/parentReport'
 
 type ParentReportApiParams = {
-  accessToken: string
+  accessToken?: string | null
   childrenId: string
 }
 
@@ -32,6 +33,7 @@ const parentReportApiPaths = {
     startDate,
   }: Omit<ParentDiaryEmotionParams, 'accessToken'>) =>
     `${REPORT_API_PREFIX}/children/${childrenId}/diaries/emotions?startDate=${startDate}&endDate=${endDate}`,
+  hrAccRatios: childChartApiPaths.hrAccRatios,
   rmssds: childChartApiPaths.rmssds,
   sleepScores: childChartApiPaths.sleepScores,
 }
@@ -68,6 +70,14 @@ async function getParentSleepScores({
   return getChildSleepScores({ accessToken, baseDate, childrenId })
 }
 
+async function getParentHrAccRatios({
+  accessToken,
+  baseDate,
+  childrenId,
+}: ParentChartParams) {
+  return getChildHrAccRatios({ accessToken, baseDate, childrenId })
+}
+
 async function getParentRmssds({
   accessToken,
   baseDate,
@@ -76,9 +86,23 @@ async function getParentRmssds({
   return getChildRmssds({ accessToken, baseDate, childrenId })
 }
 
-export {
+const parentReportApi = {
   getParentDiaryEmotions,
+  getParentHrAccRatios,
   getParentRmssds,
   getParentSleepScores,
+}
+
+export type {
+  ParentChartParams,
+  ParentDiaryEmotionParams,
+  ParentReportApiParams,
+}
+export {
+  getParentDiaryEmotions,
+  getParentHrAccRatios,
+  getParentRmssds,
+  getParentSleepScores,
+  parentReportApi,
   parentReportApiPaths,
 }

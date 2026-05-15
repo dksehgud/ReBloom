@@ -47,9 +47,23 @@ type ParentNotificationBaseResponseDto<T> = {
   message?: string | null
 }
 
+type ParentNotificationListRequest = {
+  accessToken?: string | null
+  isRead?: boolean
+  page?: number
+  size?: number
+}
+
+type ParentNotificationReadRequest = {
+  accessToken?: string | null
+  notificationId: number | string
+}
+
 export type {
   ParentNotificationBaseResponseDto,
   ParentNotificationDto,
   ParentNotificationListDataDto,
+  ParentNotificationListRequest,
   ParentNotificationPayloadDto,
+  ParentNotificationReadRequest,
 }
