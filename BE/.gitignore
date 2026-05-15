@@ -7,6 +7,9 @@ build/
 logs/
 *.log
 hs_err_pid*
+services/notification-service/firebase-service-account.json
+services/notification-service/firebase-service-account.json.json
+docker-compose.local.yml
 
 # Local environment files
 .env
@@ -16,6 +19,8 @@ hs_err_pid*
 !.env.prod.example
 !**/.env.prod.example
 *.local
+
+**/resources/firebase/*.json
 
 # IntelliJ IDEA
 .idea/

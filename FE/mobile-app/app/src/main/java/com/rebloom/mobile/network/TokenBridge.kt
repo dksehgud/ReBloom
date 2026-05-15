@@ -3,6 +3,7 @@ package com.rebloom.mobile.network
 import android.content.Context
 import android.util.Log
 import android.webkit.JavascriptInterface
+import com.rebloom.mobile.notification.FcmTokenRegistrar
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -15,15 +16,18 @@ class TokenBridge(private val context: Context) {
     fun saveToken(token: String) {
         scope.launch {
             TokenDataStore.saveToken(context, token)
-            Log.d("TokenBridge", "토큰 저장 완료")
+            FcmTokenRegistrar.registerCurrentToken(context)
+            Log.d("TokenBridge", "Token saved")
         }
     }
 
     @JavascriptInterface
     fun clearToken() {
         scope.launch {
+            val accessToken = TokenDataStore.getToken(context)
+            FcmTokenRegistrar.deactivateCurrentToken(context, accessToken)
             TokenDataStore.clearToken(context)
-            Log.d("TokenBridge", "토큰 삭제 완료")
+            Log.d("TokenBridge", "Token cleared")
         }
     }
 }

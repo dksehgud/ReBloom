@@ -35,6 +35,22 @@ public class UserFcmToken extends BaseTime {
     @Column(name = "is_active", nullable = false)
     private boolean isActive = true;
 
+    public static UserFcmToken create(UUID userId, String fcmToken) {
+        return UserFcmToken.builder()
+            .userId(userId)
+            .fcmToken(fcmToken)
+            .isActive(true)
+            .build();
+    }
+
+    public void changeUser(UUID userId) {
+        this.userId = userId;
+    }
+
+    public void activate() {
+        this.isActive = true;
+    }
+
     public void deactivate() {
         this.isActive = false;
     }
