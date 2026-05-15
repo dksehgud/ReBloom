@@ -8,9 +8,10 @@ openwakeword>=0.4.0
 # TTS_ENGINE=edge 사용 시 필요
 edge-tts>=7.0
 
-# TTS_ENGINE=huggingface 사용 시 필요
+# TTS_ENGINE=huggingface 사용 시 필요 (HF_TTS_MODEL=facebook/mms-tts-kor 기본값)
 transformers>=4.50.0
 torch>=2.2.0
+scipy>=1.10.0
 
 # TTS_ENGINE=melotts 사용 시 필요
 # PyPI melotts 0.1.1 sdist is missing requirements.txt; install from the upstream repo instead.
