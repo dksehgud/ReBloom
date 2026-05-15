@@ -54,8 +54,16 @@ class LocalSTTService(BaseSTTService):
     """arecord와 whisper.cpp를 사용하는 로컬 STT 서비스."""
 
     def __init__(self, config: Settings) -> None:
+        from types import SimpleNamespace
         self.config = config
         self._voice_runtime = self._load_voice_runtime()
+        self._stt_sound_args = SimpleNamespace(
+            stt_sound=config.stt_sound,
+            stt_sound_file=config.stt_sound_file,
+            start_sound_player=config.start_sound_player,
+            start_sound_device=config.start_sound_device,
+            aplay_bin=config.aplay_bin,
+        )
 
     async def listen(self, start_timeout: Optional[float] = None) -> str:
         return await asyncio.to_thread(self._listen_blocking, start_timeout)
@@ -65,6 +73,8 @@ class LocalSTTService(BaseSTTService):
             wav_path = Path(temp_dir) / "user.wav"
             if not self._record_with_fallback(wav_path, start_timeout):
                 return ""
+
+            self._voice_runtime.play_stt_sound(self._stt_sound_args)
 
             transcript = self._voice_runtime.transcribe_whisper_cpp(
                 wav_path,

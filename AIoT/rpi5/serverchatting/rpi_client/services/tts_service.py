@@ -60,6 +60,11 @@ class BaseTTSService(ABC):
                 await self._speak_now(text)
                 if self.sentence_delay > 0:
                     await asyncio.sleep(self.sentence_delay)
+            except RuntimeError as exc:
+                if is_audio_output_unavailable(exc):
+                    logger.warning("TTS 오디오 출력 불가: %s", first_error_line(exc))
+                else:
+                    logger.exception("TTS 처리 중 오류 발생")
             except Exception:
                 logger.exception("TTS 처리 중 오류 발생")
             finally:
@@ -68,6 +73,19 @@ class BaseTTSService(ABC):
     @abstractmethod
     async def _speak_now(self, text: str) -> None:
         """실제 한 문장을 발화한다."""
+
+
+def first_error_line(exc: BaseException) -> str:
+    message = str(exc).strip()
+    return message.splitlines()[0] if message else exc.__class__.__name__
+
+
+def is_audio_output_unavailable(exc: BaseException) -> bool:
+    message = str(exc)
+    return exc.__class__.__name__ == "AudioOutputUnavailableError" or (
+        "재생 가능한 외부 오디오 출력 장치" in message
+        or "aplay로 오디오를 재생하지 못했습니다" in message
+    )
 
 
 class MockTTSService(BaseTTSService):
@@ -89,6 +107,8 @@ class LocalTTSService(BaseTTSService):
             edge_voice=config.edge_voice,
             edge_rate=config.edge_rate,
             edge_volume=config.edge_volume,
+            edge_pitch=config.edge_pitch,
+            edge_emotion_auto=config.edge_emotion_auto,
             elevenlabs_api_key=config.elevenlabs_api_key,
             elevenlabs_voice_id=config.elevenlabs_voice_id,
             elevenlabs_model_id=config.elevenlabs_model_id,

@@ -5,6 +5,7 @@ import math
 import os
 import re
 import shutil
+import signal
 import subprocess
 import sys
 import tempfile
@@ -16,11 +17,16 @@ from pathlib import Path
 
 
 START_SOUND_WARNING_SHOWN = False
+STT_SOUND_WARNING_SHOWN = False
 START_SOUND_BUSY_MARKERS = (
     "device or resource busy",
     "resource busy",
     "장치나 자원이 동작 중",
 )
+
+
+class AudioOutputUnavailableError(RuntimeError):
+    """Raised when no usable speaker output is available."""
 
 DEFAULT_WHISPER_BIN = "/home/ssafy/whisper.cpp/build/bin/whisper-cli"
 DEFAULT_WHISPER_MODEL = "/home/ssafy/whisper.cpp/models/ggml-base.bin"
@@ -68,6 +74,35 @@ def has_command(command):
     return shutil.which(command) is not None
 
 
+def ensure_pipewire_runtime_env():
+    if os.getenv("XDG_RUNTIME_DIR"):
+        return
+    runtime_dir = Path(f"/run/user/{os.getuid()}")
+    if runtime_dir.exists():
+        os.environ["XDG_RUNTIME_DIR"] = str(runtime_dir)
+
+
+def pipewire_sink_available():
+    if not has_command("wpctl"):
+        return False
+    ensure_pipewire_runtime_env()
+    result = subprocess.run(["wpctl", "status"], text=True, capture_output=True, check=False)
+    if result.returncode != 0:
+        return False
+
+    in_sinks = False
+    for raw_line in result.stdout.splitlines():
+        line = raw_line.strip()
+        if line.startswith("├─ Sinks:") or line.startswith("|- Sinks:"):
+            in_sinks = True
+            continue
+        if in_sinks and line.startswith(("├─", "└─", "|-", "`-")):
+            return False
+        if in_sinks and re.search(r"\d+\.\s+", line):
+            return True
+    return False
+
+
 def has_python_module(module_name):
     return importlib.util.find_spec(module_name) is not None
 
@@ -98,6 +133,7 @@ def choose_alsa_device(command_name):
             line = match.group(0).lower()
             if "hdmi" not in line and "vc4" not in line:
                 return f"plughw:{match.group(1)},{match.group(2)}"
+        return ""
 
     match = matches[0]
     return f"plughw:{match.group(1)},{match.group(2)}"
@@ -207,7 +243,13 @@ def play_start_sound(args):
     aplay_bin = getattr(args, "aplay_bin", "aplay")
     command = None
 
-    if start_sound_player in ("auto", "ffplay") and has_command("ffplay"):
+    if start_sound_player in ("auto", "pw-play") and has_command("pw-play"):
+        ensure_pipewire_runtime_env()
+        command = ["pw-play"]
+        start_sound_device = getattr(args, "start_sound_device", "")
+        if start_sound_device:
+            command.extend(["--target", start_sound_device])
+    elif start_sound_player == "ffplay" and has_command("ffplay"):
         command = ["ffplay", "-nodisp", "-autoexit", "-loglevel", "error"]
     elif start_sound_player in ("auto", "aplay") and has_command(aplay_bin):
         command = [aplay_bin, "-q"]
@@ -259,6 +301,83 @@ def play_start_sound(args):
 def is_audio_busy_detail(detail):
     lower_detail = detail.lower()
     return any(marker in lower_detail for marker in START_SOUND_BUSY_MARKERS)
+
+
+def write_stt_submit_chime_wav(output_path, volume=0.25, sample_rate=16000):
+    """STT 제출 효과음(내림조): 녹음 완료 후 처리 시작을 알린다."""
+    samples = array.array("h")
+    peak = int(32767 * max(0, min(volume, 1)))
+    tones = ((1046, 0.07), (0, 0.02), (784, 0.10))
+
+    for frequency, duration in tones:
+        sample_count = max(1, int(sample_rate * duration))
+        fade_samples = max(1, int(sample_rate * 0.012))
+        for index in range(sample_count):
+            if frequency <= 0:
+                samples.append(0)
+                continue
+            envelope = 1
+            if index < fade_samples:
+                envelope = index / fade_samples
+            elif sample_count - index < fade_samples:
+                envelope = (sample_count - index) / fade_samples
+            value = int(peak * envelope * math.sin(2 * math.pi * frequency * index / sample_rate))
+            samples.append(value)
+
+    if sys.byteorder != "little":
+        samples.byteswap()
+    write_pcm_wav(output_path, [samples.tobytes()], sample_rate=sample_rate)
+
+
+def play_stt_sound(args):
+    """녹음 완료 → STT 처리 시작 시점에 짧은 효과음을 재생한다."""
+    global STT_SOUND_WARNING_SHOWN
+
+    if getattr(args, "stt_sound", "on") == "off":
+        return
+
+    stt_sound_file = getattr(args, "stt_sound_file", "")
+    start_sound_player = getattr(args, "start_sound_player", "auto")
+    start_sound_device = getattr(args, "start_sound_device", "")
+    aplay_bin = getattr(args, "aplay_bin", "aplay")
+    command = None
+
+    if start_sound_player in ("auto", "pw-play") and has_command("pw-play"):
+        ensure_pipewire_runtime_env()
+        command = ["pw-play"]
+        if start_sound_device:
+            command.extend(["--target", start_sound_device])
+    elif start_sound_player == "ffplay" and has_command("ffplay"):
+        command = ["ffplay", "-nodisp", "-autoexit", "-loglevel", "error"]
+    elif start_sound_player in ("auto", "aplay") and has_command(aplay_bin):
+        command = [aplay_bin, "-q"]
+        if start_sound_device:
+            command.extend(["-D", start_sound_device])
+
+    if command is None:
+        if not STT_SOUND_WARNING_SHOWN:
+            print("[sound] STT 효과음을 재생할 수 있는 명령을 찾지 못해 건너뜁니다.", file=sys.stderr)
+            STT_SOUND_WARNING_SHOWN = True
+        return
+
+    with tempfile.TemporaryDirectory(prefix="rebloom_stt_sound_") as temp_dir:
+        sound_path = Path(stt_sound_file).expanduser() if stt_sound_file else None
+        if sound_path is None:
+            sound_path = Path(temp_dir) / "stt_submit.wav"
+            write_stt_submit_chime_wav(sound_path)
+        elif not sound_path.exists():
+            if not STT_SOUND_WARNING_SHOWN:
+                print(f"[sound] STT 효과음 파일을 찾지 못해 건너뜁니다: {sound_path}", file=sys.stderr)
+                STT_SOUND_WARNING_SHOWN = True
+            return
+
+        command.append(str(sound_path))
+        result = subprocess.run(command, text=True, capture_output=True, check=False)
+        if result.returncode != 0:
+            detail = (result.stderr or result.stdout).strip()
+            if not is_audio_busy_detail(detail) and not STT_SOUND_WARNING_SHOWN:
+                print(f"[sound] STT 효과음 재생 실패: {detail}", file=sys.stderr)
+                STT_SOUND_WARNING_SHOWN = True
 
 
 def record_wav_until_silence(
@@ -536,13 +655,57 @@ def speak_melotts(text, language, speaker, speed, device, aplay_bin, tts_output_
         subprocess.run([aplay_bin, "-q", str(wav_path)], check=True)
 
 
-async def save_edge_tts_mp3(text, output_path, voice, rate, volume):
+# ---- Edge TTS 감정 표현 (rate / pitch 조정) ----
+# edge-tts 7.x 는 텍스트 입력 시 HTML 이스케이프를 적용하므로 SSML 직접 삽입 불가.
+# rate(속도 %) 와 pitch(음높이 Hz) 를 감정에 맞게 조정해 자연스러운 표현을 구현.
+# 각 항목: (정규식, rate_delta_pct: int, pitch_delta_hz: int)
+_EDGE_EMOTION_RULES = [
+    # 슬픔·위로: 느리고 낮은 톤
+    (r"슬프|힘들어|울고|눈물|괜찮아\?|위로해|아파|걱정돼|미안해|상처|외로|속상", -12, -8),
+    # 애정·칭찬: 부드럽고 약간 따뜻한 톤
+    (r"사랑해|고마워|감사해|정말 좋아|아끼|소중|보고 싶|칭찬|자랑스러워", -5, 5),
+    # 기쁨·활기: 빠르고 밝은 톤
+    (r"신나|기뻐|너무 좋아|재미있|행복|즐거|웃음|대박|잘 했어|훌륭|멋있|최고", 12, 10),
+    # 진지·중요: 느리고 낮은 톤
+    (r"중요해|꼭 기억|반드시|조심해|위험|진심으로|정말로|절대|진지", -10, -6),
+    # 격려·응원: 안정적이고 부드러운 톤
+    (r"괜찮아|잘 할 수 있|걱정하지|천천히|응원|용기|할 수 있어|믿어|힘내", -8, 0),
+]
+
+
+def _parse_prosody_pct(s: str) -> int:
+    """'+10%' → 10, '-5%' → -5"""
+    return int(s.replace("%", "").lstrip("+"))
+
+
+def _parse_prosody_hz(s: str) -> int:
+    """'+5Hz' → 5, '-8Hz' → -8"""
+    return int(s.replace("Hz", "").lstrip("+"))
+
+
+def _fmt_prosody_pct(n: int) -> str:
+    return f"+{n}%" if n >= 0 else f"{n}%"
+
+
+def _fmt_prosody_hz(n: int) -> str:
+    return f"+{n}Hz" if n >= 0 else f"{n}Hz"
+
+
+def detect_edge_emotion(text):
+    """텍스트에서 감정을 감지하고 (rate_delta_pct, pitch_delta_hz) 반환. 없으면 (0, 0)."""
+    for pattern, rate_delta, pitch_delta in _EDGE_EMOTION_RULES:
+        if re.search(pattern, text):
+            return rate_delta, pitch_delta
+    return 0, 0
+
+
+async def save_edge_tts_mp3(text, output_path, voice, rate, volume, pitch="+0Hz"):
     try:
         import edge_tts
     except ImportError as exc:
         raise RuntimeError("Edge TTS가 설치되어 있지 않습니다. `python3 -m pip install --user edge-tts`를 실행하세요.") from exc
 
-    communicate = edge_tts.Communicate(text, voice, rate=rate, volume=volume)
+    communicate = edge_tts.Communicate(text, voice, rate=rate, volume=volume, pitch=pitch)
     await communicate.save(str(output_path))
 
 
@@ -550,17 +713,187 @@ def split_command_args(args_text):
     return args_text.split() if args_text else []
 
 
-def speak_edge(text, edge_voice, edge_rate, edge_volume, mp3_player, mp3_player_args="", tts_output_file=""):
+def speak_edge(
+    text,
+    edge_voice,
+    edge_rate,
+    edge_volume,
+    mp3_player,
+    mp3_player_args="",
+    tts_output_file="",
+    edge_pitch="+0Hz",
+    edge_emotion_auto=False,
+):
     if not tts_output_file:
         require_command(mp3_player)
 
+    rate, pitch = edge_rate, edge_pitch
+    if edge_emotion_auto:
+        rate_delta, pitch_delta = detect_edge_emotion(text)
+        if rate_delta or pitch_delta:
+            rate = _fmt_prosody_pct(_parse_prosody_pct(edge_rate) + rate_delta)
+            pitch = _fmt_prosody_hz(_parse_prosody_hz(edge_pitch) + pitch_delta)
+
     with tempfile.TemporaryDirectory(prefix="rebloom_edge_tts_") as temp_dir:
         mp3_path = Path(tts_output_file) if tts_output_file else Path(temp_dir) / "answer.mp3"
-        asyncio.run(save_edge_tts_mp3(text, mp3_path, edge_voice, edge_rate, edge_volume))
+        asyncio.run(save_edge_tts_mp3(text, mp3_path, edge_voice, rate, edge_volume, pitch=pitch))
         if tts_output_file:
             print(f"[tts] MP3 저장됨: {mp3_path}")
             return
-        subprocess.run([mp3_player, *split_command_args(mp3_player_args), "-q", str(mp3_path)], check=True)
+        play_mp3(mp3_path, mp3_player, mp3_player_args)
+
+
+def play_mp3(mp3_path, mp3_player, mp3_player_args=""):
+    if mp3_player == "aplay":
+        play_mp3_via_aplay(mp3_path, mp3_player_args)
+        return
+    if mp3_player in {"pw-play", "pw-cat"}:
+        play_mp3_via_pipewire(mp3_path, mp3_player, mp3_player_args)
+        return
+
+    command = build_mp3_player_command(mp3_path, mp3_player, mp3_player_args)
+    try:
+        subprocess.run(command, check=True)
+        return
+    except subprocess.CalledProcessError as exc:
+        if exc.returncode != -signal.SIGSEGV:
+            raise
+        if mp3_player == "ffplay" or not has_command("ffplay"):
+            raise
+        print("[tts] mpg123가 비정상 종료되어 ffplay로 재생을 재시도합니다.", file=sys.stderr)
+
+    subprocess.run(["ffplay", "-nodisp", "-autoexit", "-loglevel", "error", str(mp3_path)], check=True)
+
+
+def build_mp3_player_command(mp3_path, mp3_player, mp3_player_args=""):
+    args = split_command_args(mp3_player_args)
+    if mp3_player == "mpg123":
+        return [mp3_player, *args, "-q", str(mp3_path)]
+    if mp3_player == "ffplay":
+        if not args:
+            args = ["-nodisp", "-autoexit", "-loglevel", "error"]
+        return [mp3_player, *args, str(mp3_path)]
+    return [mp3_player, *args, str(mp3_path)]
+
+
+def play_mp3_via_aplay(mp3_path, mp3_player_args=""):
+    require_command("ffmpeg")
+    require_command("aplay")
+
+    with tempfile.TemporaryDirectory(prefix="rebloom_mp3_wav_") as temp_dir:
+        wav_path = Path(temp_dir) / "answer.wav"
+        convert_mp3_to_wav(mp3_path, wav_path)
+        play_wav_with_aplay(wav_path, mp3_player_args)
+
+
+def play_mp3_via_pipewire(mp3_path, player, player_args=""):
+    require_command("ffmpeg")
+    require_command(player)
+    ensure_pipewire_runtime_env()
+
+    with tempfile.TemporaryDirectory(prefix="rebloom_mp3_wav_") as temp_dir:
+        wav_path = Path(temp_dir) / "answer.wav"
+        convert_mp3_to_wav(mp3_path, wav_path)
+        subprocess.run([player, *split_command_args(player_args), str(wav_path)], check=True)
+
+
+def convert_mp3_to_wav(mp3_path, wav_path):
+    subprocess.run(
+        [
+            "ffmpeg",
+            "-nostdin",
+            "-hide_banner",
+            "-loglevel",
+            "error",
+            "-y",
+            "-i",
+            str(mp3_path),
+            "-ac",
+            "2",
+            "-ar",
+            "44100",
+            str(wav_path),
+        ],
+        check=True,
+    )
+
+
+def play_wav_with_aplay(wav_path, aplay_args_text=""):
+    failures = []
+    deadline = time.monotonic() + float(os.getenv("AUDIO_OUTPUT_WAIT_SECONDS", "30"))
+
+    while True:
+        candidates = aplay_arg_candidates(aplay_args_text)
+        if not candidates:
+            time.sleep(1.0)
+            if time.monotonic() >= deadline:
+                raise AudioOutputUnavailableError("재생 가능한 외부 오디오 출력 장치를 찾지 못했습니다.")
+            continue
+
+        for args in candidates:
+            command = ["aplay", *args, "-q", str(wav_path)]
+            result = subprocess.run(command, text=True, capture_output=True, check=False)
+            if result.returncode == 0:
+                return
+            failures.append((command, (result.stderr or result.stdout).strip()))
+
+        if time.monotonic() >= deadline:
+            break
+        time.sleep(1.0)
+
+    detail = "\n".join(f"{' '.join(command)}\n{message}" for command, message in failures[-8:])
+    raise AudioOutputUnavailableError(f"aplay로 오디오를 재생하지 못했습니다.\n{detail}")
+
+
+def aplay_arg_candidates(args_text):
+    candidates = []
+    configured_args = split_command_args(args_text)
+    if configured_args and args_text.strip().lower() != "auto":
+        candidates.append(configured_args)
+
+    selected = choose_alsa_device("aplay")
+    if selected:
+        candidates.append(["-D", selected])
+
+    for device in playback_devices_from_dev_snd():
+        candidates.append(["-D", device])
+
+    if os.getenv("ALLOW_HDMI_AUDIO_FALLBACK", "false").strip().lower() in {"1", "true", "yes", "y", "on"}:
+        candidates.append(["-D", "default"])
+        candidates.append([])
+    return dedupe_arg_lists(candidates)
+
+
+def playback_devices_from_dev_snd():
+    devices = []
+    snd_dir = Path("/dev/snd")
+    if not snd_dir.exists():
+        return devices
+
+    pattern = re.compile(r"pcmC(\d+)D(\d+)p$")
+    for path in sorted(snd_dir.glob("pcmC*D*p")):
+        match = pattern.match(path.name)
+        if not match:
+            continue
+        card, device = match.groups()
+        if int(card) < 2 and os.getenv("ALLOW_HDMI_AUDIO_FALLBACK", "false").strip().lower() not in {"1", "true", "yes", "y", "on"}:
+            continue
+        devices.append(f"plughw:{card},{device}")
+
+    # Prefer likely external USB speakers over HDMI devices.
+    return sorted(devices, key=lambda item: int(item.split(":", 1)[1].split(",", 1)[0]) < 2)
+
+
+def dedupe_arg_lists(candidates):
+    result = []
+    seen = set()
+    for args in candidates:
+        key = tuple(args)
+        if key in seen:
+            continue
+        seen.add(key)
+        result.append(args)
+    return result
 
 
 def save_elevenlabs_tts_mp3(
@@ -650,7 +983,7 @@ def speak_elevenlabs(
         if tts_output_file:
             print(f"[tts] MP3 저장됨: {mp3_path}")
             return
-        subprocess.run([mp3_player, *split_command_args(mp3_player_args), "-q", str(mp3_path)], check=True)
+        play_mp3(mp3_path, mp3_player, mp3_player_args)
 
 
 def list_edge_voices():
@@ -684,6 +1017,8 @@ def speak(text, args):
                 args.mp3_player,
                 args.mp3_player_args,
                 args.tts_output_file,
+                edge_pitch=getattr(args, "edge_pitch", "+0Hz"),
+                edge_emotion_auto=getattr(args, "edge_emotion_auto", False),
             )
             return
         if args.piper_model and has_command(args.piper_bin) and has_command(args.aplay_bin):
@@ -730,6 +1065,8 @@ def speak(text, args):
             args.mp3_player,
             args.mp3_player_args,
             args.tts_output_file,
+            edge_pitch=getattr(args, "edge_pitch", "+0Hz"),
+            edge_emotion_auto=getattr(args, "edge_emotion_auto", False),
         )
         return
     if args.tts == "elevenlabs":
