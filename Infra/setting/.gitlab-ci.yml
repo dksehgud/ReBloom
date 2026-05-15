@@ -63,10 +63,20 @@ cache:
   before_script:
     - apk add --no-cache docker-cli
     - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+    - |
+      if [ "$SERVICE_NAME" == "notification-service" ]; then
+        echo "----- Creating FCM Server Key for notification-service -----"
+        # application.yml의 경로 구조에 맞춰 디렉토리 생성
+        mkdir -p BE/services/notification-service/src/main/resources/firebase
+        # 파일명을 firebase-service-account.json으로 일치시켜 복사
+        cp $FCM_SERVER_JSON BE/services/notification-service/src/main/resources/firebase/firebase-service-account.json
+      fi
+
   script:
     - echo "----- ${SERVICE_NAME} Docker 이미지 빌드 및 Push 시작 -----"
     - cd BE
     - chmod +x ./gradlew
+    - ./gradlew :services:${SERVICE_NAME}:bootJar -x test
 
     # Docker build에 필요한 실행 jar만 생성
     - ./gradlew :services:${SERVICE_NAME}:bootJar -x test
