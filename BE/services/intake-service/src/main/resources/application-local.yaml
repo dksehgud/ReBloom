@@ -3,4 +3,4 @@ spring:
     name: intake-service
 
   kafka:
-    bootstrap-servers: localhost:29092,localhost:29093,localhost:29094
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:29092,localhost:29093,localhost:29094}
