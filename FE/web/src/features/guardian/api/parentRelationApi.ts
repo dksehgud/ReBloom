@@ -38,7 +38,7 @@ const parentRelationApiPaths = {
   searchCounselors: (email: string) =>
     `${AUTH_API_PREFIX}/users/profiles?email=${encodeURIComponent(
       email,
-    )}`,
+    )}&role=COUNSELOR`,
 }
 
 function getResponseErrorMessage(error: unknown, fallback: string) {

@@ -139,6 +139,7 @@ describe('parent relation API functions', () => {
           contents: [
             {
               email: 'counselor@example.com',
+              hospitalName: 'Rebloom Clinic',
               name: 'Counselor',
               userRole: 'COUNSELOR',
             },
@@ -159,7 +160,9 @@ describe('parent relation API functions', () => {
       hospitalName: 'Rebloom Clinic',
       id: 'counselor-1',
     })
-    await expect(searchParentCounselors('counselor@example.com', 'token')).resolves.toHaveLength(1)
+    await expect(
+      searchParentCounselors('counselor@example.com', 'token'),
+    ).resolves.toMatchObject([{ hospitalName: 'Rebloom Clinic' }])
     await expect(
       requestParentCounselorRelation('counselor@example.com', 'token'),
     ).resolves.toMatchObject({ id: 'counselor-1', relationStatus: 'PENDING' })
@@ -174,7 +177,7 @@ describe('parent relation API functions', () => {
     )
     expect(apiRequestMock).toHaveBeenNthCalledWith(
       2,
-      '/auth/api/v1/users/profiles?email=counselor%40example.com',
+      '/auth/api/v1/users/profiles?email=counselor%40example.com&role=COUNSELOR',
       expect.objectContaining({ accessToken: 'token' }),
     )
     expect(apiRequestMock).toHaveBeenNthCalledWith(
