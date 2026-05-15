@@ -1,10 +1,13 @@
 package com.rebloom.mobile.webview
 
 import android.annotation.SuppressLint
+import android.Manifest
 import android.content.ActivityNotFoundException
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.graphics.Color
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.os.Message
 import android.util.Log
@@ -19,8 +22,11 @@ import android.webkit.WebView
 import android.webkit.WebView.WebViewTransport
 import android.webkit.WebViewClient
 import android.widget.FrameLayout
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.OnBackPressedCallback
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import com.rebloom.mobile.BuildConfig
@@ -36,6 +42,17 @@ class MainActivity : ComponentActivity() {
     private lateinit var webView: WebView
     private var popupContainer: FrameLayout? = null
     private var popupWebView: WebView? = null
+    private val notificationPermissionLauncher =
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+            Log.d(TAG, "Notification permission granted=$granted")
+            if (!granted) {
+                Toast.makeText(
+                    this,
+                    "Notification permission is required to receive push alerts.",
+                    Toast.LENGTH_LONG
+                ).show()
+            }
+        }
 
     private val diaryBridge: DiaryJavascriptBridge by lazy {
         val database = RebloomDatabase.getInstance(applicationContext)
@@ -76,6 +93,7 @@ class MainActivity : ComponentActivity() {
 
         rootView.addView(webView)
         setContentView(rootView)
+        requestNotificationPermissionIfNeeded()
 
         onBackPressedDispatcher.addCallback(
             this,
@@ -224,6 +242,19 @@ class MainActivity : ComponentActivity() {
 
     private fun dp(value: Int): Int =
         (value * resources.displayMetrics.density).toInt()
+
+    private fun requestNotificationPermissionIfNeeded() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+            return
+        }
+
+        val permission = Manifest.permission.POST_NOTIFICATIONS
+        if (ContextCompat.checkSelfPermission(this, permission) == PackageManager.PERMISSION_GRANTED) {
+            return
+        }
+
+        notificationPermissionLauncher.launch(permission)
+    }
 
     private companion object {
         private const val TAG = "ReBloomWebView"

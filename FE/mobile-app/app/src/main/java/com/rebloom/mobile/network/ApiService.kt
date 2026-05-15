@@ -1,6 +1,7 @@
 package com.rebloom.mobile.network
 
 import retrofit2.http.Body
+import retrofit2.http.HTTP
 import retrofit2.http.POST
 
 data class BiometricRequest(
@@ -34,6 +35,10 @@ data class IntakeResponse(
     val message: String
 )
 
+data class FcmTokenRequest(
+    val fcmToken: String
+)
+
 data class LocationEvaluateRequest(
     val user_id: String,
     val latitude: Double,
@@ -62,4 +67,10 @@ interface ApiService {
 
     @POST("aiot/api/v1/location/evaluate")
     suspend fun evaluateLocation(@Body request: LocationEvaluateRequest): LocationEvaluateResponse
+
+    @POST("notification/api/v1/notifications/fcm-tokens")
+    suspend fun registerFcmToken(@Body request: FcmTokenRequest): IntakeResponse
+
+    @HTTP(method = "DELETE", path = "notification/api/v1/notifications/fcm-tokens", hasBody = true)
+    suspend fun deactivateFcmToken(@Body request: FcmTokenRequest): IntakeResponse
 }
