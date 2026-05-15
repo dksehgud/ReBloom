@@ -1,3 +1,9 @@
+import {
+  inferSessionRoleFromApiPath,
+  readStoredAccessToken,
+  type SessionRole,
+} from '../../features/auth/session/appSessionStorage'
+
 type ApiMethod = 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE'
 
 type ApiRequestOptions = {
@@ -6,11 +12,10 @@ type ApiRequestOptions = {
   body?: unknown
   credentials?: RequestCredentials
   headers?: HeadersInit
+  sessionRole?: SessionRole
   errorMessage?: string
   withAuth?: boolean
 }
-
-const SESSION_STORAGE_KEY = 'rebloom-app-session'
 
 function isWebViewMode() {
   if (typeof window === 'undefined') return false
@@ -80,29 +85,6 @@ class ApiError extends Error {
   }
 }
 
-function getStoredAccessToken() {
-  if (typeof window === 'undefined') return null
-
-  const rawSession = window.sessionStorage.getItem(SESSION_STORAGE_KEY)
-
-  if (!rawSession) {
-    return null
-  }
-
-  try {
-    const session = JSON.parse(rawSession) as {
-      state?: {
-        accessToken?: unknown
-      }
-    }
-    const accessToken = session.state?.accessToken
-
-    return typeof accessToken === 'string' ? accessToken : null
-  } catch {
-    return null
-  }
-}
-
 function buildApiUrl(path: string) {
   if (/^https?:\/\//.test(path)) {
     return path
@@ -133,6 +115,7 @@ async function apiRequest<T>(path: string, options: ApiRequestOptions = {}): Pro
     errorMessage,
     headers,
     method = 'GET',
+    sessionRole,
     withAuth = true,
   } = options
   const requestHeaders = new Headers(headers)
@@ -145,7 +128,7 @@ async function apiRequest<T>(path: string, options: ApiRequestOptions = {}): Pro
     accessTokenOverride !== undefined
       ? accessTokenOverride
       : withAuth
-        ? getStoredAccessToken()
+        ? readStoredAccessToken(sessionRole ?? inferSessionRoleFromApiPath(path))
         : null
 
   if (accessToken && !requestHeaders.has('Authorization')) {

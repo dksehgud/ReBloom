@@ -1810,6 +1810,28 @@ body[data-shell-mode='webview'] .parent-bottom-nav__indicator {
   text-decoration: none;
 }
 
+.parent-settings-page__logout {
+  align-self: stretch;
+  min-height: 44px;
+  margin-top: 8px;
+  border: 0;
+  border-radius: 14px;
+  background: transparent;
+  color: #fb2c36;
+  cursor: pointer;
+  font-family: 'Inter', 'Noto Sans KR', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 20px;
+  padding: 11px 0;
+  text-align: center;
+}
+
+.parent-settings-page__logout:focus-visible {
+  outline: 2px solid rgba(251, 44, 54, 0.24);
+  outline-offset: 2px;
+}
+
 .parent-counselor-modal-overlay {
   background: rgba(15, 23, 42, 0.3);
   z-index: 40;
@@ -1975,6 +1997,21 @@ body[data-shell-mode='webview'] .parent-bottom-nav__indicator {
 
 .parent-counselor-modal__field-value {
   word-break: keep-all;
+}
+
+.parent-counselor-modal__status {
+  margin: 0;
+  color: #4a5565;
+  font-family: 'Inter', 'Noto Sans KR', sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.5;
+  text-align: center;
+  word-break: keep-all;
+}
+
+.parent-counselor-modal__status.is-error {
+  color: #dc2626;
 }
 
 .parent-counselor-modal__actions {

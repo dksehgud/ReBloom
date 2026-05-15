@@ -23,18 +23,63 @@ export type ParentConnectedChildResponseDto = {
 export type ParentConnectedCounselorDto = {
   counselorId?: string | null
   email?: string | null
+  hospitalName?: string | null
   name?: string | null
+  relationStatus?: ParentCounselorRelationStatus | null
+}
+
+export type ParentCounselorRelationDto = {
+  counselorId?: string | null
+  relationStatus?: ParentCounselorRelationStatus | null
 }
 
 export type ParentConnectedCounselor = {
   connected: boolean
   email: string | null
+  hospitalName: string | null
   id: string | null
   name: string | null
+  relationStatus: ParentCounselorRelationStatus | null
 }
 
 export type ParentConnectedCounselorResponseDto = {
   code?: string | null
   data?: ParentConnectedCounselorDto | null
+  message?: string | null
+}
+
+export type ParentCounselorRelationStatus = 'ACTIVE' | 'PENDING' | 'REJECT'
+
+export type ParentCounselorProfileDto = {
+  email?: string | null
+  hospitalName?: string | null
+  name?: string | null
+  userRole?: string | null
+}
+
+export type ParentCounselorProfilesDataDto = {
+  contents?: ParentCounselorProfileDto[] | null
+  count?: number | null
+}
+
+export type ParentCounselorProfilesResponseDto = {
+  code?: string | null
+  data?: ParentCounselorProfilesDataDto | null
+  message?: string | null
+}
+
+export type ParentCounselorRelationRequestDto = {
+  counselorEmail: string
+}
+
+export type ParentRelationBaseResponseDto<T> = {
+  code?: string | null
+  data?: T | null
+  message?: string | null
+}
+
+export type ParentCounselorRelationResponseDto = {
+  code?: string | null
+  data?: ParentCounselorRelationDto | null
   message?: string | null
 }

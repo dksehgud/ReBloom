@@ -2,7 +2,7 @@ import type {
   ParentCounselorCandidate,
   ParentSettingsChildLink,
   ParentSettingsProfile,
-} from '../constants/parentSettings'
+} from '../types/parentSettings'
 
 export const mockParentProfile: ParentSettingsProfile = {
   name: '이승형',

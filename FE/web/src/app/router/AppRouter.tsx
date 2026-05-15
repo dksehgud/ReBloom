@@ -27,8 +27,13 @@ import ParentReportPage from '../../pages/parent/ParentReportPage'
 import ParentSettingsPage from '../../pages/parent/ParentSettingsPage'
 import { authApi, toAppRole } from '../../features/auth/api/authApi'
 import { consumeOAuthIntent, saveOAuthIntent } from '../../features/auth/oauth/oauthIntent'
+import {
+  isUserExpectedSessionRole,
+  type SessionRole,
+} from '../../features/auth/session/appSessionStorage'
 import { useAppSessionStore } from '../../features/auth/store/useAppSessionStore'
 import { isCounselorMockModeSearch } from '../../features/counselor/hooks/useCounselorMockMode'
+import { isParentMockModeSearch } from '../../features/guardian/hooks/useParentMockMode'
 import { useSelectedChildStore } from '../../features/student/store/useSelectedChildStore'
 import {
   getChildConnectedCounselor,
@@ -65,6 +70,126 @@ function PhoneShell({ children, className }: PhoneShellProps) {
       </section>
     </main>
   )
+}
+
+type RoleGuardStatus = 'allowed' | 'blocked' | 'checking'
+
+function useRoleRouteGuard(
+  expectedRole: SessionRole,
+  isMockMode: boolean,
+): RoleGuardStatus {
+  const activeAccessToken = useAppSessionStore((state) => state.accessToken)
+  const activeRole = useAppSessionStore((state) => state.activeRole)
+  const roleSession = useAppSessionStore((state) => state.sessions[expectedRole])
+  const clearSession = useAppSessionStore((state) => state.clearSession)
+  const setActiveRole = useAppSessionStore((state) => state.setActiveRole)
+  const setCurrentUser = useAppSessionStore((state) => state.setCurrentUser)
+  const clearSelectedChild = useSelectedChildStore(
+    (state) => state.clearSelectedChild,
+  )
+
+  useEffect(() => {
+    let isCanceled = false
+
+    if (isMockMode) {
+      setActiveRole(expectedRole)
+      clearSelectedChild()
+      return () => {
+        isCanceled = true
+      }
+    }
+
+    if (!roleSession.accessToken) {
+      if (activeRole === expectedRole) {
+        setActiveRole(null)
+        clearSelectedChild()
+      }
+      return () => {
+        isCanceled = true
+      }
+    }
+
+    const allowRoleSession = () => {
+      if (isCanceled) {
+        return
+      }
+
+      setActiveRole(expectedRole)
+      clearSelectedChild()
+      saveNativeAccessToken(roleSession.accessToken ?? '')
+    }
+
+    const blockRoleSession = () => {
+      if (isCanceled) {
+        return
+      }
+
+      clearSession(expectedRole)
+      if (activeRole === expectedRole) {
+        clearNativeAccessToken()
+      }
+    }
+
+    if (roleSession.currentUser) {
+      if (isUserExpectedSessionRole(roleSession.currentUser, expectedRole)) {
+        allowRoleSession()
+      } else {
+        blockRoleSession()
+      }
+
+      return () => {
+        isCanceled = true
+      }
+    }
+
+    void authApi
+      .getMyInfo(roleSession.accessToken)
+      .then((myInfo) => {
+        if (!isUserExpectedSessionRole(myInfo, expectedRole)) {
+          blockRoleSession()
+          return
+        }
+
+        setCurrentUser(myInfo, expectedRole)
+        allowRoleSession()
+      })
+      .catch(blockRoleSession)
+
+    return () => {
+      isCanceled = true
+    }
+  }, [
+    activeRole,
+    clearSelectedChild,
+    clearSession,
+    expectedRole,
+    isMockMode,
+    roleSession.accessToken,
+    roleSession.currentUser,
+    setActiveRole,
+    setCurrentUser,
+  ])
+
+  if (isMockMode) {
+    return activeRole === expectedRole ? 'allowed' : 'checking'
+  }
+
+  if (!roleSession.accessToken) {
+    return 'blocked'
+  }
+
+  if (!roleSession.currentUser) {
+    return 'checking'
+  }
+
+  if (!isUserExpectedSessionRole(roleSession.currentUser, expectedRole)) {
+    return 'blocked'
+  }
+
+  return activeRole === expectedRole &&
+    activeAccessToken === roleSession.accessToken
+    ? 'allowed'
+    : 'checking'
 }
 
 function AuthRouteLayout() {
@@ -108,26 +233,15 @@ function CounselorAuthRouteLayout() {
 
 function CounselorRouteLayout() {
   const location = useLocation()
-  const accessToken = useAppSessionStore((state) => state.accessToken)
-  const setActiveRole = useAppSessionStore((state) => state.setActiveRole)
-  const clearSelectedChild = useSelectedChildStore(
-    (state) => state.clearSelectedChild,
-  )
   const isMockMode = isCounselorMockModeSearch(location.search)
+  const guardStatus = useRoleRouteGuard('counselor', isMockMode)
 
-  useEffect(() => {
-    if (!accessToken && !isMockMode) {
-      setActiveRole(null)
-      clearSelectedChild()
-      return
-    }
-
-    setActiveRole('counselor')
-    clearSelectedChild()
-  }, [accessToken, clearSelectedChild, isMockMode, setActiveRole])
-
-  if (!accessToken && !isMockMode) {
+  if (guardStatus === 'blocked') {
     return <Navigate replace to="/counselor/login" />
+  }
+
+  if (guardStatus !== 'allowed') {
+    return null
   }
 
   return <Outlet />
@@ -138,29 +252,34 @@ function ChildRouteLayout() {
     baseAddress: '',
     detailAddress: '',
   })
-  const setActiveRole = useAppSessionStore((state) => state.setActiveRole)
-  const clearSelectedChild = useSelectedChildStore(
-    (state) => state.clearSelectedChild,
+  const childAccessToken = useAppSessionStore(
+    (state) => state.sessions.child.accessToken,
   )
+  const guardStatus = useRoleRouteGuard('child', !childAccessToken)
 
-  useEffect(() => {
-    setActiveRole('child')
-    clearSelectedChild()
-  }, [clearSelectedChild, setActiveRole])
+  if (guardStatus === 'blocked') {
+    return <Navigate replace to="/login" />
+  }
+
+  if (guardStatus !== 'allowed') {
+    return null
+  }
 
   return <Outlet context={{ profileAddress, setProfileAddress }} />
 }
 
 function ParentRouteLayout() {
-  const setActiveRole = useAppSessionStore((state) => state.setActiveRole)
-  const clearSelectedChild = useSelectedChildStore(
-    (state) => state.clearSelectedChild,
-  )
+  const location = useLocation()
+  const isMockMode = isParentMockModeSearch(location.search)
+  const guardStatus = useRoleRouteGuard('parent', isMockMode)
 
-  useEffect(() => {
-    setActiveRole('parent')
-    clearSelectedChild()
-  }, [clearSelectedChild, setActiveRole])
+  if (guardStatus === 'blocked') {
+    return <Navigate replace to="/login" />
+  }
+
+  if (guardStatus !== 'allowed') {
+    return null
+  }
 
   return (
     <PhoneShell>
@@ -187,8 +306,7 @@ function LoginRoute() {
   const navigate = useNavigate()
   const { email, password, setEmail, setPassword } = useAuthRouteContext()
   const setActiveRole = useAppSessionStore((state) => state.setActiveRole)
-  const setCurrentUser = useAppSessionStore((state) => state.setCurrentUser)
-  const setSessionTokens = useAppSessionStore((state) => state.setSessionTokens)
+  const setRoleSession = useAppSessionStore((state) => state.setRoleSession)
   const [loginError, setLoginError] = useState<string | undefined>()
   const [isLoginSubmitting, setIsLoginSubmitting] = useState(false)
 
@@ -205,10 +323,13 @@ function LoginRoute() {
       const myInfo = await authApi.getMyInfo(tokens.accessToken)
       const nextRole = toAppRole(myInfo.role)
 
-      setSessionTokens(tokens)
+      setRoleSession(nextRole, {
+        accessToken: tokens.accessToken,
+        currentUser: myInfo,
+        refreshToken: tokens.refreshToken,
+      })
       saveNativeAccessToken(tokens.accessToken)
       setActiveRole(nextRole)
-      setCurrentUser(myInfo)
 
       if (nextRole === 'child') {
         navigate('/child/diary', { replace: true })
@@ -247,7 +368,7 @@ function LoginRoute() {
       onSignUpClick={() => navigate('/signup')}
       onSubmit={handleLoginSubmit}
       onStartChildClick={() => navigate('/child/diary')}
-      onStartParentClick={() => navigate('/parent/home')}
+      onStartParentClick={() => navigate('/parent/home?mock=1')}
       onSocialLoginClick={handleSocialLogin}
     />
   )
@@ -258,8 +379,7 @@ function OAuthCallbackRoute() {
   const location = useLocation()
   const clearSession = useAppSessionStore((state) => state.clearSession)
   const setActiveRole = useAppSessionStore((state) => state.setActiveRole)
-  const setCurrentUser = useAppSessionStore((state) => state.setCurrentUser)
-  const setSessionTokens = useAppSessionStore((state) => state.setSessionTokens)
+  const setRoleSession = useAppSessionStore((state) => state.setRoleSession)
   const clearSelectedChild = useSelectedChildStore(
     (state) => state.clearSelectedChild,
   )
@@ -278,14 +398,16 @@ function OAuthCallbackRoute() {
         return
       }
 
-      setSessionTokens({ accessToken, refreshToken })
-      saveNativeAccessToken(accessToken)
-
       void authApi.getMyInfo(accessToken)
         .then((myInfo) => {
           const nextRole = toAppRole(myInfo.role)
 
-          setCurrentUser(myInfo)
+          setRoleSession(nextRole, {
+            accessToken,
+            currentUser: myInfo,
+            refreshToken,
+          })
+          saveNativeAccessToken(accessToken)
           setActiveRole(nextRole)
           clearSelectedChild()
 
@@ -340,8 +462,7 @@ function OAuthCallbackRoute() {
     location.search,
     navigate,
     setActiveRole,
-    setCurrentUser,
-    setSessionTokens,
+    setRoleSession,
   ])
 
   return null
@@ -407,7 +528,6 @@ function ChildSettingsRoute() {
 
   useEffect(() => {
     if (!accessToken) {
-      setConnectedCounselor(null)
       return
     }
 
@@ -415,6 +535,8 @@ function ChildSettingsRoute() {
       .then(setConnectedCounselor)
       .catch(() => setConnectedCounselor(null))
   }, [accessToken])
+
+  const visibleConnectedCounselor = accessToken ? connectedCounselor : null
 
   const childProfileAddress: ChildAddress = {
     baseAddress: currentUser?.address ?? profileAddress.baseAddress,
@@ -430,12 +552,14 @@ function ChildSettingsRoute() {
         profileEmail={currentUser?.email ?? ''}
         profileName={currentUser?.name ?? ''}
         counselorName={
-          connectedCounselor?.connected
-            ? `${connectedCounselor.name ?? ''} 상담사`.trim()
+          visibleConnectedCounselor?.connected
+            ? `${visibleConnectedCounselor.name ?? ''} 상담사`.trim()
             : null
         }
         counselorSubtitle={
-          connectedCounselor?.connected ? connectedCounselor.email : null
+          visibleConnectedCounselor?.connected
+            ? visibleConnectedCounselor.email
+            : null
         }
         onBack={() => navigate('/child/diary')}
         onLogout={() => {

@@ -16,13 +16,17 @@ function ParentObservationSection({
   return (
     <ParentObservationListSection
       records={records}
-      currentMonthLabel="이번 달"
+      currentMonthLabel="최근 일주일"
       emptyDescription={
         hasConnectedChild
           ? undefined
           : '아이 계정 회원가입 시 부모 정보를 입력하면 관찰 기록을 입력할 수 있어요.'
       }
-      emptyMessage={hasConnectedChild ? undefined : '아직 연결된 아이가 없습니다.'}
+      emptyMessage={
+        hasConnectedChild
+          ? '최근 일주일간 작성한 기록이 없습니다.'
+          : '아직 연결된 아이가 없습니다.'
+      }
       isLoading={isConnectionLoading || isLoading}
       isError={isError}
     />

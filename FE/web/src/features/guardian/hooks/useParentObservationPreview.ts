@@ -1,13 +1,7 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 
 import { useAppSessionStore } from '../../auth/store/useAppSessionStore'
-import { PARENT_OBSERVATION_PREVIEW_LIMIT } from '../constants/parentObservation'
-import {
-  getParentObservationPreview,
-  mapObservationListItemToRecord,
-  sortObservationRecords,
-} from '../api/parentObservationApi'
-import { parentObservationListMock } from '../mocks/parentObservationList'
+import { getParentObservationApi } from '../services/parentObservationService'
 import type { ParentObservationPreviewItem } from '../types/parentObservation'
 import { useParentMockMode } from './useParentMockMode'
 
@@ -22,6 +16,10 @@ export function useParentObservationPreview(
 ): UseParentObservationPreviewResult {
   const accessToken = useAppSessionStore((state) => state.accessToken)
   const isMockMode = useParentMockMode()
+  const parentObservationApi = useMemo(
+    () => getParentObservationApi(isMockMode),
+    [isMockMode],
+  )
   const [records, setRecords] = useState<ParentObservationPreviewItem[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isError, setIsError] = useState(false)
@@ -34,23 +32,9 @@ export function useParentObservationPreview(
         setIsLoading(true)
         setIsError(false)
 
-        if (isMockMode) {
-          if (!isMounted) {
-            return
-          }
-
-          setRecords(
-            sortObservationRecords(
-              parentObservationListMock.map(mapObservationListItemToRecord),
-            ).slice(0, PARENT_OBSERVATION_PREVIEW_LIMIT),
-          )
-          return
-        }
-
-        const response = await getParentObservationPreview({
+        const response = await parentObservationApi.getParentObservationPreview({
           accessToken,
           childrenId,
-          limit: PARENT_OBSERVATION_PREVIEW_LIMIT,
         })
 
         if (!isMounted) {
@@ -78,7 +62,7 @@ export function useParentObservationPreview(
     return () => {
       isMounted = false
     }
-  }, [accessToken, childrenId, isMockMode])
+  }, [accessToken, childrenId, parentObservationApi])
 
   return {
     records,

@@ -1,13 +1,8 @@
 import { useMemo, useState } from 'react'
 
 import { useAppSessionStore } from '../../auth/store/useAppSessionStore'
-import {
-  createParentObservationReport,
-  deleteParentObservationReport,
-  getParentObservationDetail,
-  updateParentObservationReport,
-} from '../api/parentObservationApi'
 import { type ParentObservationMood } from '../constants/parentObservationMoods'
+import { getParentObservationApi } from '../services/parentObservationService'
 import type { ParentObservationRecord } from '../types/parentObservation'
 import { useParentObservationList } from './useParentObservationList'
 import { useParentMockMode } from './useParentMockMode'
@@ -86,6 +81,10 @@ function sortRecords(records: ParentObservationRecord[]) {
 export function useParentObservationPageState(childrenId?: string) {
   const accessToken = useAppSessionStore((state) => state.accessToken)
   const isMockMode = useParentMockMode()
+  const parentObservationApi = useMemo(
+    () => getParentObservationApi(isMockMode),
+    [isMockMode],
+  )
   const {
     currentYear,
     currentMonth,
@@ -115,8 +114,8 @@ export function useParentObservationPageState(childrenId?: string) {
   const [isMutating, setIsMutating] = useState(false)
 
   const monthKey = getMonthKey(currentYear, currentMonth)
-  const canUseObservationApi = Boolean(!isMockMode && accessToken && childrenId)
-  const canUseLocalMock = isMockMode
+  const canUseObservationApi = Boolean(childrenId)
+  const canUseLocalMock = false
   const canMutateObservation = canUseObservationApi || canUseLocalMock
 
   const clearCurrentMonthOverride = () => {
@@ -232,11 +231,11 @@ export function useParentObservationPageState(childrenId?: string) {
     setSelectedRecordDetail(fallbackRecord)
     setModalMode('detail')
 
-    if (isMockMode || !accessToken || !childrenId) {
+    if (!canUseObservationApi || !childrenId) {
       return
     }
 
-    void getParentObservationDetail({
+    void parentObservationApi.getParentObservationDetail({
       accessToken,
       childrenId,
       reportId: recordId,
@@ -268,10 +267,10 @@ export function useParentObservationPageState(childrenId?: string) {
       return
     }
 
-    if (canUseObservationApi && accessToken && childrenId) {
+    if (canUseObservationApi && childrenId) {
       try {
         setIsMutating(true)
-        await deleteParentObservationReport({
+        await parentObservationApi.deleteParentObservationReport({
           accessToken,
           childrenId,
           reportId: selectedRecord.id,
@@ -429,7 +428,7 @@ export function useParentObservationPageState(childrenId?: string) {
         ? selectedRecord.recordedAt
         : getCurrentTimeLabel()
 
-    if (canUseObservationApi && accessToken && childrenId) {
+    if (canUseObservationApi && childrenId) {
       const payload = {
         context: nextDescription,
         emotionTag: draftMood,
@@ -440,7 +439,7 @@ export function useParentObservationPageState(childrenId?: string) {
         setIsMutating(true)
 
         if (modalMode === 'edit' && selectedRecord) {
-          await updateParentObservationReport({
+          await parentObservationApi.updateParentObservationReport({
             accessToken,
             childrenId,
             reportId: selectedRecord.id,
@@ -449,7 +448,7 @@ export function useParentObservationPageState(childrenId?: string) {
           setSelectedRecordId(selectedRecord.id)
           setModalMode('detail')
         } else {
-          await createParentObservationReport({
+          await parentObservationApi.createParentObservationReport({
             accessToken,
             childrenId,
             payload,

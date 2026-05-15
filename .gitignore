@@ -12,6 +12,9 @@ Thumbs.db
 # Logs
 *.log
 
+# Local agent/runtime state
+.omx/state/
+
 # Environment files
 .env
 .env.*
