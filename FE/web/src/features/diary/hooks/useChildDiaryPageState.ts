@@ -240,14 +240,10 @@ function useChildDiaryPageState() {
   }, [])
 
   useEffect(() => {
-    const timeoutId = window.setTimeout(() => {
-      setRecordsByMonth(diaryBridge.isAvailable() ? {} : cloneSampleRecords())
-      setSelectedDiaryId(null)
-      setEditingDiaryId(null)
-      setViewMode('calendar')
-    }, 0)
-
-    return () => window.clearTimeout(timeoutId)
+    setRecordsByMonth(diaryBridge.isAvailable() ? {} : cloneSampleRecords())
+    setSelectedDiaryId(null)
+    setEditingDiaryId(null)
+    setViewMode('calendar')
   }, [currentUserId])
 
   const currentYear = currentDate.getFullYear()
@@ -259,30 +255,20 @@ function useChildDiaryPageState() {
       return undefined
     }
 
-    let isEffectActive = true
-
     try {
       const nextRecords = diaryBridge
         .getDiariesByMonth(currentUserId, currentMonthKey)
         .map(nativeDiaryToRecord)
 
-      queueMicrotask(() => {
-        if (!isEffectActive) {
-          return
-        }
-
-        setRecordsByMonth((prev) => ({
-          ...prev,
-          [currentMonthKey]: nextRecords,
-        }))
-      })
+      setRecordsByMonth((prev) => ({
+        ...prev,
+        [currentMonthKey]: nextRecords,
+      }))
     } catch (error) {
       console.error('Failed to load native diary records', error)
     }
 
-    return () => {
-      isEffectActive = false
-    }
+    return undefined
   }, [currentMonthKey, currentUserId])
 
   const records = useMemo(
