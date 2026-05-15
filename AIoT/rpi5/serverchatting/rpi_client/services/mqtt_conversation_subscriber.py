@@ -1,12 +1,15 @@
 import asyncio
 import json
 import logging
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import paho.mqtt.client as mqtt
 
 from rpi_client.core.config import Settings
 from rpi_client.services.conversation_manager import ConversationManager
+
+if TYPE_CHECKING:
+    from rpi_client.services.ir_sensor_monitor import IRSensorMonitor
 
 logger = logging.getLogger(__name__)
 
@@ -14,9 +17,15 @@ logger = logging.getLogger(__name__)
 class MQTTConversationSubscriber:
     """MQTT 대화 시작 토픽을 구독하고 기존 대화 트리거로 연결한다."""
 
-    def __init__(self, config: Settings, conversation_manager: ConversationManager) -> None:
+    def __init__(
+        self,
+        config: Settings,
+        conversation_manager: ConversationManager,
+        ir_sensor_monitor: "IRSensorMonitor | None" = None,
+    ) -> None:
         self.config = config
         self.conversation_manager = conversation_manager
+        self._ir_sensor_monitor = ir_sensor_monitor
         self._loop: asyncio.AbstractEventLoop | None = None
         self._client: mqtt.Client | None = None
         self._subscribed_event: asyncio.Event | None = None
@@ -94,11 +103,33 @@ class MQTTConversationSubscriber:
             logger.warning("MQTT 메시지를 받았지만 이벤트 루프가 준비되지 않았습니다.")
             return
 
-        future = asyncio.run_coroutine_threadsafe(
-            self.conversation_manager.trigger_conversation(greeting=greeting),
-            self._loop,
-        )
+        if self._ir_sensor_monitor is not None:
+            # IR 센서가 활성화된 경우: 움직임이 감지될 때까지 대기 후 트리거
+            future = asyncio.run_coroutine_threadsafe(
+                self._wait_for_motion_then_trigger(greeting),
+                self._loop,
+            )
+        else:
+            future = asyncio.run_coroutine_threadsafe(
+                self.conversation_manager.trigger_conversation(greeting=greeting),
+                self._loop,
+            )
         future.add_done_callback(self._log_trigger_result)
+
+    async def _wait_for_motion_then_trigger(self, greeting: str) -> bool:
+        assert self._ir_sensor_monitor is not None
+        timeout = self.config.ir_motion_timeout_seconds
+        print(f"[MQTT] IR 센서 움직임 감지 대기 중 (최대 {timeout:.0f}초)...", flush=True)
+
+        motion_detected = await self._ir_sensor_monitor.wait_for_motion(timeout)
+
+        if not motion_detected:
+            logger.info("IR 센서: %.0f초 동안 움직임이 없어 MQTT 대화 트리거를 건너뜁니다.", timeout)
+            print(f"[MQTT] {timeout:.0f}초 동안 움직임 없음 — 대화 시작 생략", flush=True)
+            return False
+
+        print("[MQTT] IR 센서 움직임 감지 — 대화 시작", flush=True)
+        return await self.conversation_manager.trigger_conversation(greeting=greeting)
 
     def _extract_greeting(self, payload_text: str) -> str | None:
         if not payload_text:
