@@ -475,6 +475,7 @@ function FindPasswordRoute() {
   return (
     <FindPasswordPage
       initialEmail={email}
+      onRequestTemporaryPassword={authApi.resetPassword}
       onBackToLogin={() => navigate('/login')}
       onMoveToLogin={(nextEmail) => {
         setEmail(nextEmail)
