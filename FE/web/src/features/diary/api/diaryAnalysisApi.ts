@@ -14,6 +14,7 @@ function requestDiaryAnalysis(request: DiaryAnalysisRequest) {
   return apiRequest<void>(`${REPORT_API_PREFIX}/analyses/diaries`, {
     method: 'POST',
     body: request,
+    sessionRole: 'child',
     errorMessage: '일기 분석 요청에 실패했습니다.',
   })
 }
