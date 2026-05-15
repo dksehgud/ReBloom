@@ -263,7 +263,13 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public ParentCounselorResponseDto getParentCounselor(UUID parentId) {
-        return parentCounselorRelationRepository.findByParentId(parentId)
+        return parentCounselorRelationRepository.findAllByParentIdAndRelationStatusIn(
+                parentId,
+                List.of(RelationStatus.ACTIVE, RelationStatus.PENDING)
+            )
+            .stream()
+            .findFirst()
+            .map(this::toParentCounselorResponse)
             .orElseGet(ParentCounselorResponseDto::disconnected);
     }
 
