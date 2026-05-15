@@ -349,6 +349,14 @@ body[data-shell-mode='webview'] .child-diary-list-page__body--list {
   width: 100%;
 }
 
+.diary-calendar__cell.is-disabled .diary-calendar__cell-button {
+  cursor: default;
+}
+
+.diary-calendar__cell.is-disabled .diary-calendar__day {
+  color: #c2c8d1;
+}
+
 .diary-calendar__day {
   color: #4d5562;
   font-family: 'Inter', 'Noto Sans KR', sans-serif;

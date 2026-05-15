@@ -30,8 +30,7 @@ class DiaryJavascriptBridge(
         runBridge {
             val request = gson.fromJson(requestJson, DiarySaveRequest::class.java)
             val savedDiary = diaryRepository.save(request)
-            // Analysis API is intentionally paused for now.
-            // diaryAnalysisClient.requestAnalysis(savedDiary)
+            diaryAnalysisClient.requestAnalysis(savedDiary)
             savedDiary
         }
 

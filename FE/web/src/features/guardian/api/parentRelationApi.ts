@@ -21,7 +21,7 @@ class ParentRelationApiError extends Error {
 }
 
 const parentRelationApiPaths = {
-  connectedCounselor: `${AUTH_API_PREFIX}/parent/counselor`,
+  connectedCounselor: `${AUTH_API_PREFIX}/parents/relations/counselors`,
   connectedChild: `${AUTH_API_PREFIX}/parents/children`,
 }
 

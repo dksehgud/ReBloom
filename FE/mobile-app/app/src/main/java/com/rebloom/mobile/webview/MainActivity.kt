@@ -58,7 +58,10 @@ class MainActivity : ComponentActivity() {
         val database = RebloomDatabase.getInstance(applicationContext)
         DiaryJavascriptBridge(
             diaryRepository = DiaryRepository(database.diaryDao()),
-            diaryAnalysisClient = DiaryAnalysisClient(BuildConfig.DIARY_ANALYSIS_API_URL),
+            diaryAnalysisClient = DiaryAnalysisClient(
+                context = this,
+                analysisApiUrl = BuildConfig.DIARY_ANALYSIS_API_URL,
+            ),
         )
     }
 
