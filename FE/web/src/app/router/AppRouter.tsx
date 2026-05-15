@@ -528,7 +528,6 @@ function ChildSettingsRoute() {
 
   useEffect(() => {
     if (!accessToken) {
-      setConnectedCounselor(null)
       return
     }
 
@@ -536,6 +535,8 @@ function ChildSettingsRoute() {
       .then(setConnectedCounselor)
       .catch(() => setConnectedCounselor(null))
   }, [accessToken])
+
+  const visibleConnectedCounselor = accessToken ? connectedCounselor : null
 
   const childProfileAddress: ChildAddress = {
     baseAddress: currentUser?.address ?? profileAddress.baseAddress,
@@ -551,12 +552,14 @@ function ChildSettingsRoute() {
         profileEmail={currentUser?.email ?? ''}
         profileName={currentUser?.name ?? ''}
         counselorName={
-          connectedCounselor?.connected
-            ? `${connectedCounselor.name ?? ''} 상담사`.trim()
+          visibleConnectedCounselor?.connected
+            ? `${visibleConnectedCounselor.name ?? ''} 상담사`.trim()
             : null
         }
         counselorSubtitle={
-          connectedCounselor?.connected ? connectedCounselor.email : null
+          visibleConnectedCounselor?.connected
+            ? visibleConnectedCounselor.email
+            : null
         }
         onBack={() => navigate('/child/diary')}
         onLogout={() => {
