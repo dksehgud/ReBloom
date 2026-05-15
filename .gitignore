@@ -43,3 +43,6 @@ AI/aiot-ai-service/MQTT/mqtt_use_guide.md
 .gitignore
 AI/aiot-ai-service/MQTT/mqtt.md
 AIoT/rpi5/serverchatting/MQTT_BROKER_REQUIREMENTS.md
+AIoT/rpi5/.claude/settings.json
+AIoT/rpi5/smart_speaker/49-rebloom-networkmanager.rules
+AIoT/rpi5/smart_speaker/rebloom-speaker.service
