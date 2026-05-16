@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 
 import {
   createCounselorComment,
@@ -396,6 +396,13 @@ function updateObservationRecordComment(
   )
 }
 
+function getInitialSidebarCollapsed() {
+  return (
+    typeof window !== 'undefined' &&
+    window.matchMedia('(max-width: 1180px)').matches
+  )
+}
+
 function getCardsAverageValue(
   cards: Array<
     CounselorDiaryAnalysisCardDto | CounselorConversationAnalysisCardDto
@@ -460,6 +467,8 @@ function mapAnalysisContentToExpressionAnalysis(
           return {
             emotionKey:
               filter !== 'conversation' ? firstDiaryEmotionKey : undefined,
+            hasConversation:
+              filter !== 'diary' ? conversationCards.length > 0 : undefined,
             label: formatWeekdayLabel(group.date),
             value: getCardsAverageValue(cards),
           }
@@ -532,7 +541,9 @@ function mapAnalysisContentToExpressionAnalysis(
 function useCounselorDashboardState() {
   const accessToken = useAppSessionStore((state) => state.accessToken)
   const isMockMode = useCounselorMockMode()
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(
+    getInitialSidebarCollapsed,
+  )
   const [childItems, setChildItems] = useState<ChildListItem[]>(() =>
     isMockMode ? initialChildList : [],
   )
@@ -625,7 +636,11 @@ function useCounselorDashboardState() {
     useState(false)
   const [observationCommentError, setObservationCommentError] =
     useState<string>()
-  const mainColumnRef = useRef<HTMLDivElement | null>(null)
+  const [mainColumnElement, setMainColumnElement] =
+    useState<HTMLDivElement | null>(null)
+  const mainColumnRef = useCallback((node: HTMLDivElement | null) => {
+    setMainColumnElement(node)
+  }, [])
 
   const getWeekControls = (section: DashboardWeekSection) => {
     const weekOffset = weekOffsets[section]
@@ -1323,9 +1338,11 @@ function useCounselorDashboardState() {
   ])
 
   useEffect(() => {
-    const columnElement = mainColumnRef.current
+    if (typeof window === 'undefined') {
+      return undefined
+    }
 
-    if (!columnElement) return undefined
+    if (!mainColumnElement) return undefined
 
     const updateAnalysisHeight = () => {
       const shouldMatchColumns = window.matchMedia('(min-width: 901px)').matches
@@ -1336,21 +1353,25 @@ function useCounselorDashboardState() {
       }
 
       setAnalysisCardHeight(
-        Math.round(columnElement.getBoundingClientRect().height),
+        Math.round(mainColumnElement.getBoundingClientRect().height),
       )
     }
 
-    updateAnalysisHeight()
+    const animationFrameId = window.requestAnimationFrame(updateAnalysisHeight)
 
-    const resizeObserver = new ResizeObserver(updateAnalysisHeight)
-    resizeObserver.observe(columnElement)
+    const resizeObserver =
+      typeof ResizeObserver === 'undefined'
+        ? null
+        : new ResizeObserver(updateAnalysisHeight)
+    resizeObserver?.observe(mainColumnElement)
     window.addEventListener('resize', updateAnalysisHeight)
 
     return () => {
-      resizeObserver.disconnect()
+      window.cancelAnimationFrame(animationFrameId)
+      resizeObserver?.disconnect()
       window.removeEventListener('resize', updateAnalysisHeight)
     }
-  }, [])
+  }, [mainColumnElement])
 
   return {
     analysisCardHeight,

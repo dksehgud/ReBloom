@@ -92,10 +92,12 @@
 .parent-child-empty-state__description,
 .parent-child-empty-state__note {
   margin: 0;
+  max-width: 100%;
   color: #718096;
   font-family: 'Inter', 'Noto Sans KR', sans-serif;
   font-size: 13px;
   line-height: 21px;
+  overflow-wrap: anywhere;
   word-break: keep-all;
 }
 
@@ -121,10 +123,12 @@
 
 .parent-home-page__section-description {
   margin: 0;
+  max-width: 100%;
   color: #718096;
   font-family: 'Inter', 'Noto Sans KR', sans-serif;
   font-size: 14px;
   line-height: 20px;
+  overflow-wrap: anywhere;
   word-break: keep-all;
 }
 
@@ -158,11 +162,13 @@
 
 .parent-home-page__tip-copy {
   margin: 0;
+  max-width: 100%;
   color: #a0725d;
   font-family: 'Sora', 'Noto Sans KR', sans-serif;
   font-size: 12px;
   font-weight: 300;
   line-height: 18px;
+  overflow-wrap: anywhere;
   word-break: keep-all;
 }
 
@@ -397,12 +403,18 @@
 }
 
 .parent-home-page__record-description {
+  display: -webkit-box;
   margin: 0;
+  max-width: 100%;
+  overflow: hidden;
   color: #4a5568;
   font-family: 'Inter', 'Noto Sans KR', sans-serif;
   font-size: 13px;
   line-height: 21px;
+  overflow-wrap: anywhere;
   word-break: keep-all;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 }
 
 .parent-bottom-nav {
@@ -506,10 +518,12 @@ body[data-shell-mode='webview'] .parent-bottom-nav__indicator {
 
 .parent-home-page__placeholder-description {
   margin: 0;
+  max-width: 100%;
   color: #718096;
   font-family: 'Inter', 'Noto Sans KR', sans-serif;
   font-size: 14px;
   line-height: 22px;
+  overflow-wrap: anywhere;
   word-break: keep-all;
 }
 
@@ -757,10 +771,12 @@ body[data-shell-mode='webview'] .parent-bottom-nav__indicator {
 
 .parent-observation-detail-modal__content-text {
   margin: 0;
+  max-width: 100%;
   color: #4a5568;
   font-family: 'Inter', 'Noto Sans KR', sans-serif;
   font-size: 14px;
   line-height: 23px;
+  overflow-wrap: anywhere;
   white-space: pre-wrap;
   word-break: keep-all;
 }
@@ -882,10 +898,13 @@ body[data-shell-mode='webview'] .parent-bottom-nav__indicator {
 
 .parent-observation-detail-modal__comment-copy {
   margin: 0;
+  max-width: 100%;
   color: #718096;
   font-family: 'Inter', 'Noto Sans KR', sans-serif;
   font-size: 12px;
   line-height: 20px;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
   word-break: keep-all;
 }
 
@@ -1337,6 +1356,7 @@ body[data-shell-mode='webview'] .parent-bottom-nav__indicator {
   padding: 12px 14px;
   white-space: normal;
   text-align: center;
+  overflow-wrap: anywhere;
   word-break: keep-all;
 }
 
@@ -1447,10 +1467,12 @@ body[data-shell-mode='webview'] .parent-bottom-nav__indicator {
 
 .parent-notifications-page__subtitle {
   margin: 0;
+  max-width: 100%;
   color: #718096;
   font-family: 'Inter', 'Noto Sans KR', sans-serif;
   font-size: 14px;
   line-height: 20px;
+  overflow-wrap: anywhere;
   word-break: keep-all;
 }
 
@@ -1592,10 +1614,12 @@ body[data-shell-mode='webview'] .parent-bottom-nav__indicator {
 
 .parent-notification-card__message {
   margin: 0;
+  max-width: 100%;
   color: #718096;
   font-family: 'Inter', 'Noto Sans KR', sans-serif;
   font-size: 12px;
   line-height: 20px;
+  overflow-wrap: anywhere;
   word-break: keep-all;
 }
 
@@ -1973,10 +1997,12 @@ body[data-shell-mode='webview'] .parent-bottom-nav__indicator {
 
 .parent-counselor-modal__description {
   margin: 0;
+  max-width: 100%;
   color: #6a7282;
   font-family: 'Inter', 'Noto Sans KR', sans-serif;
   font-size: 14px;
   line-height: 20px;
+  overflow-wrap: anywhere;
   word-break: keep-all;
 }
 
@@ -2032,17 +2058,20 @@ body[data-shell-mode='webview'] .parent-bottom-nav__indicator {
 }
 
 .parent-counselor-modal__field-value {
+  overflow-wrap: anywhere;
   word-break: keep-all;
 }
 
 .parent-counselor-modal__status {
   margin: 0;
+  max-width: 100%;
   color: #4a5565;
   font-family: 'Inter', 'Noto Sans KR', sans-serif;
   font-size: 13px;
   font-weight: 500;
   line-height: 1.5;
   text-align: center;
+  overflow-wrap: anywhere;
   word-break: keep-all;
 }
 

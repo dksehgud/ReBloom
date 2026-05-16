@@ -275,7 +275,7 @@ body[data-shell-mode='webview'] .child-floating-action-button {
   padding: 0 16px;
   box-sizing: border-box;
   background: #ffffff;
-  color: #4d3e3e;
+  color: #2d3748;
   font-family: 'Poppins', 'Noto Sans KR', sans-serif;
   font-size: 14px;
   font-weight: 500;
@@ -681,7 +681,7 @@ body[data-shell-mode='webview'] .child-floating-action-button {
 }
 
 .common-modal-title {
-  color: #4d3e3e;
+  color: #2d3748;
   font-family: 'Poppins', 'Noto Sans KR', sans-serif;
   font-size: 18px;
   font-weight: 700;

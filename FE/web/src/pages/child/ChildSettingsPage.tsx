@@ -340,7 +340,7 @@ function ChildSettingsPage({
               onClick={onOpenCounselStatus}
               trailing={
                 isCounselConnected ? (
-                  <span className="child-settings-page__connect-badge">연결</span>
+                  <span className="child-settings-page__connect-badge">연결됨</span>
                 ) : undefined
               }
               showDivider={false}

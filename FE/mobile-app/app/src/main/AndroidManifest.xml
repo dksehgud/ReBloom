@@ -13,7 +13,9 @@
     <application
         android:name=".base.RebloomApplication"
         android:allowBackup="true"
+        android:icon="@mipmap/ic_launcher"
         android:label="Re:Bloom"
+        android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:usesCleartextTraffic="true"
         android:theme="@style/Theme.ReBloom.WebView">

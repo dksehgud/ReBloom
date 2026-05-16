@@ -72,6 +72,20 @@
   background: transparent;
 }
 
+@media (max-width: 1180px) {
+  .counselor-expression-tabs {
+    align-items: center;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    width: 100%;
+    margin: 0 0 18px;
+  }
+
+  .counselor-expression-tabs .counselor-expression-more {
+    margin-left: 6px;
+  }
+}
+
 
 .counselor-ai-summary {
   margin-bottom: 14px;
@@ -100,6 +114,12 @@
   background: #ffffff;
   border: 1px solid rgba(168, 178, 188, 0.12);
   border-radius: 12px;
+}
+
+.counselor-expression-empty {
+  flex: 1;
+  min-height: 220px;
+  margin-bottom: 0;
 }
 
 .counselor-timeline {
@@ -200,9 +220,12 @@
 
 .counselor-timeline-entry p {
   margin: 4px 0 10px;
+  max-width: 100%;
   color: #4a5568;
   font-size: 11px;
   line-height: 1.6;
+  overflow-wrap: anywhere;
+  word-break: keep-all;
 }
 
 .entry-tags {

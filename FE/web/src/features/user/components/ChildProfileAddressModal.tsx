@@ -57,7 +57,7 @@ function ChildProfileAddressModal({
         }
       }, '프로필 주소 검색')
     } catch {
-      setScriptError('주소 검색창을 여는 데 실패했어요. 기본 주소를 직접 입력해주세요.')
+      setScriptError('주소 검색창을 여는 데 실패했어요. 다시 시도해 주세요.')
     } finally {
       setIsLoadingScript(false)
     }
@@ -164,15 +164,8 @@ function ChildProfileAddressModal({
               }
               id="child-profile-next-base-address"
               label="기본 주소"
-              onChange={(event) =>
-                setDraftAddress((prev) => ({
-                  ...prev,
-                  baseAddress: event.target.value,
-                  latitude: undefined,
-                  longitude: undefined,
-                }))
-              }
               placeholder="주소 검색"
+              readOnly
               value={draftAddress.baseAddress}
             />
 
