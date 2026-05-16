@@ -21,6 +21,7 @@ import com.ssafy.rebloom.notification_service.service.NotificationAlertSender;
 import com.ssafy.rebloom.notification_service.service.RedisService;
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -40,15 +41,18 @@ public class AnomalyAlertServiceImpl implements AnomalyAlertService {
     private final KafkaCommonProperties kafkaProperties;
     private final EventKeyGenerator eventKeyGenerator;
 
+    private final String instanceId = UUID.randomUUID().toString();
+
     @Override
-    public void requestGpsCheck(UUID childrenId, UUID parentId, String correlationId) {
+    public boolean requestGpsCheck(UUID childrenId, UUID parentId, String correlationId) {
         if (!acquireConversationLock(childrenId)) {
             log.debug("GPS check request ignored by conversation lock. childrenId={}", childrenId);
-            return;
+            return false;
         }
 
         try {
             publishGpsCheckRequested(childrenId, parentId, correlationId);
+            return true;
         } catch (RuntimeException e) {
             releaseConversationLock(childrenId);
             log.error(
@@ -69,6 +73,15 @@ public class AnomalyAlertServiceImpl implements AnomalyAlertService {
     @Override
     @Transactional
     public void startPhase(ParentReceiverInfo receiverInfo, String correlationId) {
+        if (isPhaseCoolTimeActive(receiverInfo.childrenId())) {
+            log.debug(
+                "Anomaly alert phase ignored by cooldown. childrenId={}, parentId={}",
+                receiverInfo.childrenId(),
+                receiverInfo.parentId()
+            );
+            return;
+        }
+
         LocalDateTime now = now();
         AnomalyAlertPhaseState phase = new AnomalyAlertPhaseState(
             receiverInfo.childrenId(),
@@ -132,7 +145,8 @@ public class AnomalyAlertServiceImpl implements AnomalyAlertService {
             return;
         }
 
-        if (!acquirePhaseLock(phase.childrenId())) {
+        Optional<String> lockToken = acquirePhaseLock(phase.childrenId());
+        if (lockToken.isEmpty()) {
             return;
         }
 
@@ -154,29 +168,34 @@ public class AnomalyAlertServiceImpl implements AnomalyAlertService {
 
             requestGpsCheckAndFinishPhase(latest);
         } finally {
-            releasePhaseLock(phase.childrenId());
+            releasePhaseLock(phase.childrenId(), lockToken.get());
         }
     }
 
     @Override
     @Transactional
     public void confirmPhase(UUID parentId, UUID childrenId) {
-        if (!acquirePhaseLock(childrenId)) {
-            return;
+        Optional<String> lockToken = acquirePhaseLock(childrenId);
+        if (lockToken.isEmpty()) {
+            throw new CustomException(
+                "현재 이상치 알림 응답을 처리 중입니다.",
+                ErrorCode.ANOMALY_ALERT_PHASE_BUSY
+            );
         }
 
         try {
             AnomalyAlertPhaseState phase = resolvePhaseForParent(parentId, childrenId);
             if (phase == null) {
                 throw new CustomException(
-                    "이미 만료되었거나 처리된 알림입니다.",
+                    "이미 종료되었거나 만료된 이상치 알림입니다.",
                     ErrorCode.ANOMALY_ALERT_PHASE_NOT_FOUND
                 );
             }
 
             redisService.delete(anomalyAlertPhaseKey(childrenId));
+            startPhaseCoolTime(childrenId);
         } finally {
-            releasePhaseLock(childrenId);
+            releasePhaseLock(childrenId, lockToken.get());
         }
     }
 
@@ -187,39 +206,61 @@ public class AnomalyAlertServiceImpl implements AnomalyAlertService {
         UUID childrenId,
         String correlationId
     ) {
-        if (!acquirePhaseLock(childrenId)) {
-            return;
+        Optional<String> lockToken = acquirePhaseLock(childrenId);
+        if (lockToken.isEmpty()) {
+            throw new CustomException(
+                "현재 이상치 알림 응답을 처리 중입니다.",
+                ErrorCode.ANOMALY_ALERT_PHASE_BUSY
+            );
         }
 
         try {
             AnomalyAlertPhaseState phase = resolvePhaseForParent(parentId, childrenId);
             if (phase == null) {
                 throw new CustomException(
-                    "이미 만료되었거나 처리된 알림입니다.",
+                    "이미 종료되었거나 만료된 이상치 알림입니다.",
                     ErrorCode.ANOMALY_ALERT_PHASE_NOT_FOUND
                 );
             }
 
-            requestGpsCheck(
+            boolean requested = requestGpsCheck(
                 phase.childrenId(),
                 phase.parentId(),
                 phase.correlationId() != null ? phase.correlationId() : correlationId
             );
 
+            if (!requested) {
+                log.debug(
+                    "GPS check request already in progress. childrenId={}, parentId={}",
+                    phase.childrenId(),
+                    phase.parentId()
+                );
+            }
+
             redisService.delete(anomalyAlertPhaseKey(childrenId));
+            startPhaseCoolTime(childrenId);
         } finally {
-            releasePhaseLock(childrenId);
+            releasePhaseLock(childrenId, lockToken.get());
         }
     }
 
     private void requestGpsCheckAndFinishPhase(AnomalyAlertPhaseState phase) {
-        requestGpsCheck(
+        boolean requested = requestGpsCheck(
             phase.childrenId(),
             phase.parentId(),
             phase.correlationId()
         );
 
+        if (!requested) {
+            log.debug(
+                "GPS check request already in progress on phase timeout. childrenId={}, parentId={}",
+                phase.childrenId(),
+                phase.parentId()
+            );
+        }
+
         redisService.delete(anomalyAlertPhaseKey(phase.childrenId()));
+        startPhaseCoolTime(phase.childrenId());
     }
 
     private void sendNextAnomalyRiskAlert(AnomalyAlertPhaseState phase) {
@@ -245,7 +286,7 @@ public class AnomalyAlertServiceImpl implements AnomalyAlertService {
         AnomalyAlertPhaseState phase = readPhase(raw);
         if (!phase.parentId().equals(parentId)) {
             throw new CustomException(
-                "해당 이상치 알림 phase를 조작할 권한이 없습니다.",
+                "해당 보호자가 조작할 수 없는 phase입니다.",
                 ErrorCode.FORBIDDEN
             );
         }
@@ -253,16 +294,34 @@ public class AnomalyAlertServiceImpl implements AnomalyAlertService {
         return phase;
     }
 
-    private boolean acquirePhaseLock(UUID childrenId) {
-        return redisService.setIfAbsent(
+    private Optional<String> acquirePhaseLock(UUID childrenId) {
+        String token = newPhaseLockToken();
+
+        boolean acquired = redisService.setIfAbsent(
             anomalyAlertPhaseLockKey(childrenId),
-            "1",
+            token,
             Duration.ofSeconds(Constants.ANOMALY_ALERT_PHASE_LOCK_TTL_SECONDS)
         );
+
+        return acquired ? Optional.of(token) : Optional.empty();
     }
 
-    private void releasePhaseLock(UUID childrenId) {
-        redisService.delete(anomalyAlertPhaseLockKey(childrenId));
+    private void releasePhaseLock(UUID childrenId, String token) {
+        boolean released = redisService.deleteIfValueEquals(
+            anomalyAlertPhaseLockKey(childrenId),
+            token
+        );
+
+        if (!released) {
+            log.debug(
+                "Phase lock release skipped. lock is owned by another token. childrenId={}",
+                childrenId
+            );
+        }
+    }
+
+    private String newPhaseLockToken() {
+        return instanceId + ":" + UUID.randomUUID();
     }
 
     private String writePhase(AnomalyAlertPhaseState phase) {
@@ -281,12 +340,28 @@ public class AnomalyAlertServiceImpl implements AnomalyAlertService {
         }
     }
 
+    private boolean isPhaseCoolTimeActive(UUID childrenId) {
+        return redisService.exists(anomalyAlertPhaseCoolTimeKey(childrenId));
+    }
+
+    private void startPhaseCoolTime(UUID childrenId) {
+        redisService.set(
+            anomalyAlertPhaseCoolTimeKey(childrenId),
+            "1",
+            Duration.ofMinutes(Constants.ANOMALY_ALERT_PHASE_COOL_TIME_MINUTES)
+        );
+    }
+
     private String anomalyAlertPhaseKey(UUID childrenId) {
         return Constants.ANOMALY_ALERT_PHASE_KEY_PREFIX + childrenId;
     }
 
     private String anomalyAlertPhaseLockKey(UUID childrenId) {
         return Constants.ANOMALY_ALERT_PHASE_LOCK_KEY_PREFIX + childrenId;
+    }
+
+    private String anomalyAlertPhaseCoolTimeKey(UUID childrenId) {
+        return Constants.ANOMALY_ALERT_PHASE_COOL_TIME_KEY_PREFIX + childrenId;
     }
 
     private LocalDateTime now() {

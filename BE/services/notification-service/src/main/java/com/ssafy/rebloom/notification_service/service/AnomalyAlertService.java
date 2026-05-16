@@ -12,7 +12,7 @@ public interface AnomalyAlertService {
 
     void rejectPhase(UUID parentId, UUID childrenId, String correlationId);
 
-    void requestGpsCheck(UUID childrenId, UUID parentId, String correlationId);
+    boolean requestGpsCheck(UUID childrenId, UUID parentId, String correlationId);
 
     void releaseConversationLock(UUID childrenId);
 }

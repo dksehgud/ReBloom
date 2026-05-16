@@ -4,7 +4,10 @@ import java.time.ZoneId;
 
 public final class Constants {
     public static final long CONVERSATION_COOL_TIME = 15;
+    public static final long ANOMALY_ALERT_PHASE_COOL_TIME_MINUTES = 15L;
 
+    public static final String ANOMALY_ALERT_PHASE_COOL_TIME_KEY_PREFIX =
+        "notification:anomaly:parent-response:phase:cool:time:";
     public static final long ANOMALY_ALERT_PHASE_TTL = 30L;
     public static final long ANOMALY_ALERT_PHASE_INTERVAL_MINUTES = 5L;
     public static final int ANOMALY_ALERT_PHASE_TOTAL_ALERT_COUNT = 3;

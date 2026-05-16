@@ -2,6 +2,7 @@ package com.ssafy.rebloom.notification_service.service;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
@@ -9,6 +10,7 @@ import org.springframework.data.redis.connection.RedisConnection;
 import org.springframework.data.redis.core.Cursor;
 import org.springframework.data.redis.core.ScanOptions;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -26,22 +28,8 @@ public class RedisService {
         return redisTemplate.opsForValue().get(key);
     }
 
-    public void set(String key, String value) {
-        redisTemplate.opsForValue().set(key, value);
-    }
-
     public void set(String key, String value, Duration ttl) {
         redisTemplate.opsForValue().set(key, value, ttl);
-    }
-
-    public long incrementBy(String key, long delta) {
-        Long value = redisTemplate.opsForValue().increment(key, delta);
-        return value == null ? 0L : value;
-    }
-
-    public boolean setIfAbsent(String key, String value) {
-        Boolean success = redisTemplate.opsForValue().setIfAbsent(key, value);
-        return Boolean.TRUE.equals(success);
     }
 
     public boolean setIfAbsent(String key, String value, Duration ttl) {
@@ -70,5 +58,27 @@ public class RedisService {
 
             return keys;
         });
+    }
+
+    private static final DefaultRedisScript<Long> DELETE_IF_VALUE_EQUALS_SCRIPT =
+        new DefaultRedisScript<>(
+            """
+            if redis.call("GET", KEYS[1]) == ARGV[1] then
+                return redis.call("DEL", KEYS[1])
+            else
+                return 0
+            end
+            """,
+            Long.class
+        );
+
+    public boolean deleteIfValueEquals(String key, String expectedValue) {
+        Long deleted = redisTemplate.execute(
+            DELETE_IF_VALUE_EQUALS_SCRIPT,
+            Collections.singletonList(key),
+            expectedValue
+        );
+
+        return deleted != null && deleted > 0;
     }
 }

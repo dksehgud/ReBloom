@@ -85,7 +85,9 @@ public enum ErrorCode {
     // ============================================================
     NOTIFICATION_NOT_FOUND(HttpStatus.NOT_FOUND, "알림을 찾을 수 없습니다."),
     NOTIFICATION_TYPE_NOT_FOUND(HttpStatus.NOT_FOUND, "존재하지 않는 알림 타입입니다."),
-    ANOMALY_ALERT_PHASE_NOT_FOUND(HttpStatus.GONE, "이미 만료되었거나 처리된 알림입니다");
+    ANOMALY_ALERT_PHASE_NOT_FOUND(HttpStatus.GONE, "이미 종료되었거나 만료된 이상치 알림입니다."),
+    ANOMALY_ALERT_PHASE_BUSY(HttpStatus.CONFLICT, "현재 이상치 알림 응답을 처리 중입니다.");
+
     // ============================================================
     // 7.
     // ============================================================
