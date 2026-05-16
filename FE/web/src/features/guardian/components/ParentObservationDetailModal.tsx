@@ -164,6 +164,7 @@ function ParentObservationDetailModal({
   hasNext = false,
 }: ParentObservationDetailModalProps) {
   const shouldShowRecordNavigation = totalCount > 1
+  const shouldShowActions = Boolean(onEdit || onDelete)
 
   return (
     <ParentObservationModalFrame
@@ -171,7 +172,9 @@ function ParentObservationDetailModal({
       onClose={onClose}
     >
       <div className="parent-observation-detail-modal__header-row">
-        <p className="parent-observation-detail-modal__date-label">{dateLabel}</p>
+        <p className="parent-observation-detail-modal__date-label">
+          {dateLabel}
+        </p>
       </div>
 
       <div className="parent-observation-detail-modal__content-card">
@@ -238,24 +241,30 @@ function ParentObservationDetailModal({
         </section>
       ) : null}
 
-      <div className="parent-observation-detail-modal__actions">
-        <button
-          type="button"
-          className="parent-observation-detail-modal__action-button is-edit"
-          onClick={onEdit}
-        >
-          <EditIcon />
-          수정
-        </button>
-        <button
-          type="button"
-          className="parent-observation-detail-modal__action-button is-delete"
-          onClick={onDelete}
-        >
-          <DeleteIcon />
-          삭제
-        </button>
-      </div>
+      {shouldShowActions ? (
+        <div className="parent-observation-detail-modal__actions">
+          {onEdit ? (
+            <button
+              type="button"
+              className="parent-observation-detail-modal__action-button is-edit"
+              onClick={onEdit}
+            >
+              <EditIcon />
+              수정
+            </button>
+          ) : null}
+          {onDelete ? (
+            <button
+              type="button"
+              className="parent-observation-detail-modal__action-button is-delete"
+              onClick={onDelete}
+            >
+              <DeleteIcon />
+              삭제
+            </button>
+          ) : null}
+        </div>
+      ) : null}
     </ParentObservationModalFrame>
   )
 }
