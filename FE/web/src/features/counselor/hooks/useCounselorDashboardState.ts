@@ -415,6 +415,22 @@ function getCardsAverageValue(
   return clampMetricValue(total / cards.length)
 }
 
+function getAnalysisCardsForFilter(
+  filter: ExpressionFilter,
+  diaryCards: CounselorDiaryAnalysisCardDto[],
+  conversationCards: CounselorConversationAnalysisCardDto[],
+) {
+  if (filter === 'diary') {
+    return diaryCards
+  }
+
+  if (filter === 'conversation') {
+    return conversationCards
+  }
+
+  return [...diaryCards, ...conversationCards]
+}
+
 function mapAnalysisContentToExpressionAnalysis(
   response: CounselorAnalysisContentResponseDto,
 ): DashboardExpressionAnalysis {
@@ -423,26 +439,32 @@ function mapAnalysisContentToExpressionAnalysis(
     Record<ExpressionFilter, DashboardMetricPoint[]>
   >(
     (nextTrend, filter) => {
-      nextTrend[filter] = dailyGroups.map((group) => {
-        const diaryCards = group.diaryList ?? []
-        const conversationCards = group.conversationList ?? []
-        const cards =
-          filter === 'diary'
-            ? diaryCards
-            : filter === 'conversation'
-              ? conversationCards
-              : [...diaryCards, ...conversationCards]
-        const firstDiaryEmotionKey = mapEmotionIconToKey(
-          diaryCards[0]?.emotionIcon,
-        )
+      nextTrend[filter] = dailyGroups
+        .map((group): DashboardMetricPoint | null => {
+          const diaryCards = group.diaryList ?? []
+          const conversationCards = group.conversationList ?? []
+          const cards = getAnalysisCardsForFilter(
+            filter,
+            diaryCards,
+            conversationCards,
+          )
 
-        return {
-          emotionKey:
-            filter !== 'conversation' ? firstDiaryEmotionKey : undefined,
-          label: formatWeekdayLabel(group.date),
-          value: getCardsAverageValue(cards),
-        }
-      })
+          if (cards.length === 0) {
+            return null
+          }
+
+          const firstDiaryEmotionKey = mapEmotionIconToKey(
+            diaryCards[0]?.emotionIcon,
+          )
+
+          return {
+            emotionKey:
+              filter !== 'conversation' ? firstDiaryEmotionKey : undefined,
+            label: formatWeekdayLabel(group.date),
+            value: getCardsAverageValue(cards),
+          }
+        })
+        .filter((point): point is DashboardMetricPoint => point !== null)
 
       return nextTrend
     },
@@ -1378,3 +1400,4 @@ function useCounselorDashboardState() {
 }
 
 export default useCounselorDashboardState
+export { mapAnalysisContentToExpressionAnalysis }
