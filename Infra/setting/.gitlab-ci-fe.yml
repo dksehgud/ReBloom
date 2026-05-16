@@ -1,4 +1,4 @@
-# Build FE/web once and pass the dist artifact to deploy-web.
+# Build FE/web
 build-web:
   image: node:22-alpine
   stage: build
@@ -14,25 +14,6 @@ build-web:
     paths:
       - FE/web/dist/
     expire_in: 1 hour
-  rules:
-    - changes:
-        - "FE/web/**/*"
-
-deploy-web:
-  image: node:22-alpine
-  stage: web-deploy
-  tags:
-    - rebloom-dev
-  services: [ ]
-  needs:
-    - job: build-web
-      artifacts: true
-  before_script:
-    - apk add --no-cache aws-cli
-  script:
-    - echo "----- FE web deploy start -----"
-    - aws s3 sync FE/web/dist "s3://${DEPLOY_S3_BUCKET}" --delete
-    - aws cloudfront create-invalidation --distribution-id "${CLOUDFRONT_DISTRIBUTION_ID}" --paths "/*"
   rules:
     - changes:
         - "FE/web/**/*"
@@ -56,3 +37,26 @@ build-mobile-apk:
   rules:
     - changes:
         - "FE/mobile-app/**/*"
+
+
+# deploy-web에서는 build-web에서 생성된 dist 폴더를 S3에 업로드하고 CloudFront 무효화 요청을 보냅니다.
+deploy-web:
+  image: node:22-alpine
+  stage: web-deploy
+  tags:
+    - rebloom-dev
+  services: [ ]
+  needs:
+    - job: build-web
+      artifacts: true
+  before_script:
+    - apk add --no-cache aws-cli
+  script:
+    - echo "----- FE web deploy start -----"
+    - aws s3 sync FE/web/dist "s3://${DEPLOY_S3_BUCKET}" --delete
+    - aws cloudfront create-invalidation --distribution-id "${CLOUDFRONT_DISTRIBUTION_ID}" --paths "/*"
+  rules:
+    - changes:
+        - "FE/web/**/*"
+
+
