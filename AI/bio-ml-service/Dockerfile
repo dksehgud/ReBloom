@@ -10,6 +10,6 @@ COPY app ./app
 # 모델 저장 디렉토리 생성
 RUN mkdir -p /app/model
 
-EXPOSE 8002
+EXPOSE 8001
 
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8002"]
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8001"]

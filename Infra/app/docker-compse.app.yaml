@@ -89,6 +89,7 @@ services:
     env_file:
       - ../services/bio-ml-service/.env
     environment:
+      SERVER_PORT: 8001
       KAFKA_BOOTSTRAP_SERVERS: kafka-1:9092,kafka-2:9092,kafka-3:9092
       REDIS_HOST: redis
       REDIS_PORT: 6379
@@ -148,13 +149,11 @@ services:
       BIOMETRIC_SERVICE_URI: http://biometric-service:8083
       REPORT_SERVICE_URI: http://report-service:8084
       NOTIFICATION_SERVICE_URI: http://notification-service:8085
-      BIO_ML_SERVICE_URI: http://bio-ml-service:8002
+      BIO_ML_SERVICE_URI: http://bio-ml-service:8001
       FRONTEND_URL: ${FRONTEND_URL:-https://d1zs5r6o9orkcb.cloudfront.net}
       FRONTEND_REDIRECT_URL: ${FRONTEND_REDIRECT_URL:-https://d1zs5r6o9orkcb.cloudfront.net}
       TZ: Asia/Seoul
       JAVA_TOOL_OPTIONS: -Duser.timezone=Asia/Seoul
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
     expose:
       - "8080"
     networks:
