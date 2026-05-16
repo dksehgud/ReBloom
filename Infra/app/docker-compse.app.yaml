@@ -1,8 +1,41 @@
 services:
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: rebloom-nginx
+    profiles: [ "app" ]
+    env_file:
+      - path: ../nginx/.env
+        required: false
+    restart: unless-stopped
+    depends_on:
+      - gateway-service
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ../nginx/conf.d:/etc/nginx/conf.d:ro
+      - ../nginx/certbot/www:/var/www/certbot:ro
+      - ../nginx/certbot/conf:/etc/letsencrypt:ro
+    networks:
+      - rebloom-network
+
+  certbot:
+    image: certbot/certbot:latest
+    container_name: rebloom-certbot
+    profiles: [ "certbot" ]
+    env_file:
+      - path: ../nginx/.env
+        required: false
+    volumes:
+      - ../nginx/certbot/www:/var/www/certbot
+      - ../nginx/certbot/conf:/etc/letsencrypt
+    networks:
+      - rebloom-network
+
   auth-service:
     image: ${DOCKER_NAMESPACE}/rebloom-auth:${AUTH_IMAGE_TAG:-latest}
     container_name: rebloom-auth
-    profiles: ["app"]
+    profiles: [ "app" ]
     env_file:
       - ../services/auth-service/.env
     environment:
@@ -17,12 +50,12 @@ services:
       - rebloom-network
     restart: unless-stopped
 
-  ai-service:
-    image: ${DOCKER_NAMESPACE}/rebloom-ai:${AI_IMAGE_TAG:-latest}
-    container_name: rebloom-ai
-    profiles: ["app"]
+  intake-service:
+    image: ${DOCKER_NAMESPACE}/rebloom-intake:${INTAKE_IMAGE_TAG:-latest}
+    container_name: rebloom-intake
+    profiles: [ "app" ]
     env_file:
-      - ../services/ai-service/.env
+      - ../services/intake-service/.env
     environment:
       DB_HOST: postgres
       TZ: Asia/Seoul
@@ -36,7 +69,7 @@ services:
   biometric-service:
     image: ${DOCKER_NAMESPACE}/rebloom-biometric:${BIOMETRIC_IMAGE_TAG:-latest}
     container_name: rebloom-biometric
-    profiles: ["app"]
+    profiles: [ "app" ]
     env_file:
       - ../services/biometric-service/.env
     environment:
@@ -49,10 +82,30 @@ services:
       - rebloom-network
     restart: unless-stopped
 
+  bio-ml-service:
+    image: ${DOCKER_NAMESPACE}/rebloom-bio-ml:${BIO_ML_IMAGE_TAG:-latest}
+    container_name: rebloom-bio-ml
+    profiles: [ "app" ]
+    env_file:
+      - ../services/bio-ml-service/.env
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: kafka-1:9092,kafka-2:9092,kafka-3:9092
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      MODEL_DIR: /app/model
+      TZ: Asia/Seoul
+    expose:
+      - "8001"
+    volumes:
+      - bio-ml-models:/app/model
+    networks:
+      - rebloom-network
+    restart: unless-stopped
+
   report-service:
     image: ${DOCKER_NAMESPACE}/rebloom-report:${REPORT_IMAGE_TAG:-latest}
     container_name: rebloom-report
-    profiles: ["app"]
+    profiles: [ "app" ]
     env_file:
       - ../services/report-service/.env
     environment:
@@ -68,7 +121,7 @@ services:
   notification-service:
     image: ${DOCKER_NAMESPACE}/rebloom-notification:${NOTIFICATION_IMAGE_TAG:-latest}
     container_name: rebloom-notification
-    profiles: ["app"]
+    profiles: [ "app" ]
     env_file:
       - ../services/notification-service/.env
     environment:
@@ -86,25 +139,24 @@ services:
   gateway-service:
     image: ${DOCKER_NAMESPACE}/rebloom-gateway:${GATEWAY_IMAGE_TAG:-latest}
     container_name: rebloom-gateway
-    profiles: ["app"]
+    profiles: [ "app" ]
     env_file:
       - ../services/gateway-service/.env
     environment:
       AUTH_SERVICE_URI: http://auth-service:8081
+      INTAKE_SERVICE_URI: http://intake-service:8082
       BIOMETRIC_SERVICE_URI: http://biometric-service:8083
       REPORT_SERVICE_URI: http://report-service:8084
       NOTIFICATION_SERVICE_URI: http://notification-service:8085
-      AIOT_AI_SERVICE_URI: http://host.docker.internal:8001
-      BIO_ML_SERVICE_URI: http://host.docker.internal:8002
-      EMOTION_INFERENCE_SERVICE_URI: http://host.docker.internal:8003
+      BIO_ML_SERVICE_URI: http://bio-ml-service:8002
       FRONTEND_URL: ${FRONTEND_URL:-https://d1zs5r6o9orkcb.cloudfront.net}
       FRONTEND_REDIRECT_URL: ${FRONTEND_REDIRECT_URL:-https://d1zs5r6o9orkcb.cloudfront.net}
       TZ: Asia/Seoul
       JAVA_TOOL_OPTIONS: -Duser.timezone=Asia/Seoul
     extra_hosts:
       - "host.docker.internal:host-gateway"
-    ports:
-      - "${GATEWAY_PORT:-8080}:8080"
+    expose:
+      - "8080"
     networks:
       - rebloom-network
     restart: unless-stopped
@@ -112,3 +164,6 @@ services:
 networks:
   rebloom-network:
     external: true
+
+volumes:
+  bio-ml-models:
