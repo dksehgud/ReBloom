@@ -37,6 +37,14 @@ public class NotificationIdempotencyService {
         );
     }
 
+    public void clear(String idempotencyKey) {
+        if (idempotencyKey == null || idempotencyKey.isBlank()) {
+            return;
+        }
+
+        redisService.delete(key(idempotencyKey));
+    }
+
     private String key(String idempotencyKey) {
         return Constants.KEY_PREFIX + idempotencyKey;
     }

@@ -16,4 +16,7 @@ public class KafkaTopicsProperties {
     private String eventDlt;
     private String parentReportCreated;
     private String parentReportCommentCreated;
+    private String gpsCheckRequested;
+    private String gpsCheckSame;
+    private String gpsCheckDifferent;
 }

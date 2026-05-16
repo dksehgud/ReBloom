@@ -6,8 +6,9 @@ public final class EventTypes {
     public static final String MODEL_TRAINING_REQUESTED = "MODEL_TRAINING_REQUESTED";
     public static final String SLEEP_RECEIVED = "SLEEP_DATA_RECEIVED";
     public static final String ANOMALY_ANALYSED = "ANOMALY_ANALYSED";
-    public static final String GPS_CHECKED = "GPS_CHECKED";
-    public static final String CONVERSATION_INITIATED = "CONVERSATION_INITIATED";
+    public static final String GPS_CHECK_REQUESTED = "GPS_CHECK_REQUESTED";
+    public static final String GPS_CHECK_SAME = "GPS_CHECK_SAME";
+    public static final String GPS_CHECK_DIFFERENT = "GPS_CHECK_DIFFERENT";
 
     public static final String MODEL_RETRAINING_REQUESTED = "MODEL_RETRAINING_REQUESTED";
 
