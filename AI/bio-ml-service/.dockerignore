@@ -7,4 +7,4 @@ venv/
 *.pyd
 .env
 .env.local
-bio-ml-service/research/
+research/
