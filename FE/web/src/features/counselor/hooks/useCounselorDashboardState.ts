@@ -396,6 +396,13 @@ function updateObservationRecordComment(
   )
 }
 
+function getInitialSidebarCollapsed() {
+  return (
+    typeof window !== 'undefined' &&
+    window.matchMedia('(max-width: 1180px)').matches
+  )
+}
+
 function getCardsAverageValue(
   cards: Array<
     CounselorDiaryAnalysisCardDto | CounselorConversationAnalysisCardDto
@@ -534,7 +541,9 @@ function mapAnalysisContentToExpressionAnalysis(
 function useCounselorDashboardState() {
   const accessToken = useAppSessionStore((state) => state.accessToken)
   const isMockMode = useCounselorMockMode()
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(
+    getInitialSidebarCollapsed,
+  )
   const [childItems, setChildItems] = useState<ChildListItem[]>(() =>
     isMockMode ? initialChildList : [],
   )

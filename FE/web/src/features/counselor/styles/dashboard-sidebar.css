@@ -250,16 +250,30 @@
 
 @media (max-width: 1180px) {
   .counselor-dashboard-sidebar {
-    position: static;
-    width: 100%;
-    height: auto;
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 90;
+    width: min(84vw, 300px);
+    height: 100svh;
     flex: none;
+    background: var(--dashboard-bg);
+    border-right-color: rgba(168, 178, 188, 0.18);
+    box-shadow: 18px 0 38px rgba(38, 55, 76, 0.16);
+    transform: translateX(0);
+    transition:
+      transform 220ms ease,
+      box-shadow 220ms ease;
   }
 
   .counselor-dashboard.is-sidebar-collapsed .counselor-dashboard-sidebar {
-    width: 100%;
+    width: min(84vw, 300px);
     flex-basis: auto;
-    height: 64px;
+    height: 100svh;
+    border-right-color: rgba(168, 178, 188, 0.18);
+    box-shadow: none;
+    pointer-events: none;
+    transform: translateX(calc(-100% - 24px));
   }
 
   .counselor-dashboard.is-sidebar-collapsed .counselor-dashboard-brand {
@@ -273,12 +287,13 @@
   }
 
   .counselor-child-list {
-    flex-direction: row;
-    overflow-x: auto;
+    flex-direction: column;
+    overflow-x: hidden;
+    overflow-y: auto;
   }
 
   .counselor-child-list button {
-    min-width: 210px;
+    min-width: 0;
   }
 
   .counselor-dashboard.is-sidebar-collapsed .counselor-child-list button {

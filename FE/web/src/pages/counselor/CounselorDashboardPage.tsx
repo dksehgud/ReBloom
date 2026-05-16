@@ -1,9 +1,11 @@
+import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   FiActivity,
   FiBell,
   FiFileText,
   FiHeart,
+  FiMenu,
   FiMoon,
 } from 'react-icons/fi'
 
@@ -90,12 +92,66 @@ function CounselorDashboardPage() {
       : '보호자의 연결 요청을 수락하면 이곳에서 아이의 기록을 확인할 수 있어요.'
   const hasSelectedChild = Boolean(selectedChildProfile && selectedChildId)
 
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return undefined
+    }
+
+    const compactSidebarQuery = window.matchMedia('(max-width: 1180px)')
+    const syncSidebarMode = () => {
+      setIsSidebarCollapsed(compactSidebarQuery.matches)
+    }
+
+    syncSidebarMode()
+    compactSidebarQuery.addEventListener('change', syncSidebarMode)
+
+    return () => {
+      compactSidebarQuery.removeEventListener('change', syncSidebarMode)
+    }
+  }, [setIsSidebarCollapsed])
+
+  const closeCompactSidebar = () => {
+    if (
+      typeof window !== 'undefined' &&
+      window.matchMedia('(max-width: 1180px)').matches
+    ) {
+      setIsSidebarCollapsed(true)
+    }
+  }
+
+  const handleSelectSidebarChild = (childId: string) => {
+    handleSelectChild(childId)
+    closeCompactSidebar()
+  }
+
+  const handleOpenSettings = () => {
+    closeCompactSidebar()
+    navigate('/counselor/settings')
+  }
+
   return (
     <main
       className={`counselor-dashboard${
         isSidebarCollapsed ? ' is-sidebar-collapsed' : ''
       }`}
     >
+      <button
+        type="button"
+        className="counselor-dashboard-mobile-menu"
+        aria-label="상담 아동 목록 열기"
+        aria-expanded={!isSidebarCollapsed}
+        onClick={() => setIsSidebarCollapsed(false)}
+      >
+        <FiMenu aria-hidden="true" />
+      </button>
+      {!isSidebarCollapsed ? (
+        <button
+          type="button"
+          className="counselor-dashboard-sidebar-backdrop"
+          aria-label="상담 아동 목록 닫기"
+          onClick={() => setIsSidebarCollapsed(true)}
+        />
+      ) : null}
       <CounselorSidebar
         isCollapsed={isSidebarCollapsed}
         childItems={childItems}
@@ -104,8 +160,8 @@ function CounselorDashboardPage() {
         isLoadingChildren={isLoadingChildItems}
         childrenError={childItemsError}
         onToggle={() => setIsSidebarCollapsed((current) => !current)}
-        onSelectChild={handleSelectChild}
-        onOpenSettings={() => navigate('/counselor/settings')}
+        onSelectChild={handleSelectSidebarChild}
+        onOpenSettings={handleOpenSettings}
       />
 
       <section className="counselor-dashboard-main">
