@@ -249,7 +249,7 @@ function CounselorDashboardPage() {
                     isLoading={isLoadingDashboardMetrics}
                     isFirstWeek={expressionWeek.isFirstWeek}
                     isLastWeek={expressionWeek.isLastWeek}
-                    maxHeight={analysisCardHeight}
+                    minHeight={analysisCardHeight}
                     weekLabel={expressionWeek.currentWeek.label}
                     childId={selectedChildId}
                     onPrevWeek={expressionWeek.goPrevWeek}

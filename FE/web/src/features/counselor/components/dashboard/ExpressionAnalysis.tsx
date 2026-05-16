@@ -19,7 +19,7 @@ type ExpressionAnalysisProps = {
   isFirstWeek: boolean
   isLastWeek: boolean
   isLoading?: boolean
-  maxHeight?: number
+  minHeight?: number
   weekLabel: string
   childId: string
   onPrevWeek: () => void
@@ -32,7 +32,7 @@ function ExpressionAnalysis({
   isFirstWeek,
   isLastWeek,
   isLoading = false,
-  maxHeight,
+  minHeight,
   weekLabel,
   childId,
   onPrevWeek,
@@ -53,7 +53,7 @@ function ExpressionAnalysis({
       title="최근 표현 분석"
       className="counselor-expression-card"
       info={dashboardInfoMessages.expression}
-      style={maxHeight ? { height: maxHeight, maxHeight } : undefined}
+      style={minHeight ? { minHeight } : undefined}
     >
       <div className="counselor-expression-tabs" aria-label="분석 범위">
         <div className="counselor-expression-tab-group">
