@@ -11,6 +11,7 @@ import com.ssafy.rebloom.notification_service.service.AuthServiceResolveService;
 import com.ssafy.rebloom.notification_service.service.NotificationIdempotencyService;
 import com.ssafy.rebloom.notification_service.service.NotificationService;
 import com.ssafy.rebloom.notification_service.service.ParentReportNotificationService;
+import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -41,8 +42,16 @@ public class ParentReportNotificationServiceImpl implements ParentReportNotifica
             return;
         }
 
-        CounselorReceiverInfo receiver =
+        Optional<CounselorReceiverInfo> receiver =
             authServiceResolveService.resolveCounselorByChildrenId(event.childrenId());
+
+        if (receiver.isEmpty()) {
+            notificationIdempotencyService.markCompleted(idempotencyKey);
+            return;
+        }
+
+        // 알림 전송
+        CounselorReceiverInfo counselor = receiver.get();
 
         NotificationPayload payload = NotificationPayload.builder()
             .title("새 부모 리포트가 등록되었습니다")
@@ -50,13 +59,13 @@ public class ParentReportNotificationServiceImpl implements ParentReportNotifica
             .childrenId(event.childrenId())
             .childrenReportId(event.reportId())
             .parentId(event.parentId())
-            .counselorId(receiver.counselorId())
-            .counselorName(receiver.counselorName())
+            .counselorId(counselor.counselorId())
+            .counselorName(counselor.counselorName())
             .build();
 
         notificationService.send(
             new NotificationCommand(
-                receiver.counselorId(),
+                counselor.counselorId(),
                 ReceiverRole.COUNSELOR,
                 NotificationCode.PARENT_REPORT_NEW,
                 payload

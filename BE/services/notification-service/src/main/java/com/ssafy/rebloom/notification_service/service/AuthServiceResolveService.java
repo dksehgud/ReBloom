@@ -3,6 +3,7 @@ package com.ssafy.rebloom.notification_service.service;
 import com.ssafy.rebloom.notification_service.dto.CounselorReceiverInfo;
 import com.ssafy.rebloom.notification_service.dto.ParentReceiverInfo;
 import com.ssafy.rebloom.notification_service.dto.response.ChildrenIotInfoResponseDto;
+import java.util.Optional;
 import java.util.UUID;
 
 public interface AuthServiceResolveService {
@@ -11,5 +12,5 @@ public interface AuthServiceResolveService {
 
     ChildrenIotInfoResponseDto resolveChildrenIotInfo(UUID childrenId);
 
-    CounselorReceiverInfo resolveCounselorByChildrenId(UUID childrenId);
+    Optional<CounselorReceiverInfo> resolveCounselorByChildrenId(UUID childrenId);
 }

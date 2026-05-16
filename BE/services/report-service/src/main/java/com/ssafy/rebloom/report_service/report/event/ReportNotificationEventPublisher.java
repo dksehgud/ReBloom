@@ -6,7 +6,6 @@ import com.ssafy.rebloom.event.dto.ParentReportCommentCreatedEvent;
 import com.ssafy.rebloom.event.dto.ParentReportCreatedEvent;
 import com.ssafy.rebloom.event.publisher.EventPublisher;
 import com.ssafy.rebloom.event.support.EventKeyGenerator;
-import com.ssafy.rebloom.report_service.analysis.dto.request.ParentReportCreatedLocalEvent;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
@@ -33,7 +32,7 @@ public class ReportNotificationEventPublisher {
         String key = localEvent.parentId().toString();
         String idempotencyKey = eventKeyGenerator.idempotencyKey(
             EventTypes.PARENT_REPORT_CREATED,
-            localEvent.parentId().toString(),
+            localEvent.childrenId().toString(),
             localEvent.reportId().toString()
         );
 
@@ -61,8 +60,8 @@ public class ReportNotificationEventPublisher {
         String key = localEvent.counselorId().toString();
         String idempotencyKey = eventKeyGenerator.idempotencyKey(
             EventTypes.PARENT_REPORT_COMMENT_CREATED,
-            localEvent.counselorId().toString(),
-            localEvent.reportId().toString()
+            localEvent.childrenId().toString(),
+            localEvent.commentId().toString()
         );
 
         eventPublisher.publish(

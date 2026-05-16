@@ -10,6 +10,7 @@ import com.ssafy.rebloom.notification_service.dto.response.ChildrenIotInfoRespon
 import com.ssafy.rebloom.notification_service.dto.response.CounselorReceiverResponseDto;
 import com.ssafy.rebloom.notification_service.dto.response.ParentReceiverResponseDto;
 import com.ssafy.rebloom.notification_service.service.AuthServiceResolveService;
+import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -61,22 +62,19 @@ public class AuthServiceResolveServiceImpl implements AuthServiceResolveService 
     }
 
     @Override
-    public CounselorReceiverInfo resolveCounselorByChildrenId(UUID childrenId) {
+    public Optional<CounselorReceiverInfo> resolveCounselorByChildrenId(UUID childrenId) {
         BaseResponse<CounselorReceiverResponseDto> response =
             authServiceInternalClient.getCounselorReceiver(childrenId);
 
         CounselorReceiverResponseDto data = response.getData();
 
         if (data == null || !data.connected() || data.counselorId() == null) {
-            throw new CustomException(
-                "연결된 상담사를 찾을 수 없습니다.",
-                ErrorCode.NOT_FOUND
-            );
+            return Optional.empty();
         }
 
-        return new CounselorReceiverInfo(
+        return Optional.of(new CounselorReceiverInfo(
             data.counselorId(),
             data.name()
-        );
+        ));
     }
 }
