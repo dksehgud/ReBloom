@@ -16,6 +16,7 @@ import com.ssafy.rebloom.report_service.report.dto.response.ChildrenReportRespon
 import com.ssafy.rebloom.report_service.report.dto.response.CounselorCommentResponseDto;
 import com.ssafy.rebloom.report_service.report.dto.response.DiaryEmotionPointResponseDto;
 import com.ssafy.rebloom.report_service.report.dto.response.DiaryEmotionResponseDto;
+import com.ssafy.rebloom.report_service.report.event.ParentReportCreatedLocalEvent;
 import com.ssafy.rebloom.report_service.report.repository.ChildrenReportRepository;
 import com.ssafy.rebloom.report_service.report.repository.CounselorCommentRepository;
 import java.time.LocalDate;
@@ -26,6 +27,7 @@ import java.util.TreeMap;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -38,6 +40,7 @@ public class ChildrenReportService {
     private final CounselorCommentRepository counselorCommentRepository;
     private final DiaryAnalysisRepository diaryAnalysisRepository;
     private final AuthAccessClient authAccessClient;
+    private final ApplicationEventPublisher applicationEventPublisher;
 
     @Transactional
     public ChildrenReportResponseDto create(UUID parentId, UUID childrenId, ChildrenReportCreateRequestDto request) {
@@ -54,7 +57,19 @@ public class ChildrenReportService {
             .hasCounselorComment(false)
             .build();
 
-        return toResponse(childrenReportRepository.save(childrenReport));
+        ChildrenReport savedReport = childrenReportRepository.save(childrenReport);
+
+        applicationEventPublisher.publishEvent(
+            new ParentReportCreatedLocalEvent(
+                savedReport.getId(),
+                savedReport.getChildrenId(),
+                savedReport.getParentId(),
+                savedReport.getReportDate(),
+                savedReport.getCreatedAt()
+            )
+        );
+
+        return toResponse(savedReport);
     }
 
     @Transactional

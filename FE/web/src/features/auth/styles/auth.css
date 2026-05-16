@@ -154,7 +154,7 @@ body[data-shell-mode='webview'] .login-screen {
 .login-header h1 {
   margin: 0;
   text-align: center;
-  color: #4d3e3e;
+  color: #2d3748;
   font-family: 'Poppins', 'Noto Sans KR', sans-serif;
   font-size: 30px;
   font-weight: 700;
@@ -260,7 +260,7 @@ body[data-shell-mode='webview'] .auth-content {
 }
 
 .auth-title {
-  color: #4d3e3e;
+  color: #2d3748;
   font-family: 'Poppins', 'Noto Sans KR', sans-serif;
   font-size: 30px;
   font-weight: 700;

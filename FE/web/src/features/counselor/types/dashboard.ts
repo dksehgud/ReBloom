@@ -60,6 +60,7 @@ type ExpressionTrendPoint = {
   label: string
   value: number
   emotionKey?: DiaryEmotionKey
+  hasConversation?: boolean
   variant?: string
 }
 

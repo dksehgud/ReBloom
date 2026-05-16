@@ -473,11 +473,18 @@ body[data-shell-mode='webview'] .child-diary-list-page__body--list {
 }
 
 .diary-list-card__summary {
+  display: -webkit-box;
+  max-width: 100%;
+  overflow: hidden;
   color: #364153;
   font-family: 'Inter', 'Noto Sans KR', sans-serif;
   font-size: 14px;
   font-weight: 500;
   line-height: 1.625;
+  overflow-wrap: anywhere;
+  word-break: keep-all;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 }
 
 .diary-list-card__mood {
@@ -685,11 +692,13 @@ body[data-shell-mode='webview'] .child-diary-list-page__body--list {
 
 .diary-detail-view__body-text {
   margin: 0;
+  max-width: 100%;
   color: #717182;
   font-family: 'Inter', 'Noto Sans KR', sans-serif;
   font-size: 14px;
   font-weight: 700;
   line-height: 1.428;
+  overflow-wrap: anywhere;
   white-space: pre-wrap;
   word-break: keep-all;
 }

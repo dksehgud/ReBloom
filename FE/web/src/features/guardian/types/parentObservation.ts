@@ -20,6 +20,7 @@ export type ParentObservationRecord = {
   weekday: string
   mood: string
   description: string
+  hasCounselorComment: boolean
   counselorComment?: ParentObservationCounselorComment | null
 }
 

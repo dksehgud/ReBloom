@@ -229,6 +229,7 @@ describe('parent observation API functions', () => {
               {
                 context: 'Calm evening',
                 emotionTag: 'calm',
+                hasCounselorComment: true,
                 reportDate: '2026-05-14T18:30:00',
                 reportId: 'report-1',
               },
@@ -268,6 +269,7 @@ describe('parent observation API functions', () => {
     })
 
     expect(list.records).toHaveLength(1)
+    expect(list.records[0]?.hasCounselorComment).toBe(true)
     expect(detail.id).toBe('report-1')
     expect(comment?.commentId).toBe('comment-1')
     expect(apiRequestMock).toHaveBeenNthCalledWith(

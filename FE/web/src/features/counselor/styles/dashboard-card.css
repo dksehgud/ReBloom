@@ -16,6 +16,10 @@
   margin: 0 0 18px;
 }
 
+.counselor-dashboard-card-title.is-info-open {
+  z-index: 120;
+}
+
 .counselor-dashboard-card-title h3 {
   margin: 0;
   color: var(--dashboard-text);
@@ -29,6 +33,10 @@
   display: inline-flex;
   align-items: center;
   z-index: 31;
+}
+
+.counselor-dashboard-card-title.is-info-open .counselor-dashboard-info-wrap {
+  z-index: 121;
 }
 
 .counselor-dashboard-info-button {
@@ -89,6 +97,7 @@
   line-height: 1.5;
   text-align: center;
   white-space: normal;
+  overflow-wrap: anywhere;
   word-break: keep-all;
 }
 

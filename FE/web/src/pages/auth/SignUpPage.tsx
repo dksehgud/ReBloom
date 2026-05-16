@@ -325,7 +325,7 @@ function SignUpPage({ onBackToLogin }: SignUpPageProps) {
         '회원가입 주소 검색',
       )
     } catch {
-      setAddressError('주소 검색창을 여는 데 실패했어요. 기본 주소를 직접 입력해 주세요.')
+      setAddressError('주소 검색창을 여는 데 실패했어요. 다시 시도해 주세요.')
     } finally {
       setIsLoadingAddressSearch(false)
     }
@@ -665,12 +665,6 @@ function SignUpPage({ onBackToLogin }: SignUpPageProps) {
           isPasswordRequired={!isOAuthSignup}
           name={name}
           nameError={nameError}
-          onBaseAddressChange={(event) => {
-            setBaseAddress(event.target.value)
-            setLatitude(undefined)
-            setLongitude(undefined)
-            setAddressError(undefined)
-          }}
           onBirthDateChange={handleBirthDateChange}
           onDetailAddressChange={(event) => setDetailAddress(event.target.value)}
           onNameChange={(event) => setName(event.target.value)}

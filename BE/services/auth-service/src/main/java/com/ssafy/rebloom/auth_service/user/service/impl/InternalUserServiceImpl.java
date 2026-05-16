@@ -4,10 +4,15 @@ import com.ssafy.rebloom.auth_service.device.domain.entity.Device;
 import com.ssafy.rebloom.auth_service.device.domain.enums.DeviceType;
 import com.ssafy.rebloom.auth_service.device.repository.DeviceRepository;
 import com.ssafy.rebloom.auth_service.user.domain.entity.Children;
+import com.ssafy.rebloom.auth_service.user.domain.entity.ChildrenCounselorRelation;
+import com.ssafy.rebloom.auth_service.user.domain.entity.Counselor;
 import com.ssafy.rebloom.auth_service.user.domain.entity.User;
+import com.ssafy.rebloom.auth_service.user.domain.enums.RelationStatus;
 import com.ssafy.rebloom.auth_service.user.dto.response.ChildAgeResponseDto;
+import com.ssafy.rebloom.auth_service.user.dto.response.ChildConnectedCounselorResponseDto;
 import com.ssafy.rebloom.auth_service.user.dto.response.ChildGpsResponseDto;
 import com.ssafy.rebloom.auth_service.user.dto.response.ChildrenIotInfoResponseDto;
+import com.ssafy.rebloom.auth_service.user.repository.ChildrenCounselorRelationRepository;
 import com.ssafy.rebloom.auth_service.user.repository.UserRepository;
 import com.ssafy.rebloom.auth_service.user.service.InternalUserService;
 import com.ssafy.rebloom.common.exception.CustomException;
@@ -30,6 +35,8 @@ public class InternalUserServiceImpl implements InternalUserService {
 
     private final UserRepository userRepository;
     private final DeviceRepository deviceRepository;
+
+    private final ChildrenCounselorRelationRepository childrenCounselorRelationRepository;
 
     @Override
     public ChildGpsResponseDto getChildGpsInfo(UUID childId) {
@@ -93,6 +100,27 @@ public class InternalUserServiceImpl implements InternalUserService {
         return new ChildrenIotInfoResponseDto(
             children.getId(),
             device.getSerialNumber()
+        );
+    }
+
+    @Override
+    public ChildConnectedCounselorResponseDto getConnectedCounselorByChild(UUID childrenId) {
+        return childrenCounselorRelationRepository
+            .findFirstByChildren_IdAndRelationStatus(childrenId, RelationStatus.ACTIVE)
+            .map(this::toChildConnectedCounselorResponse)
+            .orElseGet(ChildConnectedCounselorResponseDto::disconnected);
+    }
+
+    private ChildConnectedCounselorResponseDto toChildConnectedCounselorResponse(
+        ChildrenCounselorRelation relation
+    ) {
+        Counselor counselor = relation.getCounselor();
+        return new ChildConnectedCounselorResponseDto(
+            true,
+            counselor.getId(),
+            counselor.getName(),
+            counselor.getEmail(),
+            counselor.getHospitalName()
         );
     }
 }

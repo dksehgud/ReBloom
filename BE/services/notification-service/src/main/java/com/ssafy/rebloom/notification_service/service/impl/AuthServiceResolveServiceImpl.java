@@ -4,10 +4,13 @@ import com.ssafy.rebloom.common.dto.BaseResponse;
 import com.ssafy.rebloom.common.exception.CustomException;
 import com.ssafy.rebloom.common.exception.ErrorCode;
 import com.ssafy.rebloom.notification_service.client.AuthServiceInternalClient;
+import com.ssafy.rebloom.notification_service.dto.CounselorReceiverInfo;
 import com.ssafy.rebloom.notification_service.dto.ParentReceiverInfo;
 import com.ssafy.rebloom.notification_service.dto.response.ChildrenIotInfoResponseDto;
+import com.ssafy.rebloom.notification_service.dto.response.CounselorReceiverResponseDto;
 import com.ssafy.rebloom.notification_service.dto.response.ParentReceiverResponseDto;
 import com.ssafy.rebloom.notification_service.service.AuthServiceResolveService;
+import java.util.Optional;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -56,5 +59,22 @@ public class AuthServiceResolveServiceImpl implements AuthServiceResolveService 
         }
 
         return childrenIotInfoResponseDto;
+    }
+
+    @Override
+    public Optional<CounselorReceiverInfo> resolveCounselorByChildrenId(UUID childrenId) {
+        BaseResponse<CounselorReceiverResponseDto> response =
+            authServiceInternalClient.getCounselorReceiver(childrenId);
+
+        CounselorReceiverResponseDto data = response.getData();
+
+        if (data == null || !data.connected() || data.counselorId() == null) {
+            return Optional.empty();
+        }
+
+        return Optional.of(new CounselorReceiverInfo(
+            data.counselorId(),
+            data.name()
+        ));
     }
 }

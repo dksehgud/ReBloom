@@ -24,6 +24,10 @@ function EmotionFlowLineChart({ data }: EmotionFlowLineChartProps) {
     diary: '#344966',
     conversation: '#88b5c4',
   }
+  const hasSeriesData: Record<EmotionFlowSeries, boolean> = {
+    diary: data.some((point) => point.diary > 0),
+    conversation: data.some((point) => point.conversation > 0),
+  }
 
   const getX = (index: number) =>
     data.length > 1 ? paddingLeft + horizontalGap * index : paddingLeft + chartWidth / 2
@@ -60,16 +64,20 @@ function EmotionFlowLineChart({ data }: EmotionFlowLineChartProps) {
           </g>
         )
       })}
-      <path
-        className="counselor-emotion-flow-line is-diary"
-        d={buildPath('diary')}
-        style={{ stroke: seriesColors.diary }}
-      />
-      <path
-        className="counselor-emotion-flow-line is-conversation"
-        d={buildPath('conversation')}
-        style={{ stroke: seriesColors.conversation }}
-      />
+      {hasSeriesData.diary ? (
+        <path
+          className="counselor-emotion-flow-line is-diary"
+          d={buildPath('diary')}
+          style={{ stroke: seriesColors.diary }}
+        />
+      ) : null}
+      {hasSeriesData.conversation ? (
+        <path
+          className="counselor-emotion-flow-line is-conversation"
+          d={buildPath('conversation')}
+          style={{ stroke: seriesColors.conversation }}
+        />
+      ) : null}
       {data.map((item, index) => (
         <text
           className="counselor-emotion-flow-label"

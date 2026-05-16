@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 
 import {
   createCounselorComment,
@@ -396,6 +396,13 @@ function updateObservationRecordComment(
   )
 }
 
+function getInitialSidebarCollapsed() {
+  return (
+    typeof window !== 'undefined' &&
+    window.matchMedia('(max-width: 1180px)').matches
+  )
+}
+
 function getCardsAverageValue(
   cards: Array<
     CounselorDiaryAnalysisCardDto | CounselorConversationAnalysisCardDto
@@ -415,6 +422,22 @@ function getCardsAverageValue(
   return clampMetricValue(total / cards.length)
 }
 
+function getAnalysisCardsForFilter(
+  filter: ExpressionFilter,
+  diaryCards: CounselorDiaryAnalysisCardDto[],
+  conversationCards: CounselorConversationAnalysisCardDto[],
+) {
+  if (filter === 'diary') {
+    return diaryCards
+  }
+
+  if (filter === 'conversation') {
+    return conversationCards
+  }
+
+  return [...diaryCards, ...conversationCards]
+}
+
 function mapAnalysisContentToExpressionAnalysis(
   response: CounselorAnalysisContentResponseDto,
 ): DashboardExpressionAnalysis {
@@ -423,26 +446,34 @@ function mapAnalysisContentToExpressionAnalysis(
     Record<ExpressionFilter, DashboardMetricPoint[]>
   >(
     (nextTrend, filter) => {
-      nextTrend[filter] = dailyGroups.map((group) => {
-        const diaryCards = group.diaryList ?? []
-        const conversationCards = group.conversationList ?? []
-        const cards =
-          filter === 'diary'
-            ? diaryCards
-            : filter === 'conversation'
-              ? conversationCards
-              : [...diaryCards, ...conversationCards]
-        const firstDiaryEmotionKey = mapEmotionIconToKey(
-          diaryCards[0]?.emotionIcon,
-        )
+      nextTrend[filter] = dailyGroups
+        .map((group): DashboardMetricPoint | null => {
+          const diaryCards = group.diaryList ?? []
+          const conversationCards = group.conversationList ?? []
+          const cards = getAnalysisCardsForFilter(
+            filter,
+            diaryCards,
+            conversationCards,
+          )
 
-        return {
-          emotionKey:
-            filter !== 'conversation' ? firstDiaryEmotionKey : undefined,
-          label: formatWeekdayLabel(group.date),
-          value: getCardsAverageValue(cards),
-        }
-      })
+          if (cards.length === 0) {
+            return null
+          }
+
+          const firstDiaryEmotionKey = mapEmotionIconToKey(
+            diaryCards[0]?.emotionIcon,
+          )
+
+          return {
+            emotionKey:
+              filter !== 'conversation' ? firstDiaryEmotionKey : undefined,
+            hasConversation:
+              filter !== 'diary' ? conversationCards.length > 0 : undefined,
+            label: formatWeekdayLabel(group.date),
+            value: getCardsAverageValue(cards),
+          }
+        })
+        .filter((point): point is DashboardMetricPoint => point !== null)
 
       return nextTrend
     },
@@ -510,7 +541,9 @@ function mapAnalysisContentToExpressionAnalysis(
 function useCounselorDashboardState() {
   const accessToken = useAppSessionStore((state) => state.accessToken)
   const isMockMode = useCounselorMockMode()
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false)
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(
+    getInitialSidebarCollapsed,
+  )
   const [childItems, setChildItems] = useState<ChildListItem[]>(() =>
     isMockMode ? initialChildList : [],
   )
@@ -603,7 +636,11 @@ function useCounselorDashboardState() {
     useState(false)
   const [observationCommentError, setObservationCommentError] =
     useState<string>()
-  const mainColumnRef = useRef<HTMLDivElement | null>(null)
+  const [mainColumnElement, setMainColumnElement] =
+    useState<HTMLDivElement | null>(null)
+  const mainColumnRef = useCallback((node: HTMLDivElement | null) => {
+    setMainColumnElement(node)
+  }, [])
 
   const getWeekControls = (section: DashboardWeekSection) => {
     const weekOffset = weekOffsets[section]
@@ -1301,9 +1338,11 @@ function useCounselorDashboardState() {
   ])
 
   useEffect(() => {
-    const columnElement = mainColumnRef.current
+    if (typeof window === 'undefined') {
+      return undefined
+    }
 
-    if (!columnElement) return undefined
+    if (!mainColumnElement) return undefined
 
     const updateAnalysisHeight = () => {
       const shouldMatchColumns = window.matchMedia('(min-width: 901px)').matches
@@ -1314,21 +1353,25 @@ function useCounselorDashboardState() {
       }
 
       setAnalysisCardHeight(
-        Math.round(columnElement.getBoundingClientRect().height),
+        Math.round(mainColumnElement.getBoundingClientRect().height),
       )
     }
 
-    updateAnalysisHeight()
+    const animationFrameId = window.requestAnimationFrame(updateAnalysisHeight)
 
-    const resizeObserver = new ResizeObserver(updateAnalysisHeight)
-    resizeObserver.observe(columnElement)
+    const resizeObserver =
+      typeof ResizeObserver === 'undefined'
+        ? null
+        : new ResizeObserver(updateAnalysisHeight)
+    resizeObserver?.observe(mainColumnElement)
     window.addEventListener('resize', updateAnalysisHeight)
 
     return () => {
-      resizeObserver.disconnect()
+      window.cancelAnimationFrame(animationFrameId)
+      resizeObserver?.disconnect()
       window.removeEventListener('resize', updateAnalysisHeight)
     }
-  }, [])
+  }, [mainColumnElement])
 
   return {
     analysisCardHeight,
@@ -1378,3 +1421,4 @@ function useCounselorDashboardState() {
 }
 
 export default useCounselorDashboardState
+export { mapAnalysisContentToExpressionAnalysis }

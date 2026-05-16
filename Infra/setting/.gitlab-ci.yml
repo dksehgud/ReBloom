@@ -28,6 +28,7 @@ workflow:
     - if: '$CI_COMMIT_BRANCH == "develop"'
       changes:
         - "BE/**/*"
+        - "AI/bio-ml-service/**/*"
         - "FE/web/**/*"
         - "FE/mobile-app/**/*"
     - when: never
@@ -306,3 +307,21 @@ push-notification-service:
         - "BE/gradlew"
         - "BE/gradlew.bat"
         - "BE/gradle/**/*"
+
+push-bio-ml-service:
+  stage: docker-push
+  tags:
+    - rebloom-dev
+  variables:
+    IMAGE_NAME: rebloom-bio-ml
+  before_script:
+    - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+  script:
+    - echo "----- bio-ml-service Docker 이미지 빌드 및 Push 시작 -----"
+    - docker pull $DOCKER_NAMESPACE/${IMAGE_NAME}:latest || true
+    - docker build --cache-from $DOCKER_NAMESPACE/${IMAGE_NAME}:latest -t $DOCKER_NAMESPACE/${IMAGE_NAME}:$IMAGE_TAG -t $DOCKER_NAMESPACE/${IMAGE_NAME}:latest -f AI/bio-ml-service/Dockerfile AI/bio-ml-service
+    - docker push $DOCKER_NAMESPACE/${IMAGE_NAME}:$IMAGE_TAG
+    - docker push $DOCKER_NAMESPACE/${IMAGE_NAME}:latest
+  rules:
+    - changes:
+        - "AI/bio-ml-service/**/*"

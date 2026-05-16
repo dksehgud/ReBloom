@@ -91,6 +91,10 @@ function mapCounselorComment(item: ParentObservationListItemDto) {
   }
 }
 
+function hasCounselorComment(item: ParentObservationListItemDto) {
+  return item.hasCounselorComment ?? Boolean(item.counselorComment)
+}
+
 function formatReportDate(reportDate: string) {
   const datePart = getDatePart(reportDate)
   const [, month, day] = datePart.split('-')
@@ -129,6 +133,7 @@ function mapObservationListItemToRecord(
     weekday: getWeekdayLabel(item),
     mood: item.emotionTag,
     description: item.context,
+    hasCounselorComment: hasCounselorComment(item),
     counselorComment: mapCounselorComment(item),
   }
 }

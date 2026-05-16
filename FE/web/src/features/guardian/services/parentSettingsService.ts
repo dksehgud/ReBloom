@@ -8,9 +8,9 @@ function getCounselorStatusLabel(
   status: ParentCounselorCandidate['relationStatus'],
 ) {
   if (status === 'PENDING') return '요청중'
-  if (status === 'ACTIVE') return '연결'
+  if (status === 'ACTIVE') return '연결됨'
 
-  return '연결'
+  return '연결됨'
 }
 
 function isCounselorProfile(profile: ParentCounselorProfileDto) {

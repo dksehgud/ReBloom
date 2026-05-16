@@ -18,6 +18,10 @@
   font: inherit;
 }
 
+.counselor-settings-sidebar-backdrop {
+  display: none;
+}
+
 .counselor-settings-sidebar {
   position: sticky;
   top: 0;
@@ -376,41 +380,78 @@
 
 @media (max-width: 1180px) {
   .counselor-settings-page {
-    flex-direction: column;
+    display: block;
   }
 
   .counselor-settings-sidebar {
-    position: static;
-    width: 100%;
-    height: auto;
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 90;
+    width: min(84vw, 300px);
+    height: 100svh;
     flex: none;
-    border-right: 0;
-    border-bottom: 1px solid rgba(168, 178, 188, 0.18);
+    background: var(--dashboard-bg);
+    border-right-color: rgba(168, 178, 188, 0.18);
+    box-shadow: 18px 0 38px rgba(38, 55, 76, 0.16);
+    transform: translateX(0);
+    transition:
+      transform 220ms ease,
+      box-shadow 220ms ease;
+  }
+
+  .counselor-settings-page.is-sidebar-collapsed .counselor-settings-sidebar {
+    box-shadow: none;
+    pointer-events: none;
+    transform: translateX(calc(-100% - 24px));
+  }
+
+  .counselor-settings-page:not(.is-sidebar-collapsed)
+    .counselor-settings-mobile-header {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .counselor-settings-sidebar-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 70;
+    display: block;
+    padding: 0;
+    background: rgba(31, 43, 58, 0.28);
+    border: 0;
+    cursor: pointer;
   }
 
   .counselor-settings-sidebar__body {
-    padding: 14px 18px;
+    padding: 16px;
   }
 
   .counselor-settings-sidebar__nav {
-    flex-direction: row;
-    overflow-x: auto;
+    flex-direction: column;
+    overflow-x: visible;
   }
 
   .counselor-settings-sidebar__nav button {
-    width: auto;
-    min-width: 132px;
+    width: 100%;
+    min-width: 0;
   }
 
   .counselor-settings-sidebar__footer {
-    display: none;
+    display: block;
+  }
+
+  .counselor-settings-main {
+    min-height: 100svh;
+    padding-top: calc(76px + env(safe-area-inset-top, 0px));
   }
 }
 
 @media (max-width: 900px) {
   .counselor-settings-main {
     min-height: auto;
-    padding: 24px 18px;
+    padding-right: 18px;
+    padding-left: 18px;
   }
 }
 
