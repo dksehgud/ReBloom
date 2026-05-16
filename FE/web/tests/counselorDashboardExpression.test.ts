@@ -25,7 +25,9 @@ describe('counselor dashboard expression analysis mapping', () => {
     const analysis = mapAnalysisContentToExpressionAnalysis(response)
 
     expect(analysis.trend.all).toHaveLength(1)
+    expect(analysis.trend.all[0]?.hasConversation).toBe(false)
     expect(analysis.trend.diary).toHaveLength(1)
+    expect(analysis.trend.diary[0]?.hasConversation).toBeUndefined()
     expect(analysis.trend.conversation).toEqual([])
   })
 
@@ -49,7 +51,9 @@ describe('counselor dashboard expression analysis mapping', () => {
     const analysis = mapAnalysisContentToExpressionAnalysis(response)
 
     expect(analysis.trend.all).toHaveLength(1)
+    expect(analysis.trend.all[0]?.hasConversation).toBe(true)
     expect(analysis.trend.conversation).toHaveLength(1)
+    expect(analysis.trend.conversation[0]?.hasConversation).toBe(true)
     expect(analysis.trend.diary).toEqual([])
   })
 })

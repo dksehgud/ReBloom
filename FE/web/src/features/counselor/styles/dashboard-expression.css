@@ -102,6 +102,10 @@
   border-radius: 12px;
 }
 
+.counselor-expression-empty {
+  margin-bottom: 18px;
+}
+
 .counselor-timeline {
   display: flex;
   flex-direction: column;

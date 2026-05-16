@@ -460,6 +460,8 @@ function mapAnalysisContentToExpressionAnalysis(
           return {
             emotionKey:
               filter !== 'conversation' ? firstDiaryEmotionKey : undefined,
+            hasConversation:
+              filter !== 'diary' ? conversationCards.length > 0 : undefined,
             label: formatWeekdayLabel(group.date),
             value: getCardsAverageValue(cards),
           }

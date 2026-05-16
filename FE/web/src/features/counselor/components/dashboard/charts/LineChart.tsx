@@ -5,6 +5,7 @@ type LineChartPoint = {
   label: string
   value: number
   emotionKey?: DiaryEmotionKey
+  hasConversation?: boolean
 }
 
 type LineChartProps = {
@@ -32,7 +33,8 @@ function LineChart({
     const y = paddingTop + chartHeight - (item.value / 100) * chartHeight
     return { ...item, x, y }
   })
-  const path = points
+  const linePoints = points.filter((point) => point.hasConversation ?? true)
+  const path = linePoints
     .map((point, index) => `${index === 0 ? 'M' : 'L'} ${point.x} ${point.y}`)
     .join(' ')
 
@@ -54,30 +56,38 @@ function LineChart({
           </g>
         )
       })}
-      {showLine ? <path d={path} style={{ stroke: color }} /> : null}
-      {points.map((point, index) => (
-        <g key={`${point.label}-${index}`}>
-          {showLine ? <circle cx={point.x} cy={point.y} r={4.8} style={{ fill: color }} /> : null}
-          {showEmoji && point.emotionKey ? (
-            <foreignObject
-              className="counselor-line-chart-emotion"
-              x={point.x - 11}
-              y={point.y - 34}
-              width="22"
-              height="22"
-            >
-              <DiaryEmotionIcon
-                emotionKey={point.emotionKey}
-                size={22}
-                className="counselor-line-chart-emotion-icon"
-              />
-            </foreignObject>
-          ) : null}
-          <text className="counselor-line-chart-label" x={point.x} y={height - 8}>
-            {point.label}
-          </text>
-        </g>
-      ))}
+      {showLine && linePoints.length > 0 ? (
+        <path d={path} style={{ stroke: color }} />
+      ) : null}
+      {points.map((point, index) => {
+        const shouldShowDot = showLine && (point.hasConversation ?? true)
+
+        return (
+          <g key={`${point.label}-${index}`}>
+            {shouldShowDot ? (
+              <circle cx={point.x} cy={point.y} r={4.8} style={{ fill: color }} />
+            ) : null}
+            {showEmoji && point.emotionKey ? (
+              <foreignObject
+                className="counselor-line-chart-emotion"
+                x={point.x - 11}
+                y={point.y - 34}
+                width="22"
+                height="22"
+              >
+                <DiaryEmotionIcon
+                  emotionKey={point.emotionKey}
+                  size={22}
+                  className="counselor-line-chart-emotion-icon"
+                />
+              </foreignObject>
+            ) : null}
+            <text className="counselor-line-chart-label" x={point.x} y={height - 8}>
+              {point.label}
+            </text>
+          </g>
+        )
+      })}
     </svg>
   )
 }
