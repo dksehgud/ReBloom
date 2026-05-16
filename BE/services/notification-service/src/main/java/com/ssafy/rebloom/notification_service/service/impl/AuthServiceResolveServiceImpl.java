@@ -4,8 +4,10 @@ import com.ssafy.rebloom.common.dto.BaseResponse;
 import com.ssafy.rebloom.common.exception.CustomException;
 import com.ssafy.rebloom.common.exception.ErrorCode;
 import com.ssafy.rebloom.notification_service.client.AuthServiceInternalClient;
+import com.ssafy.rebloom.notification_service.dto.CounselorReceiverInfo;
 import com.ssafy.rebloom.notification_service.dto.ParentReceiverInfo;
 import com.ssafy.rebloom.notification_service.dto.response.ChildrenIotInfoResponseDto;
+import com.ssafy.rebloom.notification_service.dto.response.CounselorReceiverResponseDto;
 import com.ssafy.rebloom.notification_service.dto.response.ParentReceiverResponseDto;
 import com.ssafy.rebloom.notification_service.service.AuthServiceResolveService;
 import java.util.UUID;
@@ -56,5 +58,25 @@ public class AuthServiceResolveServiceImpl implements AuthServiceResolveService 
         }
 
         return childrenIotInfoResponseDto;
+    }
+
+    @Override
+    public CounselorReceiverInfo resolveCounselorByChildrenId(UUID childrenId) {
+        BaseResponse<CounselorReceiverResponseDto> response =
+            authServiceInternalClient.getCounselorReceiver(childrenId);
+
+        CounselorReceiverResponseDto data = response.getData();
+
+        if (data == null || !data.connected() || data.counselorId() == null) {
+            throw new CustomException(
+                "연결된 상담사를 찾을 수 없습니다.",
+                ErrorCode.NOT_FOUND
+            );
+        }
+
+        return new CounselorReceiverInfo(
+            data.counselorId(),
+            data.name()
+        );
     }
 }

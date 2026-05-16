@@ -1,0 +1,5 @@
+INSERT INTO notification_types (name)
+VALUES
+    ('PARENT_REPORT_NEW'),
+    ('PARENT_REPORT_REPLY')
+ON CONFLICT (name) DO NOTHING;

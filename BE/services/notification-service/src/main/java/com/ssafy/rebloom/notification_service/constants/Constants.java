@@ -24,5 +24,7 @@ public final class Constants {
     public static final String CONVERSATION_START_TYPE = "conversation_start";
 
     public static final String ANDROID_CHANNEL_ID = "rebloom_notification";
-
+    public static final String KEY_PREFIX = "notification:event:idempotency:";
+    public static final long PROCESSING_TTL = 10L;
+    public static final long COMPLETED_TTL = 7L;
 }

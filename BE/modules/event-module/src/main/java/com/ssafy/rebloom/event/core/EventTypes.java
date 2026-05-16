@@ -11,6 +11,9 @@ public final class EventTypes {
     public static final String MODEL_RETRAINING_REQUESTED = "MODEL_RETRAINING_REQUESTED";
 
     public static final String PHQ_COMPLETED = "PHQ_COMPLETED";
+
+    public static final String PARENT_REPORT_CREATED = "PARENT_REPORT_CREATED";
+    public static final String PARENT_REPORT_COMMENT_CREATED = "PARENT_REPORT_COMMENT_CREATED";
     private EventTypes() {
     }
 }

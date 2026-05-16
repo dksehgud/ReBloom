@@ -13,4 +13,6 @@ dependencies {
 
 	// security module
 	implementation project(':modules:security-module')
+
+	implementation project(':modules:event-module')
 }

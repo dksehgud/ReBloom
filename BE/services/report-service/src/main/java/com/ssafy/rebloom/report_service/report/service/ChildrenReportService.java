@@ -4,6 +4,7 @@ import com.ssafy.rebloom.common.exception.CustomException;
 import com.ssafy.rebloom.common.exception.ErrorCode;
 import com.ssafy.rebloom.report_service.analysis.client.AuthAccessClient;
 import com.ssafy.rebloom.report_service.analysis.domain.entity.DiaryAnalysis;
+import com.ssafy.rebloom.report_service.analysis.dto.request.ParentReportCreatedLocalEvent;
 import com.ssafy.rebloom.report_service.analysis.repository.DiaryAnalysisRepository;
 import com.ssafy.rebloom.report_service.report.domain.entity.ChildrenReport;
 import com.ssafy.rebloom.report_service.report.domain.entity.CounselorComment;
@@ -26,6 +27,7 @@ import java.util.TreeMap;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -38,6 +40,7 @@ public class ChildrenReportService {
     private final CounselorCommentRepository counselorCommentRepository;
     private final DiaryAnalysisRepository diaryAnalysisRepository;
     private final AuthAccessClient authAccessClient;
+    private final ApplicationEventPublisher applicationEventPublisher;
 
     @Transactional
     public ChildrenReportResponseDto create(UUID parentId, UUID childrenId, ChildrenReportCreateRequestDto request) {
@@ -53,6 +56,18 @@ public class ChildrenReportService {
             .reportDate(request.reportDate())
             .hasCounselorComment(false)
             .build();
+
+        ChildrenReport savedReport = childrenReportRepository.save(childrenReport);
+
+        applicationEventPublisher.publishEvent(
+            new ParentReportCreatedLocalEvent(
+                savedReport.getId(),
+                savedReport.getChildrenId(),
+                savedReport.getParentId(),
+                savedReport.getReportDate(),
+                savedReport.getCreatedAt()
+            )
+        );
 
         return toResponse(childrenReportRepository.save(childrenReport));
     }
