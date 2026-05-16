@@ -56,10 +56,13 @@
 
 .counselor-dashboard-hero h2 {
   margin: 0;
+  max-width: 100%;
   color: #1f2b3a;
   font-size: 18px;
   font-weight: 700;
   line-height: 1.5;
+  overflow-wrap: anywhere;
+  word-break: keep-all;
 }
 
 .counselor-dashboard-profile-meta {
@@ -78,7 +81,9 @@
 .counselor-dashboard-profile-meta span {
   display: inline-flex;
   align-items: center;
-  white-space: nowrap;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  white-space: normal;
 }
 
 .counselor-dashboard-profile-meta span:not(:last-child)::after {

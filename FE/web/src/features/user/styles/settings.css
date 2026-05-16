@@ -83,10 +83,12 @@
 
 .child-profile-address-modal__address-text {
   margin: 0;
+  max-width: 100%;
   color: #111111;
   font-family: 'Arimo', 'Noto Sans KR', sans-serif;
   font-size: 14px;
   line-height: 1.6;
+  overflow-wrap: anywhere;
   white-space: pre-wrap;
   word-break: keep-all;
 }

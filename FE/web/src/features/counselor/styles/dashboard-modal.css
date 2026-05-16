@@ -98,6 +98,7 @@
 }
 
 .counselor-observation-modal-summary {
+  max-width: 100%;
   padding: 16px;
   color: #4a5568;
   background: rgba(155, 196, 168, 0.04);
@@ -105,6 +106,9 @@
   border-radius: 16px;
   font-size: 14px;
   line-height: 1.62;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+  word-break: keep-all;
 }
 
 .counselor-connection-floating-button {
@@ -403,9 +407,13 @@
 
 .counselor-observation-comment-item p {
   margin: 4px 0 0;
+  max-width: 100%;
   color: #718096;
   font-size: 12px;
   line-height: 1.62;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+  word-break: keep-all;
 }
 
 .counselor-observation-comment-empty {
@@ -433,6 +441,8 @@
   font: inherit;
   font-size: 12px;
   line-height: 1.5;
+  overflow-wrap: anywhere;
+  word-break: keep-all;
 }
 
 .counselor-observation-comment-form textarea:focus {
