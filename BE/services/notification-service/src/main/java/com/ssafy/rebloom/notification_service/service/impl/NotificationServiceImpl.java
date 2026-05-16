@@ -81,7 +81,7 @@ public class NotificationServiceImpl implements NotificationService {
             payload
         ));
 
-        anomalyAlertService.handleValidAnomaly(childrenId, correlationId);
+        anomalyAlertService.handleValidAnomaly(childrenId, receiverInfo.parentId(), correlationId);
     }
 
     @Override

@@ -1,10 +1,12 @@
 package com.ssafy.rebloom.notification_service.service.impl;
 
+import com.ssafy.rebloom.event.config.property.KafkaCommonProperties;
+import com.ssafy.rebloom.event.core.EventTypes;
+import com.ssafy.rebloom.event.dto.GpsCheckRequestedEvent;
+import com.ssafy.rebloom.event.publisher.EventPublisher;
+import com.ssafy.rebloom.event.support.EventKeyGenerator;
 import com.ssafy.rebloom.notification_service.constants.Constants;
-import com.ssafy.rebloom.notification_service.dto.response.ChildrenIotInfoResponseDto;
 import com.ssafy.rebloom.notification_service.service.AnomalyAlertService;
-import com.ssafy.rebloom.notification_service.service.AuthServiceResolveService;
-import com.ssafy.rebloom.notification_service.service.MqttPublishService;
 import com.ssafy.rebloom.notification_service.service.RedisService;
 import java.time.Duration;
 import java.util.UUID;
@@ -18,37 +20,40 @@ import org.springframework.stereotype.Service;
 public class AnomalyAlertServiceImpl implements AnomalyAlertService {
 
     private final RedisService redisService;
-    private final AuthServiceResolveService authServiceResolveService;
-    private final MqttPublishService mqttPublishService;
+    private final EventPublisher eventPublisher;
+    private final KafkaCommonProperties kafkaProperties;
+    private final EventKeyGenerator eventKeyGenerator;
 
     @Override
-    public void handleValidAnomaly(UUID childrenId, String correlationId) {
+    public void handleValidAnomaly(UUID childrenId, UUID parentId, String correlationId) {
         long count = increaseWindowCount(childrenId);
         if (count < Constants.CONVERSATION_THRESHOLD) {
             log.debug("Anomaly window count increased. childrenId={}, count={}", childrenId, count);
             return;
         }
 
-        ChildrenIotInfoResponseDto iotInfo =
-            authServiceResolveService.resolveChildrenIotInfo(childrenId);
-
         if (!acquireConversationLock(childrenId)) {
-            log.debug("Conversation initiation ignored by lock. childrenId={}", childrenId);
+            log.debug("GPS check request ignored by conversation lock. childrenId={}", childrenId);
             return;
         }
 
         try {
-            mqttPublishService.publishConversationStart(iotInfo, correlationId);
-        } catch (Exception e) {
+            publishGpsCheckRequested(childrenId, parentId, correlationId);
+        } catch (RuntimeException e) {
             releaseConversationLock(childrenId);
-
             log.error(
-                "Failed to publish MQTT conversation start message. childrenId={}, serialNumber={}",
+                "Failed to publish GPS check requested event. childrenId={}, parentId={}",
                 childrenId,
-                iotInfo.serialNumber(),
+                parentId,
                 e
             );
+            throw e;
         }
+    }
+
+    @Override
+    public void releaseConversationLock(UUID childrenId) {
+        redisService.delete(conversationLockKey(childrenId));
     }
 
     private long increaseWindowCount(UUID childrenId) {
@@ -64,6 +69,33 @@ public class AnomalyAlertServiceImpl implements AnomalyAlertService {
         }
 
         return count;
+    }
+
+    private void publishGpsCheckRequested(
+        UUID childrenId,
+        UUID parentId,
+        String correlationId
+    ) {
+        GpsCheckRequestedEvent payload = new GpsCheckRequestedEvent(
+            childrenId,
+            parentId
+        );
+
+        String key = eventKeyGenerator.userKey(childrenId);
+        String idempotencyKey = eventKeyGenerator.idempotencyKey(
+            EventTypes.GPS_CHECK_REQUESTED,
+            childrenId.toString(),
+            correlationId != null ? correlationId : parentId.toString()
+        );
+
+        eventPublisher.publish(
+            kafkaProperties.getTopics().getGpsCheckRequested(),
+            key,
+            EventTypes.GPS_CHECK_REQUESTED,
+            correlationId,
+            idempotencyKey,
+            payload
+        );
     }
 
     private boolean acquireConversationLock(UUID childrenId) {
@@ -82,7 +114,4 @@ public class AnomalyAlertServiceImpl implements AnomalyAlertService {
         return Constants.CONVERSATION_LOCK_KEY_PREFIX + childrenId;
     }
 
-    private void releaseConversationLock(UUID childrenId) {
-        redisService.delete(conversationLockKey(childrenId));
-    }
 }
