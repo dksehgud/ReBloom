@@ -117,7 +117,6 @@ public class AnomalyAlertServiceImpl implements AnomalyAlertService {
     }
 
     @Override
-    @Transactional
     public void processDuePhases() {
         Set<String> keys = redisService.scanKeys(
             Constants.ANOMALY_ALERT_PHASE_KEY_PREFIX + "*"
