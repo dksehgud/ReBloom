@@ -355,6 +355,13 @@
   gap: 8px;
 }
 
+.parent-home-page__record-meta-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 100%;
+}
+
 .parent-home-page__record-badge {
   display: inline-flex;
   align-items: center;
@@ -369,6 +376,24 @@
   font-size: 11px;
   font-weight: 500;
   line-height: 16px;
+}
+
+.parent-home-page__record-comment-indicator {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 27px;
+  height: 27px;
+  flex-shrink: 0;
+  border-radius: 999px;
+  border: 1px solid rgba(217, 119, 69, 0.2);
+  background: rgba(217, 119, 69, 0.1);
+  color: #d97745;
+}
+
+.parent-home-page__record-comment-indicator svg {
+  width: 14px;
+  height: 14px;
 }
 
 .parent-home-page__record-description {

@@ -1,3 +1,5 @@
+import { FiMessageSquare } from 'react-icons/fi'
+
 import type { ParentObservationRecord } from '../types/parentObservation'
 
 type ParentObservationListSectionProps = {
@@ -86,6 +88,18 @@ function PromptIcon() {
   )
 }
 
+function CounselorCommentIndicator() {
+  return (
+    <span
+      className="parent-home-page__record-comment-indicator"
+      aria-label="상담사 코멘트 있음"
+      title="상담사 코멘트 있음"
+    >
+      <FiMessageSquare aria-hidden="true" />
+    </span>
+  )
+}
+
 function ParentObservationListSection({
   records,
   selectedDateLabel = null,
@@ -163,7 +177,12 @@ function ParentObservationListSection({
                 </div>
 
                 <div className="parent-home-page__record-content">
-                  <span className="parent-home-page__record-badge">{record.mood}</span>
+                  <div className="parent-home-page__record-meta-row">
+                    <span className="parent-home-page__record-badge">{record.mood}</span>
+                    {record.hasCounselorComment ? (
+                      <CounselorCommentIndicator />
+                    ) : null}
+                  </div>
                   <p className="parent-home-page__record-description">{record.description}</p>
                 </div>
               </>
