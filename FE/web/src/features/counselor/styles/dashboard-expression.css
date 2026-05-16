@@ -72,6 +72,20 @@
   background: transparent;
 }
 
+@media (max-width: 1180px) {
+  .counselor-expression-tabs {
+    align-items: center;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    width: 100%;
+    margin: 0 0 18px;
+  }
+
+  .counselor-expression-tabs .counselor-expression-more {
+    margin-left: 6px;
+  }
+}
+
 
 .counselor-ai-summary {
   margin-bottom: 14px;

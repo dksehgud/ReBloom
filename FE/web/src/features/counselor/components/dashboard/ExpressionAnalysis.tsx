@@ -74,7 +74,7 @@ function ExpressionAnalysis({
           className="counselor-expression-more"
           onClick={() => setIsEmotionFlowOpen(true)}
         >
-          감정 흐름 크게보기
+          감정 흐름 크게 보기
         </button>
       </div>
 

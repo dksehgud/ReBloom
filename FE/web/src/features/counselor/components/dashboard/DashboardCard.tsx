@@ -17,7 +17,11 @@ function DashboardCard({ title, children, className, info, style }: DashboardCar
       className={`counselor-dashboard-card${className ? ` ${className}` : ''}`}
       style={style}
     >
-      <div className="counselor-dashboard-card-title">
+      <div
+        className={`counselor-dashboard-card-title${
+          isInfoOpen ? ' is-info-open' : ''
+        }`}
+      >
         <h3>{title}</h3>
         {info ? (
           <span className="counselor-dashboard-info-wrap">
