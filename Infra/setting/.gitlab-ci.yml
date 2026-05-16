@@ -51,9 +51,14 @@ cache:
     - echo "----- ${SERVICE_NAME} 빌드 검증 시작 -----"
     - cd BE
     - chmod +x ./gradlew
-    - ./gradlew :services:${SERVICE_NAME}:build -x test
-  # artifact 업로드 제거
-  # 이유: build/libs/*.jar 업로드 시 bootJar + plain.jar가 같이 올라가며 413 발생 가능
+    # 빌드 검증과 동시에 최종 bootJar 생성
+    - ./gradlew :services:${SERVICE_NAME}:bootJar -x test
+    # plain.jar는 용량만 차지하므로 빌드 직후 제거
+    - rm -f services/${SERVICE_NAME}/build/libs/*-plain.jar
+  artifacts:
+    paths:
+      - BE/services/${SERVICE_NAME}/build/libs/*.jar
+    expire_in: 30 mins
 
 .push-template:
   image: eclipse-temurin:21-jdk-alpine
@@ -75,20 +80,11 @@ cache:
   script:
     - echo "----- ${SERVICE_NAME} Docker 이미지 빌드 및 Push 시작 -----"
     - cd BE
-    - chmod +x ./gradlew
-    - ./gradlew :services:${SERVICE_NAME}:bootJar -x test
-
-    # Docker build에 필요한 실행 jar만 생성
-    - ./gradlew :services:${SERVICE_NAME}:bootJar -x test
-
-    # plain jar 제거
-    - rm -f services/${SERVICE_NAME}/build/libs/*-plain.jar
-
-    # bootJar가 정확히 존재하는지 확인
+    
+    # build stage의 artifact에서 넘어온 bootJar가 정확히 존재하는지 확인
     - ls -lh services/${SERVICE_NAME}/build/libs/
 
-    # Docker 이미지 빌드 및 Push
-    # 가장 안전한 한 줄 명령어
+    # Docker 이미지 빌드 및 Push (새로 빌드하지 않고 artifacts로 받은 jar 바로 사용)
     - docker build -t $DOCKER_NAMESPACE/${IMAGE_NAME}:$IMAGE_TAG -t $DOCKER_NAMESPACE/${IMAGE_NAME}:latest -f services/${SERVICE_NAME}/Dockerfile .
     - docker push $DOCKER_NAMESPACE/${IMAGE_NAME}:$IMAGE_TAG
     - docker push $DOCKER_NAMESPACE/${IMAGE_NAME}:latest
