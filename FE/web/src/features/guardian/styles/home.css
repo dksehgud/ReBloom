@@ -109,32 +109,39 @@
 .parent-home-page__summary-copy {
   display: flex;
   flex-direction: column;
+  align-items: center;
   gap: 4px;
 }
 
 .parent-home-page__section-title {
   margin: 0;
+  width: 100%;
+  max-width: 292px;
   color: #2d3748;
   font-family: 'Inter', 'Noto Sans KR', sans-serif;
   font-size: 16px;
   font-weight: 700;
   line-height: 28px;
+  text-align: left;
 }
 
 .parent-home-page__section-description {
   margin: 0;
-  max-width: 100%;
+  width: 100%;
+  max-width: 292px;
   color: #718096;
   font-family: 'Inter', 'Noto Sans KR', sans-serif;
   font-size: 14px;
   line-height: 20px;
   overflow-wrap: anywhere;
+  text-align: left;
   word-break: keep-all;
 }
 
 .parent-home-page__insight-box {
   display: flex;
   flex-direction: column;
+  align-items: center;
   gap: 10px;
   border-radius: 16px;
   background: linear-gradient(
@@ -148,9 +155,12 @@
 }
 
 .parent-home-page__tip-row {
-  display: flex;
-  align-items: center;
+  display: grid;
+  grid-template-columns: 14px minmax(0, 1fr);
+  align-items: start;
   gap: 8px;
+  width: 100%;
+  max-width: 292px;
   color: #a0725d;
 }
 
@@ -162,23 +172,29 @@
 
 .parent-home-page__tip-copy {
   margin: 0;
-  max-width: 100%;
+  min-width: 0;
   color: #a0725d;
   font-family: 'Sora', 'Noto Sans KR', sans-serif;
   font-size: 12px;
   font-weight: 300;
   line-height: 18px;
   overflow-wrap: anywhere;
+  text-align: left;
   word-break: keep-all;
 }
 
 .parent-home-page__quote {
   margin: 0;
+  width: 100%;
+  max-width: 292px;
+  box-sizing: border-box;
   color: #718096;
   font-family: 'Sora', 'Noto Sans KR', sans-serif;
   font-size: 13px;
   font-weight: 300;
   line-height: 21px;
+  padding-left: 22px;
+  text-align: left;
 }
 
 .parent-home-page__records-card {
