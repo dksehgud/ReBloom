@@ -7,10 +7,12 @@ import com.ssafy.rebloom.report_service.report.domain.entity.ChildrenReport;
 import com.ssafy.rebloom.report_service.report.domain.entity.CounselorComment;
 import com.ssafy.rebloom.report_service.report.dto.request.CounselorCommentCreateRequestDto;
 import com.ssafy.rebloom.report_service.report.dto.response.CounselorCommentResponseDto;
+import com.ssafy.rebloom.report_service.report.event.ParentReportCommentCreatedLocalEvent;
 import com.ssafy.rebloom.report_service.report.repository.ChildrenReportRepository;
 import com.ssafy.rebloom.report_service.report.repository.CounselorCommentRepository;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,6 +24,7 @@ public class CounselorCommentService {
     private final CounselorCommentRepository counselorCommentRepository;
     private final ChildrenReportRepository childrenReportRepository;
     private final AuthAccessClient authAccessClient;
+    private final ApplicationEventPublisher applicationEventPublisher;
 
     @Transactional
     public CounselorCommentResponseDto create(
@@ -42,8 +45,20 @@ public class CounselorCommentService {
             .context(request.context())
             .build();
         childrenReport.markHasCounselorComment(true);
+        CounselorComment savedComment = counselorCommentRepository.save(counselorComment);
 
-        return toResponse(counselorCommentRepository.save(counselorComment));
+        applicationEventPublisher.publishEvent(
+            new ParentReportCommentCreatedLocalEvent(
+                savedComment.getId(),
+                childrenReport.getId(),
+                childrenReport.getChildrenId(),
+                childrenReport.getParentId(),
+                savedComment.getUserId(),
+                savedComment.getCreatedAt()
+            )
+        );
+
+        return toResponse(savedComment);
     }
 
     @Transactional

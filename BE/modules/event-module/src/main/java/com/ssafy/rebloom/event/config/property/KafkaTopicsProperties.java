@@ -14,4 +14,6 @@ public class KafkaTopicsProperties {
     private String modelRetrainingRequested;
     private String phqCompleted;
     private String eventDlt;
+    private String parentReportCreated;
+    private String parentReportCommentCreated;
 }
