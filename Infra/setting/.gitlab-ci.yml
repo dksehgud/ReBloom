@@ -19,6 +19,7 @@ variables:
   GRADLE_USER_HOME: "$CI_PROJECT_DIR/.gradle"
 
 stages:
+  - build
   - build-and-push  # build와 docker-push를 하나로 통합
   - web-deploy
 
@@ -202,4 +203,3 @@ push-bio-ml-service:
   rules:
     - changes:
         - "AI/bio-ml-service/**/*"
-        
