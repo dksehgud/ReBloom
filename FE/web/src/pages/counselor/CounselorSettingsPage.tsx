@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { FiChevronLeft, FiLogOut } from 'react-icons/fi'
+import { FiChevronLeft, FiLogOut, FiMenu } from 'react-icons/fi'
 
 import { authApi, type UserInfoResponse } from '../../features/auth/api/authApi'
 import { useAppSessionStore } from '../../features/auth/store/useAppSessionStore'
@@ -98,7 +98,32 @@ function CounselorSettingsPage() {
   const [isPasswordSubmitting, setIsPasswordSubmitting] = useState(false)
   const [profileError, setProfileError] = useState<string>()
   const [feedback, setFeedback] = useState<SettingsFeedback>(null)
+  const [isSettingsSidebarCollapsed, setIsSettingsSidebarCollapsed] =
+    useState(() =>
+      typeof window !== 'undefined'
+        ? window.matchMedia('(max-width: 1180px)').matches
+        : false,
+    )
   const isProfileSection = activeSection === 'profile'
+  const settingsPageTitle = isProfileSection ? '프로필 정보' : '비밀번호 변경'
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return undefined
+    }
+
+    const compactSidebarQuery = window.matchMedia('(max-width: 1180px)')
+    const syncSidebarMode = () => {
+      setIsSettingsSidebarCollapsed(compactSidebarQuery.matches)
+    }
+
+    syncSidebarMode()
+    compactSidebarQuery.addEventListener('change', syncSidebarMode)
+
+    return () => {
+      compactSidebarQuery.removeEventListener('change', syncSidebarMode)
+    }
+  }, [])
 
   useEffect(() => {
     let isActive = true
@@ -373,8 +398,46 @@ function CounselorSettingsPage() {
     navigate('/counselor/login', { replace: true })
   }
 
+  const closeCompactSettingsSidebar = () => {
+    if (
+      typeof window !== 'undefined' &&
+      window.matchMedia('(max-width: 1180px)').matches
+    ) {
+      setIsSettingsSidebarCollapsed(true)
+    }
+  }
+
+  const handleSelectSettingsSection = (section: SettingsSection) => {
+    setActiveSection(section)
+    closeCompactSettingsSidebar()
+  }
+
   return (
-    <main className="counselor-settings-page">
+    <main
+      className={`counselor-settings-page${
+        isSettingsSidebarCollapsed ? ' is-sidebar-collapsed' : ''
+      }`}
+    >
+      <header className="counselor-mobile-header counselor-settings-mobile-header">
+        <button
+          type="button"
+          className="counselor-mobile-header__menu"
+          aria-label="상담사 설정 메뉴 열기"
+          aria-expanded={!isSettingsSidebarCollapsed}
+          onClick={() => setIsSettingsSidebarCollapsed(false)}
+        >
+          <FiMenu aria-hidden="true" />
+        </button>
+        <span className="counselor-mobile-header__brand">Re:Bloom</span>
+      </header>
+      {!isSettingsSidebarCollapsed ? (
+        <button
+          type="button"
+          className="counselor-settings-sidebar-backdrop"
+          aria-label="상담사 설정 메뉴 닫기"
+          onClick={() => setIsSettingsSidebarCollapsed(true)}
+        />
+      ) : null}
       <aside className="counselor-settings-sidebar">
         <header className="counselor-settings-sidebar__header">
           <button type="button" onClick={() => navigate('/counselor/dashboard')}>
@@ -389,14 +452,14 @@ function CounselorSettingsPage() {
             <button
               type="button"
               className={isProfileSection ? 'is-active' : undefined}
-              onClick={() => setActiveSection('profile')}
+              onClick={() => handleSelectSettingsSection('profile')}
             >
               프로필 정보
             </button>
             <button
               type="button"
               className={!isProfileSection ? 'is-active' : undefined}
-              onClick={() => setActiveSection('account')}
+              onClick={() => handleSelectSettingsSection('account')}
             >
               비밀번호 변경
             </button>
@@ -413,7 +476,7 @@ function CounselorSettingsPage() {
 
       <section className="counselor-settings-main">
         <div className="counselor-settings-content">
-          <h1>{isProfileSection ? '프로필 정보' : '비밀번호 변경'}</h1>
+          <h1>{settingsPageTitle}</h1>
 
           {isProfileSection ? (
             <form

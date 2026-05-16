@@ -135,15 +135,18 @@ function CounselorDashboardPage() {
         isSidebarCollapsed ? ' is-sidebar-collapsed' : ''
       }`}
     >
-      <button
-        type="button"
-        className="counselor-dashboard-mobile-menu"
-        aria-label="상담 아동 목록 열기"
-        aria-expanded={!isSidebarCollapsed}
-        onClick={() => setIsSidebarCollapsed(false)}
-      >
-        <FiMenu aria-hidden="true" />
-      </button>
+      <header className="counselor-mobile-header counselor-dashboard-mobile-header">
+        <button
+          type="button"
+          className="counselor-mobile-header__menu"
+          aria-label="상담 아동 목록 열기"
+          aria-expanded={!isSidebarCollapsed}
+          onClick={() => setIsSidebarCollapsed(false)}
+        >
+          <FiMenu aria-hidden="true" />
+        </button>
+        <span className="counselor-mobile-header__brand">Re:Bloom</span>
+      </header>
       {!isSidebarCollapsed ? (
         <button
           type="button"
