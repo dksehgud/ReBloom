@@ -3,7 +3,7 @@ package com.ssafy.rebloom.report_service.report.event;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-public record ParentReportCommentCreatedEvent(
+public record ParentReportCommentCreatedLocalEvent(
     UUID commentId,
     UUID reportId,
     UUID childrenId,

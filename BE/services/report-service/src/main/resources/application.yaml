@@ -24,7 +24,6 @@ server:
 rebloom:
   client:
     auth-service-url: ${AUTH_SERVICE_URL:http://localhost:8081}
-    notification-service-url: ${NOTIFICATION_SERVICE_URL:http://localhost:8085}
   security:
     permit-all: /api/v1/analyses/conversations
 

@@ -7,7 +7,7 @@ import com.ssafy.rebloom.report_service.report.domain.entity.ChildrenReport;
 import com.ssafy.rebloom.report_service.report.domain.entity.CounselorComment;
 import com.ssafy.rebloom.report_service.report.dto.request.CounselorCommentCreateRequestDto;
 import com.ssafy.rebloom.report_service.report.dto.response.CounselorCommentResponseDto;
-import com.ssafy.rebloom.report_service.report.event.ParentReportCommentCreatedEvent;
+import com.ssafy.rebloom.report_service.report.event.ParentReportCommentCreatedLocalEvent;
 import com.ssafy.rebloom.report_service.report.repository.ChildrenReportRepository;
 import com.ssafy.rebloom.report_service.report.repository.CounselorCommentRepository;
 import java.util.UUID;
@@ -48,7 +48,7 @@ public class CounselorCommentService {
         CounselorComment savedComment = counselorCommentRepository.save(counselorComment);
 
         applicationEventPublisher.publishEvent(
-            new ParentReportCommentCreatedEvent(
+            new ParentReportCommentCreatedLocalEvent(
                 savedComment.getId(),
                 childrenReport.getId(),
                 childrenReport.getChildrenId(),

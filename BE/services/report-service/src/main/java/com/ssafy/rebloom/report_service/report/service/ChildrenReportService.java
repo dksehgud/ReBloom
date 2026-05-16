@@ -69,7 +69,7 @@ public class ChildrenReportService {
             )
         );
 
-        return toResponse(childrenReportRepository.save(childrenReport));
+        return toResponse(savedReport);
     }
 
     @Transactional
