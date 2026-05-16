@@ -12,11 +12,12 @@ from app.config.settings import (
     KAFKA_TOPIC_BIOMETRIC_RAW,
     KAFKA_TOPIC_AI_TRAIN,
     KAFKA_TOPIC_AI_ANALYZE,
+    KAFKA_TOPIC_GPS_CHECK_REQUEST,
     REDIS_HOST,
     REDIS_PORT,
     IF_READY_THRESHOLD,
 )
-from app.service import anomaly, if_model, phq
+from app.service import anomaly, gps_check, if_model, phq
 from app.kafka.producer import publish_anomaly_verified, publish_phq_result
 
 logger = logging.getLogger(__name__)
@@ -190,6 +191,39 @@ def _handle_ai_analyze(payload: dict) -> None:
 # Consumer 루프
 # ──────────────────────────────────────────────
 
+def _handle_gps_check_request(payload: dict) -> None:
+    children_id = payload.get("childrenId")
+    parent_id = payload.get("parentId")
+    request_id = payload.get("requestId")
+
+    if not children_id:
+        logger.warning("[gps-check.requested] childrenId missing | payload=%s", payload)
+        return
+
+    latitude = payload.get("latitude")
+    longitude = payload.get("longitude")
+    if latitude is None or longitude is None:
+        gps_check.save_pending_request(
+            children_id=children_id,
+            parent_id=parent_id,
+            request_id=request_id,
+        )
+        return
+
+    result = gps_check.evaluate_and_publish(
+        children_id=children_id,
+        parent_id=parent_id,
+        latitude=float(latitude),
+        longitude=float(longitude),
+        request_id=request_id,
+    )
+    logger.info(
+        "[gps-check.requested] evaluated inline | childrenId=%s matched=%s",
+        children_id,
+        result.matched,
+    )
+
+
 _stop_event = threading.Event()
 
 
@@ -213,6 +247,7 @@ def _consume_loop() -> None:
         KAFKA_TOPIC_BIOMETRIC_RAW,
         KAFKA_TOPIC_AI_TRAIN,
         KAFKA_TOPIC_AI_ANALYZE,
+        KAFKA_TOPIC_GPS_CHECK_REQUEST,
     ]
     consumer.subscribe(topics)
     logger.info("[Kafka] Consumer 구독 시작 | topics=%s", topics)
@@ -222,6 +257,7 @@ def _consume_loop() -> None:
         KAFKA_TOPIC_BIOMETRIC_RAW : _handle_biometric_raw,
         KAFKA_TOPIC_AI_TRAIN      : _handle_ai_train,
         KAFKA_TOPIC_AI_ANALYZE    : _handle_ai_analyze,
+        KAFKA_TOPIC_GPS_CHECK_REQUEST: _handle_gps_check_request,
     }
 
     try:
@@ -255,8 +291,13 @@ def _consume_loop() -> None:
             try:
                 handler(payload)
             except Exception as e:
-                logger.exception("[Kafka] 핸들러 예외 | topic=%s userId=%s err=%s",
-                                 topic, payload.get("userId"), e)
+                entity_id = (
+                    payload.get("childrenId")
+                    if topic == KAFKA_TOPIC_GPS_CHECK_REQUEST
+                    else payload.get("userId")
+                )
+                logger.exception("[Kafka] 핸들러 예외 | topic=%s entityId=%s err=%s",
+                                 topic, entity_id, e)
 
     finally:
         consumer.close()

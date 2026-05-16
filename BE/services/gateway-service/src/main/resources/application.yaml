@@ -100,6 +100,15 @@ spring:
           filters: *secured-filters
 
         # ==========================================
+        # BIO ML SERVICE - Secured
+        # ==========================================
+        - id: bio-ml-service
+          uri: ${BIO_ML_SERVICE_URI:http://localhost:8002}
+          predicates:
+            - Path=/ai/**
+          filters: *secured-filters
+
+        # ==========================================
         # REPORT SERVICE - Secured
         # ==========================================
         - id: report-service

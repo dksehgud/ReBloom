@@ -11,15 +11,12 @@ import com.google.android.gms.wearable.PutDataMapRequest
 import com.google.android.gms.wearable.Wearable
 import com.rebloom.watch.model.AccelerometerData
 import com.rebloom.watch.model.HeartRateData
-import com.rebloom.watch.model.LocationData
 import com.rebloom.watch.repository.BiometricRepository
 import com.rebloom.watch.sensor.BiometricSensor
-import com.rebloom.watch.sensor.LocationSensor
 
 class BiometricService : Service() {
 
     private lateinit var sensor: BiometricSensor
-    private lateinit var locationSensor: LocationSensor
     private lateinit var repository: BiometricRepository
 
     override fun onCreate() {
@@ -28,7 +25,6 @@ class BiometricService : Service() {
 
         repository = BiometricRepository()
         sensor = BiometricSensor(this)
-        locationSensor = LocationSensor(this)
 
         sensor.onHeartRateReceived = { hr, ibiList ->
             repository.addHeartRateData(
@@ -78,43 +74,15 @@ class BiometricService : Service() {
                 }
         }
 
-        locationSensor.onLocationReceived = { location ->
-            sendLocation(location)
-        }
-
         sensor.connect()
-        locationSensor.connect()
     }
 
     override fun onDestroy() {
         sensor.disconnect()
-        locationSensor.disconnect()
         super.onDestroy()
     }
 
     override fun onBind(intent: Intent?): IBinder? = null
-
-    private fun sendLocation(location: LocationData) {
-        val dataRequest = PutDataMapRequest.create("/location/${location.timestamp}").apply {
-            dataMap.putLong("timestamp", location.timestamp)
-            dataMap.putDouble("latitude", location.latitude)
-            dataMap.putDouble("longitude", location.longitude)
-            location.accuracy?.let { dataMap.putFloat("accuracy", it) }
-            location.provider?.let { dataMap.putString("provider", it) }
-        }.asPutDataRequest().setUrgent()
-
-        Wearable.getDataClient(this)
-            .putDataItem(dataRequest)
-            .addOnSuccessListener {
-                Log.d(
-                    TAG,
-                    "Location data sent: lat=${location.latitude}, lon=${location.longitude}"
-                )
-            }
-            .addOnFailureListener { error ->
-                Log.e(TAG, "Location data send failed: ${error.message}")
-            }
-    }
 
     private fun createNotification(): Notification {
         val channelId = "biometric_channel"

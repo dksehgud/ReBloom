@@ -26,6 +26,48 @@ class LocationSensor(
 
     var onLocationReceived: ((LocationData) -> Unit)? = null
 
+    fun requestSingleLocation(
+        timeoutMs: Long = SINGLE_LOCATION_TIMEOUT_MS,
+        onResult: (LocationData) -> Unit,
+        onError: (String) -> Unit
+    ) {
+        if (!hasLocationPermission()) {
+            onError("Location permission is not granted")
+            return
+        }
+
+        var completed = false
+        val singleListener = object : LocationListener {
+            override fun onLocationChanged(location: Location) {
+                if (completed) return
+                completed = true
+                retryHandler.removeCallbacksAndMessages(null)
+                locationManager.removeUpdates(this)
+                onResult(location.toLocationData())
+            }
+
+            override fun onProviderEnabled(provider: String) = Unit
+            override fun onProviderDisabled(provider: String) = Unit
+            override fun onStatusChanged(provider: String?, status: Int, extras: Bundle?) = Unit
+        }
+
+        val requested = requestSingleUpdate(LocationManager.GPS_PROVIDER, singleListener) or
+            requestSingleUpdate(LocationManager.NETWORK_PROVIDER, singleListener)
+
+        if (!requested) {
+            onError("No enabled location provider is available")
+            return
+        }
+
+        retryHandler.postDelayed({
+            if (!completed) {
+                completed = true
+                locationManager.removeUpdates(singleListener)
+                onError("Location request timed out")
+            }
+        }, timeoutMs)
+    }
+
     fun connect() {
         Log.d(TAG, "connect() called")
         if (!hasLocationPermission()) {
@@ -43,13 +85,7 @@ class LocationSensor(
                     "Location changed: provider=${location.provider}, lat=${location.latitude}, lon=${location.longitude}, accuracy=${location.accuracy}"
                 )
                 onLocationReceived?.invoke(
-                    LocationData(
-                        timestamp = location.time.takeIf { it > 0 } ?: System.currentTimeMillis(),
-                        latitude = location.latitude,
-                        longitude = location.longitude,
-                        accuracy = if (location.hasAccuracy()) location.accuracy else null,
-                        provider = location.provider
-                    )
+                    location.toLocationData()
                 )
             }
 
@@ -113,6 +149,31 @@ class LocationSensor(
         }
     }
 
+    private fun requestSingleUpdate(provider: String, listener: LocationListener): Boolean {
+        if (!locationManager.isProviderEnabled(provider)) {
+            Log.e(TAG, "Cannot request single $provider update: provider is disabled")
+            return false
+        }
+
+        return try {
+            locationManager.requestLocationUpdates(
+                provider,
+                0L,
+                0f,
+                listener,
+                Looper.getMainLooper()
+            )
+            Log.d(TAG, "Requested single $provider update")
+            true
+        } catch (_: SecurityException) {
+            Log.e(TAG, "Cannot request single $provider update: security exception")
+            false
+        } catch (error: IllegalArgumentException) {
+            Log.e(TAG, "Cannot request single $provider update: ${error.message}")
+            false
+        }
+    }
+
     private fun scheduleLocationRetry() {
         if (hasReceivedLocation || retryCount >= MAX_LOCATION_RETRY_COUNT) return
 
@@ -158,12 +219,23 @@ class LocationSensor(
         return fineGranted || coarseGranted
     }
 
+    private fun Location.toLocationData(): LocationData {
+        return LocationData(
+            timestamp = time.takeIf { it > 0 } ?: System.currentTimeMillis(),
+            latitude = latitude,
+            longitude = longitude,
+            accuracy = if (hasAccuracy()) accuracy else null,
+            provider = provider
+        )
+    }
+
     companion object {
         private const val TAG = "LocationSensor"
         private const val LOCATION_INTERVAL_MS = 10_000L
         private const val LOCATION_MIN_DISTANCE_METERS = 0f
         private const val LOCATION_RETRY_DELAY_MS = 15_000L
         private const val MAX_LOCATION_RETRY_COUNT = 3
+        private const val SINGLE_LOCATION_TIMEOUT_MS = 15_000L
     }
 }
 

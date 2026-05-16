@@ -129,10 +129,11 @@ class WearDataListenerService : WearableListenerService() {
     private fun sendLocation(timestamp: Long, latitude: Double, longitude: Double) {
         scope.launch {
             try {
-                val userId = getUserIdFromToken()
+                val childrenId = getUserIdFromToken()
 
                 val request = LocationEvaluateRequest(
-                    user_id = userId,
+                    children_id = childrenId,
+                    parent_id = null,
                     latitude = latitude,
                     longitude = longitude,
                     measured_at = dateFormat.format(Date(timestamp))
