@@ -40,7 +40,6 @@ type SignUpStepDetailsProps = {
   onNameChange: (event: ChangeEvent<HTMLInputElement>) => void
   onSelectGender: (gender: Exclude<Gender, null>) => void
   onBirthDateChange: (event: ChangeEvent<HTMLInputElement>) => void
-  onBaseAddressChange: (event: ChangeEvent<HTMLInputElement>) => void
   onDetailAddressChange: (event: ChangeEvent<HTMLInputElement>) => void
   onPasswordChange: (event: ChangeEvent<HTMLInputElement>) => void
   onPasswordConfirmChange: (event: ChangeEvent<HTMLInputElement>) => void
@@ -115,7 +114,6 @@ function SignUpStepDetails({
   onNameChange,
   onSelectGender,
   onBirthDateChange,
-  onBaseAddressChange,
   onDetailAddressChange,
   onPasswordChange,
   onPasswordConfirmChange,
@@ -201,14 +199,14 @@ function SignUpStepDetails({
             error={addressError}
             help={
               addressError
-                ? '주소 검색이 안 되면 기본 주소를 직접 입력해 주세요.'
+                ? '주소 검색을 다시 시도해 주세요.'
                 : !baseAddress
                   ? '기본 주소는 필수 입력 값이에요.'
-                  : '주소 검색이 안 되면 직접 수정할 수 있어요.'
+                  : '기본 주소는 주소 검색으로만 입력할 수 있어요.'
             }
             label="기본 주소"
-            onChange={onBaseAddressChange}
             placeholder="주소 검색"
+            readOnly
             value={baseAddress}
           />
 
