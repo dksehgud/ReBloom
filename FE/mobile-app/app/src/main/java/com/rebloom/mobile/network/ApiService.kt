@@ -40,15 +40,18 @@ data class FcmTokenRequest(
 )
 
 data class LocationEvaluateRequest(
-    val user_id: String,
+    val children_id: String,
+    val parent_id: String?,
     val latitude: Double,
     val longitude: Double,
-    val measured_at: String
+    val measured_at: String,
+    val request_id: String? = null
 )
 
 data class LocationEvaluateResponse(
-    val user_id: String,
-    val device_id: String,
+    val children_id: String,
+    val parent_id: String?,
+    val device_id: String?,
     val matched: Boolean,
     val distance_meters: Double,
     val threshold_meters: Double,
@@ -65,7 +68,7 @@ interface ApiService {
     @POST("intake/api/v1/intakes/sleeps/raw")
     suspend fun sendSleep(@Body request: SleepRequest): IntakeResponse
 
-    @POST("aiot/api/v1/location/evaluate")
+    @POST("ai/api/v1/location/evaluate")
     suspend fun evaluateLocation(@Body request: LocationEvaluateRequest): LocationEvaluateResponse
 
     @POST("notification/api/v1/notifications/fcm-tokens")

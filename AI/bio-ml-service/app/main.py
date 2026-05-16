@@ -1,10 +1,12 @@
 import logging
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel
 
 from app.kafka.consumer import start_consumer, stop_consumer
 from app.kafka.producer import flush as flush_producer
+from app.service import gps_check
 
 # ──────────────────────────────────────────────
 # 로깅 설정
@@ -46,9 +48,66 @@ app = FastAPI(
 )
 
 
+class LocationEvaluateRequest(BaseModel):
+    children_id: str
+    parent_id: str | None = None
+    latitude: float
+    longitude: float
+    measured_at: str
+    request_id: str | None = None
+
+
+class LocationEvaluateResponse(BaseModel):
+    children_id: str
+    parent_id: str | None = None
+    device_id: str | None = None
+    matched: bool
+    distance_meters: float
+    threshold_meters: float
+    target_name: str | None = None
+    action: str
+    request_id: str | None = None
+    topic: str | None = None
+
+
 # ──────────────────────────────────────────────
 # 헬스체크
 # ──────────────────────────────────────────────
 @app.get("/health")
 def health() -> dict[str, str]:
     return {"service": "bio-ml-service", "status": "ok"}
+
+
+@app.post("/api/v1/location/evaluate", response_model=LocationEvaluateResponse)
+def evaluate_location(request: LocationEvaluateRequest) -> LocationEvaluateResponse:
+    pending = gps_check.pop_pending_request(request.children_id)
+    parent_id = request.parent_id
+    request_id = request.request_id
+
+    if pending:
+        parent_id = parent_id or pending.get("parentId")
+        request_id = request_id or pending.get("requestId")
+
+    try:
+        result = gps_check.evaluate_and_publish(
+            children_id=request.children_id,
+            parent_id=parent_id,
+            latitude=request.latitude,
+            longitude=request.longitude,
+            request_id=request_id,
+        )
+    except RuntimeError as exc:
+        raise HTTPException(status_code=502, detail=str(exc)) from exc
+
+    return LocationEvaluateResponse(
+        children_id=result.children_id,
+        parent_id=result.parent_id,
+        device_id=result.device_id,
+        matched=result.matched,
+        distance_meters=result.distance_meters,
+        threshold_meters=result.threshold_meters,
+        target_name=result.target_name,
+        action=result.action,
+        request_id=result.request_id,
+        topic=result.topic,
+    )

@@ -9,6 +9,7 @@ import android.os.Build
 import androidx.core.app.NotificationCompat
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
+import com.google.android.gms.wearable.Wearable
 import com.rebloom.mobile.webview.MainActivity
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -29,12 +30,50 @@ class RebloomFirebaseMessagingService : FirebaseMessagingService() {
     override fun onMessageReceived(message: RemoteMessage) {
         super.onMessageReceived(message)
 
+        if (isGpsCheckRequest(message.data)) {
+            requestWatchLocation()
+            if (message.notification == null) {
+                return
+            }
+        }
+
         val title = message.notification?.title ?: message.data["title"] ?: DEFAULT_TITLE
         val body = message.notification?.body
             ?: message.data.getOrDefault("content", DEFAULT_BODY)
                 .ifBlank { DEFAULT_BODY }
 
         showNotification(title, body)
+    }
+
+    private fun isGpsCheckRequest(data: Map<String, String>): Boolean {
+        return data["type"] == GPS_CHECK_REQUEST_TYPE ||
+            data["topic"] == GPS_CHECK_REQUEST_TOPIC
+    }
+
+    private fun requestWatchLocation() {
+        Wearable.getNodeClient(this)
+            .connectedNodes
+            .addOnSuccessListener { nodes ->
+                nodes.forEach { node ->
+                    Wearable.getMessageClient(this)
+                        .sendMessage(node.id, LOCATION_REQUEST_PATH, ByteArray(0))
+                        .addOnSuccessListener {
+                            android.util.Log.d(
+                                TAG,
+                                "GPS check location request sent to watch node=${node.id}"
+                            )
+                        }
+                        .addOnFailureListener { error ->
+                            android.util.Log.e(
+                                TAG,
+                                "GPS check location request failed: ${error.message}"
+                            )
+                        }
+                }
+            }
+            .addOnFailureListener { error ->
+                android.util.Log.e(TAG, "Failed to load connected watch nodes: ${error.message}")
+            }
     }
 
     private fun showNotification(title: String, body: String) {
@@ -84,6 +123,10 @@ class RebloomFirebaseMessagingService : FirebaseMessagingService() {
         private const val CHANNEL_NAME = "Re:Bloom notification"
         private const val DEFAULT_TITLE = "Re:Bloom"
         private const val DEFAULT_BODY = "You have a new notification."
+        private const val GPS_CHECK_REQUEST_TYPE = "GPS_CHECK_REQUEST"
+        private const val GPS_CHECK_REQUEST_TOPIC = "rebloom.gps-check.requested.v1"
+        private const val LOCATION_REQUEST_PATH = "/location/request"
+        private const val TAG = "RebloomFCM"
     }
 }
 

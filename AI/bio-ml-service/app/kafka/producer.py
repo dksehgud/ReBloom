@@ -5,6 +5,8 @@ from confluent_kafka import Producer
 from app.config.settings import (
     KAFKA_BOOTSTRAP_SERVERS,
     KAFKA_TOPIC_ANOMALY_VERIFIED,
+    KAFKA_TOPIC_GPS_CHECK_DIFFERENT,
+    KAFKA_TOPIC_GPS_CHECK_SAME,
     KAFKA_TOPIC_PHQ_RESULT,
 )
 
@@ -114,6 +116,43 @@ def publish_phq_result(user_id: str, date: str, result: int, score: float, predi
     )
     producer.poll(0)
     logger.info("[Kafka] phq.completed 발행 | userId=%s result=%s score=%s", user_id, result, score)
+
+def publish_gps_check_result(
+    children_id: str,
+    parent_id: str | None,
+    matched: bool,
+    distance_meters: float,
+    threshold_meters: float,
+    request_id: str | None = None,
+) -> str:
+    topic = KAFKA_TOPIC_GPS_CHECK_SAME if matched else KAFKA_TOPIC_GPS_CHECK_DIFFERENT
+    payload = {
+        "childrenId": children_id,
+        "parentId": parent_id,
+        "result": matched,
+        "distanceMeters": distance_meters,
+        "thresholdMeters": threshold_meters,
+    }
+    if request_id:
+        payload["requestId"] = request_id
+
+    producer = get_producer()
+    producer.produce(
+        topic=topic,
+        key=children_id,
+        value=json.dumps(payload),
+        callback=_delivery_report,
+    )
+    producer.poll(0)
+    logger.info(
+        "[Kafka] gps-check result published | topic=%s childrenId=%s matched=%s distance=%s",
+        topic,
+        children_id,
+        matched,
+        distance_meters,
+    )
+    return topic
+
 
 def flush() -> None:
     """종료 전 미전송 메시지 플러시"""
