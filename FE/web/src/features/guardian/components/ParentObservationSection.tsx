@@ -5,6 +5,7 @@ import type { ParentObservationMood } from '../constants/parentObservationMoods'
 import { useParentObservationPreview } from '../hooks/useParentObservationPreview'
 import { useParentMockMode } from '../hooks/useParentMockMode'
 import { getParentObservationApi } from '../services/parentObservationService'
+import ParentObservationDetailModal from './ParentObservationDetailModal'
 import ParentObservationFormModal from './ParentObservationFormModal'
 import ParentObservationListSection from './ParentObservationListSection'
 
@@ -29,6 +30,16 @@ function formatDateLabel(date: Date) {
   }).format(date)
 
   return `${padNumber(date.getMonth() + 1)}/${padNumber(date.getDate())} ${weekday}`
+}
+
+function formatRecordDateLabel({
+  date,
+  weekday,
+}: {
+  date: string
+  weekday: string
+}) {
+  return `${date} ${weekday}`
 }
 
 function formatReportDateTime(date: Date) {
@@ -60,6 +71,26 @@ function ParentObservationSection({
   const [draftMood, setDraftMood] = useState<ParentObservationMood | null>(null)
   const [draftDescription, setDraftDescription] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [selectedRecordId, setSelectedRecordId] = useState<string | null>(null)
+  const [selectedRecordDetail, setSelectedRecordDetail] = useState<
+    (typeof records)[number] | null
+  >(null)
+
+  const selectedRecord = useMemo(() => {
+    if (selectedRecordDetail?.id === selectedRecordId) {
+      return selectedRecordDetail
+    }
+
+    return records.find((record) => record.id === selectedRecordId) ?? null
+  }, [records, selectedRecordDetail, selectedRecordId])
+
+  const selectedRecordIndex = useMemo(() => {
+    if (!selectedRecordId) {
+      return -1
+    }
+
+    return records.findIndex((record) => record.id === selectedRecordId)
+  }, [records, selectedRecordId])
 
   const handleOpenCreate = () => {
     if (!hasConnectedChild) {
@@ -112,6 +143,55 @@ function ParentObservationSection({
     }
   }
 
+  const handleSelectRecord = (recordId: string) => {
+    if (!childrenId) {
+      return
+    }
+
+    const fallbackRecord = records.find((record) => record.id === recordId)
+
+    if (!fallbackRecord) {
+      return
+    }
+
+    setSelectedRecordId(recordId)
+    setSelectedRecordDetail(fallbackRecord)
+
+    void parentObservationApi
+      .getParentObservationDetail({
+        accessToken,
+        childrenId,
+        reportId: recordId,
+      })
+      .then((record) => {
+        setSelectedRecordDetail((currentRecord) =>
+          currentRecord?.id === recordId ? record : currentRecord,
+        )
+      })
+      .catch((error) => {
+        console.error(error)
+      })
+  }
+
+  const handleCloseDetail = () => {
+    setSelectedRecordId(null)
+    setSelectedRecordDetail(null)
+  }
+
+  const handleNavigateDetailRecord = (direction: -1 | 1) => {
+    if (selectedRecordIndex < 0) {
+      return
+    }
+
+    const nextRecord = records[selectedRecordIndex + direction]
+
+    if (!nextRecord) {
+      return
+    }
+
+    handleSelectRecord(nextRecord.id)
+  }
+
   return (
     <>
       <ParentObservationListSection
@@ -130,7 +210,24 @@ function ParentObservationSection({
         isLoading={isConnectionLoading || isLoading}
         isError={isError}
         onAddRecord={hasConnectedChild ? handleOpenCreate : undefined}
+        onSelectRecord={hasConnectedChild ? handleSelectRecord : undefined}
       />
+
+      {selectedRecord ? (
+        <ParentObservationDetailModal
+          record={selectedRecord}
+          dateLabel={formatRecordDateLabel(selectedRecord)}
+          currentPosition={selectedRecordIndex + 1}
+          totalCount={records.length}
+          hasPrevious={selectedRecordIndex > 0}
+          hasNext={
+            selectedRecordIndex > -1 && selectedRecordIndex < records.length - 1
+          }
+          onClose={handleCloseDetail}
+          onPrevious={() => handleNavigateDetailRecord(-1)}
+          onNext={() => handleNavigateDetailRecord(1)}
+        />
+      ) : null}
 
       {isCreateModalOpen ? (
         <ParentObservationFormModal
