@@ -24,5 +24,13 @@ REDIS_HOST = os.getenv("REDIS_HOST", "localhost")
 REDIS_PORT = int(os.getenv("REDIS_PORT", 6379))
 
 # Model
-MODEL_DIR = os.getenv("MODEL_DIR", "./app/model")
+MODEL_DIR          = os.getenv("MODEL_DIR", "/app/model")
 IF_READY_THRESHOLD = int(os.getenv("IF_READY_THRESHOLD", 288))
+
+# AWS S3
+AWS_ACCESS_KEY_ID     = os.getenv("AWS_ACCESS_KEY_ID", "")
+AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY", "")
+AWS_REGION            = os.getenv("AWS_REGION", "ap-northeast-2")
+MODEL_S3_BUCKET       = os.getenv("MODEL_S3_BUCKET", "")
+BASE_PHQ_MODEL_S3_KEY = os.getenv("BASE_PHQ_MODEL_S3_KEY", "models/base/phq_model.pkl")
+USER_MODEL_S3_PREFIX  = os.getenv("USER_MODEL_S3_PREFIX", "models/users")
