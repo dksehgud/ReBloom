@@ -410,6 +410,10 @@ export function useParentObservationPageState(childrenId?: string) {
       ],
       mood: nextMood,
       description: nextDescription,
+      hasCounselorComment:
+        modalMode === 'edit' && selectedRecord
+          ? selectedRecord.hasCounselorComment
+          : false,
       counselorComment:
         modalMode === 'edit' && selectedRecord
           ? selectedRecord.counselorComment ?? null
