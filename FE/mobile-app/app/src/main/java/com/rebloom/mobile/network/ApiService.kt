@@ -2,7 +2,14 @@ package com.rebloom.mobile.network
 
 import retrofit2.http.Body
 import retrofit2.http.HTTP
+import retrofit2.http.Path
 import retrofit2.http.POST
+
+data class ApiBaseResponse<T>(
+    val code: String?,
+    val message: String?,
+    val data: T?
+)
 
 data class BiometricRequest(
     val userId: String,
@@ -39,6 +46,18 @@ data class FcmTokenRequest(
     val fcmToken: String
 )
 
+data class DeviceRegistrationRequest(
+    val serialNumber: String,
+    val deviceType: String = "IOT"
+)
+
+data class DeviceRegistrationData(
+    val deviceId: Long,
+    val serialNumber: String,
+    val deviceType: String,
+    val childrenId: String?
+)
+
 data class LocationEvaluateRequest(
     val children_id: String,
     val parent_id: String?,
@@ -73,6 +92,17 @@ interface ApiService {
 
     @POST("notification/api/v1/notifications/fcm-tokens")
     suspend fun registerFcmToken(@Body request: FcmTokenRequest): IntakeResponse
+
+    @POST("auth/api/v1/children/devices")
+    suspend fun registerChildDevice(
+        @Body request: DeviceRegistrationRequest
+    ): ApiBaseResponse<DeviceRegistrationData>
+
+    @POST("auth/api/v1/parents/devices/{childrenId}")
+    suspend fun registerParentDevice(
+        @Path("childrenId") childrenId: String,
+        @Body request: DeviceRegistrationRequest
+    ): ApiBaseResponse<DeviceRegistrationData>
 
     @HTTP(method = "DELETE", path = "notification/api/v1/notifications/fcm-tokens", hasBody = true)
     suspend fun deactivateFcmToken(@Body request: FcmTokenRequest): IntakeResponse

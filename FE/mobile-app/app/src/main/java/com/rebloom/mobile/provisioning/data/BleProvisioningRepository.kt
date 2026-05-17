@@ -13,6 +13,7 @@ import com.rebloom.mobile.provisioning.util.CryptoUtil
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.receiveAsFlow
+import org.json.JSONObject
 import java.util.UUID
 
 /**
@@ -53,6 +54,7 @@ class BleProvisioningRepository(private val context: Context) {
         object Disconnected : BleEvent()
         data class StatusNotify(val status: String) : BleEvent()
         data class Error(val message: String) : BleEvent()
+        data class ProvisioningSucceeded(val serialNumber: String) : BleEvent()
         object WriteDone : BleEvent()
     }
 
@@ -69,6 +71,11 @@ class BleProvisioningRepository(private val context: Context) {
     // ECDH 키 쌍 — connect 시점에 생성
     private var appKeyPair: CryptoUtil.ECKeyPair? = null
     private var sharedKey: ByteArray? = null
+
+    private data class ParsedProvisioningStatus(
+        val status: String,
+        val serialNumber: String?,
+    )
 
     // ─────────────────────────────────────────────
     // 연결
@@ -196,6 +203,15 @@ class BleProvisioningRepository(private val context: Context) {
 
             when (characteristic.uuid) {
                 PUBKEY_UUID -> handlePublicKeyRead(gatt, value)
+                DEVINFO_UUID -> {
+                    val serialNumber = extractSerialNumber(String(value, Charsets.UTF_8))
+                        ?: String(value, Charsets.UTF_8).trim().takeIf { it.isNotBlank() }
+                    if (serialNumber.isNullOrBlank()) {
+                        _events.trySend(BleEvent.Error("스피커 serialNumber를 받지 못했습니다. 기기 펌웨어의 DEVINFO 값을 확인해주세요."))
+                    } else {
+                        _events.trySend(BleEvent.ProvisioningSucceeded(serialNumber))
+                    }
+                }
                 else -> Log.w(TAG, "알 수 없는 Characteristic Read: ${characteristic.uuid}")
             }
         }
@@ -227,12 +243,21 @@ class BleProvisioningRepository(private val context: Context) {
             value: ByteArray,
         ) {
             if (characteristic.uuid == STATUS_UUID) {
-                val status = String(value, Charsets.UTF_8)
-                Log.d(TAG, "STATUS Notify 수신: $status")
+                val rawStatus = String(value, Charsets.UTF_8)
+                val parsedStatus = parseProvisioningStatus(rawStatus)
+                val status = parsedStatus.status
+
+                Log.d(TAG, "STATUS Notify 수신: raw=$rawStatus, status=$status, serial=${parsedStatus.serialNumber}")
                 _events.trySend(BleEvent.StatusNotify(status))
 
                 // SUCCESS 수신 시 연결 해제 (3초 후 — 앱이 SUCCESS 처리할 시간 확보)
-                if (status == "SUCCESS") {
+                if (isSuccessStatus(status)) {
+                    val serialNumber = parsedStatus.serialNumber
+                    if (!serialNumber.isNullOrBlank()) {
+                        _events.trySend(BleEvent.ProvisioningSucceeded(serialNumber))
+                    } else {
+                        readDeviceInfoOrFallback(gatt)
+                    }
                     gatt.postDelayed({ disconnect() }, 3000)
                 }
             }
@@ -337,6 +362,90 @@ class BleProvisioningRepository(private val context: Context) {
                 gatt.writeDescriptor(cccd)
             }
         }
+    }
+
+    private fun readDeviceInfoOrFallback(gatt: BluetoothGatt) {
+        val devInfoChar = gatt.getService(SERVICE_UUID)?.getCharacteristic(DEVINFO_UUID)
+        if (devInfoChar == null) {
+            Log.w(TAG, "DEVINFO Characteristic 없음")
+            _events.trySend(BleEvent.Error("스피커가 Wi-Fi에는 연결됐지만 serialNumber를 제공하지 않았습니다."))
+            return
+        }
+
+        val requested = gatt.readCharacteristic(devInfoChar)
+        if (!requested) {
+            Log.w(TAG, "DEVINFO Read 요청 실패")
+            _events.trySend(BleEvent.Error("스피커 serialNumber 읽기에 실패했습니다."))
+        }
+    }
+
+    private fun parseProvisioningStatus(rawValue: String): ParsedProvisioningStatus {
+        val value = rawValue.trim().trim('\u0000')
+
+        if (value.isBlank()) {
+            return ParsedProvisioningStatus(status = "", serialNumber = null)
+        }
+
+        runCatching {
+            val json = JSONObject(value)
+            val status = listOf("status", "state", "result")
+                .firstNotNullOfOrNull { key ->
+                    json.optString(key).trim().takeIf { it.isNotBlank() }
+                }
+                ?: value
+            val serialNumber = listOf("serialNumber", "serial", "deviceSerial")
+                .firstNotNullOfOrNull { key ->
+                    json.optString(key).trim().takeIf { it.isNotBlank() }
+                }
+
+            return ParsedProvisioningStatus(
+                status = status,
+                serialNumber = serialNumber,
+            )
+        }.onFailure {
+            Log.d(TAG, "STATUS JSON 파싱 생략: ${it.message}")
+        }
+
+        return ParsedProvisioningStatus(
+            status = value,
+            serialNumber = extractSerialNumber(value),
+        )
+    }
+
+    private fun isSuccessStatus(status: String): Boolean {
+        val normalizedStatus = status.trim().uppercase()
+
+        return normalizedStatus.startsWith("SUCCESS") ||
+            normalizedStatus == "CONNECTED" ||
+            normalizedStatus == "WIFI_CONNECTED" ||
+            normalizedStatus == "DONE" ||
+            normalizedStatus == "OK"
+    }
+
+    private fun extractSerialNumber(rawValue: String): String? {
+        val value = rawValue.trim()
+        if (value.isBlank()) {
+            return null
+        }
+
+        runCatching {
+            val json = JSONObject(value)
+            json.optString("serialNumber")
+                .takeIf { it.isNotBlank() }
+                ?.let { return it }
+            json.optString("serial")
+                .takeIf { it.isNotBlank() }
+                ?.let { return it }
+        }
+
+        if (!value.startsWith("SUCCESS")) {
+            return null
+        }
+
+        return value
+            .removePrefix("SUCCESS")
+            .trimStart(':', '|', ',', ' ')
+            .takeIf { it.isNotBlank() }
     }
 
     // BluetoothGatt에 postDelayed 확장 (GattCallback 내부 사용)

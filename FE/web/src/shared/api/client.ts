@@ -135,6 +135,24 @@ async function parseResponseBody(response: Response) {
   }
 }
 
+function getErrorMessage(responseBody: unknown, fallback: string) {
+  if (typeof responseBody === 'string' && responseBody.trim()) {
+    return responseBody
+  }
+
+  if (
+    responseBody &&
+    typeof responseBody === 'object' &&
+    'message' in responseBody &&
+    typeof responseBody.message === 'string' &&
+    responseBody.message.trim()
+  ) {
+    return responseBody.message
+  }
+
+  return fallback
+}
+
 async function apiRequest<T>(path: string, options: ApiRequestOptions = {}): Promise<T> {
   const {
     accessToken: accessTokenOverride,
@@ -177,7 +195,11 @@ async function apiRequest<T>(path: string, options: ApiRequestOptions = {}): Pro
       redirectToLoginForExpiredSession(resolvedSessionRole)
     }
 
-    throw new ApiError(errorMessage ?? 'API 요청에 실패했습니다.', response.status, responseBody)
+    throw new ApiError(
+      getErrorMessage(responseBody, errorMessage ?? 'API 요청에 실패했습니다.'),
+      response.status,
+      responseBody,
+    )
   }
 
   return responseBody as T

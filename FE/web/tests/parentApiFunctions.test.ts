@@ -14,7 +14,7 @@ const apiClientMock = vi.hoisted(() => {
   }
 
   return {
-    API_BASE_URL: 'http://localhost:8080',
+    API_BASE_URL: '/api',
     ApiError: MockApiError,
     apiRequest: vi.fn(),
   }

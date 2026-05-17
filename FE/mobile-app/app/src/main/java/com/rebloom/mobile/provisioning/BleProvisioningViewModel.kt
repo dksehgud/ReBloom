@@ -15,6 +15,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.rebloom.mobile.provisioning.data.BleProvisioningRepository
 import com.rebloom.mobile.provisioning.data.BleProvisioningRepository.BleEvent
+import com.rebloom.mobile.provisioning.data.DeviceRegistrationRepository
+import com.rebloom.mobile.provisioning.data.ProvisioningRegistrationContext
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -36,13 +38,16 @@ import kotlinx.coroutines.launch
 @SuppressLint("MissingPermission")
 class BleProvisioningViewModel(
     private val context: Context,
+    private val registrationContext: ProvisioningRegistrationContext = ProvisioningRegistrationContext(),
     private val repository: BleProvisioningRepository = BleProvisioningRepository(context),
+    private val deviceRegistrationRepository: DeviceRegistrationRepository = DeviceRegistrationRepository(context),
 ) : ViewModel() {
 
     companion object {
         private const val TAG = "BleVM"
         private const val UUID_SCAN_TIMEOUT_MS  = 7_000L   // 1단계: UUID 필터 스캔 타임아웃
         private const val FALLBACK_SCAN_TIMEOUT_MS = 8_000L // 2단계: 필터 없는 폴백 스캔 타임아웃
+        private const val PROVISIONING_RESULT_TIMEOUT_MS = 90_000L
         val TARGET_SERVICE_UUID = ParcelUuid.fromString("0000fe10-0000-1000-8000-00805f9b34fb")
         // RPi5 기기 이름 매칭 키워드 (대소문자 무시) — 폴백 스캔에서 사용
         private val DEVICE_NAME_KEYWORDS = listOf("rebloom", "re:bloom", "bloom")
@@ -55,7 +60,10 @@ class BleProvisioningViewModel(
     val state: StateFlow<ProvisioningState> = _state.asStateFlow()
 
     private var scanTimeoutJob: Job? = null
+    private var provisioningTimeoutJob: Job? = null
     private var foundBluetoothDevice: BluetoothDevice? = null
+    private var pendingSsid: String = ""
+    private var isRegisteringDevice = false
 
     private val bluetoothAdapter: BluetoothAdapter? by lazy {
         (context.getSystemService(Context.BLUETOOTH_SERVICE) as? BluetoothManager)?.adapter
@@ -219,12 +227,18 @@ class BleProvisioningViewModel(
         }
 
         Log.d(TAG, "GATT 연결 시작: ${device.address}")
+        pendingSsid = ssid
+        isRegisteringDevice = false
         _state.value = ProvisioningState.Connecting
         repository.connect(device, ssid, password)
     }
 
     fun retry() {
+        provisioningTimeoutJob?.cancel()
+        repository.disconnect()
         foundBluetoothDevice = null
+        pendingSsid = ""
+        isRegisteringDevice = false
         _state.value = ProvisioningState.Idle
     }
 
@@ -236,32 +250,105 @@ class BleProvisioningViewModel(
         Log.d(TAG, "BleEvent 수신: $event")
         when (event) {
             is BleEvent.Connected    -> _state.value = ProvisioningState.Connected
-            is BleEvent.WriteDone    -> _state.value = ProvisioningState.WaitingResult
+            is BleEvent.WriteDone    -> {
+                _state.value = ProvisioningState.WaitingResult
+                startProvisioningResultTimeout()
+            }
             is BleEvent.Disconnected -> {
-                // SUCCESS 후 disconnect는 정상 흐름이므로 무시
-                if (_state.value !is ProvisioningState.Success) {
+                if (isDisconnectFailureState(_state.value)) {
+                    provisioningTimeoutJob?.cancel()
                     _state.value = ProvisioningState.Fail("연결이 끊겼습니다.")
                 }
             }
             is BleEvent.StatusNotify -> handleStatusNotify(event.status)
-            is BleEvent.Error        -> _state.value = ProvisioningState.Fail(event.message)
+            is BleEvent.Error        -> {
+                provisioningTimeoutJob?.cancel()
+                _state.value = ProvisioningState.Fail(event.message)
+            }
+            is BleEvent.ProvisioningSucceeded -> registerProvisionedDevice(event.serialNumber)
         }
     }
 
     private fun handleStatusNotify(status: String) {
-        when (status) {
-            "CONNECTING" -> _state.value = ProvisioningState.WaitingResult
-            "SUCCESS"    -> {
-                val ssid = (foundBluetoothDevice?.name ?: "홈 Wi-Fi")
-                _state.value = ProvisioningState.Success(ssid)
+        val normalizedStatus = status.trim().uppercase()
+
+        when {
+            normalizedStatus == "CONNECTING" || normalizedStatus == "WIFI_CONNECTING" -> {
+                _state.value = ProvisioningState.WaitingResult
+                startProvisioningResultTimeout()
             }
-            "FAIL"       -> _state.value = ProvisioningState.Fail("Wi-Fi 연결 실패. SSID와 비밀번호를 확인해주세요.")
-            else         -> Log.w(TAG, "알 수 없는 STATUS: $status")
+            normalizedStatus.startsWith("SUCCESS") ||
+                normalizedStatus == "CONNECTED" ||
+                normalizedStatus == "WIFI_CONNECTED" ||
+                normalizedStatus == "DONE" ||
+                normalizedStatus == "OK" -> {
+                _state.value = ProvisioningState.RegisteringDevice
+            }
+            normalizedStatus == "FAIL" ||
+                normalizedStatus == "FAILED" ||
+                normalizedStatus.startsWith("ERROR") -> {
+                provisioningTimeoutJob?.cancel()
+                _state.value = ProvisioningState.Fail("Wi-Fi 연결 실패. SSID와 비밀번호를 확인해주세요.")
+            }
+            else -> Log.w(TAG, "알 수 없는 STATUS: $status")
+        }
+    }
+
+    private fun registerProvisionedDevice(serialNumber: String) {
+        if (isRegisteringDevice || _state.value is ProvisioningState.Success) {
+            Log.d(TAG, "기기 등록 중복 요청 무시: serialNumber=$serialNumber")
+            return
+        }
+
+        isRegisteringDevice = true
+        provisioningTimeoutJob?.cancel()
+        viewModelScope.launch {
+            _state.value = ProvisioningState.RegisteringDevice
+
+            runCatching {
+                deviceRegistrationRepository.registerIotDevice(
+                    serialNumber = serialNumber,
+                    registrationContext = registrationContext,
+                )
+            }.onSuccess {
+                _state.value = ProvisioningState.Success(pendingSuccessLabel())
+            }.onFailure { error ->
+                Log.e(TAG, "기기 등록 실패: ${error.message}", error)
+                isRegisteringDevice = false
+                _state.value = ProvisioningState.Fail(
+                    error.message ?: "프로비저닝은 완료됐지만 기기 등록에 실패했습니다.",
+                )
+            }
+        }
+    }
+
+    private fun pendingSuccessLabel(): String =
+        pendingSsid.ifBlank { foundBluetoothDevice?.name ?: "Re:Bloom 스피커" }
+
+    private fun isDisconnectFailureState(state: ProvisioningState): Boolean =
+        state is ProvisioningState.Connecting ||
+            state is ProvisioningState.Connected ||
+            state is ProvisioningState.WaitingResult
+
+    private fun startProvisioningResultTimeout() {
+        provisioningTimeoutJob?.cancel()
+        provisioningTimeoutJob = viewModelScope.launch {
+            delay(PROVISIONING_RESULT_TIMEOUT_MS)
+            if (
+                _state.value is ProvisioningState.WaitingResult ||
+                _state.value is ProvisioningState.RegisteringDevice
+            ) {
+                repository.disconnect()
+                _state.value = ProvisioningState.Fail(
+                    "스피커의 Wi-Fi 연결 결과 또는 serialNumber를 받지 못했습니다.\n기기가 Wi-Fi에 연결되어 있다면 스피커 펌웨어의 STATUS/DEVINFO 전송을 확인해주세요.",
+                )
+            }
         }
     }
 
     override fun onCleared() {
         super.onCleared()
+        provisioningTimeoutJob?.cancel()
         stopScan()
         repository.disconnect()
     }

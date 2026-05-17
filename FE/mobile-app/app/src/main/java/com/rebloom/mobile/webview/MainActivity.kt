@@ -66,10 +66,18 @@ class MainActivity : ComponentActivity() {
     }
 
     private val webAppBaseUrl: String
-        get() = BuildConfig::class.java
-            .getField("WEB_APP_BASE_URL")
-            .get(null)
-            .toString()
+        get() {
+            val configuredBaseUrl = BuildConfig.WEB_APP_BASE_URL
+            if (configuredBaseUrl.isNotBlank()) {
+                return configuredBaseUrl
+            }
+
+            return if (isProbablyEmulator()) {
+                "http://10.0.2.2:5173"
+            } else {
+                "http://127.0.0.1:5173"
+            }
+        }
 
     private val launchUrl: String
         get() = webAppBaseUrl.trimEnd('/') + "/?mode=webview"
@@ -258,6 +266,15 @@ class MainActivity : ComponentActivity() {
 
         notificationPermissionLauncher.launch(permission)
     }
+
+    private fun isProbablyEmulator(): Boolean =
+        Build.FINGERPRINT.startsWith("generic") ||
+            Build.FINGERPRINT.lowercase().contains("emulator") ||
+            Build.MODEL.lowercase().contains("sdk") ||
+            Build.MODEL.lowercase().contains("emulator") ||
+            Build.MANUFACTURER.lowercase().contains("genymotion") ||
+            Build.BRAND.startsWith("generic") ||
+            Build.DEVICE.startsWith("generic")
 
     private companion object {
         private const val TAG = "ReBloomWebView"
