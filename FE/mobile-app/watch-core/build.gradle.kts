@@ -16,7 +16,7 @@ android {
     }
 
     signingConfigs {
-        create("shared") {
+        create("rebloom") {
             storeFile = file("../rebloom.keystore")
             storePassword = "rebloom123"
             keyAlias = "rebloom"
@@ -26,10 +26,10 @@ android {
 
     buildTypes {
         debug {
-            signingConfig = signingConfigs.getByName("shared")
+            signingConfig = signingConfigs.getByName("rebloom")
         }
         release {
-            signingConfig = signingConfigs.getByName("shared")
+            signingConfig = signingConfigs.getByName("rebloom")
             isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
