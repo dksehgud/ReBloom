@@ -12,6 +12,7 @@ import {
 } from '../../features/auth/api/authApi'
 import { openDaumPostcodePopup } from '../../shared/utils/daumPostcode'
 import { geocodeAddress } from '../../shared/utils/kakaoGeocoder'
+import { requestNativeSleepPermission } from '../../shared/utils/nativeTokenBridge'
 
 type UserRole = 'child' | 'parent'
 type SignUpStep = 'role' | 'email' | 'code' | 'details'
@@ -521,6 +522,9 @@ function SignUpPage({ onBackToLogin }: SignUpPageProps) {
   }
 
   const handleComplete = () => {
+    if (role === 'child') {
+      requestNativeSleepPermission()
+    }
     setModal(null)
     setStep('role')
     setRole(null)
