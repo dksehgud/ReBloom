@@ -107,7 +107,7 @@
 }
 
 .counselor-dashboard-grid {
-  align-items: start;
+  align-items: stretch;
 }
 
 .counselor-dashboard-column {
@@ -119,7 +119,8 @@
 }
 
 .counselor-dashboard-column--analysis {
-  height: auto;
+  align-self: stretch;
+  height: 100%;
 }
 
 

@@ -27,7 +27,6 @@ function CounselorDashboardPage() {
   const counselorName =
     useAppSessionStore((state) => state.currentUser?.name?.trim()) || '상담사'
   const {
-    analysisCardHeight,
     autonomicData,
     autonomicWeek,
     biometricRatioData,
@@ -53,7 +52,6 @@ function CounselorDashboardPage() {
     isLoadingObservationRecords,
     isSubmittingObservationComment,
     isSidebarCollapsed,
-    mainColumnRef,
     observationCommentError,
     observationComments,
     observationRecordsError,
@@ -186,7 +184,6 @@ function CounselorDashboardPage() {
                 <div
                   className="counselor-dashboard-column"
                   aria-label="대시보드 주요 정보"
-                  ref={mainColumnRef}
                 >
                   <DashboardCard
                     title="아이 관찰 기록"
@@ -249,7 +246,6 @@ function CounselorDashboardPage() {
                     isLoading={isLoadingDashboardMetrics}
                     isFirstWeek={expressionWeek.isFirstWeek}
                     isLastWeek={expressionWeek.isLastWeek}
-                    minHeight={analysisCardHeight}
                     weekLabel={expressionWeek.currentWeek.label}
                     childId={selectedChildId}
                     onPrevWeek={expressionWeek.goPrevWeek}
