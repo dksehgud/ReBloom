@@ -112,6 +112,7 @@ type DashboardExpressionAnalysis = {
   insight: string
   trend: Record<ExpressionFilter, DashboardMetricPoint[]>
   days: TimelineDay[]
+  weekLabels: string[]
 }
 
 export type {

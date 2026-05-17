@@ -13,6 +13,7 @@ type LineChartProps = {
   color: string
   showLine?: boolean
   showEmoji?: boolean
+  xAxisLabels?: string[]
 }
 
 function LineChart({
@@ -20,6 +21,7 @@ function LineChart({
   color,
   showLine = true,
   showEmoji = false,
+  xAxisLabels,
 }: LineChartProps) {
   const width = 520
   const height = 180
@@ -27,9 +29,11 @@ function LineChart({
   const paddingTop = 18
   const paddingBottom = 30
   const chartHeight = height - paddingTop - paddingBottom
-  const gap = (width - paddingX * 2) / Math.max(data.length - 1, 1)
+  const axisLabels = xAxisLabels?.length ? xAxisLabels : data.map((item) => item.label)
+  const gap = (width - paddingX * 2) / Math.max(axisLabels.length - 1, 1)
   const points = data.map((item, index) => {
-    const x = paddingX + gap * index
+    const axisIndex = axisLabels.indexOf(item.label)
+    const x = paddingX + gap * (axisIndex >= 0 ? axisIndex : index)
     const y = paddingTop + chartHeight - (item.value / 100) * chartHeight
     return { ...item, x, y }
   })
@@ -82,12 +86,19 @@ function LineChart({
                 />
               </foreignObject>
             ) : null}
-            <text className="counselor-line-chart-label" x={point.x} y={height - 8}>
-              {point.label}
-            </text>
           </g>
         )
       })}
+      {axisLabels.map((label, index) => (
+        <text
+          className="counselor-line-chart-label"
+          key={`${label}-${index}`}
+          x={paddingX + gap * index}
+          y={height - 8}
+        >
+          {label}
+        </text>
+      ))}
     </svg>
   )
 }

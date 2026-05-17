@@ -26,4 +26,30 @@ describe('counselor line chart conversation markers', () => {
 
     expect(markup).toContain('<circle')
   })
+
+  it('keeps weekly x-axis labels fixed when trend data is sparse', () => {
+    const markup = renderToStaticMarkup(
+      <LineChart
+        data={[
+          { label: 'Fri', value: 80, hasConversation: true },
+          { label: 'Sun', value: 60, hasConversation: true },
+        ]}
+        color="#88b5c4"
+        xAxisLabels={['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']}
+      />,
+    )
+
+    const labels = [
+      ...markup.matchAll(
+        /class="counselor-line-chart-label"[^>]*>([^<]+)/g,
+      ),
+    ].map((match) => match[1])
+    const circleXs = [...markup.matchAll(/<circle cx="([^"]+)"/g)].map(
+      (match) => Number(match[1]),
+    )
+
+    expect(labels).toEqual(['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'])
+    expect(circleXs[0]).toBeCloseTo(331.3, 1)
+    expect(circleXs[1]).toBeCloseTo(474, 1)
+  })
 })
