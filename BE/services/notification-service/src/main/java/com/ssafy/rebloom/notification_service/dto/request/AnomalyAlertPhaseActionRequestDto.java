@@ -6,6 +6,7 @@ import java.util.UUID;
 public record AnomalyAlertPhaseActionRequestDto(
     @NotNull
     UUID childrenId,
+    @NotNull
     Long notificationId
 ) {
 }

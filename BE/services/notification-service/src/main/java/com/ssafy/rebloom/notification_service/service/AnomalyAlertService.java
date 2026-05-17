@@ -8,9 +8,9 @@ public interface AnomalyAlertService {
 
     void processDuePhases();
 
-    void confirmPhase(UUID parentId, UUID childrenId);
+    void confirmPhase(UUID parentId, UUID childrenId, Long notificationId);
 
-    void rejectPhase(UUID parentId, UUID childrenId, String correlationId);
+    void rejectPhase(UUID parentId, UUID childrenId, Long notificationId, String correlationId);
 
     boolean requestGpsCheck(UUID childrenId, UUID parentId, String correlationId);
 
