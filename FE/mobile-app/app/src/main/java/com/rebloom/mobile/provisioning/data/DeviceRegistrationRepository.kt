@@ -24,7 +24,8 @@ class DeviceRegistrationRepository(private val context: Context) {
         val request = DeviceRegistrationRequest(
             serialNumber = serialNumber,
             deviceType = "IOT",
-        )
+
+            )
         val response = if (registrationContext.role == "parent") {
             val targetChildrenId = registrationContext.childrenId?.takeIf { it.isNotBlank() }
                 ?: resolveConnectedChildId(api)
