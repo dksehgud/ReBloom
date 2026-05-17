@@ -67,7 +67,7 @@ public class NotificationServiceImpl implements NotificationService {
                 pageable
             );
         } else {
-            notifications = notificationRepository.findByReceiverIdAndReadOrderByCreatedAtDesc(
+            notifications = notificationRepository.findByReceiverIdAndIsReadOrderByCreatedAtDesc(
                 receiverId,
                 isRead,
                 pageable
