@@ -1,6 +1,7 @@
 import type { ChangeEventHandler } from 'react'
 
 import DiaryEmotionIcon from './DiaryEmotionIcon'
+import { DIARY_CONTENT_MAX_LENGTH } from '../constants/diaryLimits'
 import type { DiaryEmotionKey } from '../constants/diaryEmotions'
 
 type DiaryWriteViewProps = {
@@ -42,7 +43,7 @@ function DiaryWriteView({
   content,
   emotionKey = null,
   placeholder = '오늘 하루를 기록해보세요.',
-  maxLength = 2000,
+  maxLength = DIARY_CONTENT_MAX_LENGTH,
   isSubmitDisabled = false,
   onBack,
   onMoodClick,

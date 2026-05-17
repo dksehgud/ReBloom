@@ -1,7 +1,10 @@
+import { useLayoutEffect, useRef } from 'react'
+
 import {
   PARENT_OBSERVATION_MOODS,
   type ParentObservationMood,
 } from '../constants/parentObservationMoods'
+import { PARENT_OBSERVATION_DESCRIPTION_MAX_LENGTH } from '../constants/parentObservationLimits'
 import ParentObservationModalFrame from './ParentObservationModalFrame'
 
 type ParentObservationFormModalProps = {
@@ -75,8 +78,20 @@ function ParentObservationFormModal({
   onContentChange,
   onSubmit,
 }: ParentObservationFormModalProps) {
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
   const submitLabel = mode === 'create' ? '작성하기' : '수정하기'
   const shouldShowDateNavigation = mode === 'create'
+
+  useLayoutEffect(() => {
+    const textarea = textareaRef.current
+
+    if (!textarea) {
+      return
+    }
+
+    textarea.style.height = 'auto'
+    textarea.style.height = `${textarea.scrollHeight}px`
+  }, [content])
 
   return (
     <ParentObservationModalFrame
@@ -119,11 +134,18 @@ function ParentObservationFormModal({
 
       <div className="parent-observation-form-modal__textarea-wrap">
         <textarea
+          ref={textareaRef}
           className="parent-observation-form-modal__textarea"
           placeholder="오늘 아이의 모습을 자세히 기록해보세요..."
           value={content}
+          maxLength={PARENT_OBSERVATION_DESCRIPTION_MAX_LENGTH}
           onChange={(event) => onContentChange?.(event.target.value)}
         />
+      </div>
+      <div className="parent-observation-form-modal__count-row">
+        <span className="parent-observation-form-modal__count">
+          {content.length}/{PARENT_OBSERVATION_DESCRIPTION_MAX_LENGTH}
+        </span>
       </div>
 
       <div className="parent-observation-form-modal__mood-grid">

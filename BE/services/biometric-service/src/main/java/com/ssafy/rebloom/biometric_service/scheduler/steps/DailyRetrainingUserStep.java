@@ -49,9 +49,10 @@ public class DailyRetrainingUserStep {
     }
 
     protected RetrainingPayload collectPayload(UUID userId) {
-        LocalDate yesterday = LocalDate.now().minusDays(1);
-        sleepRepository.clearMainSleepByDate(userId, yesterday);
-        sleepRepository.markLongestSleepAsMainByDate(userId, yesterday);
+        LocalDateTime windowEnd = LocalDate.now().atTime(9, 0);
+        LocalDateTime windowStart = windowEnd.minusDays(1);
+        sleepRepository.clearMainSleepInWindow(userId, windowStart, windowEnd);
+        sleepRepository.markLongestSleepAsMainInWindow(userId, windowStart, windowEnd);
 
         boolean phqReady = isPhqReady(userId);
         List<BiometricDataEvent> biometrics = findBiometrics(userId, phqReady);
@@ -62,7 +63,7 @@ public class DailyRetrainingUserStep {
 
     private boolean isPhqReady(UUID userId) {
         return sleepRepository.findFirstWakeup(userId)
-            .map(firstWakeup -> ChronoUnit.DAYS.between(firstWakeup.toLocalDate(), LocalDate.now()) >= PHQ_READY_DAYS)
+            .map(firstWakeup -> ChronoUnit.DAYS.between(firstWakeup.toLocalDate(), LocalDate.now()) >= PHQ_READY_DAYS - 1)
             .orElse(false);
     }
 

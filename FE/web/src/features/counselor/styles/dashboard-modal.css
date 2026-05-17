@@ -408,10 +408,13 @@
 .counselor-observation-comment-item p {
   margin: 4px 0 0;
   max-width: 100%;
+  max-height: 160px;
   color: #718096;
   font-size: 12px;
   line-height: 1.62;
+  overflow-y: auto;
   overflow-wrap: anywhere;
+  overscroll-behavior: contain;
   white-space: pre-wrap;
   word-break: keep-all;
 }
@@ -431,6 +434,7 @@
 .counselor-observation-comment-form textarea {
   width: 100%;
   min-height: 80px;
+  max-height: 150px;
   resize: none;
   padding: 12px;
   color: #2d3748;
@@ -441,8 +445,21 @@
   font: inherit;
   font-size: 12px;
   line-height: 1.5;
+  overflow-y: auto;
   overflow-wrap: anywhere;
+  overscroll-behavior: contain;
   word-break: keep-all;
+}
+
+.counselor-observation-comment-item p,
+.counselor-observation-comment-form textarea {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.counselor-observation-comment-item p::-webkit-scrollbar,
+.counselor-observation-comment-form textarea::-webkit-scrollbar {
+  display: none;
 }
 
 .counselor-observation-comment-form textarea:focus {
@@ -452,6 +469,21 @@
 
 .counselor-observation-comment-form textarea::placeholder {
   color: rgba(10, 10, 10, 0.5);
+}
+
+.counselor-observation-comment-count-row {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: -7px;
+  min-height: 18px;
+}
+
+.counselor-observation-comment-count {
+  color: #99a1af;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 18px;
+  white-space: nowrap;
 }
 
 .counselor-observation-comment-form button {

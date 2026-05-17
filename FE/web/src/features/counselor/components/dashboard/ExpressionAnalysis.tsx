@@ -100,6 +100,7 @@ function ExpressionAnalysis({
                 color="#88b5c4"
                 showLine={activeFilter !== 'diary'}
                 showEmoji={activeFilter !== 'conversation'}
+                xAxisLabels={analysis.weekLabels}
               />
             </div>
           ) : null}

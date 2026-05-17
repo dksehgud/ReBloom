@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 
 import { useAppSessionStore } from '../../auth/store/useAppSessionStore'
+import { PARENT_OBSERVATION_DESCRIPTION_MAX_LENGTH } from '../constants/parentObservationLimits'
 import type { ParentObservationMood } from '../constants/parentObservationMoods'
 import { useParentObservationPreview } from '../hooks/useParentObservationPreview'
 import { useParentMockMode } from '../hooks/useParentMockMode'
@@ -118,6 +119,7 @@ function ParentObservationSection({
       !childrenId ||
       !draftMood ||
       nextDescription.length === 0 ||
+      draftDescription.length > PARENT_OBSERVATION_DESCRIPTION_MAX_LENGTH ||
       isSubmitting
     ) {
       return
@@ -238,7 +240,10 @@ function ParentObservationSection({
           canGoNextDate={false}
           canGoPreviousDate={false}
           isSubmitDisabled={
-            isSubmitting || !draftMood || draftDescription.trim().length === 0
+            isSubmitting ||
+            !draftMood ||
+            draftDescription.trim().length === 0 ||
+            draftDescription.length > PARENT_OBSERVATION_DESCRIPTION_MAX_LENGTH
           }
           onClose={handleCloseCreate}
           onSelectMood={setDraftMood}

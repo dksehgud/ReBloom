@@ -1,4 +1,6 @@
 import type { FormEvent } from 'react'
+import { useState } from 'react'
+import { FiEye, FiEyeOff } from 'react-icons/fi'
 
 import googleLogo from '../../assets/google-logo.svg'
 import kakaoLogo from '../../assets/kakao-logo.svg'
@@ -33,6 +35,7 @@ function LoginPage({
   onSocialLoginClick,
 }: LoginPageProps) {
   const isLoginEnabled = email.trim().length > 0 && password.trim().length > 0
+  const [isPasswordVisible, setIsPasswordVisible] = useState(false)
 
   const handleLoginSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -57,15 +60,23 @@ function LoginPage({
           />
         </label>
 
-        <label className="field">
+        <label className="field field--password">
           <span className="sr-only">비밀번호</span>
           <input
-            type="password"
+            type={isPasswordVisible ? 'text' : 'password'}
             placeholder="비밀번호"
             autoComplete="current-password"
             value={password}
             onChange={(event) => onPasswordChange(event.target.value)}
           />
+          <button
+            type="button"
+            className="login-password-toggle"
+            aria-label={isPasswordVisible ? 'Hide password' : 'Show password'}
+            onClick={() => setIsPasswordVisible((prev) => !prev)}
+          >
+            {isPasswordVisible ? <FiEye /> : <FiEyeOff />}
+          </button>
         </label>
 
         <button
