@@ -1,6 +1,7 @@
 package com.ssafy.rebloom.notification_service.domain.entity;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.ssafy.rebloom.notification_service.domain.enums.AnomalyActionStatus;
 import java.util.UUID;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -9,7 +10,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 @Getter
-@Builder
+@Builder(toBuilder = true)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -24,4 +25,5 @@ public class NotificationPayload {
     private String counselorName;
     private Integer depressionScore;
     private String depressionScoreText;
+    private AnomalyActionStatus anomalyActionStatus;
 }
