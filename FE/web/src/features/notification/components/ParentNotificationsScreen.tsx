@@ -20,55 +20,42 @@ function NotificationsHeaderIcon() {
 
 type ParentNotificationsHeaderProps = {
   childName?: string
-  hasUnread: boolean
-  onMarkAllAsRead: () => void
 }
 
 function ParentNotificationsHeader({
   childName,
-  hasUnread,
-  onMarkAllAsRead,
 }: ParentNotificationsHeaderProps) {
   const displayName = childName?.trim() || '아이'
 
   return (
     <div className="parent-notifications-page__header">
-      <div className="parent-notifications-page__header-copy">
-        <div className="parent-notifications-page__title-row">
-          <span className="parent-notifications-page__title-icon">
-            <NotificationsHeaderIcon />
-          </span>
-          <h1 className="parent-notifications-page__title">알림</h1>
+      <div className="parent-notifications-page__header-main">
+        <div className="parent-notifications-page__header-copy">
+          <div className="parent-notifications-page__title-row">
+            <span className="parent-notifications-page__title-icon">
+              <NotificationsHeaderIcon />
+            </span>
+            <h1 className="parent-notifications-page__title">알림</h1>
+          </div>
+          <p className="parent-notifications-page__subtitle">
+            {displayName}의 감정 변화와 중요한 소식을 확인하세요
+          </p>
         </div>
-        <p className="parent-notifications-page__subtitle">
-          {displayName}의 감정 변화와 중요한 소식을 확인하세요
-        </p>
       </div>
-      <button
-        type="button"
-        className="parent-notifications-page__read-all"
-        disabled={!hasUnread}
-        onClick={onMarkAllAsRead}
-      >
-        전체 읽음
-      </button>
+      {/* 전체 읽음 버튼은 부모앱에서 노출하지 않습니다. */}
     </div>
   )
 }
 
 function ParentNotificationsScreen() {
   const { selectedChild } = useParentConnectedChild()
-  const { notifications, markAsRead, markAllAsRead, chooseAction } =
-    useParentNotificationState()
-  const hasUnreadNotifications = notifications.some((notification) => notification.unread)
+  const { notifications, markAsRead, chooseAction } = useParentNotificationState()
 
   return (
     <MobilePageLayout
       header={
         <ParentNotificationsHeader
           childName={selectedChild?.name}
-          hasUnread={hasUnreadNotifications}
-          onMarkAllAsRead={markAllAsRead}
         />
       }
       className="parent-home-page parent-notifications-page"
