@@ -42,6 +42,7 @@ import {
 import type { ChildAddress } from '../../shared/types/childAddress'
 import {
   clearNativeAccessToken,
+  requestNativeSleepPermission,
   saveNativeAccessToken,
 } from '../../shared/utils/nativeTokenBridge'
 
@@ -332,6 +333,7 @@ function LoginRoute() {
       setActiveRole(nextRole)
 
       if (nextRole === 'child') {
+        requestNativeSleepPermission()
         navigate('/child/diary', { replace: true })
         return
       }
@@ -412,6 +414,7 @@ function OAuthCallbackRoute() {
           clearSelectedChild()
 
           if (nextRole === 'child') {
+            requestNativeSleepPermission()
             navigate('/child/diary', { replace: true })
             return
           }

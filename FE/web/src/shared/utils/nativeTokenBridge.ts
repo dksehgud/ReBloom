@@ -3,6 +3,7 @@ declare global {
     Android?: {
       saveToken?: (token: string) => void
       clearToken?: () => void
+      checkSleepPermission?: () => void
     }
   }
 }
@@ -23,4 +24,12 @@ function clearNativeAccessToken() {
   window.Android?.clearToken?.()
 }
 
-export { clearNativeAccessToken, saveNativeAccessToken }
+function requestNativeSleepPermission() {
+  if (typeof window === 'undefined') {
+    return
+  }
+
+  window.Android?.checkSleepPermission?.()
+}
+
+export { clearNativeAccessToken, requestNativeSleepPermission, saveNativeAccessToken }
