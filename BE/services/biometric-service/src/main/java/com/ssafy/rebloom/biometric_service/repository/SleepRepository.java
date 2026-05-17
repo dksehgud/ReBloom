@@ -53,4 +53,16 @@ public interface SleepRepository extends JpaRepository<Sleep, SleepId>, SleepQue
         @Param("userId") UUID userId,
         @Param("from") LocalDateTime from
     );
+
+    @Query("SELECT s FROM Sleep s " +
+           "WHERE s.id.userId = :userId " +
+           "AND s.id.wakeup >= :from " +
+           "AND s.id.wakeup < :to " +
+           "AND s.isMainSleep = true " +
+           "ORDER BY s.id.wakeup ASC")
+    List<Sleep> findMainSleepsInRange(
+        @Param("userId") UUID userId,
+        @Param("from") LocalDateTime from,
+        @Param("to") LocalDateTime to
+    );
 }

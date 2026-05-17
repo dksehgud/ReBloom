@@ -1,6 +1,7 @@
 package com.ssafy.rebloom.biometric_service.scheduler;
 
 import com.ssafy.rebloom.biometric_service.scheduler.steps.DailyRetrainingBatch;
+import com.ssafy.rebloom.biometric_service.scheduler.steps.DailyStatusCardBatch;
 import com.ssafy.rebloom.biometric_service.service.RedisService;
 import java.time.Duration;
 import lombok.RequiredArgsConstructor;
@@ -18,9 +19,10 @@ public class DailyScheduler {
 
     private final RedisService redisService;
     private final DailyRetrainingBatch dailyRetrainingBatch;
+    private final DailyStatusCardBatch dailyStatusCardBatch;
 
     @Scheduled(
-        cron = "${rebloom.scheduler.daily-retraining.cron:0 0 0 * * *}",
+        cron = "${rebloom.scheduler.daily-retraining.cron:0 0 9 * * *}",
         zone = "${rebloom.scheduler.daily-retraining.zone:Asia/Seoul}"
     )
     public void runDailyRetraining() {
@@ -31,6 +33,7 @@ public class DailyScheduler {
 
         try {
             dailyRetrainingBatch.run();
+            dailyStatusCardBatch.run();
         } finally {
             redisService.delete(LOCK_KEY);
         }
