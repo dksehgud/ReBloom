@@ -66,7 +66,10 @@ import {
   parentNotificationApi,
   rejectParentAnomalyAlert,
 } from '../src/features/notification/api/parentNotificationApi'
-import { mapNotificationDtoToItem } from '../src/features/notification/hooks/useParentNotificationState'
+import {
+  canChooseParentNotificationAction,
+  mapNotificationDtoToItem,
+} from '../src/features/notification/hooks/useParentNotificationState'
 import { getParentNotificationApi } from '../src/features/notification/services/parentNotificationService'
 import {
   getParentDiaryEmotions,
@@ -482,6 +485,79 @@ describe('parent notification API functions', () => {
       'confirm',
     ])
     expect(conversationAlert.actions).toBeUndefined()
+  })
+
+  it('blocks changing an already selected parent anomaly alert action', () => {
+    const riskAlert = mapNotificationDtoToItem({
+      createdAt: '2026-05-17T10:00:00',
+      id: 1,
+      isRead: false,
+      notificationType: 'RISK_ALERT',
+      payload: {
+        childrenId: 'child-1',
+      },
+    })
+
+    expect(canChooseParentNotificationAction(riskAlert, 'confirm')).toBe(true)
+    expect(
+      canChooseParentNotificationAction(
+        { ...riskAlert, selectedActionKey: 'confirm' },
+        'reject',
+      ),
+    ).toBe(false)
+  })
+
+  it('keeps a persisted parent anomaly alert action selected after remapping', () => {
+    const riskAlert = mapNotificationDtoToItem(
+      {
+        createdAt: '2026-05-17T10:00:00',
+        id: 1,
+        isRead: false,
+        notificationType: 'RISK_ALERT',
+        payload: {
+          childrenId: 'child-1',
+        },
+      },
+      'reject',
+    )
+
+    expect(riskAlert.selectedActionKey).toBe('reject')
+    expect(riskAlert.unread).toBe(false)
+    expect(canChooseParentNotificationAction(riskAlert, 'confirm')).toBe(false)
+  })
+
+  it('uses anomaly action status from the parent notification payload first', () => {
+    const confirmedAlert = mapNotificationDtoToItem(
+      {
+        createdAt: '2026-05-17T10:00:00',
+        id: 1,
+        isRead: false,
+        notificationType: 'RISK_ALERT',
+        payload: {
+          anomalyActionStatus: 'CONFIRMED',
+          childrenId: 'child-1',
+        },
+      },
+      'reject',
+    )
+    const pendingAlert = mapNotificationDtoToItem(
+      {
+        createdAt: '2026-05-17T10:00:00',
+        id: 2,
+        isRead: false,
+        notificationType: 'RISK_ALERT',
+        payload: {
+          anomalyActionStatus: 'NONE',
+          childrenId: 'child-1',
+        },
+      },
+      'reject',
+    )
+
+    expect(confirmedAlert.selectedActionKey).toBe('confirm')
+    expect(confirmedAlert.unread).toBe(false)
+    expect(pendingAlert.selectedActionKey).toBeUndefined()
+    expect(canChooseParentNotificationAction(pendingAlert, 'confirm')).toBe(true)
   })
 })
 

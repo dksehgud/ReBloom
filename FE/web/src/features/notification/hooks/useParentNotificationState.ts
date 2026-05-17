@@ -1,17 +1,32 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { authApi } from '../../auth/api/authApi'
 import { useAppSessionStore } from '../../auth/store/useAppSessionStore'
 import { useParentMockMode } from '../../guardian/hooks/useParentMockMode'
 import { subscribeParentNotifications } from '../api/parentNotificationSse'
-import type { ParentNotificationItem } from '../constants/parentNotifications'
+import type {
+  ParentNotificationAction,
+  ParentNotificationItem,
+} from '../constants/parentNotifications'
 import { getParentNotificationApi } from '../services/parentNotificationService'
-import type { ParentNotificationDto } from '../types/parentNotification'
+import type {
+  ParentNotificationDto,
+  ParentNotificationPayloadDto,
+} from '../types/parentNotification'
+
+type SelectedParentNotificationActions = Record<
+  string,
+  ParentNotificationAction['key']
+>
+
+const SELECTED_PARENT_NOTIFICATION_ACTIONS_STORAGE_KEY =
+  'rebloom-parent-notification-actions'
 
 function useParentNotificationState(initialItems: ParentNotificationItem[] = []) {
   const [notifications, setNotifications] = useState<ParentNotificationItem[]>(
     () => initialItems,
   )
+  const selectedActionNotificationIdsRef = useRef<Set<string>>(new Set())
   const accessToken = useAppSessionStore((state) => state.accessToken)
   const refreshToken = useAppSessionStore((state) => state.refreshToken)
   const clearSession = useAppSessionStore((state) => state.clearSession)
@@ -27,7 +42,16 @@ function useParentNotificationState(initialItems: ParentNotificationItem[] = [])
       const response = await parentNotificationApi.getParentNotifications({
         accessToken,
       })
-      setNotifications((response.contents ?? []).map(mapNotificationDtoToItem))
+      const selectedActions = readSelectedParentNotificationActions()
+
+      setNotifications(
+        (response.contents ?? []).map((notification) =>
+          mapNotificationDtoToItem(
+            notification,
+            selectedActions[String(notification.id)],
+          ),
+        ),
+      )
     } catch (error) {
       console.error(error)
       setNotifications([])
@@ -87,9 +111,19 @@ function useParentNotificationState(initialItems: ParentNotificationItem[] = [])
         (item) => item.id === notificationId,
       )
 
+      if (
+        selectedActionNotificationIdsRef.current.has(notificationId) ||
+        !canChooseParentNotificationAction(targetNotification, actionKey)
+      ) {
+        return
+      }
+
+      selectedActionNotificationIdsRef.current.add(notificationId)
+      writeSelectedParentNotificationAction(notificationId, actionKey)
+
       setNotifications((currentItems) =>
         currentItems.map((item) =>
-          item.id === notificationId
+          item.id === notificationId && !item.selectedActionKey
             ? {
                 ...item,
                 unread: false,
@@ -162,12 +196,31 @@ function useParentNotificationState(initialItems: ParentNotificationItem[] = [])
         console.error(error)
       },
       onNotification: (notification) => {
-        const notificationItem = mapNotificationDtoToItem(notification)
+        const storedActionKey = readSelectedParentNotificationAction(
+          String(notification.id),
+        )
+        const notificationItem = mapNotificationDtoToItem(
+          notification,
+          storedActionKey,
+        )
 
-        setNotifications((currentItems) => [
-          notificationItem,
-          ...currentItems.filter((item) => item.id !== notificationItem.id),
-        ])
+        setNotifications((currentItems) => {
+          const currentItem = currentItems.find(
+            (item) => item.id === notificationItem.id,
+          )
+          const nextNotificationItem = currentItem?.selectedActionKey
+            ? {
+                ...notificationItem,
+                selectedActionKey: currentItem.selectedActionKey,
+                unread: false,
+              }
+            : notificationItem
+
+          return [
+            nextNotificationItem,
+            ...currentItems.filter((item) => item.id !== notificationItem.id),
+          ]
+        })
       },
       onTokenRefresh: (tokens) => {
         setSessionTokens(tokens, 'parent')
@@ -183,13 +236,123 @@ function useParentNotificationState(initialItems: ParentNotificationItem[] = [])
   }
 }
 
+function canChooseParentNotificationAction(
+  notification: ParentNotificationItem | undefined,
+  actionKey: string,
+): actionKey is ParentNotificationAction['key'] {
+  return Boolean(
+    notification &&
+      !notification.selectedActionKey &&
+      notification.actions?.some((action) => action.key === actionKey),
+  )
+}
+
+function isParentNotificationActionKey(
+  value: unknown,
+): value is ParentNotificationAction['key'] {
+  return value === 'confirm' || value === 'reject'
+}
+
+function hasServerAnomalyActionStatus(
+  payload: ParentNotificationPayloadDto | null | undefined,
+) {
+  return Boolean(
+    payload &&
+      Object.prototype.hasOwnProperty.call(payload, 'anomalyActionStatus'),
+  )
+}
+
+function mapAnomalyActionStatusToActionKey(
+  status: ParentNotificationPayloadDto['anomalyActionStatus'],
+): ParentNotificationAction['key'] | undefined {
+  if (status === 'CONFIRMED') {
+    return 'confirm'
+  }
+
+  if (status === 'REJECTED') {
+    return 'reject'
+  }
+
+  return undefined
+}
+
+function readSelectedParentNotificationActions(): SelectedParentNotificationActions {
+  if (typeof window === 'undefined') {
+    return {}
+  }
+
+  try {
+    const rawValue = window.localStorage.getItem(
+      SELECTED_PARENT_NOTIFICATION_ACTIONS_STORAGE_KEY,
+    )
+
+    if (!rawValue) {
+      return {}
+    }
+
+    const parsedValue = JSON.parse(rawValue) as Record<string, unknown>
+
+    return Object.entries(parsedValue).reduce<SelectedParentNotificationActions>(
+      (actions, [notificationId, actionKey]) => {
+        if (isParentNotificationActionKey(actionKey)) {
+          actions[notificationId] = actionKey
+        }
+
+        return actions
+      },
+      {},
+    )
+  } catch {
+    return {}
+  }
+}
+
+function readSelectedParentNotificationAction(
+  notificationId: string,
+): ParentNotificationAction['key'] | undefined {
+  return readSelectedParentNotificationActions()[notificationId]
+}
+
+function writeSelectedParentNotificationAction(
+  notificationId: string,
+  actionKey: ParentNotificationAction['key'],
+) {
+  if (typeof window === 'undefined') {
+    return
+  }
+
+  const selectedActions = readSelectedParentNotificationActions()
+
+  selectedActions[notificationId] = actionKey
+  try {
+    window.localStorage.setItem(
+      SELECTED_PARENT_NOTIFICATION_ACTIONS_STORAGE_KEY,
+      JSON.stringify(selectedActions),
+    )
+  } catch {
+    // Ignore storage failures; the in-memory lock still prevents immediate changes.
+  }
+}
+
 function mapNotificationDtoToItem(
   notification: ParentNotificationDto,
+  selectedActionKey?: ParentNotificationAction['key'],
 ): ParentNotificationItem {
   const typeMeta = getNotificationTypeMeta(notification.notificationType)
   const payload = notification.payload
   const title = payload?.title?.trim() || typeMeta.title
   const message = payload?.content?.trim() || `${title} 알림을 확인해 주세요.`
+  const serverSelectedActionKey = mapAnomalyActionStatusToActionKey(
+    payload?.anomalyActionStatus,
+  )
+  const fallbackSelectedActionKey =
+    !hasServerAnomalyActionStatus(payload) &&
+    isParentNotificationActionKey(selectedActionKey)
+      ? selectedActionKey
+      : undefined
+  const resolvedSelectedActionKey = typeMeta.withActions
+    ? (serverSelectedActionKey ?? fallbackSelectedActionKey)
+    : undefined
 
   return {
     actions: typeMeta.withActions
@@ -207,7 +370,8 @@ function mapNotificationDtoToItem(
     timeLabel: formatRelativeTimeLabel(notification.createdAt),
     title,
     tone: typeMeta.tone,
-    unread: !notification.isRead,
+    selectedActionKey: resolvedSelectedActionKey,
+    unread: resolvedSelectedActionKey ? false : !notification.isRead,
   }
 }
 
@@ -306,4 +470,4 @@ function formatRelativeTimeLabel(createdAt?: string | null) {
 }
 
 export default useParentNotificationState
-export { mapNotificationDtoToItem }
+export { canChooseParentNotificationAction, mapNotificationDtoToItem }
