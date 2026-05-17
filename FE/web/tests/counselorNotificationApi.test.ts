@@ -15,6 +15,7 @@ import {
 import {
   getUnreadParentReportChildIds,
   getUnreadParentReportNotificationIdsByChildId,
+  mergeUnreadParentReportNotificationId,
   withUnreadParentObservationMarkers,
 } from '../src/features/notification/utils/counselorNotificationMarkers'
 
@@ -151,6 +152,42 @@ describe('counselor notification sidebar markers', () => {
       ])
 
     expect(unreadNotificationIdsByChildId.get('child-1')).toEqual([3, 4])
+  })
+
+  it('merges realtime parent report notifications into unread child markers', () => {
+    const unreadNotificationIdsByChildId = new Map([['child-1', [3]]])
+
+    const mergedNotificationIdsByChildId =
+      mergeUnreadParentReportNotificationId(unreadNotificationIdsByChildId, {
+        createdAt: '2026-05-17T09:33:00',
+        id: 4,
+        isRead: false,
+        notificationType: 'PARENT_REPORT_NEW',
+        payload: {
+          childrenId: 'child-1',
+        },
+      })
+
+    expect(mergedNotificationIdsByChildId.get('child-1')).toEqual([3, 4])
+  })
+
+  it('ignores duplicate realtime parent report notification ids', () => {
+    const unreadNotificationIdsByChildId = new Map([['child-1', [3]]])
+
+    const mergedNotificationIdsByChildId =
+      mergeUnreadParentReportNotificationId(unreadNotificationIdsByChildId, {
+        createdAt: '2026-05-17T09:33:00',
+        id: 3,
+        isRead: false,
+        notificationType: 'PARENT_REPORT_NEW',
+        payload: {
+          childrenId: 'child-1',
+        },
+      })
+
+    expect(mergedNotificationIdsByChildId).toBe(
+      unreadNotificationIdsByChildId,
+    )
   })
 
   it('adds red-dot marker state to matching sidebar children', () => {

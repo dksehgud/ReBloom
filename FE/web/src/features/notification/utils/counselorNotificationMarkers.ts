@@ -36,6 +36,38 @@ function getUnreadParentReportNotificationIdsByChildId(
   )
 }
 
+function mergeUnreadParentReportNotificationId(
+  currentNotificationIdsByChildId: Map<string, number[]>,
+  notification: ParentNotificationDto,
+): Map<string, number[]> {
+  const childrenId = notification.payload?.childrenId
+
+  if (
+    notification.isRead ||
+    notification.notificationType !== 'PARENT_REPORT_NEW' ||
+    !childrenId
+  ) {
+    return currentNotificationIdsByChildId
+  }
+
+  const currentNotificationIds =
+    currentNotificationIdsByChildId.get(childrenId) ?? []
+
+  if (currentNotificationIds.includes(notification.id)) {
+    return currentNotificationIdsByChildId
+  }
+
+  const nextNotificationIdsByChildId = new Map(
+    currentNotificationIdsByChildId,
+  )
+
+  nextNotificationIdsByChildId.set(childrenId, [
+    ...currentNotificationIds,
+    notification.id,
+  ])
+  return nextNotificationIdsByChildId
+}
+
 function withUnreadParentObservationMarkers(
   childItems: ChildListItem[],
   unreadParentReportChildIds: Set<string>,
@@ -49,5 +81,6 @@ function withUnreadParentObservationMarkers(
 export {
   getUnreadParentReportChildIds,
   getUnreadParentReportNotificationIdsByChildId,
+  mergeUnreadParentReportNotificationId,
   withUnreadParentObservationMarkers,
 }

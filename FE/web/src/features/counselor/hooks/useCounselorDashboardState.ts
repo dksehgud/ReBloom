@@ -61,10 +61,14 @@ import {
   formatDateParam,
   getWeekRangeByOffset,
 } from '../../../shared/utils/weekRange'
+import { authApi } from '../../auth/api/authApi'
 import { useAppSessionStore } from '../../auth/store/useAppSessionStore'
+import { subscribeParentNotifications } from '../../notification/api/parentNotificationSse'
 import { getCounselorNotificationApi } from '../../notification/services/counselorNotificationService'
+import type { ParentNotificationDto } from '../../notification/types/parentNotification'
 import {
   getUnreadParentReportNotificationIdsByChildId,
+  mergeUnreadParentReportNotificationId,
   withUnreadParentObservationMarkers,
 } from '../../notification/utils/counselorNotificationMarkers'
 import type { DiaryEmotionKey } from '../../diary/constants/diaryEmotions'
@@ -568,6 +572,9 @@ function mapAnalysisContentToExpressionAnalysis(
 
 function useCounselorDashboardState() {
   const accessToken = useAppSessionStore((state) => state.accessToken)
+  const refreshToken = useAppSessionStore((state) => state.refreshToken)
+  const clearSession = useAppSessionStore((state) => state.clearSession)
+  const setSessionTokens = useAppSessionStore((state) => state.setSessionTokens)
   const isMockMode = useCounselorMockMode()
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(
     getInitialSidebarCollapsed,
@@ -686,6 +693,15 @@ function useCounselorDashboardState() {
   const mainColumnRef = useCallback((node: HTMLDivElement | null) => {
     setMainColumnElement(node)
   }, [])
+
+  const mergeRealtimeParentReportNotification = useCallback(
+    (notification: ParentNotificationDto) => {
+      setUnreadParentReportNotificationIdsByChildId((current) =>
+        mergeUnreadParentReportNotificationId(current, notification),
+      )
+    },
+    [],
+  )
 
   const getWeekControls = (section: DashboardWeekSection) => {
     const weekOffset = weekOffsets[section]
@@ -1367,6 +1383,35 @@ function useCounselorDashboardState() {
 
     return () => window.clearTimeout(timeoutId)
   }, [loadParentReportNotificationMarkers])
+
+  useEffect(() => {
+    if (isMockMode || !accessToken) {
+      return undefined
+    }
+
+    return subscribeParentNotifications({
+      accessToken,
+      onAuthExpired: () => {
+        clearSession('counselor')
+      },
+      onError: (error) => {
+        console.error(error)
+      },
+      onNotification: mergeRealtimeParentReportNotification,
+      onTokenRefresh: (tokens) => {
+        setSessionTokens(tokens, 'counselor')
+      },
+      refreshToken,
+      reissueAccessToken: authApi.reissue,
+    })
+  }, [
+    accessToken,
+    clearSession,
+    isMockMode,
+    mergeRealtimeParentReportNotification,
+    refreshToken,
+    setSessionTokens,
+  ])
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
