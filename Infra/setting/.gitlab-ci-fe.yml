@@ -28,7 +28,14 @@ build-mobile-apk:
     - echo "----- FE mobile debug APK build start -----"
     - cd FE/mobile-app
     - cp $FCM_CLIENT_JSON ./app/google-services.json
-    - printf "%s" "$REBLOOM_KEYSTORE_BASE64" | tr -d '\r\n ' | base64 -d > rebloom.keystore
+    - |
+      KEYSTORE_BASE64="$(printf "%s" "$REBLOOM_KEYSTORE_BASE64" | tr -d '[:space:]')"
+      echo "REBLOOM_KEYSTORE_BASE64 length: ${#KEYSTORE_BASE64}"
+      if printf "%s" "$KEYSTORE_BASE64" | grep -q '[^A-Za-z0-9+/=]'; then
+        echo "REBLOOM_KEYSTORE_BASE64 contains invalid base64 characters"
+        exit 1
+      fi
+      printf "%s" "$KEYSTORE_BASE64" | base64 -d > rebloom.keystore
     - chmod +x ./gradlew
     - ./gradlew :app:assembleDebug --no-daemon -PWEB_APP_BASE_URL="${MOBILE_WEB_APP_BASE_URL}" -PAPI_BASE_URL="${MOBILE_API_BASE_URL}" -PDIARY_ANALYSIS_API_URL="${MOBILE_DIARY_ANALYSIS_API_URL}"
   artifacts:
