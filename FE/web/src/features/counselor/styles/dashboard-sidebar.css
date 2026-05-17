@@ -227,9 +227,14 @@
 }
 
 .counselor-child-unread-dot {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  align-self: center;
+  justify-self: end;
   width: 7px;
   height: 7px;
   flex: 0 0 7px;
+  margin-right: 2px;
   background: #f05d5d;
   border-radius: 999px;
   box-shadow: 0 0 0 3px rgba(240, 93, 93, 0.14);

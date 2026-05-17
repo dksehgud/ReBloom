@@ -78,15 +78,15 @@ function CounselorSidebar({
                 <span className="counselor-child-summary">
                   <span className="counselor-child-name">
                     <strong>{child.name}</strong>
-                    {child.hasUnreadParentObservation ? (
-                      <span
-                        className="counselor-child-unread-dot"
-                        aria-label="새 부모 관찰기록 있음"
-                      />
-                    ) : null}
                   </span>
                   <em>{child.meta}</em>
                 </span>
+                {child.hasUnreadParentObservation ? (
+                  <span
+                    className="counselor-child-unread-dot"
+                    aria-label="새 부모 관찰기록 있음"
+                  />
+                ) : null}
                 <small className="counselor-child-subtext">{child.subText}</small>
               </button>
             ))
