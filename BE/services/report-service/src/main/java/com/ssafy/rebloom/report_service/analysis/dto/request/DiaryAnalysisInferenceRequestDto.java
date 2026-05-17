@@ -3,6 +3,7 @@ package com.ssafy.rebloom.report_service.analysis.dto.request;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import java.time.LocalDate;
 import java.util.UUID;
 
@@ -25,6 +26,7 @@ public record DiaryAnalysisInferenceRequestDto(
     String emotionIcon,
 
     @NotBlank
+    @Size(max = 1000)
     String content
 ) {
 }
