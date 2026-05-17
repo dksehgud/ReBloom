@@ -20,7 +20,7 @@ variables:
 
 stages:
   - build
-  - docker-push
+  - build-and-push  # build와 docker-push를 하나로 통합
   - web-deploy
 
 workflow:
@@ -40,30 +40,12 @@ cache:
     - .gradle/wrapper/
 
 # ====================================================
-# 공통 템플릿
+# 공통 템플릿 (Build & Push 통합)
 # ====================================================
 
-.build-template:
+.build-and-push-template:
   image: eclipse-temurin:21-jdk-alpine
-  stage: build
-  tags:
-    - rebloom-dev
-  script:
-    - echo "----- ${SERVICE_NAME} 빌드 검증 시작 -----"
-    - cd BE
-    - chmod +x ./gradlew
-    # 빌드 검증과 동시에 최종 bootJar 생성
-    - ./gradlew :services:${SERVICE_NAME}:bootJar -x test
-    # plain.jar는 용량만 차지하므로 빌드 직후 제거
-    - rm -f services/${SERVICE_NAME}/build/libs/*-plain.jar
-  artifacts:
-    paths:
-      - BE/services/${SERVICE_NAME}/build/libs/*.jar
-    expire_in: 30 mins
-
-.push-template:
-  image: eclipse-temurin:21-jdk-alpine
-  stage: docker-push
+  stage: build-and-push
   tags:
     - rebloom-dev
   before_script:
@@ -72,132 +54,34 @@ cache:
     - |
       if [ "$SERVICE_NAME" == "notification-service" ]; then
         echo "----- Creating FCM Server Key for notification-service -----"
-        # application.yml의 경로 구조에 맞춰 디렉토리 생성
         mkdir -p BE/services/notification-service/src/main/resources/firebase
-        # 파일명을 firebase-service-account.json으로 일치시켜 복사
         cp $FCM_SERVER_JSON BE/services/notification-service/src/main/resources/firebase/firebase-service-account.json
       fi
-
   script:
-    - echo "----- ${SERVICE_NAME} Docker 이미지 빌드 및 Push 시작 -----"
+    - echo "----- ${SERVICE_NAME} 빌드 시작 -----"
     - cd BE
+    - chmod +x ./gradlew
     
-    # build stage의 artifact에서 넘어온 bootJar가 정확히 존재하는지 확인
+    # 1. Spring Boot 빌드 수행 (jar 파일 생성)
+    - ./gradlew :services:${SERVICE_NAME}:bootJar -x test
+    - rm -f services/${SERVICE_NAME}/build/libs/*-plain.jar
+    
+    # 2. 빌드 결과 확인
     - ls -lh services/${SERVICE_NAME}/build/libs/
-
-    # Docker 이미지 빌드 및 Push (새로 빌드하지 않고 artifacts로 받은 jar 바로 사용)
+    
+    - echo "----- ${SERVICE_NAME} Docker 이미지 빌드 및 Push 시작 -----"
+    
+    # 3. Docker 이미지 빌드 및 Push (Artifacts 업로드 없이 로컬 파일 바로 사용)
     - docker build -t $DOCKER_NAMESPACE/${IMAGE_NAME}:$IMAGE_TAG -t $DOCKER_NAMESPACE/${IMAGE_NAME}:latest -f services/${SERVICE_NAME}/Dockerfile .
     - docker push $DOCKER_NAMESPACE/${IMAGE_NAME}:$IMAGE_TAG
     - docker push $DOCKER_NAMESPACE/${IMAGE_NAME}:latest
 
 # ====================================================
-# [STAGE 1] Spring Boot 개별 빌드 검증
+# [STAGE 1] Spring Boot 개별 서비스 빌드 및 Push
 # ====================================================
 
-build-auth-service:
-  extends: .build-template
-  variables:
-    SERVICE_NAME: auth-service
-  rules:
-    - changes:
-        - "BE/services/auth-service/**/*"
-        - "BE/modules/common-module/**/*"
-        - "BE/modules/security-module/**/*"
-        - "BE/build.gradle"
-        - "BE/common-service.gradle"
-        - "BE/settings.gradle"
-        - "BE/gradlew"
-        - "BE/gradlew.bat"
-        - "BE/gradle/**/*"
-
-build-gateway-service:
-  extends: .build-template
-  variables:
-    SERVICE_NAME: gateway-service
-  rules:
-    - changes:
-        - "BE/services/gateway-service/**/*"
-        - "BE/modules/common-module/**/*"
-        - "BE/modules/security-module/**/*"
-        - "BE/build.gradle"
-        - "BE/common-service.gradle"
-        - "BE/settings.gradle"
-        - "BE/gradlew"
-        - "BE/gradlew.bat"
-        - "BE/gradle/**/*"
-
-build-intake-service:
-  extends: .build-template
-  variables:
-    SERVICE_NAME: intake-service
-  rules:
-    - changes:
-        - "BE/services/intake-service/**/*"
-        - "BE/modules/common-module/**/*"
-        - "BE/modules/event-module/**/*"
-        - "BE/build.gradle"
-        - "BE/common-service.gradle"
-        - "BE/settings.gradle"
-        - "BE/gradlew"
-        - "BE/gradlew.bat"
-        - "BE/gradle/**/*"
-
-build-biometric-service:
-  extends: .build-template
-  variables:
-    SERVICE_NAME: biometric-service
-  rules:
-    - changes:
-        - "BE/services/biometric-service/**/*"
-        - "BE/modules/common-module/**/*"
-        - "BE/modules/event-module/**/*"
-        - "BE/build.gradle"
-        - "BE/common-service.gradle"
-        - "BE/settings.gradle"
-        - "BE/gradlew"
-        - "BE/gradlew.bat"
-        - "BE/gradle/**/*"
-
-build-report-service:
-  extends: .build-template
-  variables:
-    SERVICE_NAME: report-service
-  rules:
-    - changes:
-        - "BE/services/report-service/**/*"
-        - "BE/modules/common-module/**/*"
-        - "BE/modules/event-module/**/*"
-        - "BE/build.gradle"
-        - "BE/common-service.gradle"
-        - "BE/settings.gradle"
-        - "BE/gradlew"
-        - "BE/gradlew.bat"
-        - "BE/gradle/**/*"
-
-build-notification-service:
-  extends: .build-template
-  variables:
-    SERVICE_NAME: notification-service
-  rules:
-    - changes:
-        - "BE/services/notification-service/**/*"
-        - "BE/modules/common-module/**/*"
-        - "BE/modules/event-module/**/*"
-        - "BE/build.gradle"
-        - "BE/common-service.gradle"
-        - "BE/settings.gradle"
-        - "BE/gradlew"
-        - "BE/gradlew.bat"
-        - "BE/gradle/**/*"
-
-# ====================================================
-# [STAGE 2] Docker 이미지 빌드 및 Push
-# ====================================================
-
-push-auth-service:
-  extends: .push-template
-  needs:
-    - build-auth-service
+build-push-auth-service:
+  extends: .build-and-push-template
   variables:
     SERVICE_NAME: auth-service
     IMAGE_NAME: rebloom-auth
@@ -213,10 +97,8 @@ push-auth-service:
         - "BE/gradlew.bat"
         - "BE/gradle/**/*"
 
-push-gateway-service:
-  extends: .push-template
-  needs:
-    - build-gateway-service
+build-push-gateway-service:
+  extends: .build-and-push-template
   variables:
     SERVICE_NAME: gateway-service
     IMAGE_NAME: rebloom-gateway
@@ -232,10 +114,8 @@ push-gateway-service:
         - "BE/gradlew.bat"
         - "BE/gradle/**/*"
 
-push-intake-service:
-  extends: .push-template
-  needs:
-    - build-intake-service
+build-push-intake-service:
+  extends: .build-and-push-template
   variables:
     SERVICE_NAME: intake-service
     IMAGE_NAME: rebloom-intake
@@ -251,10 +131,8 @@ push-intake-service:
         - "BE/gradlew.bat"
         - "BE/gradle/**/*"
 
-push-biometric-service:
-  extends: .push-template
-  needs:
-    - build-biometric-service
+build-push-biometric-service:
+  extends: .build-and-push-template
   variables:
     SERVICE_NAME: biometric-service
     IMAGE_NAME: rebloom-biometric
@@ -270,10 +148,8 @@ push-biometric-service:
         - "BE/gradlew.bat"
         - "BE/gradle/**/*"
 
-push-report-service:
-  extends: .push-template
-  needs:
-    - build-report-service
+build-push-report-service:
+  extends: .build-and-push-template
   variables:
     SERVICE_NAME: report-service
     IMAGE_NAME: rebloom-report
@@ -289,10 +165,8 @@ push-report-service:
         - "BE/gradlew.bat"
         - "BE/gradle/**/*"
 
-push-notification-service:
-  extends: .push-template
-  needs:
-    - build-notification-service
+build-push-notification-service:
+  extends: .build-and-push-template
   variables:
     SERVICE_NAME: notification-service
     IMAGE_NAME: rebloom-notification
@@ -308,8 +182,12 @@ push-notification-service:
         - "BE/gradlew.bat"
         - "BE/gradle/**/*"
 
+# ====================================================
+# [STAGE 1-1] AI 파트 빌드 및 Push
+# ====================================================
+
 push-bio-ml-service:
-  stage: docker-push
+  stage: build-and-push
   tags:
     - rebloom-dev
   variables:
