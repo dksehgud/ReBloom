@@ -1,42 +1,43 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <uses-permission android:name="android.permission.BODY_SENSORS" />
-    <uses-permission android:name="android.permission.ACTIVITY_RECOGNITION" />
-    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
-    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_HEALTH" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
-    <uses-permission android:name="android.permission.WAKE_LOCK" />
+
+    <uses-permission android:name="android.permission.BODY_SENSORS"/>
+    <uses-permission android:name="android.permission.ACTIVITY_RECOGNITION"/>
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_HEALTH"/>
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION"/>
+    <uses-permission android:name="android.permission.WAKE_LOCK"/>
 
     <application
-        android:label="rebloom-watch"
-        android:theme="@android:style/Theme.DeviceDefault">
+            android:label="rebloom-watch"
+            android:theme="@android:style/Theme.DeviceDefault">
 
         <activity
-            android:name=".MainActivity"
-            android:exported="true">
+                android:name=".MainActivity"
+                android:exported="true">
             <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
 
         <service
-            android:name=".service.BiometricService"
-            android:foregroundServiceType="health"
-            android:exported="false" />
+                android:name=".service.BiometricService"
+                android:foregroundServiceType="health"
+                android:exported="false"/>
 
         <service
-            android:name=".service.LocationRequestListenerService"
-            android:exported="true">
+                android:name=".service.LocationRequestListenerService"
+                android:exported="true">
             <intent-filter>
-                <action android:name="com.google.android.gms.wearable.MESSAGE_RECEIVED" />
+                <action android:name="com.google.android.gms.wearable.MESSAGE_RECEIVED"/>
                 <data
-                    android:host="*"
-                    android:pathPrefix="/location/request"
-                    android:scheme="wear" />
+                        android:host="*"
+                        android:pathPrefix="/location/request"
+                        android:scheme="wear"/>
             </intent-filter>
         </service>
 
