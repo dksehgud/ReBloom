@@ -3,7 +3,6 @@ package com.ssafy.rebloom.biometric_service.repository;
 import com.ssafy.rebloom.biometric_service.domain.entity.Sleep;
 import com.ssafy.rebloom.biometric_service.domain.entity.SleepId;
 import com.ssafy.rebloom.biometric_service.repository.query.SleepQueryRepository;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -20,9 +19,10 @@ public interface SleepRepository extends JpaRepository<Sleep, SleepId>, SleepQue
         UPDATE sleeps
         SET is_main_sleep = false
         WHERE user_id = :userId
-          AND CAST(wakeup AS date) = :date
+          AND wakeup >= :from
+          AND wakeup < :to
         """, nativeQuery = true)
-    int clearMainSleepByDate(@Param("userId") UUID userId, @Param("date") LocalDate date);
+    int clearMainSleepInWindow(@Param("userId") UUID userId, @Param("from") LocalDateTime from, @Param("to") LocalDateTime to);
 
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query(value = """
@@ -33,12 +33,13 @@ public interface SleepRepository extends JpaRepository<Sleep, SleepId>, SleepQue
               SELECT wakeup
               FROM sleeps
               WHERE user_id = :userId
-                AND CAST(wakeup AS date) = :date
+                AND wakeup >= :from
+                AND wakeup < :to
               ORDER BY sleep_duration DESC NULLS LAST, wakeup ASC
               LIMIT 1
           )
         """, nativeQuery = true)
-    int markLongestSleepAsMainByDate(@Param("userId") UUID userId, @Param("date") LocalDate date);
+    int markLongestSleepAsMainInWindow(@Param("userId") UUID userId, @Param("from") LocalDateTime from, @Param("to") LocalDateTime to);
 
     @Query("SELECT MIN(s.id.wakeup) FROM Sleep s WHERE s.id.userId = :userId")
     Optional<LocalDateTime> findFirstWakeup(@Param("userId") UUID userId);

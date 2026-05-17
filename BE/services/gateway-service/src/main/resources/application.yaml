@@ -91,6 +91,17 @@ spring:
           filters: *secured-filters
 
         # ==========================================
+        # REPORT SERVICE - Public IoT conversation analysis
+        # ==========================================
+        - id: report-service-conversation-public
+          order: -1
+          uri: ${REPORT_SERVICE_URI:http://localhost:8084}
+          predicates:
+            - Path=/report/api/v1/analyses/conversations
+            - Method=POST
+          filters: *public-filters
+
+        # ==========================================
         # BIOMETRIC SERVICE - Secured
         # ==========================================
         - id: biometric-service
