@@ -1,6 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { FiMessageSquare, FiX } from 'react-icons/fi'
 
+import { COUNSELOR_OBSERVATION_COMMENT_MAX_LENGTH } from '../../constants/observationCommentLimits'
 import type { ObservationComment, ObservationRecord } from '../../types/dashboard'
 import { formatCommentCreatedAt } from '../../utils/dashboardTimeline'
 
@@ -48,7 +49,11 @@ function ObservationCommentModal({
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
 
-    if (!trimmedDraft || isSubmitting) {
+    if (
+      !trimmedDraft ||
+      draft.length > COUNSELOR_OBSERVATION_COMMENT_MAX_LENGTH ||
+      isSubmitting
+    ) {
       return
     }
 
@@ -134,11 +139,24 @@ function ObservationCommentModal({
                   <textarea
                     value={draft}
                     disabled={isSubmitting}
+                    maxLength={COUNSELOR_OBSERVATION_COMMENT_MAX_LENGTH}
                     onChange={(event) => setDraft(event.target.value)}
                     placeholder="코멘트를 입력하세요."
                     aria-label="상담사 코멘트"
                   />
-                  <button type="submit" disabled={!trimmedDraft || isSubmitting}>
+                  <div className="counselor-observation-comment-count-row">
+                    <span className="counselor-observation-comment-count">
+                      {draft.length}/{COUNSELOR_OBSERVATION_COMMENT_MAX_LENGTH}
+                    </span>
+                  </div>
+                  <button
+                    type="submit"
+                    disabled={
+                      !trimmedDraft ||
+                      draft.length > COUNSELOR_OBSERVATION_COMMENT_MAX_LENGTH ||
+                      isSubmitting
+                    }
+                  >
                     {isSubmitting ? '저장 중' : '코멘트 추가'}
                   </button>
                 </div>

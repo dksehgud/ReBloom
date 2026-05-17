@@ -56,7 +56,11 @@ import {
   getChildSleepScores,
   type ChildChartPointDto,
 } from '../../../shared/api/childChartApi'
-import { getWeekRangeByOffset } from '../../../shared/utils/weekRange'
+import {
+  DAYS_PER_WEEK,
+  formatDateParam,
+  getWeekRangeByOffset,
+} from '../../../shared/utils/weekRange'
 import { useAppSessionStore } from '../../auth/store/useAppSessionStore'
 import type { DiaryEmotionKey } from '../../diary/constants/diaryEmotions'
 import { useCounselorMockMode } from './useCounselorMockMode'
@@ -180,6 +184,21 @@ function formatWeekdayLabel(dateValue: string, fallback?: string | null) {
   }
 
   return new Intl.DateTimeFormat('ko-KR', { weekday: 'short' }).format(date)
+}
+
+function createWeekdayLabelsFromStartDate(startDate: string) {
+  const parsedStartDate = parseDate(startDate)
+
+  if (!parsedStartDate) {
+    return []
+  }
+
+  return Array.from({ length: DAYS_PER_WEEK }, (_, index) => {
+    const date = new Date(parsedStartDate)
+    date.setDate(parsedStartDate.getDate() + index)
+
+    return formatWeekdayLabel(formatDateParam(date))
+  })
 }
 
 function formatTimelineDate(dateValue: string) {
@@ -344,6 +363,7 @@ function createEmptyExpressionAnalysis(): DashboardExpressionAnalysis {
       conversation: [],
       diary: [],
     },
+    weekLabels: [],
   }
 }
 
@@ -369,6 +389,7 @@ function createMockExpressionAnalysis(
         childId,
       ),
     },
+    weekLabels: currentWeek.trend.all.map((point) => point.label),
   }
 }
 
@@ -440,6 +461,7 @@ function getAnalysisCardsForFilter(
 
 function mapAnalysisContentToExpressionAnalysis(
   response: CounselorAnalysisContentResponseDto,
+  weekLabels: string[] = [],
 ): DashboardExpressionAnalysis {
   const dailyGroups = response.dailyGroups ?? []
   const trend = EXPRESSION_FILTERS.reduce<
@@ -535,6 +557,7 @@ function mapAnalysisContentToExpressionAnalysis(
     days,
     insight: response.summary ?? '',
     trend,
+    weekLabels,
   }
 }
 
@@ -1073,6 +1096,9 @@ function useCounselorDashboardState() {
       weekOffsets.expression,
       weekRangeOptions,
     )
+    const expressionWeekLabels = createWeekdayLabelsFromStartDate(
+      expressionRange.startDate,
+    )
 
     try {
       setIsLoadingDashboardMetrics(true)
@@ -1120,7 +1146,10 @@ function useCounselorDashboardState() {
       setBiometricRatioData(mapDashboardChartPoints(hrAccRatios.contents ?? []))
       setAutonomicData(mapDashboardChartPoints(rmssds.contents ?? []))
       setDashboardExpressionAnalysis(
-        mapAnalysisContentToExpressionAnalysis(analysisContent),
+        mapAnalysisContentToExpressionAnalysis(
+          analysisContent,
+          expressionWeekLabels,
+        ),
       )
     } catch (error) {
       console.error(error)

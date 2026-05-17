@@ -56,4 +56,36 @@ describe('counselor dashboard expression analysis mapping', () => {
     expect(analysis.trend.conversation[0]?.hasConversation).toBe(true)
     expect(analysis.trend.diary).toEqual([])
   })
+
+  it('keeps the selected week labels separate from sparse graph points', () => {
+    const response: CounselorAnalysisContentResponseDto = {
+      dailyGroups: [
+        {
+          conversationList: [],
+          date: '2026-05-01',
+          diaryList: [
+            {
+              analysisId: 'diary-analysis-1',
+              emotionIcon: 'happy',
+              prediction: '0.8',
+              targetDate: '2026-05-01T10:00:00',
+            },
+          ],
+        },
+      ],
+    }
+
+    const analysis = mapAnalysisContentToExpressionAnalysis(response, [
+      '월',
+      '화',
+      '수',
+      '목',
+      '금',
+      '토',
+      '일',
+    ])
+
+    expect(analysis.trend.all).toHaveLength(1)
+    expect(analysis.weekLabels).toEqual(['월', '화', '수', '목', '금', '토', '일'])
+  })
 })

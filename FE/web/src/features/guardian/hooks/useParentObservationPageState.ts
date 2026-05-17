@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 
 import { useAppSessionStore } from '../../auth/store/useAppSessionStore'
 import { type ParentObservationMood } from '../constants/parentObservationMoods'
+import { PARENT_OBSERVATION_DESCRIPTION_MAX_LENGTH } from '../constants/parentObservationLimits'
 import { getParentObservationApi } from '../services/parentObservationService'
 import type { ParentObservationRecord } from '../types/parentObservation'
 import { useParentObservationList } from './useParentObservationList'
@@ -444,6 +445,7 @@ export function useParentObservationPageState(childrenId?: string) {
     if (
       !draftMood ||
       nextDescription.length === 0 ||
+      draftDescription.length > PARENT_OBSERVATION_DESCRIPTION_MAX_LENGTH ||
       !canMutateObservation ||
       isFutureDraftDate(draftDate)
     ) {
@@ -524,6 +526,7 @@ export function useParentObservationPageState(childrenId?: string) {
       isMutating ||
       !draftMood ||
       draftDescription.trim().length === 0 ||
+      draftDescription.length > PARENT_OBSERVATION_DESCRIPTION_MAX_LENGTH ||
       isFutureDraftDate(draftDate),
     canDraftNextDate:
       draftDate.day < getMaxSelectableDay(draftDate.year, draftDate.month),
