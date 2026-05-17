@@ -18,6 +18,8 @@ Thumbs.db
 # Environment files
 .env
 .env.*
+rebloom.keystore
+FE/mobile-app/rebloom.keystore
 !.env.example
 !**/.env.example
 !.env.*.example
