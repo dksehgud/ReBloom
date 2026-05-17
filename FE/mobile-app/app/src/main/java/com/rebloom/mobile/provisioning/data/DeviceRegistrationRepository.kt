@@ -2,6 +2,7 @@ package com.rebloom.mobile.provisioning.data
 
 import android.content.Context
 import com.rebloom.mobile.network.ApiClient
+import com.rebloom.mobile.network.ApiService
 import com.rebloom.mobile.network.DeviceRegistrationData
 import com.rebloom.mobile.network.DeviceRegistrationRequest
 import com.rebloom.mobile.network.TokenDataStore
@@ -18,25 +19,41 @@ class DeviceRegistrationRepository(private val context: Context) {
         registrationContext: ProvisioningRegistrationContext,
     ): DeviceRegistrationData {
         val accessToken = TokenDataStore.getToken(context)
-            ?: throw IllegalStateException("로그인 토큰이 없어 기기를 등록할 수 없습니다.")
+            ?: throw IllegalStateException("Login token is missing. Cannot register device.")
         val api = ApiClient.create(context, accessToken)
         val request = DeviceRegistrationRequest(
             serialNumber = serialNumber,
             deviceType = "IOT",
         )
         val response = if (registrationContext.role == "parent") {
-            val childrenId = registrationContext.childrenId
-                ?: throw IllegalStateException("아이 정보가 없어 보호자 기기 등록을 진행할 수 없습니다.")
+            val targetChildrenId = registrationContext.childrenId?.takeIf { it.isNotBlank() }
+                ?: resolveConnectedChildId(api)
 
-            api.registerParentDevice(childrenId, request)
+            api.registerParentDevice(targetChildrenId, request)
         } else {
             api.registerChildDevice(request)
         }
 
         if (response.code != null) {
-            throw IllegalStateException(response.message ?: "기기 등록에 실패했습니다.")
+            throw IllegalStateException(response.message ?: "Device registration failed.")
         }
 
-        return response.data ?: throw IllegalStateException("기기 등록 응답이 비어 있습니다.")
+        return response.data ?: throw IllegalStateException("Device registration response is empty.")
+    }
+
+    private suspend fun resolveConnectedChildId(api: ApiService): String {
+        val response = api.getParentConnectedChild()
+        if (response.code != null) {
+            throw IllegalStateException(response.message ?: "Failed to load connected child.")
+        }
+
+        val child = response.data
+            ?: throw IllegalStateException("Connected child response is empty.")
+
+        if (!child.connected || child.childrenId.isNullOrBlank()) {
+            throw IllegalStateException("No connected child found.")
+        }
+
+        return child.childrenId
     }
 }
