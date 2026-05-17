@@ -586,9 +586,7 @@ function useCounselorDashboardState() {
     unreadParentReportNotificationIdsByChildId,
     setUnreadParentReportNotificationIdsByChildId,
   ] = useState<Map<string, number[]>>(() => new Map())
-  const [selectedChildId, setSelectedChildId] = useState<string | null>(() =>
-    isMockMode ? (initialChildList[0]?.id ?? null) : null,
-  )
+  const [selectedChildId, setSelectedChildId] = useState<string | null>(null)
   const [isLoadingChildItems, setIsLoadingChildItems] = useState(!isMockMode)
   const [childItemsError, setChildItemsError] = useState<string>()
   const [connectionRequests, setConnectionRequests] = useState(() =>
@@ -656,7 +654,6 @@ function useCounselorDashboardState() {
   const [isLoadingDashboardMetrics, setIsLoadingDashboardMetrics] =
     useState(!isMockMode)
   const [dashboardMetricsError, setDashboardMetricsError] = useState<string>()
-  const [analysisCardHeight, setAnalysisCardHeight] = useState<number>()
   const [selectedObservation, setSelectedObservation] =
     useState<ObservationRecord | null>(null)
   const [observationRecords, setObservationRecords] = useState<
@@ -675,8 +672,6 @@ function useCounselorDashboardState() {
     useState(false)
   const [observationCommentError, setObservationCommentError] =
     useState<string>()
-  const [mainColumnElement, setMainColumnElement] =
-    useState<HTMLDivElement | null>(null)
   const counselorNotificationApi = useMemo(
     () => getCounselorNotificationApi(isMockMode),
     [isMockMode],
@@ -690,9 +685,6 @@ function useCounselorDashboardState() {
       withUnreadParentObservationMarkers(childItems, unreadParentReportChildIds),
     [childItems, unreadParentReportChildIds],
   )
-  const mainColumnRef = useCallback((node: HTMLDivElement | null) => {
-    setMainColumnElement(node)
-  }, [])
 
   const mergeRealtimeParentReportNotification = useCallback(
     (notification: ParentNotificationDto) => {
@@ -948,7 +940,7 @@ function useCounselorDashboardState() {
   const loadChildItems = useCallback(async () => {
     if (isMockMode) {
       setChildItems(initialChildList)
-      setSelectedChildId(initialChildList[0]?.id ?? null)
+      setSelectedChildId(null)
       setSelectedObservation(null)
       setChildItemsError(undefined)
       setIsLoadingChildItems(false)
@@ -975,7 +967,7 @@ function useCounselorDashboardState() {
       setSelectedChildId((current) =>
         current && nextChildItems.some((child) => child.id === current)
           ? current
-          : (nextChildItems[0]?.id ?? null),
+          : null,
       )
       setSelectedObservation(null)
     } catch (error) {
@@ -1509,44 +1501,7 @@ function useCounselorDashboardState() {
     selectedObservation,
   ])
 
-  useEffect(() => {
-    if (typeof window === 'undefined') {
-      return undefined
-    }
-
-    if (!mainColumnElement) return undefined
-
-    const updateAnalysisHeight = () => {
-      const shouldMatchColumns = window.matchMedia('(min-width: 901px)').matches
-
-      if (!shouldMatchColumns) {
-        setAnalysisCardHeight(undefined)
-        return
-      }
-
-      setAnalysisCardHeight(
-        Math.round(mainColumnElement.getBoundingClientRect().height),
-      )
-    }
-
-    const animationFrameId = window.requestAnimationFrame(updateAnalysisHeight)
-
-    const resizeObserver =
-      typeof ResizeObserver === 'undefined'
-        ? null
-        : new ResizeObserver(updateAnalysisHeight)
-    resizeObserver?.observe(mainColumnElement)
-    window.addEventListener('resize', updateAnalysisHeight)
-
-    return () => {
-      window.cancelAnimationFrame(animationFrameId)
-      resizeObserver?.disconnect()
-      window.removeEventListener('resize', updateAnalysisHeight)
-    }
-  }, [mainColumnElement])
-
   return {
-    analysisCardHeight,
     autonomicData,
     autonomicWeek,
     biometricRatioData,
@@ -1572,7 +1527,6 @@ function useCounselorDashboardState() {
     isLoadingObservationRecords,
     isSubmittingObservationComment,
     isSidebarCollapsed,
-    mainColumnRef,
     observationCommentError,
     observationComments,
     observationRecordsError,

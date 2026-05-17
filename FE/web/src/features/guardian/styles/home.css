@@ -1791,6 +1791,12 @@ body[data-shell-mode='webview'] .parent-bottom-nav__indicator {
   box-shadow: none;
 }
 
+.parent-notification-card__action-button:disabled {
+  cursor: default;
+  opacity: 1;
+  transform: none;
+}
+
 .parent-settings-page {
   background: linear-gradient(180deg, #ffffff 0%, #fbfcfd 100%);
 }

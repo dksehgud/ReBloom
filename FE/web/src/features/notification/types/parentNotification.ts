@@ -1,4 +1,5 @@
 type ParentNotificationPayloadDto = {
+  anomalyActionStatus?: 'NONE' | 'CONFIRMED' | 'REJECTED' | null
   childrenId?: string | null
   childrenName?: string | null
   childrenReportId?: string | null
