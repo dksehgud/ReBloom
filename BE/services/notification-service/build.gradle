@@ -19,4 +19,7 @@ dependencies {
 	implementation project(':modules:event-module')
 	implementation 'org.eclipse.paho:org.eclipse.paho.client.mqttv3:1.2.5'
 	implementation 'com.google.firebase:firebase-admin:9.7.0'
+
+	implementation "net.javacrumbs.shedlock:shedlock-spring:7.6.0"
+	implementation "net.javacrumbs.shedlock:shedlock-provider-redis-spring:7.6.0"
 }
