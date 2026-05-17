@@ -38,11 +38,22 @@ android {
         buildConfigField("String", "API_BASE_URL", "\"$apiBaseUrl\"")
     }
 
+    signingConfigs {
+        create("shared") {
+            storeFile = file("../rebloom.keystore")
+            storePassword = "rebloom123"
+            keyAlias = "rebloom"
+            keyPassword = "rebloom123"
+        }
+    }
+
     buildTypes {
         debug {
+            signingConfig = signingConfigs.getByName("shared")
             buildConfigField("String", "WEB_APP_BASE_URL", "\"$debugWebAppBaseUrl\"")
         }
         release {
+            signingConfig = signingConfigs.getByName("shared")
             isMinifyEnabled = false
             buildConfigField("String", "WEB_APP_BASE_URL", "\"$releaseWebAppBaseUrl\"")
             proguardFiles(
