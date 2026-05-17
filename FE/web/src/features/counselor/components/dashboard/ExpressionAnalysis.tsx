@@ -19,7 +19,6 @@ type ExpressionAnalysisProps = {
   isFirstWeek: boolean
   isLastWeek: boolean
   isLoading?: boolean
-  minHeight?: number
   weekLabel: string
   childId: string
   onPrevWeek: () => void
@@ -32,7 +31,6 @@ function ExpressionAnalysis({
   isFirstWeek,
   isLastWeek,
   isLoading = false,
-  minHeight,
   weekLabel,
   childId,
   onPrevWeek,
@@ -53,7 +51,6 @@ function ExpressionAnalysis({
       title="최근 표현 분석"
       className="counselor-expression-card"
       info={dashboardInfoMessages.expression}
-      style={minHeight ? { minHeight } : undefined}
     >
       <div className="counselor-expression-tabs" aria-label="분석 범위">
         <div className="counselor-expression-tab-group">
@@ -78,78 +75,80 @@ function ExpressionAnalysis({
         </button>
       </div>
 
-      <WeekNavigator
-        label={weekLabel}
-        isFirst={isFirstWeek}
-        isLast={isLastWeek}
-        onPrev={onPrevWeek}
-        onNext={onNextWeek}
-      />
+      <div className="counselor-expression-scroll">
+        <WeekNavigator
+          label={weekLabel}
+          isFirst={isFirstWeek}
+          isLast={isLastWeek}
+          onPrev={onPrevWeek}
+          onNext={onNextWeek}
+        />
 
-      <div className="counselor-ai-summary">
-        <span>AI 분석 인사이트</span>
-        <p>{summary}</p>
-      </div>
+        <div className="counselor-ai-summary">
+          <span>AI 분석 인사이트</span>
+          <p>{summary}</p>
+        </div>
 
-      {hasVisibleExpressionData ? (
-        <>
-          {currentTrend.length > 0 ? (
-            <div className="counselor-expression-chart">
-              <LineChart
-                data={currentTrend}
-                color="#88b5c4"
-                showLine={activeFilter !== 'diary'}
-                showEmoji={activeFilter !== 'conversation'}
-                xAxisLabels={analysis.weekLabels}
-              />
-            </div>
-          ) : null}
+        {hasVisibleExpressionData ? (
+          <>
+            {currentTrend.length > 0 ? (
+              <div className="counselor-expression-chart">
+                <LineChart
+                  data={currentTrend}
+                  color="#88b5c4"
+                  showLine={activeFilter !== 'diary'}
+                  showEmoji={activeFilter !== 'conversation'}
+                  xAxisLabels={analysis.weekLabels}
+                />
+              </div>
+            ) : null}
 
-          {visibleTimelineDays.length > 0 ? (
-            <div className="counselor-timeline">
-              {visibleTimelineDays.map((day) => (
-                <section className="counselor-timeline-day" key={day.id}>
-                  <h4>{day.date}</h4>
-                  <div className="counselor-timeline-items">
-                    {day.entries.map((entry) => (
-                      <article className="counselor-timeline-entry" key={entry.id}>
-                        <MetricTag tone={entry.type === 'diary' ? 'green' : 'blue'}>
-                          {entry.type === 'diary' ? '일기' : '대화'}
-                        </MetricTag>
-                        <div>
-                          {entry.time ? <span className="entry-time">{entry.time}</span> : null}
-                          {entry.emotionKey ? (
-                            <DiaryEmotionIcon
-                              emotionKey={entry.emotionKey}
-                              size={24}
-                              className="entry-emotion"
-                            />
-                          ) : null}
-                          <p>{entry.content}</p>
-                          <div className="entry-tags">
-                            {entry.tags.map((tag, index) => (
-                              <MetricTag
-                                key={`${entry.id}-${tag}`}
-                                tone={index === 0 ? 'orange' : 'neutral'}
-                              >
-                                {tag}
-                              </MetricTag>
-                            ))}
+            {visibleTimelineDays.length > 0 ? (
+              <div className="counselor-timeline">
+                {visibleTimelineDays.map((day) => (
+                  <section className="counselor-timeline-day" key={day.id}>
+                    <h4>{day.date}</h4>
+                    <div className="counselor-timeline-items">
+                      {day.entries.map((entry) => (
+                        <article className="counselor-timeline-entry" key={entry.id}>
+                          <MetricTag tone={entry.type === 'diary' ? 'green' : 'blue'}>
+                            {entry.type === 'diary' ? '일기' : '대화'}
+                          </MetricTag>
+                          <div>
+                            {entry.time ? <span className="entry-time">{entry.time}</span> : null}
+                            {entry.emotionKey ? (
+                              <DiaryEmotionIcon
+                                emotionKey={entry.emotionKey}
+                                size={24}
+                                className="entry-emotion"
+                              />
+                            ) : null}
+                            <p>{entry.content}</p>
+                            <div className="entry-tags">
+                              {entry.tags.map((tag, index) => (
+                                <MetricTag
+                                  key={`${entry.id}-${tag}`}
+                                  tone={index === 0 ? 'orange' : 'neutral'}
+                                >
+                                  {tag}
+                                </MetricTag>
+                              ))}
+                            </div>
                           </div>
-                        </div>
-                      </article>
-                    ))}
-                  </div>
-                </section>
-              ))}
-            </div>
-          ) : null}
-        </>
-      ) : (
-        <p className="counselor-timeline-empty counselor-expression-empty">
-          해당 주차에 표시할 기록이 없습니다.
-        </p>
-      )}
+                        </article>
+                      ))}
+                    </div>
+                  </section>
+                ))}
+              </div>
+            ) : null}
+          </>
+        ) : (
+          <p className="counselor-timeline-empty counselor-expression-empty">
+            해당 주차에 표시할 기록이 없습니다.
+          </p>
+        )}
+      </div>
       {isEmotionFlowOpen ? (
         <EmotionFlowModal childId={childId} onClose={() => setIsEmotionFlowOpen(false)} />
       ) : null}

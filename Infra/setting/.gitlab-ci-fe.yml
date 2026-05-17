@@ -38,7 +38,6 @@ build-mobile-apk:
     - changes:
         - "FE/mobile-app/**/*"
 
-
 # deploy-web에서는 build-web에서 생성된 dist 폴더를 S3에 업로드하고 CloudFront 무효화 요청을 보냅니다.
 deploy-web:
   image: node:22-alpine

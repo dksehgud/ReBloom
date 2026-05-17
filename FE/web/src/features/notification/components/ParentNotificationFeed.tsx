@@ -67,20 +67,35 @@ function ParentNotificationFeed({
 
               {item.actions ? (
                 <div className="parent-notification-card__actions">
-                  {item.actions.map((action) => (
-                    <button
-                      key={action.key}
-                      type="button"
-                      className={`parent-notification-card__action-button parent-notification-card__action-button--${action.tone}${item.selectedActionKey === action.key ? ' is-selected' : ''}${item.selectedActionKey && item.selectedActionKey !== action.key ? ' is-muted' : ''}`}
-                      aria-pressed={item.selectedActionKey === action.key}
-                      onClick={(event) => {
-                        event.stopPropagation()
-                        onActionClick(item.id, action.key)
-                      }}
-                    >
-                      {action.label}
-                    </button>
-                  ))}
+                  {item.actions
+                    .filter(
+                      (action) =>
+                        !item.selectedActionKey ||
+                        item.selectedActionKey === action.key,
+                    )
+                    .map((action) => {
+                      const isActionSelected = item.selectedActionKey === action.key
+                      const isActionLocked = Boolean(item.selectedActionKey)
+
+                      return (
+                        <button
+                          key={action.key}
+                          type="button"
+                          className={`parent-notification-card__action-button parent-notification-card__action-button--${action.tone}${isActionSelected ? ' is-selected' : ''}${isActionLocked && !isActionSelected ? ' is-muted' : ''}`}
+                          aria-pressed={isActionSelected}
+                          disabled={isActionLocked}
+                          onClick={(event) => {
+                            event.stopPropagation()
+
+                            if (!isActionLocked) {
+                              onActionClick(item.id, action.key)
+                            }
+                          }}
+                        >
+                          {action.label}
+                        </button>
+                      )
+                    })}
                 </div>
               ) : null}
             </div>

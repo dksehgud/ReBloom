@@ -1,5 +1,6 @@
 import { parentNotificationsMock } from '../mocks/parentNotifications'
 import type {
+  ParentNotificationAnomalyActionRequest,
   ParentNotificationDto,
   ParentNotificationListDataDto,
   ParentNotificationListRequest,
@@ -21,10 +22,9 @@ function createMockNotificationDto(
     deliveryStatus: 'SENT',
     id: index + 1,
     isRead: !notification.unread,
-    notificationType: notification.actions
-      ? 'CONVERSATION_ALERT'
-      : 'BIOMETRIC_ANOMALY',
+    notificationType: notification.notificationType ?? 'BIOMETRIC_ANOMALY',
     payload: {
+      childrenId: notification.childrenId,
       content: notification.message,
       depressionScoreText: notification.highlightLabel,
       title: notification.title,
@@ -86,15 +86,31 @@ async function markAllParentNotificationsAsRead(): Promise<void> {
   }))
 }
 
+async function confirmParentAnomalyAlert({
+  notificationId,
+}: ParentNotificationAnomalyActionRequest): Promise<void> {
+  await markParentNotificationAsRead({ notificationId })
+}
+
+async function rejectParentAnomalyAlert({
+  notificationId,
+}: ParentNotificationAnomalyActionRequest): Promise<void> {
+  await markParentNotificationAsRead({ notificationId })
+}
+
 const parentNotificationMockApi = {
+  confirmParentAnomalyAlert,
   getParentNotifications,
   markAllParentNotificationsAsRead,
   markParentNotificationAsRead,
+  rejectParentAnomalyAlert,
 }
 
 export {
+  confirmParentAnomalyAlert,
   getParentNotifications,
   markAllParentNotificationsAsRead,
   markParentNotificationAsRead,
   parentNotificationMockApi,
+  rejectParentAnomalyAlert,
 }

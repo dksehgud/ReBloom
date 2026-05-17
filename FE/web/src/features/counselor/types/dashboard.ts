@@ -11,6 +11,7 @@ type ChildListItem = {
   guardianName?: string
   registeredAt: string
   counselingStatus?: string
+  hasUnreadParentObservation?: boolean
 }
 
 type CounselorConnectionRequest = {

@@ -10,12 +10,15 @@ import com.ssafy.rebloom.event.dto.GpsCheckRequestedEvent;
 import com.ssafy.rebloom.event.publisher.EventPublisher;
 import com.ssafy.rebloom.event.support.EventKeyGenerator;
 import com.ssafy.rebloom.notification_service.constants.Constants;
+import com.ssafy.rebloom.notification_service.domain.entity.Notification;
 import com.ssafy.rebloom.notification_service.domain.entity.NotificationPayload;
+import com.ssafy.rebloom.notification_service.domain.enums.AnomalyActionStatus;
 import com.ssafy.rebloom.notification_service.domain.enums.NotificationCode;
 import com.ssafy.rebloom.notification_service.domain.enums.ReceiverRole;
 import com.ssafy.rebloom.notification_service.dto.AnomalyAlertPhaseState;
 import com.ssafy.rebloom.notification_service.dto.NotificationCommand;
 import com.ssafy.rebloom.notification_service.dto.ParentReceiverInfo;
+import com.ssafy.rebloom.notification_service.repository.NotificationRepository;
 import com.ssafy.rebloom.notification_service.service.AnomalyAlertService;
 import com.ssafy.rebloom.notification_service.service.NotificationAlertSender;
 import com.ssafy.rebloom.notification_service.service.RedisService;
@@ -37,6 +40,7 @@ public class AnomalyAlertServiceImpl implements AnomalyAlertService {
     private final RedisService redisService;
     private final ObjectMapper objectMapper;
     private final NotificationAlertSender notificationAlertSender;
+    private final NotificationRepository notificationRepository;
     private final EventPublisher eventPublisher;
     private final KafkaCommonProperties kafkaProperties;
     private final EventKeyGenerator eventKeyGenerator;
@@ -173,7 +177,7 @@ public class AnomalyAlertServiceImpl implements AnomalyAlertService {
 
     @Override
     @Transactional
-    public void confirmPhase(UUID parentId, UUID childrenId) {
+    public void confirmPhase(UUID parentId, UUID childrenId, Long notificationId) {
         Optional<String> lockToken = acquirePhaseLock(childrenId);
         if (lockToken.isEmpty()) {
             throw new CustomException(
@@ -191,6 +195,13 @@ public class AnomalyAlertServiceImpl implements AnomalyAlertService {
                 );
             }
 
+            updateAnomalyNotificationActionStatus(
+                parentId,
+                childrenId,
+                notificationId,
+                AnomalyActionStatus.CONFIRMED
+            );
+
             redisService.delete(anomalyAlertPhaseKey(childrenId));
             startPhaseCoolTime(childrenId);
         } finally {
@@ -203,6 +214,7 @@ public class AnomalyAlertServiceImpl implements AnomalyAlertService {
     public void rejectPhase(
         UUID parentId,
         UUID childrenId,
+        Long notificationId,
         String correlationId
     ) {
         Optional<String> lockToken = acquirePhaseLock(childrenId);
@@ -221,6 +233,13 @@ public class AnomalyAlertServiceImpl implements AnomalyAlertService {
                     ErrorCode.ANOMALY_ALERT_PHASE_NOT_FOUND
                 );
             }
+
+            updateAnomalyNotificationActionStatus(
+                parentId,
+                childrenId,
+                notificationId,
+                AnomalyActionStatus.REJECTED
+            );
 
             boolean requested = requestGpsCheck(
                 phase.childrenId(),
@@ -241,6 +260,40 @@ public class AnomalyAlertServiceImpl implements AnomalyAlertService {
         } finally {
             releasePhaseLock(childrenId, lockToken.get());
         }
+    }
+
+    private void updateAnomalyNotificationActionStatus(
+        UUID parentId,
+        UUID childrenId,
+        Long notificationId,
+        AnomalyActionStatus status
+    ) {
+        Notification notification = notificationRepository.findByIdAndReceiverId(
+                notificationId,
+                parentId
+            )
+            .orElseThrow(() -> new CustomException(
+                "알림을 찾을 수 없습니다.",
+                ErrorCode.NOTIFICATION_NOT_FOUND
+            ));
+
+        if (!NotificationCode.RISK_ALERT.name().equals(notification.getNotificationType().getName())) {
+            throw new CustomException(
+                "알림을 찾을 수 없습니다.",
+                ErrorCode.NOTIFICATION_NOT_FOUND
+            );
+        }
+
+        NotificationPayload payload = notification.getNotificationPayload();
+        if (payload == null || !childrenId.equals(payload.getChildrenId())) {
+            throw new CustomException(
+                "접근 권한이 없습니다.",
+                ErrorCode.FORBIDDEN
+            );
+        }
+
+        notification.markRead();
+        notification.markAnomalyActionStatus(status);
     }
 
     private void requestGpsCheckAndFinishPhase(AnomalyAlertPhaseState phase) {
@@ -377,6 +430,7 @@ public class AnomalyAlertServiceImpl implements AnomalyAlertService {
             .childrenId(phase.childrenId())
             .childrenName(phase.childrenName())
             .parentId(phase.parentId())
+            .anomalyActionStatus(AnomalyActionStatus.NONE)
             .build();
 
         notificationAlertSender.send(new NotificationCommand(

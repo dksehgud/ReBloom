@@ -49,7 +49,9 @@ function CounselorSidebar({
 
       <nav className="counselor-child-list" aria-label="상담 아동 목록">
         {isLoadingChildren ? (
-          <p className="counselor-child-list-state">상담 아동을 불러오는 중입니다.</p>
+          <p className="counselor-child-list-state">
+            상담 아동을 불러오는 중입니다.
+          </p>
         ) : null}
 
         {!isLoadingChildren && childrenError ? (
@@ -57,7 +59,9 @@ function CounselorSidebar({
         ) : null}
 
         {!isLoadingChildren && !childrenError && childItems.length === 0 ? (
-          <p className="counselor-child-list-state">연결된 상담 아동이 없습니다.</p>
+          <p className="counselor-child-list-state">
+            연결된 상담 아동이 없습니다.
+          </p>
         ) : null}
 
         {!isLoadingChildren && !childrenError
@@ -72,9 +76,17 @@ function CounselorSidebar({
                   {child.name.slice(0, 1)}
                 </span>
                 <span className="counselor-child-summary">
-                  <strong>{child.name}</strong>
+                  <span className="counselor-child-name">
+                    <strong>{child.name}</strong>
+                  </span>
                   <em>{child.meta}</em>
                 </span>
+                {child.hasUnreadParentObservation ? (
+                  <span
+                    className="counselor-child-unread-dot"
+                    aria-label="새 부모 관찰기록 있음"
+                  />
+                ) : null}
                 <small className="counselor-child-subtext">{child.subText}</small>
               </button>
             ))

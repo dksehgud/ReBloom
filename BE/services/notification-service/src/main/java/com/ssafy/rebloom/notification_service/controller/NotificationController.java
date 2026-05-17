@@ -131,7 +131,7 @@ public class NotificationController {
         @LoginUserId UUID parentId,
         @RequestBody @Valid AnomalyAlertPhaseActionRequestDto request
     ) {
-        anomalyAlertService.confirmPhase(parentId, request.childrenId());
+        anomalyAlertService.confirmPhase(parentId, request.childrenId(), request.notificationId());
         return ResponseEntity.ok(BaseResponse.success("이상치 알림을 확인 처리했습니다."));
     }
 
@@ -142,7 +142,7 @@ public class NotificationController {
         @RequestBody @Valid AnomalyAlertPhaseActionRequestDto request,
         @RequestId String requestId
     ) {
-        anomalyAlertService.rejectPhase(parentId, request.childrenId(), requestId);
+        anomalyAlertService.rejectPhase(parentId, request.childrenId(), request.notificationId(), requestId);
         return ResponseEntity.ok(BaseResponse.success("이상치 알림을 불가 처리했습니다."));
     }
 }

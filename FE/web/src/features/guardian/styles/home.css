@@ -1521,9 +1521,20 @@ body[data-shell-mode='webview'] .parent-bottom-nav__indicator {
 
 .parent-notifications-page__header {
   box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
   background: rgba(255, 255, 255, 0.94);
-  border-bottom: 1px solid rgba(243, 244, 246, 0.5);
-  padding: 48px 20px 16px;
+  padding: 48px 20px 0;
+}
+
+.parent-notifications-page__header-main {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  border-bottom: 1px solid rgba(229, 231, 235, 0.9);
+  padding-bottom: 16px;
 }
 
 .parent-notifications-page__header-copy {
@@ -1778,6 +1789,12 @@ body[data-shell-mode='webview'] .parent-bottom-nav__indicator {
   background: rgba(168, 178, 188, 0.16);
   color: #718096;
   box-shadow: none;
+}
+
+.parent-notification-card__action-button:disabled {
+  cursor: default;
+  opacity: 1;
+  transform: none;
 }
 
 .parent-settings-page {

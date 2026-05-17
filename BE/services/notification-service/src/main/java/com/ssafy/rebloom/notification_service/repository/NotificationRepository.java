@@ -14,7 +14,7 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
 
     Slice<Notification> findByReceiverIdOrderByCreatedAtDesc(UUID receiverId, Pageable pageable);
 
-    Slice<Notification> findByReceiverIdAndReadOrderByCreatedAtDesc(
+    Slice<Notification> findByReceiverIdAndIsReadOrderByCreatedAtDesc(
         UUID receiverId,
         boolean isRead,
         Pageable pageable

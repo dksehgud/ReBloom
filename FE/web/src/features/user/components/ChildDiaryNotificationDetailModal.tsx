@@ -1,6 +1,11 @@
 import { useEffect, useMemo, useState } from 'react'
 
 import CommonModalLayout from '../../../components/organisms/Modal/CommonModalLayout'
+import type {
+  DiaryNotificationDay,
+  DiaryNotificationSettings,
+  DiaryNotificationTime,
+} from '../types/diaryNotificationSettings'
 import ChildDiaryNotificationTooltip from './ChildDiaryNotificationTooltip'
 
 const DAY_OPTIONS = [
@@ -18,22 +23,12 @@ const MINUTE_OPTIONS = [0, 10, 20, 30, 40, 50] as const
 const WEEKDAY_KEYS = ['MON', 'TUE', 'WED', 'THU', 'FRI'] as const
 const WEEKEND_KEYS = ['SAT', 'SUN'] as const
 
-type DiaryNotificationDay = (typeof DAY_OPTIONS)[number]['key']
-type DiaryNotificationQuickPreset = 'EVERYDAY' | 'WEEKDAYS' | 'WEEKENDS' | null
-type DiaryNotificationTime = '' | `${string}:${string}`
-
-type DiaryNotificationSettings = {
-  enabled: boolean
-  daysOfWeek: DiaryNotificationDay[]
-  frequencyPerDay: (typeof FREQUENCY_OPTIONS)[number]
-  times: DiaryNotificationTime[]
-  quickPreset: DiaryNotificationQuickPreset
-}
-
 type ChildDiaryNotificationDetailModalProps = {
   initialSettings: DiaryNotificationSettings
   onClose: () => void
-  onSave: (settings: DiaryNotificationSettings) => void
+  onSave: (settings: DiaryNotificationSettings) => void | Promise<void>
+  errorMessage?: string
+  isSaving?: boolean
 }
 
 type NotificationSwitchProps = {
@@ -128,6 +123,8 @@ function ChildDiaryNotificationDetailModal({
   initialSettings,
   onClose,
   onSave,
+  errorMessage,
+  isSaving = false,
 }: ChildDiaryNotificationDetailModalProps) {
   const [draft, setDraft] = useState<DiaryNotificationSettings>(() => ({
     ...initialSettings,
@@ -147,12 +144,12 @@ function ChildDiaryNotificationDetailModal({
   const hasDuplicateTimes =
     draft.enabled &&
     new Set(draft.times.filter(Boolean)).size !== draft.times.filter(Boolean).length
-  const saveDisabled = hasEmptyTimes || hasDuplicateTimes
+  const saveDisabled = isSaving || hasEmptyTimes || hasDuplicateTimes
   const helperMessage = hasEmptyTimes
     ? '알림 시간을 모두 선택해주세요.'
     : hasDuplicateTimes
       ? '중복되지 않게 알림 시간을 설정해주세요.'
-      : ''
+      : errorMessage ?? ''
 
   useEffect(() => {
     if (!isTooltipVisible) return undefined
@@ -293,7 +290,7 @@ function ChildDiaryNotificationDetailModal({
             type="button"
             className="auth-button is-primary"
             disabled={saveDisabled}
-            onClick={() => onSave(draft)}
+            onClick={() => void onSave(draft)}
           >
             저장
           </button>
@@ -466,6 +463,6 @@ function ChildDiaryNotificationDetailModal({
   )
 }
 
-export type { DiaryNotificationDay, DiaryNotificationSettings }
+export type { DiaryNotificationDay, DiaryNotificationSettings } from '../types/diaryNotificationSettings'
 
 export default ChildDiaryNotificationDetailModal
