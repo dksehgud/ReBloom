@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 
 import ChildHeader from '../../components/organisms/Header/ChildHeader'
 import MobilePageLayout from '../../components/templates/MobilePageLayout/MobilePageLayout'
@@ -24,6 +24,10 @@ type ChildSettingsPageProps = {
   onSaveProfileAddress?: (address: ChildAddress) => void | Promise<void>
   onOpenCounselStatus?: () => void
   onLogout?: () => void
+  onLoadNotificationSettings?: () => Promise<DiaryNotificationSettings>
+  onSaveNotificationSettings?: (
+    settings: DiaryNotificationSettings,
+  ) => Promise<DiaryNotificationSettings>
   onVerifyCurrentPassword?: (password: string) => Promise<void>
 }
 
@@ -275,6 +279,8 @@ function ChildSettingsPage({
   onSaveProfileAddress,
   onOpenCounselStatus,
   onLogout,
+  onLoadNotificationSettings,
+  onSaveNotificationSettings,
   onVerifyCurrentPassword,
 }: ChildSettingsPageProps) {
   const [isAddressModalOpen, setIsAddressModalOpen] = useState(false)
@@ -290,9 +296,75 @@ function ChildSettingsPage({
       times: [],
       quickPreset: 'EVERYDAY',
     })
+  const [notificationSettingsError, setNotificationSettingsError] = useState<
+    string | undefined
+  >()
+  const [isSavingNotificationSettings, setIsSavingNotificationSettings] =
+    useState(false)
 
   const isCounselConnected = Boolean(counselorName && counselorSubtitle)
   const profileAddressText = formatChildAddress(profileAddress)
+
+  useEffect(() => {
+    if (!onLoadNotificationSettings) {
+      return undefined
+    }
+
+    let isCanceled = false
+
+    void onLoadNotificationSettings()
+      .then((nextSettings) => {
+        if (isCanceled) {
+          return
+        }
+
+        setNotificationSettings(nextSettings)
+        setNotificationSettingsError(undefined)
+      })
+      .catch((error) => {
+        if (isCanceled) {
+          return
+        }
+
+        setNotificationSettingsError(
+          error instanceof Error
+            ? error.message
+            : '일기 알림 설정을 불러오지 못했습니다.',
+        )
+      })
+
+    return () => {
+      isCanceled = true
+    }
+  }, [onLoadNotificationSettings])
+
+  const handleSaveNotificationSettings = async (
+    nextSettings: DiaryNotificationSettings,
+  ) => {
+    setNotificationSettingsError(undefined)
+
+    if (!onSaveNotificationSettings) {
+      setNotificationSettings(nextSettings)
+      setIsNotificationDetailModalOpen(false)
+      return
+    }
+
+    try {
+      setIsSavingNotificationSettings(true)
+      const savedSettings = await onSaveNotificationSettings(nextSettings)
+
+      setNotificationSettings(savedSettings)
+      setIsNotificationDetailModalOpen(false)
+    } catch (error) {
+      setNotificationSettingsError(
+        error instanceof Error
+          ? error.message
+          : '일기 알림 설정을 저장하지 못했습니다.',
+      )
+    } finally {
+      setIsSavingNotificationSettings(false)
+    }
+  }
 
   const handleOpenProvisioning = () => {
     const didStart = startNativeBleProvisioning({ role: 'child' })
@@ -331,7 +403,10 @@ function ChildSettingsPage({
               title="일기 작성 알림"
               description={formatNotificationSummary(notificationSettings)}
               icon={<BellIcon />}
-              onClick={() => setIsNotificationDetailModalOpen(true)}
+              onClick={() => {
+                setNotificationSettingsError(undefined)
+                setIsNotificationDetailModalOpen(true)
+              }}
               showChevron
               showDivider={false}
             />
@@ -451,10 +526,9 @@ function ChildSettingsPage({
         <ChildDiaryNotificationDetailModal
           initialSettings={notificationSettings}
           onClose={() => setIsNotificationDetailModalOpen(false)}
-          onSave={(nextSettings) => {
-            setNotificationSettings(nextSettings)
-            setIsNotificationDetailModalOpen(false)
-          }}
+          errorMessage={notificationSettingsError}
+          isSaving={isSavingNotificationSettings}
+          onSave={handleSaveNotificationSettings}
         />
       ) : null}
 
