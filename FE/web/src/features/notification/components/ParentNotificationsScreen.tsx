@@ -18,7 +18,17 @@ function NotificationsHeaderIcon() {
   )
 }
 
-function ParentNotificationsHeader({ childName }: { childName?: string }) {
+type ParentNotificationsHeaderProps = {
+  childName?: string
+  hasUnread: boolean
+  onMarkAllAsRead: () => void
+}
+
+function ParentNotificationsHeader({
+  childName,
+  hasUnread,
+  onMarkAllAsRead,
+}: ParentNotificationsHeaderProps) {
   const displayName = childName?.trim() || '아이'
 
   return (
@@ -34,17 +44,33 @@ function ParentNotificationsHeader({ childName }: { childName?: string }) {
           {displayName}의 감정 변화와 중요한 소식을 확인하세요
         </p>
       </div>
+      <button
+        type="button"
+        className="parent-notifications-page__read-all"
+        disabled={!hasUnread}
+        onClick={onMarkAllAsRead}
+      >
+        전체 읽음
+      </button>
     </div>
   )
 }
 
 function ParentNotificationsScreen() {
   const { selectedChild } = useParentConnectedChild()
-  const { notifications, markAsRead, chooseAction } = useParentNotificationState()
+  const { notifications, markAsRead, markAllAsRead, chooseAction } =
+    useParentNotificationState()
+  const hasUnreadNotifications = notifications.some((notification) => notification.unread)
 
   return (
     <MobilePageLayout
-      header={<ParentNotificationsHeader childName={selectedChild?.name} />}
+      header={
+        <ParentNotificationsHeader
+          childName={selectedChild?.name}
+          hasUnread={hasUnreadNotifications}
+          onMarkAllAsRead={markAllAsRead}
+        />
+      }
       className="parent-home-page parent-notifications-page"
       contentClassName="parent-notifications-page__content"
       bottomNavigation={<ParentBottomNavigation />}

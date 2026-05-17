@@ -58,6 +58,25 @@ function useParentNotificationState(initialItems: ParentNotificationItem[] = [])
     [accessToken, parentNotificationApi],
   )
 
+  const markAllAsRead = useCallback(() => {
+    setNotifications((currentItems) =>
+      currentItems.map((item) =>
+        item.unread
+          ? {
+              ...item,
+              unread: false,
+            }
+          : item,
+      ),
+    )
+
+    void parentNotificationApi
+      .markAllParentNotificationsAsRead(accessToken)
+      .catch((error: unknown) => {
+        console.error(error)
+      })
+  }, [accessToken, parentNotificationApi])
+
   const chooseAction = useCallback(
     (notificationId: string, actionKey: string) => {
       const targetNotification = notifications.find(
@@ -147,6 +166,7 @@ function useParentNotificationState(initialItems: ParentNotificationItem[] = [])
   return {
     notifications,
     markAsRead,
+    markAllAsRead,
     chooseAction,
   }
 }
