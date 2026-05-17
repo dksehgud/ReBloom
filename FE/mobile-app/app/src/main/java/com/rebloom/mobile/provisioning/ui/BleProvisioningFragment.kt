@@ -25,6 +25,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.rebloom.mobile.provisioning.BleProvisioningViewModel
 import com.rebloom.mobile.provisioning.ProvisioningState
+import com.rebloom.mobile.provisioning.data.ProvisioningRegistrationContext
 import com.rebloom.mobile.databinding.FragmentBleProvisioningBinding
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -47,7 +48,13 @@ class BleProvisioningFragment : Fragment() {
     private val binding get() = _binding!!
 
     private val viewModel: BleProvisioningViewModel by viewModels {
-        BleProvisioningViewModelFactory(requireContext())
+        BleProvisioningViewModelFactory(
+            context = requireContext(),
+            registrationContext = ProvisioningRegistrationContext(
+                role = arguments?.getString(BleProvisioningActivity.EXTRA_ROLE) ?: "child",
+                childrenId = arguments?.getString(BleProvisioningActivity.EXTRA_CHILDREN_ID),
+            ),
+        )
     }
 
     /** 현재 선택된 Wi-Fi SSID */
@@ -187,6 +194,12 @@ class BleProvisioningFragment : Fragment() {
             is ProvisioningState.Writing, is ProvisioningState.WaitingResult -> {
                 binding.progressPanel.isVisible = true
                 binding.tvStatus.text = "스피커가 Wi-Fi에 연결 중..."
+                binding.progressIndicator.isVisible = true
+            }
+
+            is ProvisioningState.RegisteringDevice -> {
+                binding.progressPanel.isVisible = true
+                binding.tvStatus.text = "스피커를 계정에 등록 중..."
                 binding.progressIndicator.isVisible = true
             }
 

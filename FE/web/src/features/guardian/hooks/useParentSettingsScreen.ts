@@ -51,6 +51,7 @@ function useParentSettingsScreen() {
   const linkedChildAgeLabel =
     typeof selectedChild?.age === 'number' ? `${selectedChild.age}세` : ''
   const linkedChildEmail = selectedChild?.email ?? ''
+  const linkedChildId = selectedChild?.id ?? null
 
   useEffect(() => {
     let isCanceled = false
@@ -174,6 +175,7 @@ function useParentSettingsScreen() {
     isPasswordModalOpen,
     linkedChildAgeLabel,
     linkedChildEmail,
+    linkedChildId,
     linkedChildName,
     parentProfile,
     setConnectedCounselor,

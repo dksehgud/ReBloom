@@ -1792,7 +1792,7 @@ body[data-shell-mode='webview'] .parent-bottom-nav__indicator {
   display: flex;
   flex-direction: column;
   gap: 24px;
-  padding: 24px 24px 32px;
+  padding: 24px 24px 104px;
 }
 
 .parent-settings-page__section {

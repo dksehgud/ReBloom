@@ -87,19 +87,19 @@ def _handle_biometric_raw(payload: dict) -> None:
         )
         logger.info("[Phase2] userId=%s is_anomaly=%s", user_id, result["is_anomaly"])
 
-    if result["is_anomaly"]:
-        publish_anomaly_verified(
-            user_id          = user_id,
-            ts_start         = ts_start,
-            ts_end           = ts_end,
-            hr               = hr,
-            rmssd            = rmssd,
-            pnn50            = pnn50,
-            lf_hf            = lf_hf,
-            acc_mag          = acc_mag,
-            hr_acc_ratio     = hr_acc_ratio,
-            anomaly_features = result.get("anomaly_features", []),
-        )
+    publish_anomaly_verified(
+        user_id          = user_id,
+        ts_start         = ts_start,
+        ts_end           = ts_end,
+        hr               = hr,
+        rmssd            = rmssd,
+        pnn50            = pnn50,
+        lf_hf            = lf_hf,
+        acc_mag          = acc_mag,
+        hr_acc_ratio     = hr_acc_ratio,
+        is_anomaly       = result["is_anomaly"],
+        anomaly_features = result.get("anomaly_features", []),
+    )
 
 
 def _handle_ai_train(payload: dict) -> None:

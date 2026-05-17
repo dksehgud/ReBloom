@@ -29,6 +29,9 @@ sealed class ProvisioningState {
     /** RPi5가 Wi-Fi 연결 시도 중 (CONNECTING Notify 수신) */
     object WaitingResult : ProvisioningState()
 
+    /** Provisioning 완료 후 Gateway에 기기 등록 중 */
+    object RegisteringDevice : ProvisioningState()
+
     /** Provisioning 완료 */
     data class Success(val ssid: String) : ProvisioningState()
 

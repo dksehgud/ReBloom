@@ -1,7 +1,7 @@
 import type { FormEvent } from 'react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { FiEye, FiEyeOff } from 'react-icons/fi'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 
 import googleLogo from '../../assets/google-logo.svg'
 import kakaoLogo from '../../assets/kakao-logo.svg'
@@ -14,6 +14,7 @@ import { useSelectedChildStore } from '../../features/student/store/useSelectedC
 
 function CounselorLoginPage() {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [isPasswordVisible, setIsPasswordVisible] = useState(false)
@@ -27,6 +28,17 @@ function CounselorLoginPage() {
   )
 
   const isSubmitEnabled = email.trim().length > 0 && password.trim().length > 0
+
+  useEffect(() => {
+    if (searchParams.get('oauthRoleMismatch') === '1') {
+      setLoginError('상담사 계정으로 로그인해 주세요.')
+      return
+    }
+
+    if (searchParams.get('sessionExpired') === '1') {
+      setLoginError('로그인이 만료되었습니다. 다시 로그인해 주세요.')
+    }
+  }, [searchParams])
 
   const handleSocialLogin = (provider: 'google' | 'kakao') => {
     saveOAuthIntent('counselor')
