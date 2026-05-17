@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import { useAppSessionStore } from '../../auth/store/useAppSessionStore'
 import { useParentMockMode } from '../../guardian/hooks/useParentMockMode'
+import { subscribeParentNotifications } from '../api/parentNotificationSse'
 import type { ParentNotificationItem } from '../constants/parentNotifications'
 import { getParentNotificationApi } from '../services/parentNotificationService'
 import type { ParentNotificationDto } from '../types/parentNotification'
@@ -121,6 +122,27 @@ function useParentNotificationState(initialItems: ParentNotificationItem[] = [])
 
     return () => window.clearTimeout(timeoutId)
   }, [loadNotifications])
+
+  useEffect(() => {
+    if (isMockMode || !accessToken) {
+      return undefined
+    }
+
+    return subscribeParentNotifications({
+      accessToken,
+      onError: (error) => {
+        console.error(error)
+      },
+      onNotification: (notification) => {
+        const notificationItem = mapNotificationDtoToItem(notification)
+
+        setNotifications((currentItems) => [
+          notificationItem,
+          ...currentItems.filter((item) => item.id !== notificationItem.id),
+        ])
+      },
+    })
+  }, [accessToken, isMockMode])
 
   return {
     notifications,
