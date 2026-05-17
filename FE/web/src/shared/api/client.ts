@@ -1,7 +1,10 @@
 import {
+  clearStoredRoleSession,
   inferSessionRoleFromApiPath,
+  readStoredActiveRole,
   readStoredAccessToken,
   type SessionRole,
+  writeStoredActiveRole,
 } from '../../features/auth/session/appSessionStorage'
 
 type ApiMethod = 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE'
@@ -93,6 +96,31 @@ function buildApiUrl(path: string) {
   return `${API_BASE_URL}${path.startsWith('/') ? path : `/${path}`}`
 }
 
+function resolveSessionRole(path: string, sessionRole?: SessionRole) {
+  return sessionRole ?? readStoredActiveRole() ?? inferSessionRoleFromApiPath(path)
+}
+
+function redirectToLoginForExpiredSession(role: SessionRole | null) {
+  if (typeof window === 'undefined' || !role) {
+    return
+  }
+
+  clearStoredRoleSession(role)
+
+  if (readStoredActiveRole() === role) {
+    writeStoredActiveRole(null)
+  }
+
+  const loginPath =
+    role === 'counselor'
+      ? '/counselor/login?sessionExpired=1'
+      : '/login?sessionExpired=1'
+
+  if (window.location.pathname !== loginPath.split('?')[0]) {
+    window.location.replace(loginPath)
+  }
+}
+
 async function parseResponseBody(response: Response) {
   const text = await response.text()
 
@@ -119,6 +147,7 @@ async function apiRequest<T>(path: string, options: ApiRequestOptions = {}): Pro
     withAuth = true,
   } = options
   const requestHeaders = new Headers(headers)
+  const resolvedSessionRole = resolveSessionRole(path, sessionRole)
 
   if (body !== undefined && !requestHeaders.has('Content-Type')) {
     requestHeaders.set('Content-Type', 'application/json')
@@ -128,7 +157,7 @@ async function apiRequest<T>(path: string, options: ApiRequestOptions = {}): Pro
     accessTokenOverride !== undefined
       ? accessTokenOverride
       : withAuth
-        ? readStoredAccessToken(sessionRole ?? inferSessionRoleFromApiPath(path))
+        ? readStoredAccessToken(resolvedSessionRole)
         : null
 
   if (accessToken && !requestHeaders.has('Authorization')) {
@@ -144,6 +173,10 @@ async function apiRequest<T>(path: string, options: ApiRequestOptions = {}): Pro
   const responseBody = await parseResponseBody(response)
 
   if (!response.ok) {
+    if (withAuth && response.status === 401) {
+      redirectToLoginForExpiredSession(resolvedSessionRole)
+    }
+
     throw new ApiError(errorMessage ?? 'API 요청에 실패했습니다.', response.status, responseBody)
   }
 
