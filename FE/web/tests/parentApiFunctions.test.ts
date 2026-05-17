@@ -59,11 +59,14 @@ import { getParentAccountApi } from '../src/features/guardian/services/parentAcc
 import { getParentObservationApi } from '../src/features/guardian/services/parentObservationService'
 import { getParentRelationApi } from '../src/features/guardian/services/parentRelationService'
 import {
+  confirmParentAnomalyAlert,
   getParentNotifications,
   markAllParentNotificationsAsRead,
   markParentNotificationAsRead,
   parentNotificationApi,
+  rejectParentAnomalyAlert,
 } from '../src/features/notification/api/parentNotificationApi'
+import { mapNotificationDtoToItem } from '../src/features/notification/hooks/useParentNotificationState'
 import { getParentNotificationApi } from '../src/features/notification/services/parentNotificationService'
 import {
   getParentDiaryEmotions,
@@ -412,6 +415,73 @@ describe('parent notification API functions', () => {
       '/notification/api/v1/notifications/read-all',
       expect.objectContaining({ method: 'PATCH' }),
     )
+  })
+
+  it('handles parent anomaly alert action requests', async () => {
+    apiRequestMock.mockResolvedValue({ data: null })
+
+    await confirmParentAnomalyAlert({
+      accessToken: 'token',
+      childrenId: 'child-1',
+      notificationId: 1,
+    })
+    await rejectParentAnomalyAlert({
+      accessToken: 'token',
+      childrenId: 'child-1',
+      notificationId: 1,
+    })
+
+    expect(apiRequestMock).toHaveBeenNthCalledWith(
+      1,
+      '/notification/api/v1/notifications/anomaly-alert/confirm',
+      expect.objectContaining({
+        accessToken: 'token',
+        body: { childrenId: 'child-1', notificationId: 1 },
+        method: 'POST',
+      }),
+    )
+    expect(apiRequestMock).toHaveBeenNthCalledWith(
+      2,
+      '/notification/api/v1/notifications/anomaly-alert/reject',
+      expect.objectContaining({
+        accessToken: 'token',
+        body: { childrenId: 'child-1', notificationId: 1 },
+        method: 'POST',
+      }),
+    )
+  })
+
+  it('maps action buttons only for risk alert notifications', () => {
+    const riskAlert = mapNotificationDtoToItem({
+      createdAt: '2026-05-17T10:00:00',
+      id: 1,
+      isRead: false,
+      notificationType: 'RISK_ALERT',
+      payload: {
+        childrenId: 'child-1',
+        content: '확인이 필요한 알림입니다.',
+        title: '주의 필요',
+      },
+    })
+    const conversationAlert = mapNotificationDtoToItem({
+      createdAt: '2026-05-17T10:00:00',
+      id: 2,
+      isRead: false,
+      notificationType: 'CONVERSATION_ALERT',
+      payload: {
+        childrenId: 'child-1',
+        content: '대화 확인 결과 알림입니다.',
+        title: '응답 요청',
+      },
+    })
+
+    expect(riskAlert.childrenId).toBe('child-1')
+    expect(riskAlert.notificationType).toBe('RISK_ALERT')
+    expect(riskAlert.actions?.map((action) => action.key)).toEqual([
+      'reject',
+      'confirm',
+    ])
+    expect(conversationAlert.actions).toBeUndefined()
   })
 })
 

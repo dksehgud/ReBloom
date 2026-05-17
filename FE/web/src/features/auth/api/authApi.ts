@@ -88,6 +88,7 @@ type PasswordChangeRequest = {
 type AuthRequestOptions = {
   accessToken?: string | null
   body?: unknown
+  headers?: HeadersInit
   method?: 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE'
   withAuth?: boolean
 }
@@ -116,6 +117,7 @@ async function request<T>(path: string, options: AuthRequestOptions = {}) {
   const response = await apiRequest<BaseResponse<T> | null>(path, {
     accessToken: options.accessToken,
     body: options.body,
+    headers: options.headers,
     method: options.method,
     withAuth: options.withAuth,
   })
@@ -143,6 +145,21 @@ async function login(email: string, password: string) {
 
   if (!response.data) {
     throw new AuthApiError('로그인 응답이 올바르지 않습니다.')
+  }
+
+  return response.data
+}
+
+async function reissue(refreshToken?: string | null) {
+  const headers = refreshToken ? { 'refresh-token': refreshToken } : undefined
+  const response = await request<LoginResponse>(`${AUTH_API_PREFIX}/auth/reissue`, {
+    headers,
+    method: 'POST',
+    withAuth: false,
+  })
+
+  if (!response.data) {
+    throw new AuthApiError('토큰 재발급 응답이 올바르지 않습니다.')
   }
 
   return response.data
@@ -292,6 +309,7 @@ const authApi = {
   findParentProfile,
   getMyInfo,
   login,
+  reissue,
   resetPassword,
   sendEmailVerificationCode,
   signup,

@@ -219,6 +219,22 @@
   min-width: 0;
 }
 
+.counselor-child-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.counselor-child-unread-dot {
+  width: 7px;
+  height: 7px;
+  flex: 0 0 7px;
+  background: #f05d5d;
+  border-radius: 999px;
+  box-shadow: 0 0 0 3px rgba(240, 93, 93, 0.14);
+}
+
 .counselor-child-list strong {
   min-width: 0;
   overflow: hidden;
