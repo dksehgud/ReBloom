@@ -5,8 +5,19 @@ import com.ssafy.rebloom.auth_service.user.dto.request.UserCreateRequestDto;
 import com.ssafy.rebloom.auth_service.user.validation.ValidRoleFields;
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+import java.time.format.ResolverStyle;
+import java.util.List;
 
 public class RoleFieldsValidator implements ConstraintValidator<ValidRoleFields, UserCreateRequestDto> {
+
+    private static final List<DateTimeFormatter> BIRTH_FORMATTERS = List.of(
+        DateTimeFormatter.ISO_LOCAL_DATE,
+        DateTimeFormatter.ofPattern("uuuuMMdd").withResolverStyle(ResolverStyle.STRICT),
+        DateTimeFormatter.ofPattern("uuuu.MM.dd").withResolverStyle(ResolverStyle.STRICT)
+    );
 
     @Override
     public boolean isValid(UserCreateRequestDto dto, ConstraintValidatorContext context) {
@@ -28,6 +39,11 @@ public class RoleFieldsValidator implements ConstraintValidator<ValidRoleFields,
                 addError(context, "아이 가입에는 부모 이메일, 생년월일, 성별, 주소, 상세주소, 위도, 경도가 필수입니다.");
                 isValid = false;
             }
+
+            if (!isEmpty(dto.birth()) && !isValidBirth(dto.birth())) {
+                addError(context, "아이 생년월일은 실제 존재하는 날짜여야 합니다. 허용 형식: yyyy-MM-dd, yyyyMMdd, yyyy.MM.dd.");
+                isValid = false;
+            }
         } else if (dto.role() == UserRole.COUNSELOR) {
             if (isEmpty(dto.hospitalName())
                 || isEmpty(dto.hospitalAddress())
@@ -43,6 +59,20 @@ public class RoleFieldsValidator implements ConstraintValidator<ValidRoleFields,
 
     private boolean isEmpty(String value) {
         return value == null || value.trim().isEmpty();
+    }
+
+    private boolean isValidBirth(String birth) {
+        String normalizedBirth = birth.trim();
+
+        for (DateTimeFormatter formatter : BIRTH_FORMATTERS) {
+            try {
+                LocalDate birthDate = LocalDate.parse(normalizedBirth, formatter);
+                return !birthDate.isAfter(LocalDate.now());
+            } catch (DateTimeParseException ignored) {
+            }
+        }
+
+        return false;
     }
 
     private void addError(ConstraintValidatorContext context, String message) {
