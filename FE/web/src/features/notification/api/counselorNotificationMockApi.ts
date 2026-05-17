@@ -13,6 +13,7 @@ let counselorNotificationDtos: ParentNotificationDto[] = [
     isRead: false,
     notificationType: 'PARENT_REPORT_NEW',
     payload: {
+      childrenId: 'mock-child-1',
       childrenName: 'Child One',
       content: '보호자가 새 보고서를 등록했습니다.',
       title: '새 부모 보고서',

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import {
   createCounselorComment,
@@ -62,6 +62,11 @@ import {
   getWeekRangeByOffset,
 } from '../../../shared/utils/weekRange'
 import { useAppSessionStore } from '../../auth/store/useAppSessionStore'
+import { getCounselorNotificationApi } from '../../notification/services/counselorNotificationService'
+import {
+  getUnreadParentReportChildIds,
+  withUnreadParentObservationMarkers,
+} from '../../notification/utils/counselorNotificationMarkers'
 import type { DiaryEmotionKey } from '../../diary/constants/diaryEmotions'
 import { useCounselorMockMode } from './useCounselorMockMode'
 
@@ -570,6 +575,9 @@ function useCounselorDashboardState() {
   const [childItems, setChildItems] = useState<ChildListItem[]>(() =>
     isMockMode ? initialChildList : [],
   )
+  const [unreadParentReportChildIds, setUnreadParentReportChildIds] = useState<
+    Set<string>
+  >(() => new Set())
   const [selectedChildId, setSelectedChildId] = useState<string | null>(() =>
     isMockMode ? (initialChildList[0]?.id ?? null) : null,
   )
@@ -661,6 +669,15 @@ function useCounselorDashboardState() {
     useState<string>()
   const [mainColumnElement, setMainColumnElement] =
     useState<HTMLDivElement | null>(null)
+  const counselorNotificationApi = useMemo(
+    () => getCounselorNotificationApi(isMockMode),
+    [isMockMode],
+  )
+  const childItemsWithNotificationMarkers = useMemo(
+    () =>
+      withUnreadParentObservationMarkers(childItems, unreadParentReportChildIds),
+    [childItems, unreadParentReportChildIds],
+  )
   const mainColumnRef = useCallback((node: HTMLDivElement | null) => {
     setMainColumnElement(node)
   }, [])
@@ -711,8 +728,8 @@ function useCounselorDashboardState() {
   const autonomicWeek = getWeekControls('autonomic')
   const currentObservationRecords = selectedChildId ? observationRecords : []
   const selectedChildProfile =
-    childItems.find((child) => child.id === selectedChildId) ??
-    childItems[0] ??
+    childItemsWithNotificationMarkers.find((child) => child.id === selectedChildId) ??
+    childItemsWithNotificationMarkers[0] ??
     null
   const selectedObservationComment = selectedObservation
     ? (observationComments[selectedObservation.reportId] ??
@@ -722,6 +739,16 @@ function useCounselorDashboardState() {
 
   const handleSelectChild = (childId: string) => {
     setSelectedChildId(childId)
+    setUnreadParentReportChildIds((current) => {
+      if (!current.has(childId)) {
+        return current
+      }
+
+      const next = new Set(current)
+
+      next.delete(childId)
+      return next
+    })
     setSelectedObservation(null)
     setWeekOffsets(INITIAL_DASHBOARD_WEEK_OFFSETS)
   }
@@ -946,6 +973,28 @@ function useCounselorDashboardState() {
       setIsLoadingConnectionRequests(false)
     }
   }, [accessToken, isMockMode])
+
+  const loadParentReportNotificationMarkers = useCallback(async () => {
+    if (!isMockMode && !accessToken) {
+      setUnreadParentReportChildIds(new Set())
+      return
+    }
+
+    try {
+      const response = await counselorNotificationApi.getCounselorNotifications({
+        accessToken,
+        isRead: false,
+        size: 50,
+      })
+
+      setUnreadParentReportChildIds(
+        getUnreadParentReportChildIds(response.contents ?? []),
+      )
+    } catch (error) {
+      console.error(error)
+      setUnreadParentReportChildIds(new Set())
+    }
+  }, [accessToken, counselorNotificationApi, isMockMode])
 
   const loadObservationRecords = useCallback(async () => {
     if (isMockMode) {
@@ -1272,6 +1321,14 @@ function useCounselorDashboardState() {
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
+      void loadParentReportNotificationMarkers()
+    }, 0)
+
+    return () => window.clearTimeout(timeoutId)
+  }, [loadParentReportNotificationMarkers])
+
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => {
       void loadObservationRecords()
     }, 0)
 
@@ -1408,7 +1465,7 @@ function useCounselorDashboardState() {
     autonomicWeek,
     biometricRatioData,
     biometricRatioWeek,
-    childItems,
+    childItems: childItemsWithNotificationMarkers,
     childItemsError,
     connectionRequests,
     connectionRequestsError,

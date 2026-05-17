@@ -12,7 +12,10 @@ import {
   getCounselorNotifications,
   markCounselorNotificationAsRead,
 } from '../src/features/notification/api/counselorNotificationApi'
-import { mapCounselorNotificationDtoToItem } from '../src/features/notification/hooks/useCounselorNotificationState'
+import {
+  getUnreadParentReportChildIds,
+  withUnreadParentObservationMarkers,
+} from '../src/features/notification/utils/counselorNotificationMarkers'
 
 const apiRequestMock = apiClientMock.apiRequest
 
@@ -79,37 +82,65 @@ describe('counselor notification API', () => {
   })
 })
 
-describe('counselor notification mapper', () => {
-  it('maps notification DTOs to counselor list items', () => {
-    vi.useFakeTimers()
-    vi.setSystemTime(new Date('2026-05-17T10:00:00'))
-
-    try {
-      expect(
-        mapCounselorNotificationDtoToItem({
-          createdAt: '2026-05-17T09:30:00',
-          id: 3,
-          isRead: false,
-          notificationType: 'RISK_ALERT',
-          payload: {
-            childrenName: 'Child Two',
-            content: 'Risk alert content',
-            title: 'Risk title',
-          },
-        }),
-      ).toEqual({
-        childName: 'Child Two',
-        id: '3',
-        message: 'Risk alert content',
+describe('counselor notification sidebar markers', () => {
+  it('extracts unread parent report child ids only', () => {
+    const unreadChildIds = getUnreadParentReportChildIds([
+      {
+        createdAt: '2026-05-17T09:30:00',
+        id: 3,
+        isRead: false,
+        notificationType: 'PARENT_REPORT_NEW',
+        payload: {
+          childrenId: 'child-1',
+        },
+      },
+      {
+        createdAt: '2026-05-17T09:31:00',
+        id: 4,
+        isRead: true,
+        notificationType: 'PARENT_REPORT_NEW',
+        payload: {
+          childrenId: 'child-2',
+        },
+      },
+      {
+        createdAt: '2026-05-17T09:32:00',
+        id: 5,
+        isRead: false,
         notificationType: 'RISK_ALERT',
-        timeLabel: '30분 전',
-        title: 'Risk title',
-        tone: 'pink',
-        typeLabel: '위험 감지',
-        unread: true,
-      })
-    } finally {
-      vi.useRealTimers()
-    }
+        payload: {
+          childrenId: 'child-3',
+        },
+      },
+    ])
+
+    expect([...unreadChildIds]).toEqual(['child-1'])
+  })
+
+  it('adds red-dot marker state to matching sidebar children', () => {
+    expect(
+      withUnreadParentObservationMarkers(
+        [
+          {
+            id: 'child-1',
+            meta: '13세',
+            name: 'Child One',
+            registeredAt: '2026-05-17T00:00:00',
+            subText: '보호자: Parent One',
+          },
+          {
+            id: 'child-2',
+            meta: '12세',
+            name: 'Child Two',
+            registeredAt: '2026-05-17T00:00:00',
+            subText: '보호자: Parent Two',
+          },
+        ],
+        new Set(['child-2']),
+      ),
+    ).toMatchObject([
+      { id: 'child-1', hasUnreadParentObservation: false },
+      { id: 'child-2', hasUnreadParentObservation: true },
+    ])
   })
 })

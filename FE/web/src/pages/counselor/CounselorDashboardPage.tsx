@@ -129,11 +129,6 @@ function CounselorDashboardPage() {
     navigate('/counselor/settings')
   }
 
-  const handleOpenNotifications = () => {
-    closeCompactSidebar()
-    navigate('/counselor/notifications')
-  }
-
   return (
     <main
       className={`counselor-dashboard${
@@ -169,7 +164,6 @@ function CounselorDashboardPage() {
         childrenError={childItemsError}
         onToggle={() => setIsSidebarCollapsed((current) => !current)}
         onSelectChild={handleSelectSidebarChild}
-        onOpenNotifications={handleOpenNotifications}
         onOpenSettings={handleOpenSettings}
       />
 
