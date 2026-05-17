@@ -49,6 +49,7 @@ def publish_anomaly_verified(
     lf_hf           : float,
     acc_mag         : float,
     hr_acc_ratio    : float,
+    is_anomaly      : bool,
     anomaly_features: list[str],
 ) -> None:
     """
@@ -64,6 +65,7 @@ def publish_anomaly_verified(
         lf_hf           : LF/HF ratio
         acc_mag         : 가속도 크기
         hr_acc_ratio    : 심박수/가속도 비율
+        is_anomaly      : 이상치 여부
         anomaly_features: 이상치로 판단된 변수명 목록
     """
     payload = {
@@ -76,7 +78,7 @@ def publish_anomaly_verified(
         "lfHf"           : lf_hf,
         "accMag"         : acc_mag,
         "hrAccRatio"     : hr_acc_ratio,
-        "isAnomaly"      : True,
+        "isAnomaly"      : is_anomaly,
         "anomalyFeatures": anomaly_features,
     }
     producer = get_producer()
