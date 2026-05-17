@@ -1,13 +1,15 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import { useAppSessionStore } from '../../auth/store/useAppSessionStore'
+import { useParentMockMode } from '../../guardian/hooks/useParentMockMode'
 import type { ParentNotificationItem } from '../constants/parentNotifications'
 import { getParentNotificationApi } from '../services/parentNotificationService'
 import type { ParentNotificationDto } from '../types/parentNotification'
-import { useParentMockMode } from '../../guardian/hooks/useParentMockMode'
 
 function useParentNotificationState(initialItems: ParentNotificationItem[] = []) {
-  const [notifications, setNotifications] = useState<ParentNotificationItem[]>(() => initialItems)
+  const [notifications, setNotifications] = useState<ParentNotificationItem[]>(
+    () => initialItems,
+  )
   const accessToken = useAppSessionStore((state) => state.accessToken)
   const isMockMode = useParentMockMode()
   const parentNotificationApi = useMemo(
@@ -27,42 +29,90 @@ function useParentNotificationState(initialItems: ParentNotificationItem[] = [])
     }
   }, [accessToken, parentNotificationApi])
 
-  const markAsRead = useCallback((notificationId: string) => {
-    setNotifications((currentItems) =>
-      currentItems.map((item) =>
-        item.id === notificationId && item.unread ? { ...item, unread: false } : item
-      ),
-    )
+  const markAsRead = useCallback(
+    (notificationId: string) => {
+      setNotifications((currentItems) =>
+        currentItems.map((item) =>
+          item.id === notificationId && item.unread
+            ? { ...item, unread: false }
+            : item,
+        ),
+      )
 
-    const apiNotificationId = Number(notificationId)
+      const apiNotificationId = Number(notificationId)
 
-    if (Number.isNaN(apiNotificationId)) {
-      return
-    }
+      if (Number.isNaN(apiNotificationId)) {
+        return
+      }
 
-    void parentNotificationApi.markParentNotificationAsRead({
-      accessToken,
-      notificationId: apiNotificationId,
-    }).catch((error: unknown) => {
-      console.error(error)
-    })
-  }, [accessToken, parentNotificationApi])
+      void parentNotificationApi
+        .markParentNotificationAsRead({
+          accessToken,
+          notificationId: apiNotificationId,
+        })
+        .catch((error: unknown) => {
+          console.error(error)
+        })
+    },
+    [accessToken, parentNotificationApi],
+  )
 
-  const chooseAction = useCallback((notificationId: string, actionKey: string) => {
-    setNotifications((currentItems) =>
-      currentItems.map((item) =>
-        item.id === notificationId
-          ? {
-              ...item,
-              unread: false,
-              selectedActionKey: actionKey,
-            }
-          : item
-      ),
-    )
+  const chooseAction = useCallback(
+    (notificationId: string, actionKey: string) => {
+      const targetNotification = notifications.find(
+        (item) => item.id === notificationId,
+      )
 
-    markAsRead(notificationId)
-  }, [markAsRead])
+      setNotifications((currentItems) =>
+        currentItems.map((item) =>
+          item.id === notificationId
+            ? {
+                ...item,
+                unread: false,
+                selectedActionKey: actionKey,
+              }
+            : item,
+        ),
+      )
+
+      const apiNotificationId = Number(notificationId)
+
+      if (
+        targetNotification?.notificationType !== 'RISK_ALERT' ||
+        !targetNotification.childrenId ||
+        Number.isNaN(apiNotificationId)
+      ) {
+        markAsRead(notificationId)
+        return
+      }
+
+      const actionRequest = {
+        accessToken,
+        childrenId: targetNotification.childrenId,
+        notificationId: apiNotificationId,
+      }
+      const actionPromise =
+        actionKey === 'confirm'
+          ? parentNotificationApi.confirmParentAnomalyAlert(actionRequest)
+          : actionKey === 'reject'
+            ? parentNotificationApi.rejectParentAnomalyAlert(actionRequest)
+            : null
+
+      if (!actionPromise) {
+        markAsRead(notificationId)
+        return
+      }
+
+      void actionPromise
+        .then(() => {
+          markAsRead(notificationId)
+        })
+        .catch((error: unknown) => {
+          console.error(error)
+        })
+    },
+    [accessToken, markAsRead, notifications, parentNotificationApi],
+  )
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
@@ -79,7 +129,9 @@ function useParentNotificationState(initialItems: ParentNotificationItem[] = [])
   }
 }
 
-function mapNotificationDtoToItem(notification: ParentNotificationDto): ParentNotificationItem {
+function mapNotificationDtoToItem(
+  notification: ParentNotificationDto,
+): ParentNotificationItem {
   const typeMeta = getNotificationTypeMeta(notification.notificationType)
   const payload = notification.payload
   const title = payload?.title?.trim() || typeMeta.title
@@ -88,14 +140,16 @@ function mapNotificationDtoToItem(notification: ParentNotificationDto): ParentNo
   return {
     actions: typeMeta.withActions
       ? [
-          { key: 'decline', label: '불가', tone: 'danger' },
+          { key: 'reject', label: '불가', tone: 'danger' },
           { key: 'confirm', label: '확인', tone: 'primary' },
         ]
       : undefined,
+    childrenId: payload?.childrenId,
     highlightLabel: getHighlightLabel(notification),
     icon: typeMeta.icon,
     id: String(notification.id),
     message,
+    notificationType: notification.notificationType,
     timeLabel: formatRelativeTimeLabel(notification.createdAt),
     title,
     tone: typeMeta.tone,
@@ -118,19 +172,25 @@ function getNotificationTypeMeta(notificationType: string): Pick<
         withActions: false,
       }
     case 'BIOMETRIC_ANOMALY':
-    case 'RISK_ALERT':
       return {
         icon: 'alert',
         title: '주의 필요',
         tone: 'pink',
         withActions: false,
       }
+    case 'RISK_ALERT':
+      return {
+        icon: 'alert',
+        title: '주의 필요',
+        tone: 'pink',
+        withActions: true,
+      }
     case 'CONVERSATION_ALERT':
       return {
         icon: 'response',
         title: '응답 요청',
         tone: 'orange',
-        withActions: true,
+        withActions: false,
       }
     default:
       return {
@@ -192,3 +252,4 @@ function formatRelativeTimeLabel(createdAt?: string | null) {
 }
 
 export default useParentNotificationState
+export { mapNotificationDtoToItem }
