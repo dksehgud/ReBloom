@@ -168,6 +168,41 @@ body[data-shell-mode='webview'] .login-screen {
   margin-top: 111px;
 }
 
+.field--password {
+  position: relative;
+}
+
+.field--password input {
+  padding-right: 48px;
+}
+
+.login-password-toggle {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  color: #9ca3af;
+  cursor: pointer;
+  display: inline-flex;
+  height: 32px;
+  justify-content: center;
+  padding: 0;
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 32px;
+}
+
+.login-password-toggle svg {
+  width: 20px;
+  height: 20px;
+}
+
+.login-password-toggle:focus-visible {
+  outline: 2px solid #6c8ec4;
+  outline-offset: 2px;
+}
+
 .login-button {
   width: 100%;
   min-height: 45px;
