@@ -40,13 +40,8 @@ android {
     }
 
     signingConfigs {
-<<<<<<< HEAD
-        create("shared") {
-            storeFile = file("../rebloom.keystore")
-=======
         create("rebloom") {
             storeFile = rebloomKeystoreFile
->>>>>>> develop
             storePassword = "rebloom123"
             keyAlias = "rebloom"
             keyPassword = "rebloom123"
@@ -55,17 +50,11 @@ android {
 
     buildTypes {
         debug {
-<<<<<<< HEAD
-            signingConfig = signingConfigs.getByName("shared")
-=======
-            if (rebloomKeystoreFile.exists()) {
-                signingConfig = signingConfigs.getByName("rebloom")
-            }
->>>>>>> develop
+            signingConfig = signingConfigs.getByName("rebloom")
             buildConfigField("String", "WEB_APP_BASE_URL", "\"$debugWebAppBaseUrl\"")
         }
         release {
-            signingConfig = signingConfigs.getByName("shared")
+            signingConfig = signingConfigs.getByName("rebloom")
             isMinifyEnabled = false
             buildConfigField("String", "WEB_APP_BASE_URL", "\"$releaseWebAppBaseUrl\"")
             proguardFiles(
