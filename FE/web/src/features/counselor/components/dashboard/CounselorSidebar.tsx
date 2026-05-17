@@ -1,4 +1,4 @@
-import { FiChevronLeft, FiMenu, FiSettings } from 'react-icons/fi'
+import { FiBell, FiChevronLeft, FiMenu, FiSettings } from 'react-icons/fi'
 
 import type { ChildListItem } from '../../types/dashboard'
 
@@ -11,6 +11,7 @@ type CounselorSidebarProps = {
   childrenError?: string
   onToggle: () => void
   onSelectChild: (childId: string) => void
+  onOpenNotifications: () => void
   onOpenSettings: () => void
 }
 
@@ -23,6 +24,7 @@ function CounselorSidebar({
   childrenError,
   onToggle,
   onSelectChild,
+  onOpenNotifications,
   onOpenSettings,
 }: CounselorSidebarProps) {
   return (
@@ -49,7 +51,9 @@ function CounselorSidebar({
 
       <nav className="counselor-child-list" aria-label="상담 아동 목록">
         {isLoadingChildren ? (
-          <p className="counselor-child-list-state">상담 아동을 불러오는 중입니다.</p>
+          <p className="counselor-child-list-state">
+            상담 아동을 불러오는 중입니다.
+          </p>
         ) : null}
 
         {!isLoadingChildren && childrenError ? (
@@ -57,7 +61,9 @@ function CounselorSidebar({
         ) : null}
 
         {!isLoadingChildren && !childrenError && childItems.length === 0 ? (
-          <p className="counselor-child-list-state">연결된 상담 아동이 없습니다.</p>
+          <p className="counselor-child-list-state">
+            연결된 상담 아동이 없습니다.
+          </p>
         ) : null}
 
         {!isLoadingChildren && !childrenError
@@ -85,14 +91,24 @@ function CounselorSidebar({
         <div className="counselor-dashboard-sidebar-profile">
           <strong>{counselorName} 상담사님</strong>
         </div>
-        <button
-          type="button"
-          aria-label="설정 페이지로 이동"
-          className="counselor-dashboard-sidebar-settings"
-          onClick={onOpenSettings}
-        >
-          <FiSettings aria-hidden="true" />
-        </button>
+        <div className="counselor-dashboard-sidebar-actions">
+          <button
+            type="button"
+            aria-label="상담사 알림 페이지로 이동"
+            className="counselor-dashboard-sidebar-settings"
+            onClick={onOpenNotifications}
+          >
+            <FiBell aria-hidden="true" />
+          </button>
+          <button
+            type="button"
+            aria-label="설정 페이지로 이동"
+            className="counselor-dashboard-sidebar-settings"
+            onClick={onOpenSettings}
+          >
+            <FiSettings aria-hidden="true" />
+          </button>
+        </div>
       </footer>
     </aside>
   )
