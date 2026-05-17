@@ -7,6 +7,7 @@ type ParentNotificationPayloadDto = {
   counselorName?: string | null
   depressionScore?: number | null
   depressionScoreText?: string | null
+  notificationId?: number | null
   parentId?: string | null
   title?: string | null
 }
@@ -59,7 +60,12 @@ type ParentNotificationReadRequest = {
   notificationId: number | string
 }
 
+type ParentNotificationAnomalyActionRequest = ParentNotificationReadRequest & {
+  childrenId: string
+}
+
 export type {
+  ParentNotificationAnomalyActionRequest,
   ParentNotificationBaseResponseDto,
   ParentNotificationDto,
   ParentNotificationListDataDto,

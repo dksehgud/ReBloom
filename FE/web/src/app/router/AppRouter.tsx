@@ -1,4 +1,4 @@
-import {type ReactNode, useEffect, useState} from 'react'
+import {type ReactNode, useCallback, useEffect, useState} from 'react'
 import {Navigate, Outlet, Route, Routes, useLocation, useNavigate, useOutletContext,} from 'react-router-dom'
 
 import FindPasswordPage from '../../pages/auth/FindPasswordPage'
@@ -24,7 +24,12 @@ import {useAppSessionStore} from '../../features/auth/store/useAppSessionStore'
 import {isCounselorMockModeSearch} from '../../features/counselor/hooks/useCounselorMockMode'
 import {isParentMockModeSearch} from '../../features/guardian/hooks/useParentMockMode'
 import {useSelectedChildStore} from '../../features/student/store/useSelectedChildStore'
+import {
+  getChildDiaryNotificationSettings,
+  updateChildDiaryNotificationSettings,
+} from '../../features/notification/api/childNotificationSettingsApi'
 import {type ChildConnectedCounselor, getChildConnectedCounselor,} from '../../features/user/api/childRelationApi'
+import type {DiaryNotificationSettings} from '../../features/user/types/diaryNotificationSettings'
 import type {ChildAddress} from '../../shared/types/childAddress'
 import {
   clearNativeAccessToken,
@@ -542,6 +547,25 @@ function ChildSettingsRoute() {
         longitude: currentUser?.longitude ?? profileAddress.longitude,
     }
 
+    const handleLoadNotificationSettings = useCallback(async () => {
+        if (!accessToken) {
+            throw new Error('로그인이 필요합니다.')
+        }
+
+        return getChildDiaryNotificationSettings(accessToken)
+    }, [accessToken])
+
+    const handleSaveNotificationSettings = useCallback(
+        async (settings: DiaryNotificationSettings) => {
+            if (!accessToken) {
+                throw new Error('로그인이 필요합니다.')
+            }
+
+            return updateChildDiaryNotificationSettings(settings, accessToken)
+        },
+        [accessToken],
+    )
+
     return (
         <PhoneShell>
             <ChildSettingsPage
@@ -559,12 +583,18 @@ function ChildSettingsRoute() {
                         : null
                 }
                 onBack={() => navigate('/child/diary')}
+                onLoadNotificationSettings={
+                    accessToken ? handleLoadNotificationSettings : undefined
+                }
                 onLogout={() => {
                     clearSession()
                     clearNativeAccessToken()
                     clearSelectedChild()
                     navigate('/login', {replace: true})
                 }}
+                onSaveNotificationSettings={
+                    accessToken ? handleSaveNotificationSettings : undefined
+                }
                 onVerifyCurrentPassword={async (password) => {
                     if (!accessToken) {
                         throw new Error('로그인이 필요합니다.')
