@@ -14,6 +14,7 @@ import {
 } from '../src/features/notification/api/counselorNotificationApi'
 import {
   getUnreadParentReportChildIds,
+  getUnreadParentReportNotificationIdsByChildId,
   withUnreadParentObservationMarkers,
 } from '../src/features/notification/utils/counselorNotificationMarkers'
 
@@ -115,6 +116,41 @@ describe('counselor notification sidebar markers', () => {
     ])
 
     expect([...unreadChildIds]).toEqual(['child-1'])
+  })
+
+  it('groups unread parent report notification ids by child id', () => {
+    const unreadNotificationIdsByChildId =
+      getUnreadParentReportNotificationIdsByChildId([
+        {
+          createdAt: '2026-05-17T09:30:00',
+          id: 3,
+          isRead: false,
+          notificationType: 'PARENT_REPORT_NEW',
+          payload: {
+            childrenId: 'child-1',
+          },
+        },
+        {
+          createdAt: '2026-05-17T09:31:00',
+          id: 4,
+          isRead: false,
+          notificationType: 'PARENT_REPORT_NEW',
+          payload: {
+            childrenId: 'child-1',
+          },
+        },
+        {
+          createdAt: '2026-05-17T09:32:00',
+          id: 5,
+          isRead: false,
+          notificationType: 'RISK_ALERT',
+          payload: {
+            childrenId: 'child-1',
+          },
+        },
+      ])
+
+    expect(unreadNotificationIdsByChildId.get('child-1')).toEqual([3, 4])
   })
 
   it('adds red-dot marker state to matching sidebar children', () => {

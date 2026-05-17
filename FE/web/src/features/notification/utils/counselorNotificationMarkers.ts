@@ -5,15 +5,34 @@ function getUnreadParentReportChildIds(
   notifications: ParentNotificationDto[],
 ): Set<string> {
   return new Set(
-    notifications
-      .filter(
-        (notification) =>
-          !notification.isRead &&
-          notification.notificationType === 'PARENT_REPORT_NEW' &&
-          notification.payload?.childrenId,
-      )
-      .map((notification) => notification.payload?.childrenId)
-      .filter((childrenId): childrenId is string => Boolean(childrenId)),
+    getUnreadParentReportNotificationIdsByChildId(notifications).keys(),
+  )
+}
+
+function getUnreadParentReportNotificationIdsByChildId(
+  notifications: ParentNotificationDto[],
+): Map<string, number[]> {
+  return notifications.reduce<Map<string, number[]>>(
+    (notificationIdsByChildId, notification) => {
+      const childrenId = notification.payload?.childrenId
+
+      if (
+        notification.isRead ||
+        notification.notificationType !== 'PARENT_REPORT_NEW' ||
+        !childrenId
+      ) {
+        return notificationIdsByChildId
+      }
+
+      const notificationIds = notificationIdsByChildId.get(childrenId) ?? []
+
+      notificationIdsByChildId.set(childrenId, [
+        ...notificationIds,
+        notification.id,
+      ])
+      return notificationIdsByChildId
+    },
+    new Map(),
   )
 }
 
@@ -29,5 +48,6 @@ function withUnreadParentObservationMarkers(
 
 export {
   getUnreadParentReportChildIds,
+  getUnreadParentReportNotificationIdsByChildId,
   withUnreadParentObservationMarkers,
 }

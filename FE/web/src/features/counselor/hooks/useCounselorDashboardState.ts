@@ -64,7 +64,7 @@ import {
 import { useAppSessionStore } from '../../auth/store/useAppSessionStore'
 import { getCounselorNotificationApi } from '../../notification/services/counselorNotificationService'
 import {
-  getUnreadParentReportChildIds,
+  getUnreadParentReportNotificationIdsByChildId,
   withUnreadParentObservationMarkers,
 } from '../../notification/utils/counselorNotificationMarkers'
 import type { DiaryEmotionKey } from '../../diary/constants/diaryEmotions'
@@ -575,9 +575,10 @@ function useCounselorDashboardState() {
   const [childItems, setChildItems] = useState<ChildListItem[]>(() =>
     isMockMode ? initialChildList : [],
   )
-  const [unreadParentReportChildIds, setUnreadParentReportChildIds] = useState<
-    Set<string>
-  >(() => new Set())
+  const [
+    unreadParentReportNotificationIdsByChildId,
+    setUnreadParentReportNotificationIdsByChildId,
+  ] = useState<Map<string, number[]>>(() => new Map())
   const [selectedChildId, setSelectedChildId] = useState<string | null>(() =>
     isMockMode ? (initialChildList[0]?.id ?? null) : null,
   )
@@ -673,6 +674,10 @@ function useCounselorDashboardState() {
     () => getCounselorNotificationApi(isMockMode),
     [isMockMode],
   )
+  const unreadParentReportChildIds = useMemo(
+    () => new Set(unreadParentReportNotificationIdsByChildId.keys()),
+    [unreadParentReportNotificationIdsByChildId],
+  )
   const childItemsWithNotificationMarkers = useMemo(
     () =>
       withUnreadParentObservationMarkers(childItems, unreadParentReportChildIds),
@@ -737,18 +742,54 @@ function useCounselorDashboardState() {
       null)
     : null
 
-  const handleSelectChild = (childId: string) => {
-    setSelectedChildId(childId)
-    setUnreadParentReportChildIds((current) => {
-      if (!current.has(childId)) {
-        return current
+  const markParentReportNotificationsAsRead = useCallback(
+    async (childId: string) => {
+      const notificationIds =
+        unreadParentReportNotificationIdsByChildId.get(childId) ?? []
+
+      if (notificationIds.length === 0) {
+        return
       }
 
-      const next = new Set(current)
+      if (!isMockMode && !accessToken) {
+        return
+      }
 
-      next.delete(childId)
-      return next
-    })
+      try {
+        await Promise.all(
+          notificationIds.map((notificationId) =>
+            counselorNotificationApi.markCounselorNotificationAsRead({
+              accessToken,
+              notificationId,
+            }),
+          ),
+        )
+
+        setUnreadParentReportNotificationIdsByChildId((current) => {
+          if (!current.has(childId)) {
+            return current
+          }
+
+          const next = new Map(current)
+
+          next.delete(childId)
+          return next
+        })
+      } catch (error) {
+        console.error(error)
+      }
+    },
+    [
+      accessToken,
+      counselorNotificationApi,
+      isMockMode,
+      unreadParentReportNotificationIdsByChildId,
+    ],
+  )
+
+  const handleSelectChild = (childId: string) => {
+    setSelectedChildId(childId)
+    void markParentReportNotificationsAsRead(childId)
     setSelectedObservation(null)
     setWeekOffsets(INITIAL_DASHBOARD_WEEK_OFFSETS)
   }
@@ -976,7 +1017,7 @@ function useCounselorDashboardState() {
 
   const loadParentReportNotificationMarkers = useCallback(async () => {
     if (!isMockMode && !accessToken) {
-      setUnreadParentReportChildIds(new Set())
+      setUnreadParentReportNotificationIdsByChildId(new Map())
       return
     }
 
@@ -987,12 +1028,12 @@ function useCounselorDashboardState() {
         size: 50,
       })
 
-      setUnreadParentReportChildIds(
-        getUnreadParentReportChildIds(response.contents ?? []),
+      setUnreadParentReportNotificationIdsByChildId(
+        getUnreadParentReportNotificationIdsByChildId(response.contents ?? []),
       )
     } catch (error) {
       console.error(error)
-      setUnreadParentReportChildIds(new Set())
+      setUnreadParentReportNotificationIdsByChildId(new Map())
     }
   }, [accessToken, counselorNotificationApi, isMockMode])
 
