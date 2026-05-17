@@ -159,7 +159,7 @@ async function reissue(refreshToken?: string | null) {
   })
 
   if (!response.data) {
-    throw new AuthApiError('濡쒓렇???묐떟???щ컮瑜댁? ?딆뒿?덈떎.')
+    throw new AuthApiError('토큰 재발급 응답이 올바르지 않습니다.')
   }
 
   return response.data
