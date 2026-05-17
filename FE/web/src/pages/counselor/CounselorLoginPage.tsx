@@ -32,6 +32,11 @@ function CounselorLoginPage() {
   useEffect(() => {
     if (searchParams.get('oauthRoleMismatch') === '1') {
       setLoginError('상담사 계정으로 로그인해 주세요.')
+      return
+    }
+
+    if (searchParams.get('sessionExpired') === '1') {
+      setLoginError('로그인이 만료되었습니다. 다시 로그인해 주세요.')
     }
   }, [searchParams])
 
