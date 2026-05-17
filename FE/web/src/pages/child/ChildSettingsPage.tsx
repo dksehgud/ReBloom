@@ -11,6 +11,7 @@ import ChildPasswordChangeModal, {
 } from '../../features/user/components/ChildPasswordChangeModal'
 import ChildProfileAddressModal from '../../features/user/components/ChildProfileAddressModal'
 import { formatChildAddress, type ChildAddress } from '../../shared/types/childAddress'
+import { startNativeBleProvisioning } from '../../shared/utils/nativeTokenBridge'
 
 type ChildSettingsPageProps = {
   profileName?: string
@@ -193,6 +194,31 @@ function KeyIcon() {
   )
 }
 
+function SpeakerIcon() {
+  return (
+    <svg aria-hidden="true" fill="none" height="20" viewBox="0 0 24 24" width="20">
+      <path
+        d="M8 9.25H5.75C5.06 9.25 4.5 9.81 4.5 10.5V13.5C4.5 14.19 5.06 14.75 5.75 14.75H8L12.5 18V6L8 9.25Z"
+        stroke="currentColor"
+        strokeLinejoin="round"
+        strokeWidth="1.65"
+      />
+      <path
+        d="M15.5 9.25C16.24 9.92 16.7 10.9 16.7 12C16.7 13.1 16.24 14.08 15.5 14.75"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeWidth="1.65"
+      />
+      <path
+        d="M18.25 7.25C19.46 8.39 20.2 10.07 20.2 12C20.2 13.93 19.46 15.61 18.25 16.75"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeWidth="1.65"
+      />
+    </svg>
+  )
+}
+
 function SettingsCardRow({
   title,
   description,
@@ -267,6 +293,14 @@ function ChildSettingsPage({
 
   const isCounselConnected = Boolean(counselorName && counselorSubtitle)
   const profileAddressText = formatChildAddress(profileAddress)
+
+  const handleOpenProvisioning = () => {
+    const didStart = startNativeBleProvisioning({ role: 'child' })
+
+    if (!didStart) {
+      window.alert('앱에서만 스피커 연결을 시작할 수 있습니다.')
+    }
+  }
 
   return (
     <MobilePageLayout
@@ -343,6 +377,20 @@ function ChildSettingsPage({
                   <span className="child-settings-page__connect-badge">연결됨</span>
                 ) : undefined
               }
+              showDivider={false}
+            />
+          </div>
+        </section>
+
+        <section className="child-settings-page__section">
+          <h2 className="child-settings-page__section-title">스피커 연결</h2>
+          <div className="child-settings-page__box">
+            <SettingsCardRow
+              title="Re:Bloom 스피커 연결"
+              description="블루투스로 스피커 Wi-Fi를 설정합니다."
+              icon={<SpeakerIcon />}
+              onClick={handleOpenProvisioning}
+              showChevron
               showDivider={false}
             />
           </div>

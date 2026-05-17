@@ -5,10 +5,13 @@ plugins {
     alias(libs.plugins.google.services)
 }
 
-val webAppBaseUrl =
-    providers.gradleProperty("WEB_APP_BASE_URL")
-        .orElse("https://example.invalid")
-        .get()
+val webAppBaseUrlProvider = providers.gradleProperty("WEB_APP_BASE_URL")
+val debugWebAppBaseUrl = webAppBaseUrlProvider
+    .orElse("")
+    .get()
+val releaseWebAppBaseUrl = webAppBaseUrlProvider
+    .orElse("https://example.invalid")
+    .get()
 val diaryAnalysisApiUrl =
     providers.gradleProperty("DIARY_ANALYSIS_API_URL")
         .orElse("")
@@ -30,14 +33,18 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        buildConfigField("String", "WEB_APP_BASE_URL", "\"$webAppBaseUrl\"")
+        buildConfigField("String", "WEB_APP_BASE_URL", "\"$debugWebAppBaseUrl\"")
         buildConfigField("String", "DIARY_ANALYSIS_API_URL", "\"$diaryAnalysisApiUrl\"")
         buildConfigField("String", "API_BASE_URL", "\"$apiBaseUrl\"")
     }
 
     buildTypes {
+        debug {
+            buildConfigField("String", "WEB_APP_BASE_URL", "\"$debugWebAppBaseUrl\"")
+        }
         release {
             isMinifyEnabled = false
+            buildConfigField("String", "WEB_APP_BASE_URL", "\"$releaseWebAppBaseUrl\"")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"

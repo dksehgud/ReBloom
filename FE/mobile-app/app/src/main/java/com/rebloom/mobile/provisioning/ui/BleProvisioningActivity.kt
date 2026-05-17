@@ -15,13 +15,24 @@ import com.rebloom.mobile.R
  */
 class BleProvisioningActivity : AppCompatActivity() {
 
+    companion object {
+        const val EXTRA_CHILDREN_ID = "childrenId"
+        const val EXTRA_ROLE = "role"
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_ble_provisioning)
 
         if (savedInstanceState == null) {
+            val fragment = BleProvisioningFragment().apply {
+                arguments = Bundle().apply {
+                    putString(EXTRA_ROLE, intent.getStringExtra(EXTRA_ROLE) ?: "child")
+                    putString(EXTRA_CHILDREN_ID, intent.getStringExtra(EXTRA_CHILDREN_ID))
+                }
+            }
             supportFragmentManager.beginTransaction()
-                .replace(R.id.fragment_container, BleProvisioningFragment())
+                .replace(R.id.fragment_container, fragment)
                 .commit()
         }
     }

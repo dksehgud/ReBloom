@@ -8,6 +8,7 @@ import ParentCounselorConnectModal from './ParentCounselorConnectModal'
 import { parentSupportContacts } from '../constants/parentSettings'
 import { useParentSettingsScreen } from '../hooks/useParentSettingsScreen'
 import { getCounselorStatusLabel } from '../services/parentSettingsService'
+import { startNativeBleProvisioning } from '../../../shared/utils/nativeTokenBridge'
 
 type ParentSettingsRowProps = {
   title: ReactNode
@@ -112,6 +113,31 @@ function PhoneIcon() {
         stroke="currentColor"
         strokeLinecap="round"
         strokeLinejoin="round"
+        strokeWidth="1.65"
+      />
+    </svg>
+  )
+}
+
+function SpeakerIcon() {
+  return (
+    <svg aria-hidden="true" fill="none" viewBox="0 0 24 24">
+      <path
+        d="M8 9.25H5.75C5.06 9.25 4.5 9.81 4.5 10.5V13.5C4.5 14.19 5.06 14.75 5.75 14.75H8L12.5 18V6L8 9.25Z"
+        stroke="currentColor"
+        strokeLinejoin="round"
+        strokeWidth="1.65"
+      />
+      <path
+        d="M15.5 9.25C16.24 9.92 16.7 10.9 16.7 12C16.7 13.1 16.24 14.08 15.5 14.75"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeWidth="1.65"
+      />
+      <path
+        d="M18.25 7.25C19.46 8.39 20.2 10.07 20.2 12C20.2 13.93 19.46 15.61 18.25 16.75"
+        stroke="currentColor"
+        strokeLinecap="round"
         strokeWidth="1.65"
       />
     </svg>
@@ -237,6 +263,7 @@ function ParentSettingsScreen() {
     isPasswordModalOpen,
     linkedChildAgeLabel,
     linkedChildEmail,
+    linkedChildId,
     linkedChildName,
     parentProfile,
     setConnectedCounselor,
@@ -244,6 +271,22 @@ function ParentSettingsScreen() {
     setIsLogoutModalOpen,
     setIsPasswordModalOpen,
   } = useParentSettingsScreen()
+
+  const handleOpenProvisioning = () => {
+    if (!linkedChildId) {
+      window.alert('아이 연결 후 스피커를 등록할 수 있습니다.')
+      return
+    }
+
+    const didStart = startNativeBleProvisioning({
+      childrenId: linkedChildId,
+      role: 'parent',
+    })
+
+    if (!didStart) {
+      window.alert('앱에서만 스피커 연결을 시작할 수 있습니다.')
+    }
+  }
 
   return (
     <MobilePageLayout
@@ -366,6 +409,20 @@ function ParentSettingsScreen() {
                 showDivider={false}
               />
             )}
+          </div>
+        </section>
+
+        <section className="parent-settings-page__section">
+          <h2 className="parent-settings-page__section-title">스피커 연결</h2>
+          <div className="parent-settings-page__box">
+            <ParentSettingsRow
+              title="Re:Bloom 스피커 연결"
+              description="블루투스로 스피커 Wi-Fi를 설정합니다."
+              icon={<SpeakerIcon />}
+              onClick={handleOpenProvisioning}
+              showChevron
+              showDivider={false}
+            />
           </div>
         </section>
 

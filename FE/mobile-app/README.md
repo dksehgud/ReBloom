@@ -22,7 +22,25 @@ The default local address is:
 http://localhost:5173
 ```
 
-## 2. Expose the FE app through HTTPS
+## 2. Point the WebView at the FE app
+
+Endpoint values are intentionally not committed to `gradle.properties`.
+Pass them with `-P...` when building, or keep them in your user-level
+`~/.gradle/gradle.properties`.
+
+For the Android emulator, use the host loopback alias:
+
+```properties
+WEB_APP_BASE_URL=http://10.0.2.2:5173
+```
+
+For a physical device, either use `adb reverse tcp:5173 tcp:5173` with:
+
+```properties
+WEB_APP_BASE_URL=http://127.0.0.1:5173
+```
+
+or expose the FE app through HTTPS.
 
 Use a tunnel because the Android WebView smoke APK expects an HTTPS origin.
 
@@ -44,12 +62,14 @@ https://your-tunnel.trycloudflare.com
 ngrok http 5173
 ```
 
-## 3. Update the WebView base URL
+## 3. Update the WebView base URL for a tunnel
 
-Edit `FE/mobile-app/gradle.properties`:
+Use the tunnel URL as `WEB_APP_BASE_URL` when building:
 
-```properties
-WEB_APP_BASE_URL=https://your-tunnel.trycloudflare.com
+```bash
+sh gradlew :app:installDebug \
+  -PWEB_APP_BASE_URL=https://your-tunnel.trycloudflare.com \
+  -PAPI_BASE_URL=https://your-gateway.example.com/
 ```
 
 The app loads:
@@ -63,7 +83,10 @@ ${WEB_APP_BASE_URL}/
 From `FE/mobile-app`:
 
 ```bash
-./gradlew.bat :app:installDebug
+sh gradlew :app:installDebug \
+  -PWEB_APP_BASE_URL=https://your-web-app.example.com \
+  -PAPI_BASE_URL=https://your-gateway.example.com/ \
+  -PDIARY_ANALYSIS_API_URL=https://your-gateway.example.com/report/api/v1/analyses/diaries
 ```
 
 You can also run the `app` module directly from Android Studio.

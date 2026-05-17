@@ -4,6 +4,7 @@ declare global {
       saveToken?: (token: string) => void
       clearToken?: () => void
       checkSleepPermission?: () => void
+      startBleProvisioning?: (payloadJson?: string) => void
     }
   }
 }
@@ -32,4 +33,27 @@ function requestNativeSleepPermission() {
   window.Android?.checkSleepPermission?.()
 }
 
-export { clearNativeAccessToken, requestNativeSleepPermission, saveNativeAccessToken }
+type BleProvisioningContext = {
+  childrenId?: string | null
+  role: 'child' | 'parent'
+}
+
+function startNativeBleProvisioning(context?: BleProvisioningContext) {
+  if (typeof window === 'undefined') {
+    return false
+  }
+
+  if (!window.Android?.startBleProvisioning) {
+    return false
+  }
+
+  window.Android.startBleProvisioning(JSON.stringify(context ?? { role: 'child' }))
+  return true
+}
+
+export {
+  clearNativeAccessToken,
+  requestNativeSleepPermission,
+  saveNativeAccessToken,
+  startNativeBleProvisioning,
+}
