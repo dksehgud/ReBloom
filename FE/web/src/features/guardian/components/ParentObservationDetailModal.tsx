@@ -183,6 +183,10 @@ function ParentObservationDetailModal({
         </p>
       </div>
 
+      <span className="parent-observation-detail-modal__mood-chip">
+        {record.mood}
+      </span>
+
       {shouldShowRecordNavigation ? (
         <div className="parent-observation-detail-modal__pager">
           <button
@@ -208,10 +212,6 @@ function ParentObservationDetailModal({
           </button>
         </div>
       ) : null}
-
-      <span className="parent-observation-detail-modal__mood-chip">
-        {record.mood}
-      </span>
 
       {record.counselorComment ? (
         <section

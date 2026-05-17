@@ -5,6 +5,7 @@ import { requestDiaryAnalysis } from '../api/diaryAnalysisApi'
 import { diaryBridge, type NativeDiary } from '../bridge/diaryBridge'
 import type { DiaryCalendarEntry } from '../components/DiaryCalendar'
 import type { DiaryListItem } from '../components/DiaryListView'
+import { DIARY_CONTENT_MAX_LENGTH } from '../constants/diaryLimits'
 import { preloadDiaryEmotionAssets, type DiaryEmotionKey } from '../constants/diaryEmotions'
 import type {
   DiaryRecord,
@@ -321,6 +322,7 @@ function useChildDiaryPageState() {
 
     return formatWriteDateLabel(draftDate)
   }, [currentMonth, currentYear, draftDate, editingRecord])
+  const trimmedDraftContent = draftContent.trim()
 
   const handlePreviousMonth = () => {
     setCurrentDate((prev) => new Date(prev.getFullYear(), prev.getMonth() - 1, 1))
@@ -506,7 +508,11 @@ function useChildDiaryPageState() {
   }
 
   const handleSubmitWrite = () => {
-    if (!draftEmotionKey || draftContent.trim().length === 0) {
+    if (
+      !draftEmotionKey ||
+      trimmedDraftContent.length === 0 ||
+      draftContent.length > DIARY_CONTENT_MAX_LENGTH
+    ) {
       return
     }
 
@@ -516,7 +522,7 @@ function useChildDiaryPageState() {
     const day = isEditing && editingRecord ? editingRecord.day : draftDate.getDate()
     const monthKey = getMonthKey(year, month)
     const diaryDate = getDateText(year, month, day)
-    const trimmedContent = draftContent.trim()
+    const trimmedContent = trimmedDraftContent
     let nextRecord: DiaryRecord = {
       id: editingDiaryId ?? createDiaryRecordId(),
       day,
@@ -594,7 +600,10 @@ function useChildDiaryPageState() {
     draftEmotionKey,
     isEmotionModalOpen,
     isDeleteModalOpen,
-    isWriteSubmitDisabled: !draftEmotionKey || draftContent.trim().length === 0,
+    isWriteSubmitDisabled:
+      !draftEmotionKey ||
+      trimmedDraftContent.length === 0 ||
+      draftContent.length > DIARY_CONTENT_MAX_LENGTH,
     handlePreviousMonth,
     handleNextMonth,
     handleToggleViewMode,
