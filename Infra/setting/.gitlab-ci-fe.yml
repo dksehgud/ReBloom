@@ -38,6 +38,35 @@ build-mobile-apk:
     - changes:
         - "FE/mobile-app/**/*"
 
+upload-mobile-apk-to-drive:
+  image:
+    name: rclone/rclone:latest
+    entrypoint: [""]
+  stage: web-deploy
+  tags:
+    - rebloom-dev
+  services: [ ]
+  needs:
+    - job: build-mobile-apk
+      artifacts: true
+  script:
+    - echo "----- FE mobile APK Google Drive upload start -----"
+    - |
+      APK_PATH="$(find FE/mobile-app/app/build/outputs/apk/debug -type f -name '*.apk' | head -n 1)"
+      if [ -z "$APK_PATH" ]; then
+        echo "APK not found"
+        exit 1
+      fi
+      DRIVE_NAME="rebloom-debug-${CI_COMMIT_SHORT_SHA}.apk"
+      cp "$APK_PATH" "$DRIVE_NAME"
+      export RCLONE_CONFIG_GDRIVE_TYPE="drive"
+      export RCLONE_CONFIG_GDRIVE_SCOPE="drive"
+      export RCLONE_CONFIG_GDRIVE_SERVICE_ACCOUNT_FILE="$GDRIVE_SERVICE_ACCOUNT_JSON"
+      export RCLONE_CONFIG_GDRIVE_ROOT_FOLDER_ID="$GDRIVE_APK_FOLDER_ID"
+      rclone copy "$DRIVE_NAME" gdrive: --drive-stop-on-upload-limit
+  rules:
+    - changes:
+        - "FE/mobile-app/**/*"
 
 # deploy-web에서는 build-web에서 생성된 dist 폴더를 S3에 업로드하고 CloudFront 무효화 요청을 보냅니다.
 deploy-web:

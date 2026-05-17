@@ -61,7 +61,11 @@ public class DeviceController {
         return ResponseEntity.ok(BaseResponse.success("기기 삭제 성공"));
     }
 
-    @GetMapping("/parents/devices/{childrenId}/")
+    @GetMapping({
+        "/parents/devices/{childrenId}",
+        "/parents/devices/{childrenId}/",
+        "/parents/children/{childrenId}/device"
+    })
     @PreAuthorize("hasRole('PARENT')")
     public ResponseEntity<BaseResponse<ListResponseDto<DeviceResponseDto>>> getDevicesByParent(
         @LoginUserId UUID parentId,
@@ -71,7 +75,10 @@ public class DeviceController {
         return ResponseEntity.ok(BaseResponse.success("기기 조회 성공", response));
     }
 
-    @PostMapping("/parents/devices/{childrenId}")
+    @PostMapping({
+        "/parents/devices/{childrenId}",
+        "/parents/device/{childrenId}"
+    })
     @PreAuthorize("hasRole('PARENT')")
     public ResponseEntity<BaseResponse<DeviceResponseDto>> registerDevice(
         @LoginUserId UUID parentId,
@@ -82,7 +89,12 @@ public class DeviceController {
         return ResponseEntity.ok(BaseResponse.success("기기 등록 성공", response));
     }
 
-    @GetMapping("/parents/devices/{childrenId}/type/{deviceType}")
+    @GetMapping({
+        "/parents/devices/{childrenId}/type/{deviceType}",
+        "/parents/devices/{childrenId}/type/{deviceType}/",
+        "/parents/devices/{childrenId}/types/{deviceType}",
+        "/parents/devices/{childrenId}/types/{deviceType}/"
+    })
     @PreAuthorize("hasRole('PARENT')")
     public ResponseEntity<BaseResponse<DeviceResponseDto>> getDeviceByParentAndType(
         @LoginUserId UUID parentId,
@@ -93,7 +105,10 @@ public class DeviceController {
         return ResponseEntity.ok(BaseResponse.success("기기 조회 성공", response));
     }
 
-    @DeleteMapping("/parents/devices/{childrenId}/serial/{serialNumber}")
+    @DeleteMapping({
+        "/parents/devices/{childrenId}/serial/{serialNumber}",
+        "/parents/children/{childrenId}/devices/serial/{serialNumber}"
+    })
     @PreAuthorize("hasRole('PARENT')")
     public ResponseEntity<BaseResponse<Void>> deleteDevice(
         @LoginUserId UUID parentId,
