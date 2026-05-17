@@ -20,6 +20,7 @@ val apiBaseUrl =
     providers.gradleProperty("API_BASE_URL")
         .orElse("https://example.invalid/")
         .get()
+val rebloomKeystoreFile = rootProject.file("rebloom.keystore")
 
 android {
     namespace = "com.rebloom.mobile"
@@ -39,8 +40,13 @@ android {
     }
 
     signingConfigs {
+<<<<<<< HEAD
         create("shared") {
             storeFile = file("../rebloom.keystore")
+=======
+        create("rebloom") {
+            storeFile = rebloomKeystoreFile
+>>>>>>> develop
             storePassword = "rebloom123"
             keyAlias = "rebloom"
             keyPassword = "rebloom123"
@@ -49,7 +55,13 @@ android {
 
     buildTypes {
         debug {
+<<<<<<< HEAD
             signingConfig = signingConfigs.getByName("shared")
+=======
+            if (rebloomKeystoreFile.exists()) {
+                signingConfig = signingConfigs.getByName("rebloom")
+            }
+>>>>>>> develop
             buildConfigField("String", "WEB_APP_BASE_URL", "\"$debugWebAppBaseUrl\"")
         }
         release {
