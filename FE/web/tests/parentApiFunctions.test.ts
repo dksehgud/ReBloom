@@ -122,6 +122,7 @@ describe('parent relation API functions', () => {
       age: 9,
       connected: true,
       id: 'child-1',
+      name: 'Child',
     })
     expect(apiRequestMock).toHaveBeenCalledWith(
       '/auth/api/v1/parents/children',

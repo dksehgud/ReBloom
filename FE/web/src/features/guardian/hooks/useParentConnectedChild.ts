@@ -52,7 +52,7 @@ export function useParentConnectedChild(): UseParentConnectedChildResult {
           age: child.age,
           email: child.email,
           id: child.id,
-          name: child.name ?? '자녀',
+          name: child.name?.trim() || '자녀',
         })
         return
       }

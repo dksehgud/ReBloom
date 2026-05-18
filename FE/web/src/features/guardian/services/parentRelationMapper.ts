@@ -24,7 +24,7 @@ function normalizeConnectedChild(
     connected: true,
     email: child.email ?? null,
     id: child.childrenId,
-    name: child.name ?? null,
+    name: child.name?.trim() || null,
   }
 }
 
