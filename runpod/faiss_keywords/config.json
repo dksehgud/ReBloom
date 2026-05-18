@@ -1,0 +1,5 @@
+{
+  "embedding_model": "text-embedding-3-large",
+  "openai_base_url": "https://gms.ssafy.io/gmsapi/api.openai.com/v1",
+  "openai_dimensions": null
+}
