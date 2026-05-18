@@ -117,7 +117,7 @@ function createEmotionFlowPeriod(
     label: string,
     order: number,
     key: 'diaryScores' | 'conversationScores',
-    prediction?: string | null,
+    prediction?: number | string | null,
   ) => {
     const current =
       pointMap.get(label) ?? { conversationScores: [], diaryScores: [], order }

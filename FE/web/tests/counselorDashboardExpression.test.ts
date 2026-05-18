@@ -14,7 +14,7 @@ describe('counselor dashboard expression analysis mapping', () => {
             {
               analysisId: 'diary-analysis-1',
               emotionIcon: 'happy',
-              prediction: '0.8',
+              prediction: 0.8,
               targetDate: '2026-05-14T10:00:00',
             },
           ],
@@ -26,10 +26,45 @@ describe('counselor dashboard expression analysis mapping', () => {
 
     expect(analysis.trend.all).toHaveLength(1)
     expect(analysis.trend.all[0]?.hasConversation).toBe(false)
-    expect(analysis.trend.all[0]?.value).toBe(19)
+    expect(analysis.trend.all[0]?.value).toBe(1)
     expect(analysis.trend.diary).toHaveLength(1)
     expect(analysis.trend.diary[0]?.hasConversation).toBeUndefined()
     expect(analysis.trend.conversation).toEqual([])
+  })
+
+  it('accepts raw numeric prediction values from the report API', () => {
+    const response: CounselorAnalysisContentResponseDto = {
+      dailyGroups: [
+        {
+          conversationList: [
+            {
+              analysisId: 'conversation-analysis-1',
+              prediction: 3,
+              startedAt: '2026-05-14T10:00:00',
+            },
+          ],
+          date: '2026-05-14',
+          diaryList: [
+            {
+              analysisId: 'diary-analysis-1',
+              emotionIcon: 'happy',
+              prediction: 0.8,
+              targetDate: '2026-05-14T10:00:00',
+            },
+          ],
+        },
+      ],
+    }
+
+    const analysis = mapAnalysisContentToExpressionAnalysis(response)
+
+    expect(analysis.trend.diary[0]?.value).toBe(1)
+    expect(analysis.trend.conversation[0]?.value).toBe(3)
+    expect(analysis.trend.all[0]?.value).toBe(2)
+    expect(analysis.days[0]?.entries.map((entry) => entry.content)).toEqual([
+      '0.8',
+      '3',
+    ])
   })
 
   it('does not create diary graph points for conversation-only data', () => {
@@ -39,7 +74,7 @@ describe('counselor dashboard expression analysis mapping', () => {
           conversationList: [
             {
               analysisId: 'conversation-analysis-1',
-              prediction: '65',
+              prediction: 3,
               startedAt: '2026-05-14T10:00:00',
             },
           ],
@@ -53,14 +88,14 @@ describe('counselor dashboard expression analysis mapping', () => {
 
     expect(analysis.trend.all).toHaveLength(1)
     expect(analysis.trend.all[0]?.hasConversation).toBe(true)
-    expect(analysis.trend.all[0]?.value).toBe(24)
+    expect(analysis.trend.all[0]?.value).toBe(3)
     expect(analysis.trend.conversation).toHaveLength(1)
     expect(analysis.trend.conversation[0]?.hasConversation).toBe(true)
     expect(analysis.trend.diary).toEqual([])
   })
 
-  it('maps depression stage predictions onto the PHQ-8 score range', () => {
-    const response: CounselorAnalysisContentResponseDto = {
+  it('maps legacy depression stage predictions onto migrated numeric ranks', () => {
+    const response = {
       dailyGroups: [
         {
           conversationList: [
@@ -81,13 +116,36 @@ describe('counselor dashboard expression analysis mapping', () => {
           ],
         },
       ],
-    }
+    } as unknown as CounselorAnalysisContentResponseDto
 
     const analysis = mapAnalysisContentToExpressionAnalysis(response)
 
-    expect(analysis.trend.diary[0]?.value).toBe(12)
-    expect(analysis.trend.conversation[0]?.value).toBe(22)
-    expect(analysis.trend.all[0]?.value).toBe(17)
+    expect(analysis.trend.diary[0]?.value).toBe(2)
+    expect(analysis.trend.conversation[0]?.value).toBe(3)
+    expect(analysis.trend.all[0]?.value).toBe(3)
+  })
+
+  it('keeps legacy uncertain predictions at zero', () => {
+    const response: CounselorAnalysisContentResponseDto = {
+      dailyGroups: [
+        {
+          conversationList: [],
+          date: '2026-05-14',
+          diaryList: [
+            {
+              analysisId: 'diary-analysis-1',
+              emotionIcon: 'happy',
+              prediction: 'uncertain',
+              targetDate: '2026-05-14T10:00:00',
+            },
+          ],
+        },
+      ],
+    } as unknown as CounselorAnalysisContentResponseDto
+
+    const analysis = mapAnalysisContentToExpressionAnalysis(response)
+
+    expect(analysis.trend.diary[0]?.value).toBe(0)
   })
 
   it('keeps the selected week labels separate from sparse graph points', () => {
@@ -100,7 +158,7 @@ describe('counselor dashboard expression analysis mapping', () => {
             {
               analysisId: 'diary-analysis-1',
               emotionIcon: 'happy',
-              prediction: '0.8',
+              prediction: 0.8,
               targetDate: '2026-05-01T10:00:00',
             },
           ],

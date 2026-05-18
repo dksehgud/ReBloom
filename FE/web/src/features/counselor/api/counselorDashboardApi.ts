@@ -1,15 +1,17 @@
 import { apiRequest } from '../../../shared/api/client'
 
+type CounselorPredictionValue = number
+
 type CounselorDiaryChartPointDto = {
   targetDate: string
   emotionIcon?: string | null
-  prediction?: string | null
+  prediction?: CounselorPredictionValue | null
 }
 
 type CounselorConversationChartPointDto = {
   startedAt: string
   endedAt?: string | null
-  prediction?: string | null
+  prediction?: CounselorPredictionValue | null
 }
 
 type CounselorEmotionFlowResponseDto = {
@@ -22,7 +24,7 @@ type CounselorDiaryAnalysisCardDto = {
   targetDate: string
   emotionIcon?: string | null
   embeddingText?: string | null
-  prediction?: string | null
+  prediction?: CounselorPredictionValue | null
   keywords?: string[] | null
 }
 
@@ -30,9 +32,8 @@ type CounselorConversationAnalysisCardDto = {
   analysisId: string
   startedAt: string
   endedAt?: string | null
-  emotionIcon?: string | null
   embeddingText?: string | null
-  prediction?: string | null
+  prediction?: CounselorPredictionValue | null
   aiInitiated?: boolean | null
   keywords?: string[] | null
 }
@@ -122,6 +123,7 @@ export type {
   CounselorAnalysisDailyGroupDto,
   CounselorConversationAnalysisCardDto,
   CounselorConversationChartPointDto,
+  CounselorPredictionValue,
   CounselorDiaryAnalysisCardDto,
   CounselorDiaryChartPointDto,
   CounselorEmotionFlowResponseDto,
