@@ -43,6 +43,7 @@ import {
   clearNativeNavigationHistory,
   requestNativeSleepPermission,
   saveNativeAccessToken,
+  saveNativeRefreshToken,
 } from '../../shared/utils/nativeTokenBridge'
 
 type AuthRouteContextValue = {
@@ -155,6 +156,7 @@ function useRoleRouteGuard(
             setActiveRole(expectedRole)
             clearSelectedChild()
             saveNativeAccessToken(roleSession.accessToken ?? '', expectedRole)
+            saveNativeRefreshToken(roleSession.refreshToken)
         }
 
         const blockRoleSession = () => {
@@ -401,6 +403,7 @@ function LoginRoute() {
                 refreshToken: tokens.refreshToken,
             })
             saveNativeAccessToken(tokens.accessToken, nextRole)
+            saveNativeRefreshToken(tokens.refreshToken)
             setActiveRole(nextRole)
 
             if (nextRole === 'child') {
@@ -489,6 +492,7 @@ function OAuthCallbackRoute() {
                         refreshToken,
                     })
                     saveNativeAccessToken(accessToken, nextRole)
+                    saveNativeRefreshToken(refreshToken)
                     setActiveRole(nextRole)
                     clearSelectedChild()
 
