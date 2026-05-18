@@ -34,7 +34,12 @@ public class NotificationSseService {
         emitter.onCompletion(() -> remove(userId, emitter));
         emitter.onTimeout(() -> remove(userId, emitter));
         emitter.onError(error -> {
-            log.debug("SSE emitter error. userId={}", userId, error);
+            log.warn(
+                "SSE emitter error. userId={}, errorType={}, message={}",
+                userId,
+                error.getClass().getSimpleName(),
+                error.getMessage()
+            );
             remove(userId, emitter);
         });
 
@@ -75,7 +80,22 @@ public class NotificationSseService {
                 .data(data));
             onlineStatusService.refresh(userId);
         } catch (IOException | IllegalStateException e) {
-            log.debug("SSE send failed. userId={}", userId, e);
+            if ("ping".equals(eventName)) {
+                log.debug(
+                    "SSE heartbeat failed. userId={}, errorType={}, message={}",
+                    userId,
+                    e.getClass().getSimpleName(),
+                    e.getMessage()
+                );
+            } else {
+                log.warn(
+                    "SSE event send failed. userId={}, eventName={}, errorType={}, message={}",
+                    userId,
+                    eventName,
+                    e.getClass().getSimpleName(),
+                    e.getMessage()
+                );
+            }
             remove(userId, emitter);
         }
     }
@@ -83,7 +103,9 @@ public class NotificationSseService {
     private void remove(UUID userId, SseEmitter emitter) {
         sseEmitterRepository.delete(userId, emitter);
 
-        if (!sseEmitterRepository.existsByUserId(userId)) {
+        boolean stillConnected = sseEmitterRepository.existsByUserId(userId);
+
+        if (!stillConnected) {
             onlineStatusService.markOffline(userId);
         }
     }
