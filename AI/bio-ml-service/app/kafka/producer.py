@@ -83,13 +83,18 @@ def publish_anomaly_verified(
         "accMag"         : acc_mag,
         "hrAccRatio"     : hr_acc_ratio,
         "isAnomaly"      : is_anomaly,
-        "anomalyFeatures": anomaly_features,
     }
+    envelope = _event_envelope(
+        event_type="ANOMALY_ANALYSED",
+        payload=payload,
+        idempotency_key=f"ANOMALY_ANALYSED:{user_id}:{ts_start}",
+    )
+
     producer = get_producer()
     producer.produce(
         topic    = KAFKA_TOPIC_ANOMALY_VERIFIED,
         key      = user_id,
-        value    = json.dumps(payload),
+        value    = json.dumps(envelope, ensure_ascii=False),
         callback = _delivery_report,
     )
     producer.poll(0)
@@ -113,11 +118,17 @@ def publish_phq_result(user_id: str, date: str, result: int, score: float, predi
         "score"      : score,
         "predictedAt": predicted_at,
     }
+    envelope = _event_envelope(
+        event_type="PHQ_COMPLETED",
+        payload=payload,
+        idempotency_key=f"PHQ_COMPLETED:{user_id}:{date}",
+    )
+
     producer = get_producer()
     producer.produce(
         topic    = KAFKA_TOPIC_PHQ_RESULT,
         key      = user_id,
-        value    = json.dumps(payload),
+        value    = json.dumps(envelope, ensure_ascii=False),
         callback = _delivery_report,
     )
     producer.poll(0)
@@ -135,18 +146,22 @@ def publish_gps_check_result(
     payload = {
         "childrenId": children_id,
         "parentId": parent_id,
-        "result": matched,
-        "distanceMeters": distance_meters,
-        "thresholdMeters": threshold_meters,
+        "isSame": matched,
     }
-    if request_id:
-        payload["requestId"] = request_id
+
+    event_type = "GPS_CHECK_SAME" if matched else "GPS_CHECK_DIFFERENT"
+    envelope = _event_envelope(
+        event_type=event_type,
+        payload=payload,
+        correlation_id=request_id,
+        idempotency_key=f"{event_type}:{children_id}:{request_id or _now_seoul_datetime()}",
+    )
 
     producer = get_producer()
     producer.produce(
         topic=topic,
         key=children_id,
-        value=json.dumps(payload),
+        value=json.dumps(envelope, ensure_ascii=False),
         callback=_delivery_report,
     )
     producer.poll(0)
