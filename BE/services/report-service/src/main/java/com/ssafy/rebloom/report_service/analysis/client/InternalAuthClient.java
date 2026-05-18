@@ -1,6 +1,8 @@
 package com.ssafy.rebloom.report_service.analysis.client;
 
 import com.ssafy.rebloom.common.dto.BaseResponse;
+import com.ssafy.rebloom.report_service.analysis.dto.response.ActiveChildResponseDto;
+import java.util.List;
 import java.util.UUID;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -25,4 +27,7 @@ public interface InternalAuthClient {
     BaseResponse<UUID> getChildrenIdByDeviceSerial(
         @PathVariable String serialNumber
     );
+
+    @GetMapping("/api/v1/internal/children/active")
+    BaseResponse<List<ActiveChildResponseDto>> getActiveChildren();
 }

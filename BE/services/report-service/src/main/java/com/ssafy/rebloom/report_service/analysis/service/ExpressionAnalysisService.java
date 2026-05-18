@@ -133,7 +133,7 @@ public class ExpressionAnalysisService {
         dates.addAll(diaryListByDate.keySet());
         dates.addAll(conversationListByDate.keySet());
 
-        String summary = recentTrendRepository.findLatestByUserId(childId)
+        String summary = recentTrendRepository.findLatestByUserIdAndReportDateBetween(childId, startDate, endDate)
             .map(recentTrend -> recentTrend.getSummary())
             .orElse(null);
         EmotionFlowResponse chart = EmotionFlowResponse.builder()
