@@ -28,6 +28,7 @@ REGISTRATION_TIMEOUT_SECONDS = 5.0
 
 NO_WIFI_PROMPT = "와이파이 연결이 안되어 있어요. 앱에서 연결 연동을 해주세요."
 READY_PROMPT = "만나서 반가워요. 우리 재미있는 대화를 나눠요!"
+DEFAULT_NO_WIFI_TTS_FILE = SERVERCHATTING_DIR / "music" / "no_wifi_prompt_edge.mp3"
 
 # TODO: main server device registration endpoint. Replace/uncomment when API is ready.
 # DEFAULT_DEVICE_REGISTRATION_URL = "https://main.example.com/api/v1/devices/register"
@@ -124,6 +125,8 @@ def build_tts_args(tts_engine: str | None = None) -> SimpleNamespace:
         edge_voice=os.getenv("EDGE_VOICE", "ko-KR-SunHiNeural").strip(),
         edge_rate=os.getenv("EDGE_RATE", "+0%").strip(),
         edge_volume=os.getenv("EDGE_VOLUME", "+0%").strip(),
+        edge_pitch=os.getenv("EDGE_PITCH", "+0Hz").strip(),
+        edge_emotion_auto=env_bool("EDGE_EMOTION_AUTO", True),
         elevenlabs_api_key=os.getenv("ELEVENLABS_API_KEY", "").strip(),
         elevenlabs_voice_id=os.getenv("ELEVENLABS_VOICE_ID", "JBFqnCBsd6RMkjVDRZzb").strip(),
         elevenlabs_model_id=os.getenv("ELEVENLABS_MODEL_ID", "eleven_multilingual_v2").strip(),
@@ -148,6 +151,56 @@ def build_tts_args(tts_engine: str | None = None) -> SimpleNamespace:
         melotts_speaker=os.getenv("MELOTTS_SPEAKER", "KR").strip(),
         melotts_speed=env_float("MELOTTS_SPEED", 1.0),
     )
+
+
+def no_wifi_tts_file() -> Path:
+    path = os.getenv("NO_WIFI_TTS_FILE", "").strip()
+    if path:
+        return Path(path).expanduser()
+    return DEFAULT_NO_WIFI_TTS_FILE
+
+
+def ensure_no_wifi_prompt_cache(voice_runtime) -> bool:
+    mp3_path = no_wifi_tts_file()
+    if mp3_path.exists() and mp3_path.stat().st_size > 0:
+        return True
+
+    try:
+        mp3_path.parent.mkdir(parents=True, exist_ok=True)
+        args = build_tts_args("edge")
+        args.tts_output_file = str(mp3_path)
+        voice_runtime.speak(NO_WIFI_PROMPT, args)
+        logger.info("[Boot] BLE 프로비저닝 안내 음성 캐시 생성: %s", mp3_path)
+        return True
+    except Exception as exc:
+        logger.warning("[Boot] BLE 프로비저닝 안내 음성 캐시 생성 실패: %s", exc)
+        return False
+
+
+def play_cached_no_wifi_prompt(voice_runtime) -> bool:
+    mp3_path = no_wifi_tts_file()
+    if not mp3_path.exists() or mp3_path.stat().st_size <= 0:
+        logger.warning("[Boot] BLE 프로비저닝 안내 음성 캐시 없음: %s", mp3_path)
+        return False
+
+    if os.getenv("BOOT_TTS_ENABLED", "true").strip().lower() in {"0", "false", "no", "off"}:
+        logger.info("[Boot] 안내 음성 비활성화: %s", NO_WIFI_PROMPT)
+        return True
+
+    if not wait_for_audio_output(voice_runtime):
+        logger.warning("[Boot] 오디오 출력 장치가 없어 안내 음성을 건너뜁니다.")
+        return False
+
+    try:
+        voice_runtime.play_mp3(
+            mp3_path,
+            os.getenv("MP3_PLAYER", "mpg123").strip(),
+            os.getenv("MP3_PLAYER_ARGS", "").strip(),
+        )
+        return True
+    except Exception as exc:
+        logger.warning("[Boot] BLE 프로비저닝 안내 음성 캐시 재생 실패: %s", exc)
+        return False
 
 
 def speak_prompt(voice_runtime, text: str, prefer_offline: bool = False) -> None:
@@ -379,7 +432,8 @@ def main() -> int:
         provisioned_in_this_cycle = False
         if not wait_for_wifi(is_wifi_connected):
             logger.info("[Boot] Wi-Fi 미연결, BLE 프로비저닝 모드 진입")
-            speak_prompt(voice_runtime, NO_WIFI_PROMPT, prefer_offline=True)
+            if not play_cached_no_wifi_prompt(voice_runtime):
+                speak_prompt(voice_runtime, NO_WIFI_PROMPT, prefer_offline=True)
             if not run_ble_until_wifi(is_wifi_connected):
                 logger.error("[Boot] Wi-Fi 연결 없이 종료")
                 return 1
@@ -387,6 +441,7 @@ def main() -> int:
 
         ssid = get_connected_ssid()
         logger.info("[Boot] Wi-Fi 연결 확인: ssid=%s", ssid or "unknown")
+        ensure_no_wifi_prompt_cache(voice_runtime)
         if provisioned_in_this_cycle:
             register_device_after_provisioning(ssid)
 
