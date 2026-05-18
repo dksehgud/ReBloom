@@ -41,6 +41,7 @@ rebloom:
       model-training-requested: ${KAFKA_TOPIC_MODEL_TRAINING_REQUESTED:rebloom.model.training.requested.v1}
       model-retraining-requested: ${KAFKA_TOPIC_MODEL_RETRAINING_REQUESTED:rebloom.model.retraining.requested.v1}
       phq-completed: ${KAFKA_TOPIC_PHQ_COMPLETED:rebloom.phq.completed.v1}
+      status-card-requested: ${KAFKA_TOPIC_STATUS_CARD_REQUESTED:rebloom.status-card.requested.v1}
       event-dlt: ${KAFKA_TOPIC_EVENT_DLT:rebloom.event.dlt.v1}
     producer:
       retries: 3

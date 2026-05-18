@@ -1,9 +1,11 @@
 package com.ssafy.rebloom.auth_service.user.service;
 
+import com.ssafy.rebloom.auth_service.user.dto.response.ActiveChildResponseDto;
 import com.ssafy.rebloom.auth_service.user.dto.response.ChildAgeResponseDto;
 import com.ssafy.rebloom.auth_service.user.dto.response.ChildConnectedCounselorResponseDto;
 import com.ssafy.rebloom.auth_service.user.dto.response.ChildGpsResponseDto;
 import com.ssafy.rebloom.auth_service.user.dto.response.ChildrenIotInfoResponseDto;
+import java.util.List;
 import java.util.UUID;
 
 public interface InternalUserService {
@@ -15,4 +17,6 @@ public interface InternalUserService {
     ChildrenIotInfoResponseDto getChildrenIotInfo(UUID childrenId);
 
     ChildConnectedCounselorResponseDto getConnectedCounselorByChild(UUID childrenId);
+
+    List<ActiveChildResponseDto> getActiveChildren();
 }

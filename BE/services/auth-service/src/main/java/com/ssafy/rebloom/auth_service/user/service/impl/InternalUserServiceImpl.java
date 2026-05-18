@@ -8,6 +8,7 @@ import com.ssafy.rebloom.auth_service.user.domain.entity.ChildrenCounselorRelati
 import com.ssafy.rebloom.auth_service.user.domain.entity.Counselor;
 import com.ssafy.rebloom.auth_service.user.domain.entity.User;
 import com.ssafy.rebloom.auth_service.user.domain.enums.RelationStatus;
+import com.ssafy.rebloom.auth_service.user.dto.response.ActiveChildResponseDto;
 import com.ssafy.rebloom.auth_service.user.dto.response.ChildAgeResponseDto;
 import com.ssafy.rebloom.auth_service.user.dto.response.ChildConnectedCounselorResponseDto;
 import com.ssafy.rebloom.auth_service.user.dto.response.ChildGpsResponseDto;
@@ -20,6 +21,7 @@ import com.ssafy.rebloom.common.exception.ErrorCode;
 import java.time.LocalDate;
 import java.time.Period;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -109,6 +111,11 @@ public class InternalUserServiceImpl implements InternalUserService {
             .findFirstByChildren_IdAndRelationStatus(childrenId, RelationStatus.ACTIVE)
             .map(this::toChildConnectedCounselorResponse)
             .orElseGet(ChildConnectedCounselorResponseDto::disconnected);
+    }
+
+    @Override
+    public List<ActiveChildResponseDto> getActiveChildren() {
+        return userRepository.findActiveChildren();
     }
 
     private ChildConnectedCounselorResponseDto toChildConnectedCounselorResponse(

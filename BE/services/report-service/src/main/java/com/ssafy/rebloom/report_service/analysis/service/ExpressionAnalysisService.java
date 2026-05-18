@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.YearMonth;
+import java.time.ZoneId;
 import java.time.temporal.TemporalAdjusters;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -20,6 +21,8 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 public class ExpressionAnalysisService {
+
+    private static final ZoneId SEOUL_ZONE = ZoneId.of("Asia/Seoul");
 
     private final AuthAccessClient authAccessClient;
     private final DiaryAnalysisRepository diaryAnalysisRepository;
@@ -80,7 +83,8 @@ public class ExpressionAnalysisService {
         validateDateRange(startDate, endDate);
         authAccessClient.validateCounselorChildAccess(counselorId, childId);
 
-        List<DiaryAnalysis> analyses = findDiaryAnalyses(childId, startDate, endDate);
+        LocalDate effectiveEndDate = effectiveEndDate(endDate);
+        List<DiaryAnalysis> analyses = findDiaryAnalyses(childId, startDate, effectiveEndDate);
 
         return DiaryChartResponse.builder()
             .diaryList(analyses.stream()
@@ -98,8 +102,9 @@ public class ExpressionAnalysisService {
         validateDateRange(startDate, endDate);
         authAccessClient.validateCounselorChildAccess(counselorId, childId);
 
-        List<DiaryAnalysis> diaryAnalyses = findDiaryAnalyses(childId, startDate, endDate);
-        List<ConversationAnalysis> conversationAnalyses = findConversationAnalyses(childId, startDate, endDate);
+        LocalDate effectiveEndDate = effectiveEndDate(endDate);
+        List<DiaryAnalysis> diaryAnalyses = findDiaryAnalyses(childId, startDate, effectiveEndDate);
+        List<ConversationAnalysis> conversationAnalyses = findConversationAnalyses(childId, startDate, effectiveEndDate);
         Map<UUID, List<String>> diaryKeywordsByAnalysisId = getDiaryKeywordsByAnalysisId(childId, diaryAnalyses);
         Map<UUID, List<String>> conversationKeywordsByAnalysisId =
             getConversationKeywordsByAnalysisId(childId, conversationAnalyses);
@@ -133,7 +138,7 @@ public class ExpressionAnalysisService {
         dates.addAll(diaryListByDate.keySet());
         dates.addAll(conversationListByDate.keySet());
 
-        String summary = recentTrendRepository.findLatestByUserId(childId)
+        String summary = recentTrendRepository.findLatestByUserIdAndReportDateBetween(childId, startDate, effectiveEndDate)
             .map(recentTrend -> recentTrend.getSummary())
             .orElse(null);
         EmotionFlowResponse chart = EmotionFlowResponse.builder()
@@ -167,10 +172,11 @@ public class ExpressionAnalysisService {
         validateDateRange(startDate, endDate);
         authAccessClient.validateCounselorChildAccess(counselorId, childId);
 
+        LocalDate effectiveEndDate = effectiveEndDate(endDate);
         List<DiaryAnalysis> analyses = diaryAnalysisRepository.findByPeriod(
             childId,
             startDate.atStartOfDay(),
-            endDate.plusDays(1).atStartOfDay().minusNanos(1)
+            effectiveEndDate.plusDays(1).atStartOfDay().minusNanos(1)
         );
         Map<UUID, List<String>> keywordsByAnalysisId = getDiaryKeywordsByAnalysisId(childId, analyses);
 
@@ -207,7 +213,8 @@ public class ExpressionAnalysisService {
         validateDateRange(startDate, endDate);
         authAccessClient.validateCounselorChildAccess(counselorId, childId);
 
-        List<ConversationAnalysis> analyses = findConversationAnalyses(childId, startDate, endDate);
+        LocalDate effectiveEndDate = effectiveEndDate(endDate);
+        List<ConversationAnalysis> analyses = findConversationAnalyses(childId, startDate, effectiveEndDate);
 
         return ConversationChartResponse.builder()
             .conversationList(analyses.stream()
@@ -226,7 +233,7 @@ public class ExpressionAnalysisService {
         authAccessClient.validateCounselorChildAccess(counselorId, childId);
 
         LocalDateTime startDateTime = startDate.atStartOfDay();
-        LocalDateTime endDateTime = endDate.plusDays(1).atStartOfDay().minusNanos(1);
+        LocalDateTime endDateTime = effectiveEndDate(endDate).plusDays(1).atStartOfDay().minusNanos(1);
         List<ConversationAnalysis> analyses = conversationAnalysisRepository.findByPeriod(
             childId,
             startDateTime,
@@ -263,13 +270,13 @@ public class ExpressionAnalysisService {
             throw new CustomException("시작일은 종료일보다 늦을 수 없습니다.", ErrorCode.INVALID_PARAMETER);
         }
 
-        if (startDate.isAfter(LocalDate.now()) || endDate.isAfter(LocalDate.now())) {
+        if (startDate.isAfter(today())) {
             throw new CustomException("미래 날짜는 조회할 수 없습니다.", ErrorCode.INVALID_PARAMETER);
         }
     }
 
     private void validateBaseDate(LocalDate baseDate) {
-        if (baseDate.isAfter(LocalDate.now())) {
+        if (baseDate.isAfter(today())) {
             throw new CustomException("미래 날짜는 조회할 수 없습니다.", ErrorCode.INVALID_PARAMETER);
         }
     }
@@ -295,7 +302,7 @@ public class ExpressionAnalysisService {
             default -> throw new CustomException("지원하지 않는 기간 단위입니다.", ErrorCode.INVALID_PARAMETER);
         }
 
-        LocalDate today = LocalDate.now();
+        LocalDate today = today();
         if (endDate.isAfter(today)) {
             endDate = today;
         }
@@ -312,6 +319,15 @@ public class ExpressionAnalysisService {
         }
 
         return normalizedType;
+    }
+
+    private LocalDate effectiveEndDate(LocalDate endDate) {
+        LocalDate today = today();
+        return endDate.isAfter(today) ? today : endDate;
+    }
+
+    private LocalDate today() {
+        return LocalDate.now(SEOUL_ZONE);
     }
 
     private boolean shouldIncludeDiary(String type) {

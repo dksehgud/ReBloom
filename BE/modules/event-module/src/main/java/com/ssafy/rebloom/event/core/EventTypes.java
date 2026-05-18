@@ -16,6 +16,8 @@ public final class EventTypes {
 
     public static final String PARENT_REPORT_CREATED = "PARENT_REPORT_CREATED";
     public static final String PARENT_REPORT_COMMENT_CREATED = "PARENT_REPORT_COMMENT_CREATED";
+    public static final String STATUS_CARD_REQUESTED = "STATUS_CARD_REQUESTED";
+    public static final String STATUS_CARD_CREATED = "STATUS_CARD_CREATED";
     private EventTypes() {
     }
 }

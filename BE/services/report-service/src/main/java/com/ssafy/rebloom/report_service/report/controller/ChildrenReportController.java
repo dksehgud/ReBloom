@@ -1,11 +1,13 @@
 package com.ssafy.rebloom.report_service.report.controller;
 
 import com.ssafy.rebloom.common.dto.BaseResponse;
+import com.ssafy.rebloom.report_service.analysis.service.StatusCardService;
 import com.ssafy.rebloom.report_service.report.dto.request.ChildrenReportCreateRequestDto;
 import com.ssafy.rebloom.report_service.report.dto.request.ChildrenReportUpdateRequestDto;
 import com.ssafy.rebloom.report_service.report.dto.response.ChildrenReportDetailResponseDto;
 import com.ssafy.rebloom.report_service.report.dto.response.ChildrenReportListResponseDto;
 import com.ssafy.rebloom.report_service.report.dto.response.DiaryEmotionResponseDto;
+import com.ssafy.rebloom.report_service.report.dto.response.StatusCardResponseDto;
 import com.ssafy.rebloom.report_service.report.service.ChildrenReportService;
 import com.ssafy.rebloom.security.annotation.LoginUserId;
 import com.ssafy.rebloom.security.annotation.LoginUserRole;
@@ -32,6 +34,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class ChildrenReportController {
 
     private final ChildrenReportService childrenReportService;
+    private final StatusCardService statusCardService;
 
     @PostMapping("/children/{childrenId}/reports")
     @PreAuthorize("hasRole('PARENT')")
@@ -100,5 +103,20 @@ public class ChildrenReportController {
         @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate
     ) {
         return ResponseEntity.ok(childrenReportService.getDiaryEmotionIndicators(userId, role, childrenId, startDate, endDate));
+    }
+
+    @GetMapping("/children/{childrenId}/status-cards")
+    @PreAuthorize("hasRole('PARENT')")
+    public ResponseEntity<BaseResponse<StatusCardResponseDto>> getStatusCard(
+        @LoginUserId UUID parentId,
+        @PathVariable UUID childrenId
+    ) {
+        return statusCardService.getRecentStatusCard(parentId, childrenId)
+            .map(statusCard -> ResponseEntity.ok(
+                BaseResponse.success("상태 카드 조회 성공", statusCard)
+            ))
+            .orElseGet(() -> ResponseEntity.ok(
+                BaseResponse.success("조회 가능한 상태 카드가 없습니다.")
+            ));
     }
 }

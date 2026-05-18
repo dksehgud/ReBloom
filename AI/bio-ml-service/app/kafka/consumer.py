@@ -2,6 +2,7 @@ import json
 import logging
 import threading
 from datetime import datetime, timezone
+from zoneinfo import ZoneInfo
 
 import redis
 from confluent_kafka import Consumer, KafkaError, KafkaException
@@ -16,11 +17,18 @@ from app.config.settings import (
     REDIS_HOST,
     REDIS_PORT,
     IF_READY_THRESHOLD,
+    KAFKA_TOPIC_STATUS_CARD_REQUESTED,
 )
-from app.service import anomaly, gps_check, if_model, phq
-from app.kafka.producer import publish_anomaly_verified, publish_phq_result
+from app.service import anomaly, gps_check, if_model, phq, status_card
+from app.kafka.producer import publish_anomaly_verified, publish_phq_result, publish_status_card_created
 
 logger = logging.getLogger(__name__)
+
+
+def _unwrap_event_envelope(message: dict) -> dict:
+    if isinstance(message, dict) and isinstance(message.get("payload"), dict):
+        return message["payload"]
+    return message
 
 # ──────────────────────────────────────────────
 # Redis 클라이언트 (biometric_count 조회용)
@@ -57,6 +65,8 @@ def _handle_biometric_raw(payload: dict) -> None:
     biometric_count >= 288 → IF 모델 이상치 탐지 (if_model.py)
     이상치 확정 시 → rebloom.anomaly.analysed.v1 발행
     """
+
+    payload = _unwrap_event_envelope(payload)
 
     user_id      = payload["userId"]
     hr           = payload["hr"]
@@ -112,6 +122,8 @@ def _handle_ai_train(payload: dict) -> None:
           "biometrics": [ {hr, rmssd, pnn50, lfHf, accMag, hrAccRatio}, ... ]
         }
     """
+    payload = _unwrap_event_envelope(payload)
+
     user_id    = payload.get("userId")
     biometrics = payload.get("biometrics", [])
 
@@ -145,6 +157,8 @@ def _handle_ai_analyze(payload: dict) -> None:
     sleeps 있으면 → PHQ 예측 + IF 재학습 → rebloom.phq.completed.v1 발행
     sleeps 없으면 → IF 재학습만
     """
+    payload = _unwrap_event_envelope(payload)
+
     user_id    = payload.get("userId")
     age        = payload.get("age")        # ← 추가
     biometrics = payload.get("biometrics", [])
@@ -192,6 +206,8 @@ def _handle_ai_analyze(payload: dict) -> None:
 # ──────────────────────────────────────────────
 
 def _handle_gps_check_request(payload: dict) -> None:
+    payload = _unwrap_event_envelope(payload)
+
     children_id = payload.get("childrenId")
     parent_id = payload.get("parentId")
     request_id = payload.get("requestId")
@@ -224,6 +240,10 @@ def _handle_gps_check_request(payload: dict) -> None:
     )
 
 
+def _today_seoul() -> str:
+    return datetime.now(ZoneInfo("Asia/Seoul")).date().isoformat()
+
+
 _stop_event = threading.Event()
 
 
@@ -248,6 +268,7 @@ def _consume_loop() -> None:
         KAFKA_TOPIC_AI_TRAIN,
         KAFKA_TOPIC_AI_ANALYZE,
         KAFKA_TOPIC_GPS_CHECK_REQUEST,
+        KAFKA_TOPIC_STATUS_CARD_REQUESTED,
     ]
     consumer.subscribe(topics)
     logger.info("[Kafka] Consumer 구독 시작 | topics=%s", topics)
@@ -258,6 +279,7 @@ def _consume_loop() -> None:
         KAFKA_TOPIC_AI_TRAIN      : _handle_ai_train,
         KAFKA_TOPIC_AI_ANALYZE    : _handle_ai_analyze,
         KAFKA_TOPIC_GPS_CHECK_REQUEST: _handle_gps_check_request,
+        KAFKA_TOPIC_STATUS_CARD_REQUESTED: _handle_status_card_requested,
     }
 
     try:
@@ -291,10 +313,11 @@ def _consume_loop() -> None:
             try:
                 handler(payload)
             except Exception as e:
+                entity_payload = _unwrap_event_envelope(payload)
                 entity_id = (
-                    payload.get("childrenId")
+                    entity_payload.get("childrenId")
                     if topic == KAFKA_TOPIC_GPS_CHECK_REQUEST
-                    else payload.get("userId")
+                    else entity_payload.get("userId")
                 )
                 logger.exception("[Kafka] 핸들러 예외 | topic=%s entityId=%s err=%s",
                                  topic, entity_id, e)
@@ -303,6 +326,56 @@ def _consume_loop() -> None:
         consumer.close()
         logger.info("[Kafka] Consumer 종료")
 
+# ──────────────────────────────────────────────
+# Status Card
+# ──────────────────────────────────────────────
+
+def _extract_status_card_payload(message: dict) -> tuple[dict, dict]:
+    if "payload" in message and "eventType" in message:
+        payload = message.get("payload") or {}
+        if not isinstance(payload, dict):
+            raise ValueError("Kafka envelope payload must be an object")
+        return payload, message
+    return message, {}
+
+def _handle_status_card_requested(message: dict) -> None:
+    payload, envelope = _extract_status_card_payload(message)
+
+    user_id = payload.get("userId")
+    name = payload.get("name")
+    biometrics = payload.get("biometrics", [])
+    sleeps = payload.get("sleeps", [])
+
+    if not user_id:
+        logger.warning("[status-card.requested] userId missing | payload=%s", payload)
+        return
+    if not name:
+        logger.warning("[status-card.requested] name missing | userId=%s", user_id)
+        return
+    if not biometrics or not sleeps:
+        logger.warning(
+            "[status-card.requested] data missing | userId=%s biometrics=%d sleeps=%d",
+            user_id,
+            len(biometrics),
+            len(sleeps),
+        )
+        return
+
+    result = status_card.generate_status_card(
+        name=name,
+        biometrics=biometrics,
+        sleeps=sleeps,
+    )
+
+    publish_status_card_created(
+        user_id=user_id,
+        date=_today_seoul(),
+        title=result["title"],
+        description=result["description"],
+        sub_title=result["subTitle"],
+        suggestion=result["suggestion"],
+        correlation_id=(envelope or {}).get("eventId"),
+    )
 
 # ──────────────────────────────────────────────
 # 외부 인터페이스

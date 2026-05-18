@@ -60,4 +60,9 @@ public interface BiometricRepository extends JpaRepository<Biometric, BiometricI
         @Param("from") LocalDateTime from,
         @Param("to") LocalDateTime to
     );
+
+    @Query("SELECT b FROM Biometric b " +
+           "WHERE b.id.userId = :userId " +
+           "ORDER BY b.id.tsStart DESC")
+    List<Biometric> findByUserIdOrderByTsStartDesc(@Param("userId") UUID userId);
 }
