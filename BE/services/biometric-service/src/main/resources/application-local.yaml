@@ -3,9 +3,6 @@ debug: true
 logging:
   level:
     root: INFO
-    com.ssafy.rebloom: DEBUG
-    org.springframework.kafka: DEBUG
-    io.lettuce.core: DEBUG
 
 spring:
   kafka:

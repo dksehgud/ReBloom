@@ -37,7 +37,7 @@ public final class Constants {
     public static final long PROCESSING_TTL = 10L;
     public static final long COMPLETED_TTL = 7L;
 
-    public static final String DIARY_REMINDER_SCHEDULER_CRON = "0 * * * * *";
+    public static final String DIARY_REMINDER_SCHEDULER_CRON = "0 */10 * * * *";
     public static final String DIARY_REMINDER_SCHEDULER_ZONE = "Asia/Seoul";
     public static final String DIARY_REMINDER_SCHEDULER_LOCK_NAME =
         "notification.diary-reminder.send-due";

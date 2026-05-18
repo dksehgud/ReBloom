@@ -1,11 +1,13 @@
 package com.ssafy.rebloom.auth_service.user.controller;
 
+import com.ssafy.rebloom.auth_service.user.dto.response.ActiveChildResponseDto;
 import com.ssafy.rebloom.auth_service.user.dto.response.ChildAgeResponseDto;
 import com.ssafy.rebloom.auth_service.user.dto.response.ChildConnectedCounselorResponseDto;
 import com.ssafy.rebloom.auth_service.user.dto.response.ChildGpsResponseDto;
 import com.ssafy.rebloom.auth_service.user.dto.response.ChildrenIotInfoResponseDto;
 import com.ssafy.rebloom.auth_service.user.service.InternalUserService;
 import com.ssafy.rebloom.common.dto.BaseResponse;
+import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -59,5 +61,11 @@ public class InternalUserController {
         return ResponseEntity.ok(
             BaseResponse.success("상담사 알림 수신자 조회 성공", response)
         );
+    }
+
+    @GetMapping("/children/active")
+    public ResponseEntity<BaseResponse<List<ActiveChildResponseDto>>> getActiveChildren() {
+        List<ActiveChildResponseDto> response = internalUserService.getActiveChildren();
+        return ResponseEntity.ok(BaseResponse.success("활동 중인 자녀 조회 성공", response));
     }
 }
