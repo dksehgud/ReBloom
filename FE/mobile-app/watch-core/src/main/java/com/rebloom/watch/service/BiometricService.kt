@@ -6,6 +6,7 @@ import android.app.NotificationManager
 import android.app.Service
 import android.content.Intent
 import android.os.IBinder
+import android.os.PowerManager
 import android.util.Log
 import com.google.android.gms.wearable.PutDataMapRequest
 import com.google.android.gms.wearable.Wearable
@@ -18,10 +19,15 @@ class BiometricService : Service() {
 
     private lateinit var sensor: BiometricSensor
     private lateinit var repository: BiometricRepository
+    private lateinit var wakeLock: PowerManager.WakeLock
 
     override fun onCreate() {
         super.onCreate()
         startForeground(1, createNotification())
+
+        val powerManager = getSystemService(PowerManager::class.java)
+        wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "rebloom:biometric")
+        wakeLock.acquire()
 
         repository = BiometricRepository()
         sensor = BiometricSensor(this)
@@ -78,6 +84,7 @@ class BiometricService : Service() {
     }
 
     override fun onDestroy() {
+        if (wakeLock.isHeld) wakeLock.release()
         sensor.disconnect()
         super.onDestroy()
     }
