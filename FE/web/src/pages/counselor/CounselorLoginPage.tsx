@@ -1,5 +1,5 @@
 import type { FormEvent } from 'react'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { FiEye, FiEyeOff } from 'react-icons/fi'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 
@@ -12,13 +12,25 @@ import { saveOAuthIntent } from '../../features/auth/oauth/oauthIntent'
 import { useAppSessionStore } from '../../features/auth/store/useAppSessionStore'
 import { useSelectedChildStore } from '../../features/student/store/useSelectedChildStore'
 
+function getCounselorLoginEntryError(searchParams: URLSearchParams) {
+  if (searchParams.get('oauthRoleMismatch') === '1') {
+    return '상담사 계정으로 로그인해 주세요.'
+  }
+
+  if (searchParams.get('sessionExpired') === '1') {
+    return '로그인이 만료되었습니다. 다시 로그인해 주세요.'
+  }
+
+  return undefined
+}
+
 function CounselorLoginPage() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [isPasswordVisible, setIsPasswordVisible] = useState(false)
-  const [loginError, setLoginError] = useState<string | undefined>()
+  const [formLoginError, setFormLoginError] = useState<string | undefined>()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const clearSession = useAppSessionStore((state) => state.clearSession)
   const setActiveRole = useAppSessionStore((state) => state.setActiveRole)
@@ -28,17 +40,8 @@ function CounselorLoginPage() {
   )
 
   const isSubmitEnabled = email.trim().length > 0 && password.trim().length > 0
-
-  useEffect(() => {
-    if (searchParams.get('oauthRoleMismatch') === '1') {
-      setLoginError('상담사 계정으로 로그인해 주세요.')
-      return
-    }
-
-    if (searchParams.get('sessionExpired') === '1') {
-      setLoginError('로그인이 만료되었습니다. 다시 로그인해 주세요.')
-    }
-  }, [searchParams])
+  const loginError =
+    formLoginError ?? getCounselorLoginEntryError(searchParams)
 
   const handleSocialLogin = (provider: 'google' | 'kakao') => {
     saveOAuthIntent('counselor')
@@ -54,7 +57,7 @@ function CounselorLoginPage() {
 
     try {
       setIsSubmitting(true)
-      setLoginError(undefined)
+      setFormLoginError(undefined)
 
       const tokens = await authApi.login(email.trim().toLowerCase(), password)
       const myInfo = await authApi.getMyInfo(tokens.accessToken)
@@ -75,7 +78,7 @@ function CounselorLoginPage() {
       navigate('/counselor/dashboard', { replace: true })
     } catch (error) {
       clearSession('counselor')
-      setLoginError(
+      setFormLoginError(
         error instanceof Error ? error.message : '로그인 중 오류가 발생했습니다.',
       )
     } finally {
