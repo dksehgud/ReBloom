@@ -10,6 +10,7 @@ import com.ssafy.rebloom.report_service.analysis.dto.request.ConversationSession
 import com.ssafy.rebloom.report_service.analysis.dto.request.DepressionSvrPredictRequest;
 import com.ssafy.rebloom.report_service.analysis.dto.request.DiaryAnalysisInferenceRequestDto;
 import com.ssafy.rebloom.report_service.analysis.dto.request.RecentInsightInferenceRequestDto;
+import com.ssafy.rebloom.report_service.analysis.dto.request.RunpodInferenceCallbackRequest;
 import com.ssafy.rebloom.report_service.analysis.dto.response.BiometricAnalysisFeatureResponse;
 import com.ssafy.rebloom.report_service.analysis.dto.response.DepressionSvrPredictResponse;
 import com.ssafy.rebloom.report_service.analysis.repository.*;
@@ -59,6 +60,7 @@ public class AnalysisInferenceService {
     private final ConversationAnalysisRepository conversationAnalysisRepository;
     private final ConversationKeywordRepository conversationKeywordRepository;
     private final DiaryKeywordRepository diaryKeywordRepository;
+    private final AnalysisInferenceJobRepository analysisInferenceJobRepository;
     private final RecentTrendRepository recentTrendRepository;
     private final TransactionTemplate transactionTemplate;
 
@@ -78,11 +80,8 @@ public class AnalysisInferenceService {
     @Value("${RUNPOD_BASE_URL}")
     private String runpodBaseUrl;
 
-    @Value("${RUNPOD_WAIT_MS}")
-    private long runpodWaitMs;
-
-    @Value("${RUNPOD_POLL_INTERVAL_MS:2000}")
-    private long runpodPollIntervalMs;
+    @Value("${ANALYSIS_INFERENCE_CALLBACK_URL:http://localhost:8084/api/v1/analyses/inference-callbacks/runpod}")
+    private String analysisInferenceCallbackUrl;
 
     @Value("${RECENT_INSIGHT_API_URL}")
     private String recentInsightApiUrl;
@@ -128,45 +127,29 @@ public class AnalysisInferenceService {
         );
 
         /*
-         * RunPod receives only one "text" field. Conversation events are flattened in
+         * RunPod receives only one "prompt" field. Conversation events are flattened in
          * chronological order, with child utterances marked as User and bot utterances
          * marked as Bot, matching the agreed model input contract:
          *
          *   {
          *     "input": {
-         *       "text": "User: ...\nBot: ..."
+         *       "prompt": "User: ...\nBot: ..."
          *     }
          *   }
          */
-        String text = buildConversationText(request.events());
-        JsonNode output = requestRunpod(text);
         UUID childrenId = authAccessClient.getChildrenIdByDeviceSerial(request.raspberrypiId());
         UUID analysisId = parseSessionId(request.sessionId());
-        LocalDate targetDate = resolveTargetDate(output, request.endedAt().toLocalDateTime().toLocalDate());
-        LocalDateTime referenceDateTime = request.endedAt().toLocalDateTime();
-        Double prediction = inferPredictionScore(output, childrenId, targetDate, referenceDateTime);
-        List<String> keywords = readRequiredTextList(output, "keywords");
+        String text = buildConversationText(request.events());
+        String jobId = requestRunpod(text);
 
-        transactionTemplate.executeWithoutResult(status -> {
-            conversationAnalysisRepository.save(ConversationAnalysis.builder()
-                .id(new ConversationAnalysisId(analysisId, childrenId))
-                .startedAt(request.startedAt().toLocalDateTime())
-                .endedAt(request.endedAt().toLocalDateTime())
-                .embeddingText(readRequiredText(output, "embedding_text"))
-                .prediction(prediction)
-                .aiInitiated(false)
-                .build());
-            saveConversationKeywords(analysisId, childrenId, keywords);
-        });
+        savePendingConversationJob(jobId, analysisId, childrenId, request);
 
         log.info(
-            "conversation analysis completed. sessionId={}, raspberrypiId={}, userId={}, prediction={}, keywords={}, output={}",
+            "conversation analysis submitted. sessionId={}, raspberrypiId={}, childrenId={}, jobId={}",
             request.sessionId(),
             request.raspberrypiId(),
             childrenId,
-            prediction,
-            keywords,
-            output
+            jobId
         );
     }
 
@@ -179,7 +162,7 @@ public class AnalysisInferenceService {
          * 그래서 raspberrypi_id -> userId 변환 과정이 필요 없습니다.
          *
          * 전체 흐름:
-         * 1. request.content()를 RunPod input.text로 보낸다.
+         * 1. request.content()를 RunPod input.prompt로 보낸다.
          * 2. RunPod output에서 embedding_text, prediction, keywords를 읽는다.
          * 3. 요청에 포함된 emotion_icon과 RunPod output을 diary_analysis / diary_keywords에 저장한다.
          */
@@ -194,32 +177,68 @@ public class AnalysisInferenceService {
          * Diary analysis uses the same RunPod contract as conversation analysis.
          * The diary content is already a single text body, so it can be sent as-is.
          */
-        JsonNode output = requestRunpod(request.content());
-        LocalDate targetDate = resolveTargetDate(output, request.targetDate());
-        LocalDateTime referenceDateTime = targetDate.plusDays(1).atStartOfDay();
-        Double prediction = inferPredictionScore(output, request.userId(), targetDate, referenceDateTime);
-        List<String> keywords = readRequiredTextList(output, "keywords");
+        String jobId = requestRunpod(request.content());
+        savePendingDiaryJob(jobId, request);
 
-        transactionTemplate.executeWithoutResult(status -> {
-            diaryAnalysisRepository.save(DiaryAnalysis.builder()
-                .id(new DiaryAnalysisId(request.diaryId(), request.userId()))
-                .targetDate(request.targetDate().atStartOfDay())
-                .emotionIcon(request.emotionIcon())
-                .embeddingText(readRequiredText(output, "embedding_text"))
-                .prediction(prediction)
-                .build());
-            diaryKeywordRepository.deleteByAnalysisIdAndUserId(request.diaryId(), request.userId());
-            saveDiaryKeywords(request.diaryId(), request.userId(), keywords);
-        });
 
         log.info(
-            "diary analysis completed. diaryId={}, userId={}, prediction={}, keywords={}, output={}",
+            "diary analysis submitted. diaryId={}, childrenId={}, jobId={}",
             request.diaryId(),
             request.userId(),
-            prediction,
-            keywords,
-            output
+            jobId
         );
+    }
+
+    public void handleRunpodCallback(RunpodInferenceCallbackRequest request) {
+        String jobId = readCallbackJobId(request);
+        log.info("RunPod callback received. jobId={}, status={}", jobId, request.status());
+
+        AnalysisInferenceJob job = analysisInferenceJobRepository.findById(jobId)
+            .orElseThrow(() -> new CustomException(
+                "RunPod callback job not found. jobId=" + jobId,
+                ErrorCode.INVALID_PARAMETER
+            ));
+
+        if (job.isCompleted()) {
+            log.info("RunPod callback ignored because job is already completed. jobId={}", jobId);
+            return;
+        }
+
+        String status = normalizeRunpodStatus(request.status());
+        if (RUNPOD_FAILED_STATUSES.contains(status)) {
+            markInferenceJobFailed(job, callbackErrorMessage(request));
+            return;
+        }
+
+        if (!RUNPOD_COMPLETED_STATUS.equals(status)) {
+            log.info("RunPod callback ignored because job is not completed yet. jobId={}, status={}", jobId, status);
+            return;
+        }
+
+        JsonNode output = request.output();
+        if (output == null || output.isMissingNode() || output.isNull()) {
+            markInferenceJobFailed(job, "RunPod callback does not contain output.");
+            throw new CustomException("RunPod callback does not contain output.", ErrorCode.INVALID_PARAMETER);
+        }
+
+        try {
+            transactionTemplate.executeWithoutResult(transactionStatus -> {
+                if (AnalysisInferenceType.CONVERSATION.equals(job.getInferenceType())) {
+                    saveConversationAnalysisFromOutput(job, output);
+                } else if (AnalysisInferenceType.DIARY.equals(job.getInferenceType())) {
+                    saveDiaryAnalysisFromOutput(job, output);
+                } else {
+                    throw new CustomException("Unsupported inference type.", ErrorCode.INTERNAL_SERVER_ERROR);
+                }
+                job.complete();
+                analysisInferenceJobRepository.save(job);
+            });
+        } catch (RuntimeException e) {
+            markInferenceJobFailed(job, e.getMessage());
+            throw e;
+        }
+
+        log.info("RunPod callback processed. jobId={}, type={}", jobId, job.getInferenceType());
     }
 
     @Async("analysisTaskExecutor")
@@ -302,7 +321,7 @@ public class AnalysisInferenceService {
         }
     }
 
-    private JsonNode requestRunpod(String text) {
+    private String requestRunpod(String text) {
         validateRunpodText(text);
 
         try {
@@ -311,7 +330,7 @@ public class AnalysisInferenceService {
              *
              * {
              *   "input": {
-             *     "text": "분석할 텍스트"
+             *     "prompt": "분석할 텍스트"
              *   }
              * }
              *
@@ -328,7 +347,10 @@ public class AnalysisInferenceService {
                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + runpodApiKey)
                 .contentType(MediaType.APPLICATION_JSON)
                 .accept(MediaType.APPLICATION_JSON)
-                .body(Map.of("input", Map.of("text", text)))
+                .body(Map.of(
+                    "input", Map.of("prompt", text),
+                    "webhook", analysisInferenceCallbackUrl
+                ))
                 .retrieve()
                 .body(JsonNode.class);
 
@@ -342,57 +364,120 @@ public class AnalysisInferenceService {
             }
 
             log.info("RunPod async job submitted. jobId={}", jobId);
-            long deadline = System.currentTimeMillis() + runpodWaitMs;
-
-            while (System.currentTimeMillis() <= deadline) {
-                JsonNode statusResponse = runpodClient
-                    .get()
-                    .uri("/{endpointId}/status/{jobId}", runpodEndpointId, jobId)
-                    .header(HttpHeaders.AUTHORIZATION, "Bearer " + runpodApiKey)
-                    .accept(MediaType.APPLICATION_JSON)
-                    .retrieve()
-                    .body(JsonNode.class);
-
-                if (statusResponse == null) {
-                    throw new CustomException("RunPod returned empty status response.", ErrorCode.INTERNAL_SERVER_ERROR);
-                }
-
-                String status = statusResponse.path("status").asText();
-                if (RUNPOD_COMPLETED_STATUS.equals(status)) {
-                    JsonNode output = statusResponse.path("output");
-                    if (output.isMissingNode() || output.isNull()) {
-                        throw new CustomException("RunPod response does not contain output.", ErrorCode.INTERNAL_SERVER_ERROR);
-                    }
-
-                    log.info("RunPod async job completed. jobId={}", jobId);
-                    return output;
-                }
-
-                if (RUNPOD_FAILED_STATUSES.contains(status)) {
-                    throw new CustomException(
-                        "RunPod inference failed. jobId=" + jobId + ", status=" + status,
-                        ErrorCode.INTERNAL_SERVER_ERROR
-                    );
-                }
-
-                sleepBeforeNextRunpodPoll(jobId, status);
-            }
-
-            throw new CustomException("RunPod inference timed out. jobId=" + jobId, ErrorCode.INTERNAL_SERVER_ERROR);
+            return jobId;
         } catch (RestClientException e) {
             log.error("RunPod inference request failed.", e);
             throw new CustomException("RunPod inference request failed.", ErrorCode.INTERNAL_SERVER_ERROR);
         }
     }
 
-    private void sleepBeforeNextRunpodPoll(String jobId, String status) {
-        try {
-            log.debug("RunPod async job pending. jobId={}, status={}", jobId, status);
-            Thread.sleep(runpodPollIntervalMs);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new CustomException("RunPod polling interrupted.", ErrorCode.INTERNAL_SERVER_ERROR);
+    private void savePendingConversationJob(
+        String jobId,
+        UUID analysisId,
+        UUID childrenId,
+        ConversationSessionCreateRequestDto request
+    ) {
+        analysisInferenceJobRepository.save(AnalysisInferenceJob.builder()
+            .jobId(jobId)
+            .inferenceType(AnalysisInferenceType.CONVERSATION)
+            .analysisId(analysisId)
+            .childrenId(childrenId)
+            .startedAt(request.startedAt().toLocalDateTime())
+            .endedAt(request.endedAt().toLocalDateTime())
+            .status(AnalysisInferenceJobStatus.PENDING)
+            .build());
+    }
+
+    private void savePendingDiaryJob(String jobId, DiaryAnalysisInferenceRequestDto request) {
+        analysisInferenceJobRepository.save(AnalysisInferenceJob.builder()
+            .jobId(jobId)
+            .inferenceType(AnalysisInferenceType.DIARY)
+            .analysisId(request.diaryId())
+            .childrenId(request.userId())
+            .targetDate(request.targetDate())
+            .emotionIcon(request.emotionIcon())
+            .status(AnalysisInferenceJobStatus.PENDING)
+            .build());
+    }
+
+    private void saveConversationAnalysisFromOutput(AnalysisInferenceJob job, JsonNode output) {
+        LocalDate defaultDate = job.getEndedAt().toLocalDate();
+        LocalDate targetDate = resolveTargetDate(output, defaultDate);
+        Double prediction = inferPredictionScore(output, job.getChildrenId(), targetDate, job.getEndedAt());
+        List<String> keywords = readRequiredTextList(output, "keywords");
+
+        conversationAnalysisRepository.save(ConversationAnalysis.builder()
+            .id(new ConversationAnalysisId(job.getAnalysisId(), job.getChildrenId()))
+            .startedAt(job.getStartedAt())
+            .endedAt(job.getEndedAt())
+            .embeddingText(readRequiredText(output, "embedding_text"))
+            .prediction(prediction)
+            .aiInitiated(false)
+            .build());
+        saveConversationKeywords(job.getAnalysisId(), job.getChildrenId(), keywords);
+
+        log.info(
+            "conversation analysis completed from callback. jobId={}, analysisId={}, childrenId={}, prediction={}, keywords={}",
+            job.getJobId(),
+            job.getAnalysisId(),
+            job.getChildrenId(),
+            prediction,
+            keywords
+        );
+    }
+
+    private void saveDiaryAnalysisFromOutput(AnalysisInferenceJob job, JsonNode output) {
+        LocalDate defaultDate = job.getTargetDate();
+        LocalDate targetDate = resolveTargetDate(output, defaultDate);
+        LocalDateTime referenceDateTime = targetDate.plusDays(1).atStartOfDay();
+        Double prediction = inferPredictionScore(output, job.getChildrenId(), targetDate, referenceDateTime);
+        List<String> keywords = readRequiredTextList(output, "keywords");
+
+        diaryAnalysisRepository.save(DiaryAnalysis.builder()
+            .id(new DiaryAnalysisId(job.getAnalysisId(), job.getChildrenId()))
+            .targetDate(job.getTargetDate().atStartOfDay())
+            .emotionIcon(job.getEmotionIcon())
+            .embeddingText(readRequiredText(output, "embedding_text"))
+            .prediction(prediction)
+            .build());
+        diaryKeywordRepository.deleteByAnalysisIdAndUserId(job.getAnalysisId(), job.getChildrenId());
+        saveDiaryKeywords(job.getAnalysisId(), job.getChildrenId(), keywords);
+
+        log.info(
+            "diary analysis completed from callback. jobId={}, diaryId={}, childrenId={}, prediction={}, keywords={}",
+            job.getJobId(),
+            job.getAnalysisId(),
+            job.getChildrenId(),
+            prediction,
+            keywords
+        );
+    }
+
+    private String readCallbackJobId(RunpodInferenceCallbackRequest request) {
+        if (request != null && StringUtils.hasText(request.id())) {
+            return request.id();
         }
+        throw new CustomException("RunPod callback missing job id.", ErrorCode.INVALID_PARAMETER);
+    }
+
+    private String normalizeRunpodStatus(String status) {
+        return StringUtils.hasText(status) ? status.trim().toUpperCase(Locale.ROOT) : "";
+    }
+
+    private void markInferenceJobFailed(AnalysisInferenceJob job, String errorMessage) {
+        job.fail(StringUtils.hasText(errorMessage) ? errorMessage : "RunPod inference failed.");
+        analysisInferenceJobRepository.save(job);
+        log.warn("RunPod inference job failed. jobId={}, error={}", job.getJobId(), job.getErrorMessage());
+    }
+
+    private String callbackErrorMessage(RunpodInferenceCallbackRequest request) {
+        if (StringUtils.hasText(request.errorMessage())) {
+            return request.errorMessage();
+        }
+        if (request.error() != null && !request.error().isMissingNode() && !request.error().isNull()) {
+            return request.error().asText(request.error().toString());
+        }
+        return "RunPod inference failed. status=" + request.status();
     }
 
     private JsonNode requestRecentInsightApi(String text) {
