@@ -121,7 +121,7 @@ function useRoleRouteGuard(
 
             setActiveRole(expectedRole)
             clearSelectedChild()
-            saveNativeAccessToken(roleSession.accessToken ?? '')
+            saveNativeAccessToken(roleSession.accessToken ?? '', expectedRole)
         }
 
         const blockRoleSession = () => {
@@ -343,7 +343,7 @@ function LoginRoute() {
                 currentUser: myInfo,
                 refreshToken: tokens.refreshToken,
             })
-            saveNativeAccessToken(tokens.accessToken)
+            saveNativeAccessToken(tokens.accessToken, nextRole)
             setActiveRole(nextRole)
 
             if (nextRole === 'child') {
@@ -431,7 +431,7 @@ function OAuthCallbackRoute() {
                         currentUser: myInfo,
                         refreshToken,
                     })
-                    saveNativeAccessToken(accessToken)
+                    saveNativeAccessToken(accessToken, nextRole)
                     setActiveRole(nextRole)
                     clearSelectedChild()
 

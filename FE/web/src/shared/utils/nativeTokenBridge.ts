@@ -9,8 +9,23 @@ declare global {
   }
 }
 
-function saveNativeAccessToken(accessToken: string | null | undefined) {
+type FcmSupportedNativeRole = 'child' | 'parent'
+
+function isFcmSupportedNativeRole(
+  role: string | null | undefined,
+): role is FcmSupportedNativeRole {
+  return role === 'child' || role === 'parent'
+}
+
+function saveNativeAccessToken(
+  accessToken: string | null | undefined,
+  role?: string | null,
+) {
   if (!accessToken || typeof window === 'undefined') {
+    return
+  }
+
+  if (!isFcmSupportedNativeRole(role)) {
     return
   }
 
