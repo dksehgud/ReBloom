@@ -24,9 +24,11 @@ function clearStoredCounselorSelectedChildId() {
   window.sessionStorage.removeItem(COUNSELOR_SELECTED_CHILD_STORAGE_KEY)
 }
 
-function syncStoredCounselorSelectedChildId(childId: string | null) {
-  if (childId) {
-    setStoredCounselorSelectedChildId(childId)
+function syncStoredCounselorSelectedChildId(childId: string | null | undefined) {
+  const normalizedChildId = childId?.trim()
+
+  if (normalizedChildId) {
+    setStoredCounselorSelectedChildId(normalizedChildId)
     return
   }
 
@@ -36,6 +38,5 @@ function syncStoredCounselorSelectedChildId(childId: string | null) {
 export {
   clearStoredCounselorSelectedChildId,
   getStoredCounselorSelectedChildId,
-  setStoredCounselorSelectedChildId,
   syncStoredCounselorSelectedChildId,
 }

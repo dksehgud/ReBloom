@@ -43,7 +43,6 @@ import {
 import {
   clearStoredCounselorSelectedChildId,
   getStoredCounselorSelectedChildId,
-  setStoredCounselorSelectedChildId,
   syncStoredCounselorSelectedChildId,
 } from '../session/counselorSelectedChildStorage'
 import type {
@@ -856,7 +855,7 @@ function useCounselorDashboardState() {
   )
 
   const handleSelectChild = (childId: string) => {
-    setStoredCounselorSelectedChildId(childId)
+    syncStoredCounselorSelectedChildId(childId)
     setSelectedChildId(childId)
     void markParentReportNotificationsAsRead(childId)
     setSelectedObservation(null)
