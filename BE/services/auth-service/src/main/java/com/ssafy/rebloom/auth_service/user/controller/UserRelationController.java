@@ -135,17 +135,4 @@ public class UserRelationController {
         ParentSummaryResponseDto response = userService.connectParent(childrenId, request);
         return ResponseEntity.ok(BaseResponse.success("부모 연결 성공", response));
     }
-
-    @GetMapping("/children/{childrenId}/parent-receiver")
-    public ResponseEntity<BaseResponse<ParentReceiverResponseDto>> getParentReceiver(
-        @PathVariable UUID childrenId
-    ) {
-        ParentReceiverResponseDto response =
-            userService.getParentReceiverByChildrenId(childrenId);
-
-        return ResponseEntity.ok(
-            BaseResponse.success("자녀의 부모 알림 수신자 조회 성공", response)
-        );
-    }
 }
-
