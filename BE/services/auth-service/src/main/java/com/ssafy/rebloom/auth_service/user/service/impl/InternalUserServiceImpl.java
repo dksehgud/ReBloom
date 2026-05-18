@@ -115,9 +115,16 @@ public class InternalUserServiceImpl implements InternalUserService {
 
     @Override
     public List<ActiveChildResponseDto> getActiveChildren() {
-        return userRepository.findActiveChildren().stream()
-            .map(user -> new ActiveChildResponseDto(user.getId(), user.getName()))
+        return userRepository.findActiveChildrenRows().stream()
+            .map(row -> new ActiveChildResponseDto(toUuid(row[0]), (String) row[1]))
             .toList();
+    }
+
+    private UUID toUuid(Object value) {
+        if (value instanceof UUID uuid) {
+            return uuid;
+        }
+        return UUID.fromString(value.toString());
     }
 
     private ChildConnectedCounselorResponseDto toChildConnectedCounselorResponse(
