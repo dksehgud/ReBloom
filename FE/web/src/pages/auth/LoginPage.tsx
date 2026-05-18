@@ -5,6 +5,8 @@ import { FiEye, FiEyeOff } from 'react-icons/fi'
 import googleLogo from '../../assets/google-logo.svg'
 import kakaoLogo from '../../assets/kakao-logo.svg'
 
+const SHOW_MOCK_ENTRY = false
+
 type LoginPageProps = {
   email: string
   password: string
@@ -98,25 +100,27 @@ function LoginPage({
 
       {error ? <p className="field-error">{error}</p> : null}
 
-      <div className="mock-entry-section" aria-label="개발용 빠른 진입">
-        <p className="mock-entry-title">API 연동 전 임시 진입</p>
-        <div className="mock-entry-actions">
-          <button
-            type="button"
-            className="auth-button is-secondary mock-entry-button"
-            onClick={onStartChildClick}
-          >
-            아이로 시작
-          </button>
-          <button
-            type="button"
-            className="auth-button is-primary mock-entry-button"
-            onClick={onStartParentClick}
-          >
-            부모로 시작
-          </button>
+      {SHOW_MOCK_ENTRY ? (
+        <div className="mock-entry-section" aria-label="개발용 빠른 진입">
+          <p className="mock-entry-title">API 연동 전 임시 진입</p>
+          <div className="mock-entry-actions">
+            <button
+              type="button"
+              className="auth-button is-secondary mock-entry-button"
+              onClick={onStartChildClick}
+            >
+              아이로 시작
+            </button>
+            <button
+              type="button"
+              className="auth-button is-primary mock-entry-button"
+              onClick={onStartParentClick}
+            >
+              부모로 시작
+            </button>
+          </div>
         </div>
-      </div>
+      ) : null}
 
       <div className="social-login">
         <div className="social-divider" aria-hidden="true">
