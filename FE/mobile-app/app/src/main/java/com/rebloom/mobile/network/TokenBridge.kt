@@ -2,6 +2,8 @@ package com.rebloom.mobile.network
 
 import android.content.Context
 import android.content.Intent
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import android.webkit.JavascriptInterface
 import com.rebloom.mobile.notification.FcmTokenRegistrar
@@ -16,9 +18,13 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import org.json.JSONObject
 
-class TokenBridge(private val context: Context) {
+class TokenBridge(
+    private val context: Context,
+    private val clearWebHistory: (() -> Unit)? = null,
+) {
 
     private val scope = CoroutineScope(Dispatchers.IO)
+    private val mainHandler = Handler(Looper.getMainLooper())
 
     @JavascriptInterface
     fun saveToken(token: String) {
@@ -36,6 +42,14 @@ class TokenBridge(private val context: Context) {
             FcmTokenRegistrar.deactivateCurrentToken(context, accessToken)
             TokenDataStore.clearToken(context)
             Log.d("TokenBridge", "Token cleared")
+        }
+    }
+
+    @JavascriptInterface
+    fun clearHistory() {
+        mainHandler.post {
+            clearWebHistory?.invoke()
+            Log.d("TokenBridge", "WebView history cleared")
         }
     }
 

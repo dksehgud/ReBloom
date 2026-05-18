@@ -38,14 +38,14 @@ public class DeviceServiceImpl implements DeviceService {
         validateChildExists(childrenId);
         validateParentChildRelation(parentId, childrenId);
 
-        return registerDeviceForChild(childrenId, request);
+        return registerDeviceForChild(childrenId, request, true);
     }
 
     @Override
     @Transactional
     public DeviceResponseDto registerDeviceByChild(UUID childrenId, DeviceRegisterRequestDto request) {
         validateChildExists(childrenId);
-        return registerDeviceForChild(childrenId, request);
+        return registerDeviceForChild(childrenId, request, false);
     }
 
     @Override
@@ -118,8 +118,18 @@ public class DeviceServiceImpl implements DeviceService {
         }
     }
 
-    private DeviceResponseDto registerDeviceForChild(UUID childrenId, DeviceRegisterRequestDto request) {
+    private DeviceResponseDto registerDeviceForChild(
+        UUID childrenId,
+        DeviceRegisterRequestDto request,
+        boolean allowReassignment
+    ) {
         String serialNumber = request.serialNumber().trim();
+        Device existingDevice = deviceRepository.findBySerialNumber(serialNumber)
+            .orElse(null);
+
+        if (existingDevice != null && allowReassignment) {
+            return DeviceResponseDto.from(reassignExistingDevice(childrenId, request, existingDevice));
+        }
         if (deviceRepository.existsBySerialNumber(serialNumber)) {
             throw new CustomException("이미 등록된 기기입니다.", ErrorCode.DUPLICATE_RESOURCE);
         }
@@ -134,6 +144,33 @@ public class DeviceServiceImpl implements DeviceService {
             .build();
 
         return DeviceResponseDto.from(deviceRepository.save(device));
+    }
+
+    private Device reassignExistingDevice(
+        UUID childrenId,
+        DeviceRegisterRequestDto request,
+        Device existingDevice
+    ) {
+        if (existingDevice.getDeviceType() != request.deviceType()) {
+            throw new CustomException(
+                "기기 시리얼 번호와 타입이 일치하지 않습니다.",
+                ErrorCode.BAD_REQUEST
+            );
+        }
+
+        if (existingDevice.getChildrenId().equals(childrenId)) {
+            return existingDevice;
+        }
+
+        deviceRepository.findByChildrenIdAndDeviceType(childrenId, existingDevice.getDeviceType())
+            .ifPresent(deviceForTargetChild -> {
+                deviceRepository.delete(deviceForTargetChild);
+                deviceRepository.flush();
+            });
+
+        existingDevice.assignToChild(childrenId);
+
+        return existingDevice;
     }
 
     private void validateDeviceOwnership(UUID childrenId, Device device) {

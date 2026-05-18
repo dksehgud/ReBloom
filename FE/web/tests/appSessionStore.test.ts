@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import {
+  getFirstSessionRoleWithToken,
   inferSessionRoleFromApiPath,
   isUserExpectedSessionRole,
   readStoredAccessToken,
@@ -99,6 +100,38 @@ describe('app session storage', () => {
     )
     expect(
       inferSessionRoleFromApiPath('/auth/api/v1/counselors/children'),
+    ).toBe('counselor')
+  })
+
+  it('chooses an existing token session before showing auth pages', () => {
+    const store = useAppSessionStore.getState()
+
+    store.setRoleSession('parent', {
+      accessToken: 'parent-token',
+      currentUser: createUser('PARENT', 'parent@example.com'),
+      refreshToken: 'parent-refresh',
+    })
+    store.setRoleSession('counselor', {
+      accessToken: 'counselor-token',
+      currentUser: createUser('COUNSELOR', 'counselor@example.com'),
+      refreshToken: 'counselor-refresh',
+    })
+
+    expect(
+      getFirstSessionRoleWithToken(
+        useAppSessionStore.getState().sessions,
+        null,
+        ['child', 'parent'],
+      ),
+    ).toBe('parent')
+
+    store.setActiveRole('counselor')
+
+    expect(
+      getFirstSessionRoleWithToken(
+        useAppSessionStore.getState().sessions,
+        useAppSessionStore.getState().activeRole,
+      ),
     ).toBe('counselor')
   })
 })

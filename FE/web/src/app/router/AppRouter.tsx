@@ -19,7 +19,12 @@ import ParentReportPage from '../../pages/parent/ParentReportPage'
 import ParentSettingsPage from '../../pages/parent/ParentSettingsPage'
 import {authApi, toAppRole} from '../../features/auth/api/authApi'
 import {consumeOAuthIntent, saveOAuthIntent} from '../../features/auth/oauth/oauthIntent'
-import {isUserExpectedSessionRole, type SessionRole,} from '../../features/auth/session/appSessionStorage'
+import {
+  getFirstSessionRoleWithToken,
+  isUserExpectedSessionRole,
+  sessionRoles,
+  type SessionRole,
+} from '../../features/auth/session/appSessionStorage'
 import {useAppSessionStore} from '../../features/auth/store/useAppSessionStore'
 import {isCounselorMockModeSearch} from '../../features/counselor/hooks/useCounselorMockMode'
 import {isParentMockModeSearch} from '../../features/guardian/hooks/useParentMockMode'
@@ -33,6 +38,7 @@ import type {DiaryNotificationSettings} from '../../features/user/types/diaryNot
 import type {ChildAddress} from '../../shared/types/childAddress'
 import {
   clearNativeAccessToken,
+  clearNativeNavigationHistory,
   requestNativeSleepPermission,
   saveNativeAccessToken,
 } from '../../shared/utils/nativeTokenBridge'
@@ -66,10 +72,35 @@ function PhoneShell({children, className}: PhoneShellProps) {
 
 type RoleGuardStatus = 'allowed' | 'blocked' | 'checking'
 
+const authenticatedHomePaths: Record<SessionRole, string> = {
+    child: '/child/diary',
+    counselor: '/counselor/dashboard',
+    parent: '/parent/home',
+}
+
 function hasMockModeParams(search: string) {
     const searchParams = new URLSearchParams(search)
 
     return searchParams.has('mock') || searchParams.get('mode') === 'mock'
+}
+
+function useAuthenticatedRedirectRole() {
+    const activeRole = useAppSessionStore((state) => state.activeRole)
+    const sessions = useAppSessionStore((state) => state.sessions)
+
+    return getFirstSessionRoleWithToken(sessions, activeRole, sessionRoles)
+}
+
+function useClearNativeHistoryWhenAllowed(guardStatus: RoleGuardStatus) {
+    useEffect(() => {
+        if (guardStatus !== 'allowed') {
+            return
+        }
+
+        const timeoutId = window.setTimeout(clearNativeNavigationHistory, 0)
+
+        return () => window.clearTimeout(timeoutId)
+    }, [guardStatus])
 }
 
 function useRoleRouteGuard(
@@ -206,19 +237,29 @@ function AuthRouteLayout() {
     const location = useLocation()
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
+    const redirectRole = useAuthenticatedRedirectRole()
     const setActiveRole = useAppSessionStore((state) => state.setActiveRole)
     const clearSelectedChild = useSelectedChildStore(
         (state) => state.clearSelectedChild,
     )
+    const shouldSkipRedirect = location.pathname === '/oauth/callback'
 
     const phoneShellClassName = `phone-shell--auth${
         location.pathname === '/signup' ? ' phone-shell--signup' : ''
     }`
 
     useEffect(() => {
+        if (redirectRole || shouldSkipRedirect) {
+            return
+        }
+
         setActiveRole(null)
         clearSelectedChild()
-    }, [clearSelectedChild, setActiveRole])
+    }, [clearSelectedChild, redirectRole, setActiveRole, shouldSkipRedirect])
+
+    if (redirectRole && !shouldSkipRedirect) {
+        return <Navigate replace to={authenticatedHomePaths[redirectRole]}/>
+    }
 
     return (
         <PhoneShell className={phoneShellClassName}>
@@ -228,15 +269,24 @@ function AuthRouteLayout() {
 }
 
 function CounselorAuthRouteLayout() {
+    const redirectRole = useAuthenticatedRedirectRole()
     const setActiveRole = useAppSessionStore((state) => state.setActiveRole)
     const clearSelectedChild = useSelectedChildStore(
         (state) => state.clearSelectedChild,
     )
 
     useEffect(() => {
+        if (redirectRole) {
+            return
+        }
+
         setActiveRole(null)
         clearSelectedChild()
-    }, [clearSelectedChild, setActiveRole])
+    }, [clearSelectedChild, redirectRole, setActiveRole])
+
+    if (redirectRole) {
+        return <Navigate replace to={authenticatedHomePaths[redirectRole]}/>
+    }
 
     return <Outlet/>
 }
@@ -249,6 +299,7 @@ function CounselorRouteLayout() {
         isMockMode,
         hasMockModeParams(location.search),
     )
+    useClearNativeHistoryWhenAllowed(guardStatus)
 
     if (guardStatus === 'blocked') {
         return <Navigate replace to="/counselor/login"/>
@@ -267,6 +318,7 @@ function ChildRouteLayout() {
         detailAddress: '',
     })
     const guardStatus = useRoleRouteGuard('child', false)
+    useClearNativeHistoryWhenAllowed(guardStatus)
 
     if (guardStatus === 'blocked') {
         return <Navigate replace to="/login"/>
@@ -287,6 +339,7 @@ function ParentRouteLayout() {
         isMockMode,
         hasMockModeParams(location.search),
     )
+    useClearNativeHistoryWhenAllowed(guardStatus)
 
     if (guardStatus === 'blocked') {
         return <Navigate replace to="/login"/>

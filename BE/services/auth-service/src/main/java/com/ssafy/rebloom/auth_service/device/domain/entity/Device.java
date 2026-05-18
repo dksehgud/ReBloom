@@ -32,4 +32,8 @@ public class Device extends BaseTime {
     @NotNull
     @Column(name = "children_id", nullable = false)
     private UUID childrenId;
+
+    public void assignToChild(UUID childrenId) {
+        this.childrenId = childrenId;
+    }
 }

@@ -96,7 +96,12 @@ class MainActivity : ComponentActivity() {
 
         rootView = FrameLayout(this)
         webView = createConfiguredWebView().apply {
-            addJavascriptInterface(TokenBridge(this@MainActivity), "Android")
+            addJavascriptInterface(
+                TokenBridge(this@MainActivity) {
+                    webView.clearHistory()
+                },
+                "Android",
+            )
             addJavascriptInterface(diaryBridge, DIARY_BRIDGE_NAME)
             Log.d(TAG, "Loading WebView URL: $launchUrl")
             loadUrl(launchUrl)

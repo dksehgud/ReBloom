@@ -181,6 +181,22 @@ function readStoredAccessToken(role: SessionRole | null | undefined) {
   return readStoredRoleSession(role).accessToken
 }
 
+function getFirstSessionRoleWithToken(
+  sessions: Record<SessionRole, Pick<RoleSessionState, 'accessToken'>>,
+  preferredRole?: AppRole,
+  eligibleRoles: readonly SessionRole[] = sessionRoles,
+) {
+  if (
+    preferredRole &&
+    eligibleRoles.includes(preferredRole) &&
+    sessions[preferredRole].accessToken
+  ) {
+    return preferredRole
+  }
+
+  return eligibleRoles.find((role) => sessions[role].accessToken) ?? null
+}
+
 function isUserExpectedSessionRole(
   user: UserInfoResponse | null | undefined,
   expectedRole: SessionRole,
@@ -252,6 +268,7 @@ export type { RoleSessionState, SessionRole }
 export {
   createEmptyRoleSession,
   createEmptyRoleSessions,
+  getFirstSessionRoleWithToken,
   getUserSessionRole,
   inferSessionRoleFromApiPath,
   isUserExpectedSessionRole,
