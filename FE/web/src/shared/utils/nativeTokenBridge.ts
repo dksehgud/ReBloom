@@ -3,6 +3,7 @@ declare global {
     Android?: {
       saveToken?: (token: string) => void
       clearToken?: () => void
+      clearHistory?: () => void
       checkSleepPermission?: () => void
       startBleProvisioning?: (payloadJson?: string) => void
     }
@@ -40,6 +41,14 @@ function clearNativeAccessToken() {
   window.Android?.clearToken?.()
 }
 
+function clearNativeNavigationHistory() {
+  if (typeof window === 'undefined') {
+    return
+  }
+
+  window.Android?.clearHistory?.()
+}
+
 function requestNativeSleepPermission() {
   if (typeof window === 'undefined') {
     return
@@ -68,6 +77,7 @@ function startNativeBleProvisioning(context?: BleProvisioningContext) {
 
 export {
   clearNativeAccessToken,
+  clearNativeNavigationHistory,
   requestNativeSleepPermission,
   saveNativeAccessToken,
   startNativeBleProvisioning,

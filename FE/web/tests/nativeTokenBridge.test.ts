@@ -1,6 +1,9 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import { saveNativeAccessToken } from '../src/shared/utils/nativeTokenBridge'
+import {
+  clearNativeNavigationHistory,
+  saveNativeAccessToken,
+} from '../src/shared/utils/nativeTokenBridge'
 
 describe('native token bridge FCM registration gate', () => {
   afterEach(() => {
@@ -28,5 +31,15 @@ describe('native token bridge FCM registration gate', () => {
     saveNativeAccessToken('unknown-access-token')
 
     expect(saveToken).not.toHaveBeenCalled()
+  })
+
+  it('requests native WebView history cleanup after authenticated navigation', () => {
+    const clearHistory = vi.fn()
+
+    vi.stubGlobal('window', { Android: { clearHistory } })
+
+    clearNativeNavigationHistory()
+
+    expect(clearHistory).toHaveBeenCalledOnce()
   })
 })
