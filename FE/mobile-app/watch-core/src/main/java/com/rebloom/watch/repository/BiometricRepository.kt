@@ -28,6 +28,10 @@ class BiometricRepository {
     var onRecordReady: ((BiometricRecord) -> Unit)? = null
 
     fun addHeartRateData(data: HeartRateData) {
+        if (hrBuffer.isEmpty()) {
+            bufferStartTime = data.timestamp
+            accBuffer.clear()
+        }
         hrBuffer.add(data)
         checkAndFlush()
     }
@@ -48,12 +52,11 @@ class BiometricRepository {
     }
 
     private fun buildRecord(tsStart: Long, tsEnd: Long): BiometricRecord {
-        val validHr = hrBuffer.filter { it.hr > 0 }
-        val rawIbi = validHr.flatMap { it.ibi }
+        val rawIbi = hrBuffer.flatMap { it.ibi }
         val allIbi = preprocessIbi(rawIbi)
 
-        val hrAvg = if (validHr.isEmpty()) 0f
-        else validHr.map { it.hr }.average().toFloat()
+        val hrAvg = if (hrBuffer.isEmpty()) 0f
+        else hrBuffer.map { it.hr }.average().toFloat()
         val ibiAvg = if (allIbi.isEmpty()) 0f
         else allIbi.average().toFloat()
         val accXAvg = if (accBuffer.isEmpty()) 0f
@@ -72,7 +75,7 @@ class BiometricRepository {
         return BiometricRecord(
             tsStart = tsStart,
             tsEnd = tsEnd,
-            missingnessScore = calcMissingness(validHr.size),
+            missingnessScore = calcMissingness(hrBuffer.size),
             hr = hrAvg,
             ibi = ibiAvg,
             accXAvg = accXAvg,
