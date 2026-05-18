@@ -24,6 +24,12 @@ from app.kafka.producer import publish_anomaly_verified, publish_phq_result, pub
 
 logger = logging.getLogger(__name__)
 
+
+def _unwrap_event_envelope(message: dict) -> dict:
+    if isinstance(message, dict) and isinstance(message.get("payload"), dict):
+        return message["payload"]
+    return message
+
 # ──────────────────────────────────────────────
 # Redis 클라이언트 (biometric_count 조회용)
 # ──────────────────────────────────────────────
@@ -59,6 +65,8 @@ def _handle_biometric_raw(payload: dict) -> None:
     biometric_count >= 288 → IF 모델 이상치 탐지 (if_model.py)
     이상치 확정 시 → rebloom.anomaly.analysed.v1 발행
     """
+
+    payload = _unwrap_event_envelope(payload)
 
     user_id      = payload["userId"]
     hr           = payload["hr"]
@@ -114,6 +122,8 @@ def _handle_ai_train(payload: dict) -> None:
           "biometrics": [ {hr, rmssd, pnn50, lfHf, accMag, hrAccRatio}, ... ]
         }
     """
+    payload = _unwrap_event_envelope(payload)
+
     user_id    = payload.get("userId")
     biometrics = payload.get("biometrics", [])
 
@@ -147,6 +157,8 @@ def _handle_ai_analyze(payload: dict) -> None:
     sleeps 있으면 → PHQ 예측 + IF 재학습 → rebloom.phq.completed.v1 발행
     sleeps 없으면 → IF 재학습만
     """
+    payload = _unwrap_event_envelope(payload)
+
     user_id    = payload.get("userId")
     age        = payload.get("age")        # ← 추가
     biometrics = payload.get("biometrics", [])
@@ -194,6 +206,8 @@ def _handle_ai_analyze(payload: dict) -> None:
 # ──────────────────────────────────────────────
 
 def _handle_gps_check_request(payload: dict) -> None:
+    payload = _unwrap_event_envelope(payload)
+
     children_id = payload.get("childrenId")
     parent_id = payload.get("parentId")
     request_id = payload.get("requestId")
@@ -299,10 +313,11 @@ def _consume_loop() -> None:
             try:
                 handler(payload)
             except Exception as e:
+                entity_payload = _unwrap_event_envelope(payload)
                 entity_id = (
-                    payload.get("childrenId")
+                    entity_payload.get("childrenId")
                     if topic == KAFKA_TOPIC_GPS_CHECK_REQUEST
-                    else payload.get("userId")
+                    else entity_payload.get("userId")
                 )
                 logger.exception("[Kafka] 핸들러 예외 | topic=%s entityId=%s err=%s",
                                  topic, entity_id, e)
