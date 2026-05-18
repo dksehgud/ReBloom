@@ -80,6 +80,22 @@ function buildProfilePayload(profileForm: ProfileForm) {
   }
 }
 
+function getProfileInputMaxLength(fieldId: string) {
+  if (fieldId === 'name') {
+    return 10
+  }
+
+  if (fieldId === 'phone') {
+    return 13
+  }
+
+  if (fieldId === 'hospitalName') {
+    return 50
+  }
+
+  return undefined
+}
+
 function CounselorSettingsPage() {
   const navigate = useNavigate()
   const isMockMode = useCounselorMockMode()
@@ -498,6 +514,7 @@ function CounselorSettingsPage() {
                   field={field}
                   help={field.id === 'email' ? EMAIL_READONLY_HELP : undefined}
                   key={field.id}
+                  maxLength={getProfileInputMaxLength(field.id)}
                   readOnly={
                     field.id === 'email' || isProfileLoading || isProfileSubmitting
                   }
@@ -539,6 +556,7 @@ function CounselorSettingsPage() {
                   value: profileForm.hospitalAddressDetail,
                 }}
                 disabled={isProfileLoading || isProfileSubmitting}
+                maxLength={50}
                 value={profileForm.hospitalAddressDetail}
                 onChange={(value) => updateProfileField('hospitalAddressDetail', value)}
               />
@@ -558,6 +576,7 @@ function CounselorSettingsPage() {
                   field={field}
                   disabled={isPasswordSubmitting}
                   key={field.id}
+                  maxLength={20}
                   value={passwordForm[field.id as keyof PasswordForm]}
                   onChange={(value) =>
                     updatePasswordField(field.id as keyof PasswordForm, value)
