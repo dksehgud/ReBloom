@@ -49,6 +49,16 @@ public class GpsCheckNotificationConsumer {
                 envelope.correlationId(),
                 envelope.idempotencyKey()
             );
+        }catch (RuntimeException e) {
+            log.error(
+                "GPS same event consume failed. eventId={}, correlationId={}, idempotencyKey={}, payload={}",
+                envelope.eventId(),
+                envelope.correlationId(),
+                envelope.idempotencyKey(),
+                envelope.payload(),
+                e
+            );
+            throw e;
         } finally {
             MDC.remove("correlationId");
         }
@@ -83,6 +93,16 @@ public class GpsCheckNotificationConsumer {
                 envelope.correlationId(),
                 envelope.idempotencyKey()
             );
+        }catch (RuntimeException e) {
+            log.error(
+                "GPS different event consume failed. eventId={}, correlationId={}, idempotencyKey={}, payload={}",
+                envelope.eventId(),
+                envelope.correlationId(),
+                envelope.idempotencyKey(),
+                envelope.payload(),
+                e
+            );
+            throw e;
         } finally {
             MDC.remove("correlationId");
         }
