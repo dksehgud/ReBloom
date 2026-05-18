@@ -189,6 +189,7 @@ function ParentReportScreen() {
   const { isLoading: isChildLoading, selectedChild } = useParentConnectedChild()
   const [selectedWeekIndex, setSelectedWeekIndex] = useState(PARENT_REPORT_VISIBLE_WEEK_COUNT - 1)
   const [isEmotionInfoOpen, setIsEmotionInfoOpen] = useState(false)
+  const [isSleepInfoOpen, setIsSleepInfoOpen] = useState(false)
   const [isStabilityInfoOpen, setIsStabilityInfoOpen] = useState(false)
 
   const { currentWeek } = useParentReportData({
@@ -223,13 +224,31 @@ function ParentReportScreen() {
     return () => window.clearTimeout(timeoutId)
   }, [isStabilityInfoOpen])
 
+  useEffect(() => {
+    if (!isSleepInfoOpen) return undefined
+
+    const timeoutId = window.setTimeout(() => {
+      setIsSleepInfoOpen(false)
+    }, TOOLTIP_AUTO_CLOSE_MS)
+
+    return () => window.clearTimeout(timeoutId)
+  }, [isSleepInfoOpen])
+
   const handleOpenEmotionInfo = () => {
+    setIsSleepInfoOpen(false)
     setIsStabilityInfoOpen(false)
     setIsEmotionInfoOpen(true)
   }
 
+  const handleOpenSleepInfo = () => {
+    setIsEmotionInfoOpen(false)
+    setIsStabilityInfoOpen(false)
+    setIsSleepInfoOpen(true)
+  }
+
   const handleOpenStabilityInfo = () => {
     setIsEmotionInfoOpen(false)
+    setIsSleepInfoOpen(false)
     setIsStabilityInfoOpen(true)
   }
 
@@ -320,6 +339,22 @@ function ParentReportScreen() {
               <h2 id="sleep-score-report" className="parent-report-page__section-title">
                 수면 점수 추이
               </h2>
+              <div className="parent-report-page__info-wrap">
+                <button
+                  type="button"
+                  className="parent-report-page__info-button"
+                  onClick={handleOpenSleepInfo}
+                  aria-label="수면 점수 추이 안내 보기"
+                  aria-expanded={isSleepInfoOpen}
+                >
+                  <InfoIcon />
+                </button>
+                {isSleepInfoOpen ? (
+                  <div className="parent-report-page__tooltip-row">
+                    <ReportInfoTooltip message="수면 시간, 규칙성, 회복 상태를 바탕으로 계산한 주간 수면 점수 추이입니다." />
+                  </div>
+                ) : null}
+              </div>
             </div>
           </div>
 
