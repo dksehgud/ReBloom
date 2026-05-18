@@ -23,6 +23,7 @@ import org.springframework.web.client.RestClientException;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.*;
 
 @Slf4j
@@ -32,6 +33,7 @@ public class AnalysisInferenceService {
 
     private static final String RUNPOD_COMPLETED_STATUS = "COMPLETED";
     private static final Set<String> RUNPOD_FAILED_STATUSES = Set.of("FAILED", "CANCELLED", "TIMED_OUT");
+    private static final ZoneId SEOUL_ZONE = ZoneId.of("Asia/Seoul");
 
     /*
      * RestClient.Builder
@@ -252,22 +254,25 @@ public class AnalysisInferenceService {
         JsonNode output = requestRecentInsightApi(insightPrompt);
         String summary = readInsightText(output);
 
+        LocalDate reportDate = LocalDate.now(SEOUL_ZONE);
+
         transactionTemplate.executeWithoutResult(status ->
-            recentTrendRepository.findByUserIdAndReportDate(request.userId(), request.endDate())
+            recentTrendRepository.findByUserIdAndReportDate(request.userId(), reportDate)
                 .ifPresentOrElse(
                     recentTrend -> recentTrend.updateSummary(summary),
                     () -> recentTrendRepository.save(RecentTrend.builder()
                         .id(new RecentTrendId(UUID.randomUUID(), request.userId()))
-                        .reportDate(request.endDate())
+                        .reportDate(reportDate)
                         .summary(summary)
                         .build())
                 ));
 
         log.info(
-            "recent insight completed. userId={}, startDate={}, endDate={}, dayCount={}, summary={}",
+            "recent insight completed. userId={}, startDate={}, endDate={}, reportDate={}, dayCount={}, summary={}",
             request.userId(),
             request.startDate(),
             request.endDate(),
+            reportDate,
             summaries.size(),
             summary
         );
