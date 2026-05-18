@@ -43,6 +43,9 @@ import java.util.UUID;
 @Transactional(readOnly = true)
 public class UserServiceImpl implements UserService {
 
+    private static final String PHONE_NUMBER_PATTERN = "^010-\\d{4}-\\d{4}$";
+    private static final String PASSWORD_PATTERN = "^(?=.*[A-Za-z])(?=.*\\d)[!-~]{8,20}$";
+
     private final UserRepository userRepository;
     private final ParentRepository parentRepository;
     private final CounselorRepository counselorRepository;
@@ -398,6 +401,8 @@ public class UserServiceImpl implements UserService {
     public void changePassword(UUID userId, PasswordChangeRequestDto request) {
         User user = getUser(userId);
 
+        validatePasswordChangeRequest(request);
+
         if (user.getRole() == UserRole.COUNSELOR) {
             validateCounselorPasswordChange(user, request);
         }
@@ -407,6 +412,16 @@ public class UserServiceImpl implements UserService {
         }
 
         user.changePassword(passwordEncoder.encode(request.newPassword()));
+    }
+
+    private void validatePasswordChangeRequest(PasswordChangeRequestDto request) {
+        if (!StringUtils.hasText(request.newPassword())) {
+            throw new CustomException("새 비밀번호는 필수입니다.", ErrorCode.INVALID_PARAMETER);
+        }
+
+        if (!request.newPassword().matches(PASSWORD_PATTERN)) {
+            throw new CustomException("새 비밀번호는 8~20자이며 영문과 숫자를 포함해야 합니다.", ErrorCode.INVALID_PARAMETER);
+        }
     }
 
     @Override
@@ -484,6 +499,10 @@ public class UserServiceImpl implements UserService {
         fields.put("addressDetail", request.addressDetail());
 
         fields.forEach((fieldName, value) -> validateNotBlankIfPresent(value, fieldName));
+
+        if (StringUtils.hasText(request.phone()) && !request.phone().trim().matches(PHONE_NUMBER_PATTERN)) {
+            throw new CustomException("전화번호는 010-1234-5678 형식이어야 합니다.", ErrorCode.INVALID_PARAMETER);
+        }
     }
 
     private void validateChildrenLocationUpdate(UserUpdateRequestDto request) {
