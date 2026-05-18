@@ -31,6 +31,22 @@ describe('counselor line chart conversation markers', () => {
     expect(markup).toContain('<circle')
   })
 
+  it('hides dots and line segments for missing metric points', () => {
+    const markup = renderToStaticMarkup(
+      <LineChart
+        data={[
+          { label: 'Mon', value: 20, hasValue: true },
+          { label: 'Tue', value: 0, hasValue: false },
+          { label: 'Wed', value: 30, hasValue: true },
+        ]}
+        color="#88b5c4"
+      />,
+    )
+
+    expect([...markup.matchAll(/<circle /g)]).toHaveLength(2)
+    expect(markup).not.toContain('<path')
+  })
+
   it('keeps weekly x-axis labels fixed when trend data is sparse', () => {
     const markup = renderToStaticMarkup(
       <LineChart
