@@ -50,7 +50,7 @@ function ParentNotificationsHeader({
 function ParentNotificationsScreen() {
   const { selectedChild } = useParentConnectedChild()
   const { currentTime, notifications, markAsRead, chooseAction } =
-    useParentNotificationState()
+    useParentNotificationState([], { markAllAsReadOnInitialLoad: true })
 
   return (
     <MobilePageLayout
