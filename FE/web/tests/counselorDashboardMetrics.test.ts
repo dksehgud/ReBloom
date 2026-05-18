@@ -32,4 +32,19 @@ describe('counselor dashboard biometric metric mapping', () => {
 
     expect(points.map((point) => point.value)).toEqual([128, 300])
   })
+
+  it('marks null biometric values as missing instead of real zeroes', () => {
+    const points = mapDashboardChartPoints(
+      [
+        { date: '2026-05-18', value: null },
+        { date: '2026-05-19', value: 0 },
+      ],
+      60,
+    )
+
+    expect(points).toMatchObject([
+      { hasValue: false, value: 0, variant: undefined },
+      { hasValue: true, value: 0, variant: 'warning' },
+    ])
+  })
 })

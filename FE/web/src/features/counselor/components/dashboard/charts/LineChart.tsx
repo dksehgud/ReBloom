@@ -6,6 +6,7 @@ type LineChartPoint = {
   value: number
   emotionKey?: DiaryEmotionKey
   hasConversation?: boolean
+  hasValue?: boolean
 }
 
 type LineChartProps = {
@@ -43,16 +44,38 @@ function LineChart({
 
     return paddingTop + chartHeight - (clampedValue / yAxisMax) * chartHeight
   }
+  const isVisiblePoint = (point: LineChartPoint) =>
+    (point.hasConversation ?? true) && (point.hasValue ?? true)
   const points = data.map((item, index) => {
     const axisIndex = axisLabels.indexOf(item.label)
     const x = paddingX + gap * (axisIndex >= 0 ? axisIndex : index)
     const y = getY(item.value)
     return { ...item, x, y }
   })
-  const linePoints = points.filter((point) => point.hasConversation ?? true)
-  const path = linePoints
-    .map((point, index) => `${index === 0 ? 'M' : 'L'} ${point.x} ${point.y}`)
-    .join(' ')
+  const lineSegments: (typeof points)[] = []
+
+  points.forEach((point, index) => {
+    if (!isVisiblePoint(point)) {
+      return
+    }
+
+    const previousPoint = points[index - 1]
+    const shouldStartSegment = !previousPoint || !isVisiblePoint(previousPoint)
+
+    if (shouldStartSegment) {
+      lineSegments.push([point])
+      return
+    }
+
+    lineSegments[lineSegments.length - 1]?.push(point)
+  })
+  const paths = lineSegments
+    .filter((segment) => segment.length > 1)
+    .map((segment) =>
+      segment
+        .map((point, index) => `${index === 0 ? 'M' : 'L'} ${point.x} ${point.y}`)
+        .join(' '),
+    )
 
   return (
     <svg
@@ -72,11 +95,11 @@ function LineChart({
           </g>
         )
       })}
-      {showLine && linePoints.length > 0 ? (
-        <path d={path} style={{ stroke: color }} />
-      ) : null}
+      {showLine
+        ? paths.map((path) => <path d={path} key={path} style={{ stroke: color }} />)
+        : null}
       {points.map((point, index) => {
-        const shouldShowDot = showLine && (point.hasConversation ?? true)
+        const shouldShowDot = showLine && isVisiblePoint(point)
 
         return (
           <g key={`${point.label}-${index}`}>

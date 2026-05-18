@@ -234,6 +234,10 @@ function normalizeMetricValue(
     : 0
 }
 
+function hasMetricValue(value?: number | null): value is number {
+  return typeof value === 'number' && Number.isFinite(value)
+}
+
 function formatWeekdayLabel(dateValue: string, fallback?: string | null) {
   if (fallback) {
     return fallback
@@ -368,15 +372,18 @@ function mapDashboardChartPoints(
   maxValue = DEFAULT_METRIC_Y_AXIS_MAX,
 ): DashboardMetricPoint[] {
   return points.map((point) => {
-    const value = normalizeMetricValue(point.value, maxValue)
+    const rawValue = point.value
+    const hasValue = hasMetricValue(rawValue)
+    const value = hasValue ? normalizeMetricValue(rawValue, maxValue) : 0
 
     return {
+      hasValue,
       label: formatWeekdayLabel(point.date, point.dayLabel),
       value,
       variant:
         typeof warningThreshold === 'number' &&
-        typeof point.value === 'number' &&
-        point.value < warningThreshold
+        hasValue &&
+        rawValue < warningThreshold
           ? 'warning'
           : undefined,
     }
