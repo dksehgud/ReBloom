@@ -71,7 +71,16 @@ function ParentHomeScreen() {
   const statusCardSubTitle = normalizeCardCopy(statusCard?.subTitle)
   const statusCardSuggestion = normalizeCardCopy(statusCard?.suggestion)
   const emptyStatusCardTitle = selectedChildName
-    ? `${selectedChildName}님의 상태 카드를 기다리고 있어요`
+    ? (
+        <>
+          <span className="parent-home-page__section-title-line">
+            {selectedChildName} 님의
+          </span>
+          <span className="parent-home-page__section-title-line">
+            상태 카드를 기다리고 있어요
+          </span>
+        </>
+      )
     : '아직 보여드릴 상태 카드가 없어요'
   const summaryTitle = isChildLoading
     ? '아이 정보를 불러오고 있어요'

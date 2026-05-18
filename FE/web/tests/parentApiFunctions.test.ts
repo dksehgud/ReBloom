@@ -87,16 +87,18 @@ beforeEach(() => {
 })
 
 describe('parent mock mode routing', () => {
-  it('does not force parent mock mode into normal parent URLs', () => {
+  it('blocks parent mock mode from URL queries', () => {
     expect(isParentMockModeSearch('')).toBe(false)
-    expect(isParentMockModeSearch('?mock=1')).toBe(true)
-    expect(isParentMockModeSearch('?mock=true')).toBe(true)
+    expect(isParentMockModeSearch('?mock=1')).toBe(false)
+    expect(isParentMockModeSearch('?mock=true')).toBe(false)
+    expect(isParentMockModeSearch('?mode=mock')).toBe(false)
     expect(getParentMockSearch('')).toBe('')
-    expect(getParentMockSearch('?mock=1')).toBe('?mock=1')
+    expect(getParentMockSearch('?mock=1')).toBe('')
+    expect(getParentMockSearch('?mock=1&mode=webview')).toBe('?mode=webview')
     expect(getParentMockSearch('?mode=webview')).toBe('?mode=webview')
   })
 
-  it('selects real parent APIs unless mock mode is explicit', () => {
+  it('keeps parent API selection explicit at the service boundary', () => {
     expect(getParentAccountApi(false)).toBe(parentAccountApi)
     expect(getParentObservationApi(false)).toBe(parentObservationApi)
     expect(getParentRelationApi(false)).toBe(parentRelationApi)

@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import {
   FiActivity,
   FiBell,
@@ -24,8 +24,7 @@ import { useAppSessionStore } from '../../features/auth/store/useAppSessionStore
 
 function CounselorDashboardPage() {
   const navigate = useNavigate()
-  const [searchParams, setSearchParams] = useSearchParams()
-  const initialSelectedChildId = searchParams.get('childId')
+  const location = useLocation()
   const counselorName =
     useAppSessionStore((state) => state.currentUser?.name?.trim()) || '상담사'
   const {
@@ -40,8 +39,8 @@ function CounselorDashboardPage() {
     connectionRequestsError,
     currentObservationRecords,
     dashboardExpressionAnalysis,
-    dashboardMetricsError,
     expressionWeek,
+    expressionAnalysisError,
     handleAcceptConnectionRequest,
     handleClearSelectedChild,
     handleDeleteObservationComment,
@@ -50,7 +49,7 @@ function CounselorDashboardPage() {
     handleSelectChild,
     isLoadingObservationComment,
     isLoadingConnectionRequests,
-    isLoadingDashboardMetrics,
+    isLoadingExpressionAnalysis,
     isConnectionModalOpen,
     isLoadingChildItems,
     isLoadingObservationRecords,
@@ -73,7 +72,7 @@ function CounselorDashboardPage() {
     sleepScoreData,
     sleepScoreWeek,
     canRejectConnectionRequests,
-  } = useCounselorDashboardState({ initialSelectedChildId })
+  } = useCounselorDashboardState()
   const selectedChildMetaItems = selectedChildProfile
     ? [
         selectedChildProfile.age,
@@ -98,6 +97,26 @@ function CounselorDashboardPage() {
         ? '왼쪽 목록에서 아이를 선택하면 관찰기록과 분석 정보를 볼 수 있어요.'
         : '보호자의 연결 요청을 수락하면 이곳에서 아이의 기록을 확인할 수 있어요.'
   const hasSelectedChild = Boolean(selectedChildProfile && selectedChildId)
+
+  useEffect(() => {
+    const nextSearchParams = new URLSearchParams(location.search)
+
+    if (!nextSearchParams.has('childId')) {
+      return
+    }
+
+    nextSearchParams.delete('childId')
+    const nextSearch = nextSearchParams.toString()
+
+    navigate(
+      {
+        hash: location.hash,
+        pathname: location.pathname,
+        search: nextSearch ? `?${nextSearch}` : '',
+      },
+      { replace: true },
+    )
+  }, [location.hash, location.pathname, location.search, navigate])
 
   useEffect(() => {
     if (typeof window === 'undefined') {
@@ -127,19 +146,11 @@ function CounselorDashboardPage() {
   }
 
   const handleSelectSidebarChild = (childId: string) => {
-    const nextSearchParams = new URLSearchParams(searchParams)
-
-    nextSearchParams.set('childId', childId)
-    setSearchParams(nextSearchParams, { replace: true })
     handleSelectChild(childId)
     closeCompactSidebar()
   }
 
   const handleResetDashboard = () => {
-    const nextSearchParams = new URLSearchParams(searchParams)
-
-    nextSearchParams.delete('childId')
-    setSearchParams(nextSearchParams, { replace: true })
     handleClearSelectedChild()
     closeCompactSidebar()
   }
@@ -263,8 +274,8 @@ function CounselorDashboardPage() {
                 >
                   <ExpressionAnalysis
                     analysis={dashboardExpressionAnalysis}
-                    error={dashboardMetricsError}
-                    isLoading={isLoadingDashboardMetrics}
+                    error={expressionAnalysisError}
+                    isLoading={isLoadingExpressionAnalysis}
                     isFirstWeek={expressionWeek.isFirstWeek}
                     isLastWeek={expressionWeek.isLastWeek}
                     maxHeight={analysisCardHeight}
