@@ -74,6 +74,32 @@ import {
 import type { DiaryEmotionKey } from '../../diary/constants/diaryEmotions'
 import { useCounselorMockMode } from './useCounselorMockMode'
 
+const COUNSELOR_SELECTED_CHILD_STORAGE_KEY = 'rebloom:counselor:selectedChildId'
+
+function getStoredCounselorSelectedChildId() {
+  if (typeof window === 'undefined') {
+    return null
+  }
+
+  return window.sessionStorage.getItem(COUNSELOR_SELECTED_CHILD_STORAGE_KEY)
+}
+
+function setStoredCounselorSelectedChildId(childId: string) {
+  if (typeof window === 'undefined') {
+    return
+  }
+
+  window.sessionStorage.setItem(COUNSELOR_SELECTED_CHILD_STORAGE_KEY, childId)
+}
+
+function clearStoredCounselorSelectedChildId() {
+  if (typeof window === 'undefined') {
+    return
+  }
+
+  window.sessionStorage.removeItem(COUNSELOR_SELECTED_CHILD_STORAGE_KEY)
+}
+
 function getCounselingStatusLabel(status: string) {
   if (status === 'IN_PROGRESS') {
     return '상담 진행 중'
@@ -589,13 +615,7 @@ function mapAnalysisContentToExpressionAnalysis(
   }
 }
 
-type UseCounselorDashboardStateOptions = {
-  initialSelectedChildId?: string | null
-}
-
-function useCounselorDashboardState({
-  initialSelectedChildId = null,
-}: UseCounselorDashboardStateOptions = {}) {
+function useCounselorDashboardState() {
   const accessToken = useAppSessionStore((state) => state.accessToken)
   const refreshToken = useAppSessionStore((state) => state.refreshToken)
   const clearSession = useAppSessionStore((state) => state.clearSession)
@@ -612,7 +632,7 @@ function useCounselorDashboardState({
     setUnreadParentReportNotificationIdsByChildId,
   ] = useState<Map<string, number[]>>(() => new Map())
   const [selectedChildId, setSelectedChildId] = useState<string | null>(
-    initialSelectedChildId,
+    getStoredCounselorSelectedChildId,
   )
   const [isLoadingChildItems, setIsLoadingChildItems] = useState(!isMockMode)
   const [childItemsError, setChildItemsError] = useState<string>()
@@ -832,6 +852,7 @@ function useCounselorDashboardState({
   )
 
   const handleSelectChild = (childId: string) => {
+    setStoredCounselorSelectedChildId(childId)
     setSelectedChildId(childId)
     void markParentReportNotificationsAsRead(childId)
     setSelectedObservation(null)
@@ -839,6 +860,7 @@ function useCounselorDashboardState({
   }
 
   const handleClearSelectedChild = () => {
+    clearStoredCounselorSelectedChildId()
     setSelectedChildId(null)
     setSelectedObservation(null)
     setWeekOffsets(INITIAL_DASHBOARD_WEEK_OFFSETS)
@@ -982,11 +1004,14 @@ function useCounselorDashboardState({
   const loadChildItems = useCallback(async () => {
     if (isMockMode) {
       setChildItems(initialChildList)
-      setSelectedChildId((current) =>
-        current && initialChildList.some((child) => child.id === current)
-          ? current
-          : null,
-      )
+      setSelectedChildId((current) => {
+        if (current && initialChildList.some((child) => child.id === current)) {
+          return current
+        }
+
+        clearStoredCounselorSelectedChildId()
+        return null
+      })
       setSelectedObservation(null)
       setChildItemsError(undefined)
       setIsLoadingChildItems(false)
@@ -995,6 +1020,7 @@ function useCounselorDashboardState({
 
     if (!accessToken) {
       setChildItems([])
+      clearStoredCounselorSelectedChildId()
       setSelectedChildId(null)
       setSelectedObservation(null)
       setChildItemsError(undefined)
@@ -1010,15 +1036,19 @@ function useCounselorDashboardState({
       const nextChildItems = children.map(mapCounselorChildToListItem)
 
       setChildItems(nextChildItems)
-      setSelectedChildId((current) =>
-        current && nextChildItems.some((child) => child.id === current)
-          ? current
-          : null,
-      )
+      setSelectedChildId((current) => {
+        if (current && nextChildItems.some((child) => child.id === current)) {
+          return current
+        }
+
+        clearStoredCounselorSelectedChildId()
+        return null
+      })
       setSelectedObservation(null)
     } catch (error) {
       console.error(error)
       setChildItems([])
+      clearStoredCounselorSelectedChildId()
       setSelectedChildId(null)
       setSelectedObservation(null)
       setChildItemsError(
