@@ -20,6 +20,15 @@ export type ParentDiaryEmotionResponseDto = {
   emotionList?: ParentDiaryEmotionPointDto[]
 }
 
+export type ParentStatusCardDto = {
+  date: string
+  description: string
+  subTitle: string
+  suggestion: string
+  title: string
+  userId: string
+}
+
 export type ParentChartPointDto = {
   date: string
   dayLabel?: string | null

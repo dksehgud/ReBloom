@@ -1,5 +1,6 @@
 import MobilePageLayout from '../../../components/templates/MobilePageLayout/MobilePageLayout'
 import { useParentConnectedChild } from '../hooks/useParentConnectedChild'
+import { useParentStatusCard } from '../hooks/useParentStatusCard'
 import ParentBottomNavigation from './ParentBottomNavigation'
 import ParentChildConnectionEmptyState from './ParentChildConnectionEmptyState'
 import ParentObservationSection from './ParentObservationSection'
@@ -51,34 +52,54 @@ function ParentHomeHeader({ childName }: { childName?: string }) {
   )
 }
 
-function hasFinalConsonant(value: string) {
-  const lastCharacter = [...value.trim()].at(-1)
-
-  if (!lastCharacter) {
-    return false
-  }
-
-  const code = lastCharacter.charCodeAt(0)
-  const hangulStart = 0xac00
-  const hangulEnd = 0xd7a3
-
-  if (code < hangulStart || code > hangulEnd) {
-    return false
-  }
-
-  return (code - hangulStart) % 28 !== 0
-}
-
-function formatSubjectName(name: string) {
-  return `${name}${hasFinalConsonant(name) ? '이' : '가'}`
+function normalizeCardCopy(value?: string | null) {
+  return value?.trim() ?? ''
 }
 
 function ParentHomeScreen() {
   const { isLoading: isChildLoading, selectedChild } = useParentConnectedChild()
+  const {
+    errorMessage: statusCardErrorMessage,
+    isError: isStatusCardError,
+    isLoading: isStatusCardLoading,
+    statusCard,
+  } = useParentStatusCard(selectedChild?.id)
   const hasConnectedChild = Boolean(selectedChild?.id)
-  const childSubjectName = selectedChild?.name
-    ? formatSubjectName(selectedChild.name)
-    : '아이가'
+  const selectedChildName = normalizeCardCopy(selectedChild?.name)
+  const statusCardTitle = normalizeCardCopy(statusCard?.title)
+  const statusCardDescription = normalizeCardCopy(statusCard?.description)
+  const statusCardSubTitle = normalizeCardCopy(statusCard?.subTitle)
+  const statusCardSuggestion = normalizeCardCopy(statusCard?.suggestion)
+  const emptyStatusCardTitle = selectedChildName
+    ? `${selectedChildName}님의 상태 카드를 기다리고 있어요`
+    : '아직 보여드릴 상태 카드가 없어요'
+  const summaryTitle = isChildLoading
+    ? '아이 정보를 불러오고 있어요'
+    : isStatusCardLoading
+      ? '상태 카드를 불러오고 있어요'
+      : isStatusCardError
+        ? '상태 카드를 불러오지 못했어요'
+        : statusCardTitle || emptyStatusCardTitle
+  const summaryDescription = isChildLoading
+    ? '연결된 아이 정보를 확인한 뒤 맞춤 요약을 보여드릴게요.'
+    : isStatusCardLoading
+      ? '오늘 또는 어제 생성된 상태 카드를 확인하고 있어요.'
+      : isStatusCardError
+        ? statusCardErrorMessage ?? '잠시 후 다시 확인해 주세요.'
+        : statusCardDescription ||
+          '오늘 또는 어제 생성된 상태 카드가 있으면 이곳에 보여드릴게요.'
+  const suggestionTitle = isChildLoading
+    ? '아이 연결 후 맞춤 제안을 표시합니다.'
+    : isStatusCardLoading
+      ? '맞춤 제안을 준비하고 있어요.'
+      : isStatusCardError
+        ? '다시 시도해 주세요.'
+        : statusCardSubTitle || '카드가 생성되면 제안을 보여드릴게요.'
+  const suggestionCopy = statusCardSuggestion
+    ? `"${statusCardSuggestion}"`
+    : isStatusCardLoading
+      ? '잠시만 기다려 주세요.'
+      : '상태 카드가 생성되면 아이에게 건넬 문장을 보여드릴게요.'
 
   return (
     <MobilePageLayout
@@ -91,32 +112,18 @@ function ParentHomeScreen() {
         {hasConnectedChild || isChildLoading ? (
           <section className="parent-home-page__summary-card" aria-label="보호자 홈 요약 영역">
             <div className="parent-home-page__summary-copy">
-              <h2 className="parent-home-page__section-title">
-                {hasConnectedChild
-                  ? `${childSubjectName} 조금 지쳐 있는 것 같아요`
-                  : '아이 정보를 불러오고 있어요'}
-              </h2>
+              <h2 className="parent-home-page__section-title">{summaryTitle}</h2>
               <p className="parent-home-page__section-description">
-                {hasConnectedChild
-                  ? '수면 질이 평소보다 좋지 않고, 활동량이 저번주에 비해 줄어들었어요.'
-                  : '연결된 아이 정보를 확인한 뒤 홈 요약을 보여드릴게요.'}
+                {summaryDescription}
               </p>
             </div>
 
             <div className="parent-home-page__insight-box">
               <div className="parent-home-page__tip-row">
                 <InsightTipIcon />
-                <p className="parent-home-page__tip-copy">
-                  {hasConnectedChild
-                    ? '직접적인 상태 질문보다 가벼운 제안이 좋습니다.'
-                    : '아이 연결 후 맞춤 요약과 제안이 표시됩니다.'}
-                </p>
+                <p className="parent-home-page__tip-copy">{suggestionTitle}</p>
               </div>
-              <p className="parent-home-page__quote">
-                {hasConnectedChild
-                  ? '"오늘 저녁에 같이 맛있는 거 먹을까?"'
-                  : '잠시만 기다려 주세요.'}
-              </p>
+              <p className="parent-home-page__quote">{suggestionCopy}</p>
             </div>
           </section>
         ) : (

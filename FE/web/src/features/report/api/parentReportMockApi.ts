@@ -1,12 +1,15 @@
 import type {
   ParentChartParams,
   ParentDiaryEmotionParams,
+  ParentReportApiParams,
 } from './parentReportApi'
 import { parentReportWeeksMock } from '../mocks/parentReport'
+import { parentStatusCardMock } from '../mocks/parentStatusCard'
 import type {
   ListResponseDto,
   ParentChartPointDto,
   ParentDiaryEmotionResponseDto,
+  ParentStatusCardDto,
 } from '../types/parentReport'
 
 type ParentMockDiaryEmotionParams = ParentDiaryEmotionParams & {
@@ -56,6 +59,19 @@ async function getParentDiaryEmotions({
           : null,
       )
       .filter((point): point is NonNullable<typeof point> => point !== null),
+  }
+}
+
+async function getParentStatusCard({
+  childrenId,
+}: ParentReportApiParams): Promise<ParentStatusCardDto | null> {
+  if (!childrenId) {
+    return null
+  }
+
+  return {
+    ...parentStatusCardMock,
+    userId: childrenId,
   }
 }
 
@@ -115,6 +131,7 @@ const parentReportMockApi = {
   getParentHrAccRatios,
   getParentRmssds,
   getParentSleepScores,
+  getParentStatusCard,
 }
 
 export {
@@ -122,5 +139,6 @@ export {
   getParentHrAccRatios,
   getParentRmssds,
   getParentSleepScores,
+  getParentStatusCard,
   parentReportMockApi,
 }

@@ -8,6 +8,7 @@ import {
 import type {
   BaseResponseDto,
   ParentDiaryEmotionResponseDto,
+  ParentStatusCardDto,
 } from '../types/parentReport'
 
 type ParentReportApiParams = {
@@ -36,11 +37,34 @@ const parentReportApiPaths = {
   hrAccRatios: childChartApiPaths.hrAccRatios,
   rmssds: childChartApiPaths.rmssds,
   sleepScores: childChartApiPaths.sleepScores,
+  statusCard: ({ childrenId }: Pick<ParentReportApiParams, 'childrenId'>) =>
+    `${REPORT_API_PREFIX}/children/${childrenId}/status-cards`,
 }
 
 function unwrapApiData<T>(response: BaseResponseDto<T> | T): T {
   if (response && typeof response === 'object' && 'data' in response) {
     return ((response as BaseResponseDto<T>).data ?? null) as T
+  }
+
+  return response as T
+}
+
+function unwrapNullableApiData<T>(response: BaseResponseDto<T> | T | null): T | null {
+  if (!response) {
+    return null
+  }
+
+  if (
+    typeof response === 'object' &&
+    ('code' in response || 'data' in response || 'message' in response)
+  ) {
+    const body = response as BaseResponseDto<T>
+
+    if (body.code) {
+      throw new Error(body.message ?? 'API 요청에 실패했습니다.')
+    }
+
+    return body.data ?? null
   }
 
   return response as T
@@ -60,6 +84,21 @@ async function getParentDiaryEmotions({
   })
 
   return unwrapApiData(response)
+}
+
+async function getParentStatusCard({
+  accessToken,
+  childrenId,
+}: ParentReportApiParams) {
+  const response = await apiRequest<
+    BaseResponseDto<ParentStatusCardDto> | ParentStatusCardDto | null
+  >(parentReportApiPaths.statusCard({ childrenId }), {
+    accessToken,
+    errorMessage: '보호자 상태 카드를 불러오지 못했습니다.',
+    sessionRole: 'parent',
+  })
+
+  return unwrapNullableApiData(response)
 }
 
 async function getParentSleepScores({
@@ -91,6 +130,7 @@ const parentReportApi = {
   getParentHrAccRatios,
   getParentRmssds,
   getParentSleepScores,
+  getParentStatusCard,
 }
 
 export type {
@@ -103,6 +143,7 @@ export {
   getParentHrAccRatios,
   getParentRmssds,
   getParentSleepScores,
+  getParentStatusCard,
   parentReportApi,
   parentReportApiPaths,
 }
