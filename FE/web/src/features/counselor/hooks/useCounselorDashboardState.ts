@@ -36,6 +36,10 @@ import {
   sleepEfficiency,
   sleepScoreBars,
 } from '../mocks/dashboardMockData'
+import {
+  AUTONOMIC_Y_AXIS_MAX,
+  BIOMETRIC_RATIO_Y_AXIS_MAX,
+} from '../constants/dashboardChartAxis'
 import type {
   ChildListItem,
   CounselorConnectionRequest,
@@ -218,13 +222,22 @@ function isDateInRange(dateValue: string, startDate?: string, endDate?: string) 
   return Boolean(dateKey && dateKey >= startDate && dateKey <= endDate)
 }
 
-function clampMetricValue(value: number) {
-  return Math.max(0, Math.min(100, Math.round(value)))
+const DEFAULT_METRIC_Y_AXIS_MAX = 100
+
+function clampMetricValue(value: number, maxValue = DEFAULT_METRIC_Y_AXIS_MAX) {
+  const clampedValue = Math.max(0, Math.min(maxValue, value))
+
+  return Number.isInteger(maxValue)
+    ? Math.round(clampedValue)
+    : Number(clampedValue.toFixed(2))
 }
 
-function normalizeMetricValue(value?: number | null) {
+function normalizeMetricValue(
+  value?: number | null,
+  maxValue = DEFAULT_METRIC_Y_AXIS_MAX,
+) {
   return typeof value === 'number' && Number.isFinite(value)
-    ? clampMetricValue(value)
+    ? clampMetricValue(value, maxValue)
     : 0
 }
 
@@ -359,9 +372,10 @@ function mapEmotionIconToKey(
 function mapDashboardChartPoints(
   points: ChildChartPointDto[],
   warningThreshold?: number,
+  maxValue = DEFAULT_METRIC_Y_AXIS_MAX,
 ): DashboardMetricPoint[] {
   return points.map((point) => {
-    const value = normalizeMetricValue(point.value)
+    const value = normalizeMetricValue(point.value, maxValue)
 
     return {
       label: formatWeekdayLabel(point.date, point.dayLabel),
@@ -657,6 +671,7 @@ function useCounselorDashboardState() {
           biometricRatio,
           DEFAULT_EXPRESSION_WEEK_INDEX,
           initialChildList[0]?.id,
+          { maxValue: BIOMETRIC_RATIO_Y_AXIS_MAX },
         )
       : [],
   )
@@ -667,6 +682,7 @@ function useCounselorDashboardState() {
             hrvTrend,
             DEFAULT_EXPRESSION_WEEK_INDEX,
             initialChildList[0]?.id,
+            { maxValue: AUTONOMIC_Y_AXIS_MAX },
           )
         : [],
   )
@@ -1196,6 +1212,7 @@ function useCounselorDashboardState() {
           biometricRatio,
           getMockWeekIndex(weekOffsets.biometricRatio),
           currentChildId,
+          { maxValue: BIOMETRIC_RATIO_Y_AXIS_MAX },
         ),
       )
       setAutonomicData(
@@ -1203,6 +1220,7 @@ function useCounselorDashboardState() {
           hrvTrend,
           getMockWeekIndex(weekOffsets.autonomic),
           currentChildId,
+          { maxValue: AUTONOMIC_Y_AXIS_MAX },
         ),
       )
       setDashboardMetricsError(undefined)
@@ -1272,8 +1290,20 @@ function useCounselorDashboardState() {
       setSleepEfficiencyData(
         mapDashboardChartPoints(sleepEfficiencies.contents ?? []),
       )
-      setBiometricRatioData(mapDashboardChartPoints(hrAccRatios.contents ?? []))
-      setAutonomicData(mapDashboardChartPoints(rmssds.contents ?? []))
+      setBiometricRatioData(
+        mapDashboardChartPoints(
+          hrAccRatios.contents ?? [],
+          undefined,
+          BIOMETRIC_RATIO_Y_AXIS_MAX,
+        ),
+      )
+      setAutonomicData(
+        mapDashboardChartPoints(
+          rmssds.contents ?? [],
+          undefined,
+          AUTONOMIC_Y_AXIS_MAX,
+        ),
+      )
     } catch (error) {
       console.error(error)
       setSleepScoreData([])
@@ -1709,4 +1739,4 @@ function useCounselorDashboardState() {
 }
 
 export default useCounselorDashboardState
-export { mapAnalysisContentToExpressionAnalysis }
+export { mapAnalysisContentToExpressionAnalysis, mapDashboardChartPoints }

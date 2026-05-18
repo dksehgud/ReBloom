@@ -298,23 +298,23 @@ const INITIAL_DASHBOARD_WEEK_OFFSETS: DashboardWeekOffsets = {
 }
 
 const biometricRatio = [
-  { label: '월', value: 52 },
-  { label: '화', value: 55 },
-  { label: '수', value: 31 },
-  { label: '목', value: 43 },
-  { label: '금', value: 58 },
-  { label: '토', value: 72 },
-  { label: '일', value: 64 },
+  { label: '월', value: 0.92 },
+  { label: '화', value: 0.87 },
+  { label: '수', value: 0.54 },
+  { label: '목', value: 0.71 },
+  { label: '금', value: 0.96 },
+  { label: '토', value: 1.18 },
+  { label: '일', value: 1.04 },
 ]
 
 const hrvTrend = [
-  { label: '월', value: 55 },
-  { label: '화', value: 64 },
-  { label: '수', value: 29 },
-  { label: '목', value: 48 },
-  { label: '금', value: 61 },
-  { label: '토', value: 77 },
-  { label: '일', value: 70 },
+  { label: '월', value: 110 },
+  { label: '화', value: 128 },
+  { label: '수', value: 58 },
+  { label: '목', value: 96 },
+  { label: '금', value: 122 },
+  { label: '토', value: 154 },
+  { label: '일', value: 140 },
 ]
 
 const timelineDays: TimelineDay[] = [
