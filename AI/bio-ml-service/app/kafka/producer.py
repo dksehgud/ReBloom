@@ -1,6 +1,9 @@
 import json
 import logging
 from confluent_kafka import Producer
+from datetime import datetime
+from uuid import uuid4
+from zoneinfo import ZoneInfo
 
 from app.config.settings import (
     KAFKA_BOOTSTRAP_SERVERS,
@@ -8,6 +11,7 @@ from app.config.settings import (
     KAFKA_TOPIC_GPS_CHECK_DIFFERENT,
     KAFKA_TOPIC_GPS_CHECK_SAME,
     KAFKA_TOPIC_PHQ_RESULT,
+    KAFKA_TOPIC_STATUS_CARD_CREATED,
 )
 
 logger = logging.getLogger(__name__)
@@ -155,6 +159,62 @@ def publish_gps_check_result(
     )
     return topic
 
+# status cards
+def _now_seoul_datetime() -> str:
+    return datetime.now(ZoneInfo("Asia/Seoul")).replace(microsecond=0).isoformat()
+
+
+def _event_envelope(
+    event_type: str,
+    payload: dict,
+    correlation_id: str | None = None,
+    idempotency_key: str | None = None,
+) -> dict:
+    return {
+        "eventId": str(uuid4()),
+        "eventType": event_type,
+        "eventVersion": "v1",
+        "producer": "bio-ml-service",
+        "correlationId": correlation_id,
+        "idempotencyKey": idempotency_key,
+        "occurredAt": _now_seoul_datetime(),
+        "payload": payload,
+    }
+
+
+def publish_status_card_created(
+    user_id: str,
+    date: str,
+    title: str,
+    description: str,
+    sub_title: str,
+    suggestion: str,
+    correlation_id: str | None = None,
+) -> None:
+    payload = {
+        "userId": user_id,
+        "date": date,
+        "title": title,
+        "description": description,
+        "subTitle": sub_title,
+        "suggestion": suggestion,
+    }
+    envelope = _event_envelope(
+        event_type="STATUS_CARD_CREATED",
+        payload=payload,
+        correlation_id=correlation_id,
+        idempotency_key=f"STATUS_CARD_CREATED:{user_id}:{date}",
+    )
+
+    producer = get_producer()
+    producer.produce(
+        topic=KAFKA_TOPIC_STATUS_CARD_CREATED,
+        key=user_id,
+        value=json.dumps(envelope, ensure_ascii=False),
+        callback=_delivery_report,
+    )
+    producer.poll(0)
+    logger.info("[Kafka] status-card.created published | userId=%s date=%s", user_id, date)
 
 def flush() -> None:
     """종료 전 미전송 메시지 플러시"""

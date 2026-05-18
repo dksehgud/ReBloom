@@ -92,8 +92,8 @@ public class ParentReportNotificationServiceImpl implements ParentReportNotifica
         }
 
         NotificationPayload payload = NotificationPayload.builder()
-            .title("상담사 댓글이 등록되었습니다")
-            .content("작성한 부모 리포트에 상담사 댓글이 등록되었습니다.")
+            .title("상담사 코멘트가 등록되었습니다")
+            .content("작성한 부모 리포트에 상담사 코멘트가 등록되었습니다.")
             .childrenId(event.childrenId())
             .childrenReportId(event.reportId())
             .parentId(event.parentId())

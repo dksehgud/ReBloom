@@ -44,4 +44,16 @@ public class StatusCard extends BaseTime {
 
     @Column(name = "suggestion", nullable = false)
     private String suggestion;
+
+    public void update(
+        String title,
+        String description,
+        String subTitle,
+        String suggestion
+    ) {
+        this.title = title;
+        this.description = description;
+        this.subTitle = subTitle;
+        this.suggestion = suggestion;
+    }
 }
