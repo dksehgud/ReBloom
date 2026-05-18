@@ -492,6 +492,8 @@ public class AnalysisInferenceService {
         } catch (RuntimeException e) {
             throw new CustomException("RunPod output target_date must be ISO date.", ErrorCode.INTERNAL_SERVER_ERROR);
         }
+    }
+
     private Map<String, Object> recentInsightRequestBody(String text) {
         return Map.of(
             "model", recentInsightModel,
