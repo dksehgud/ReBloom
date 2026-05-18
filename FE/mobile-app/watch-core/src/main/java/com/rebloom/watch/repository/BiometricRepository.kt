@@ -70,7 +70,7 @@ class BiometricRepository {
         val rmssd = calcRmssd(allIbi)
         val pnn50 = calcPnn(allIbi, 50.0)
         val lfHf = calcLfHf(allIbi)
-        val hrAccRatio = if (accMag > 0f) hrAvg / accMag else 0f  // ← 추가
+        val hrAccRatio = hrAvg / (accMag + 1f)
 
         return BiometricRecord(
             tsStart = tsStart,
@@ -105,11 +105,9 @@ class BiometricRepository {
 
     private fun calcAccMag(accData: List<AccelerometerData>): Float {
         if (accData.isEmpty()) return 0f
-        val magnitudes = accData.map {
+        return accData.map {
             sqrt(it.acc_x * it.acc_x + it.acc_y * it.acc_y + it.acc_z * it.acc_z)
-        }
-        val mean = magnitudes.average()
-        return sqrt(magnitudes.map { (it - mean) * (it - mean) }.average()).toFloat()
+        }.average().toFloat()
     }
 
     private fun calcLfHf(ibi: List<Double>): Float {

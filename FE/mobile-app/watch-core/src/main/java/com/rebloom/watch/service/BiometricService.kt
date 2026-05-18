@@ -46,9 +46,9 @@ class BiometricService : Service() {
             repository.addAccelerometerData(
                 AccelerometerData(
                     timestamp = System.currentTimeMillis(),
-                    acc_x = x.toDouble(),
-                    acc_y = y.toDouble(),
-                    acc_z = z.toDouble()
+                    acc_x = x / 4096.0 * 9.81,
+                    acc_y = y / 4096.0 * 9.81,
+                    acc_z = z / 4096.0 * 9.81
                 )
             )
         }

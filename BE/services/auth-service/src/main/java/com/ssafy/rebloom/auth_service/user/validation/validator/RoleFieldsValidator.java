@@ -13,6 +13,8 @@ import java.util.List;
 
 public class RoleFieldsValidator implements ConstraintValidator<ValidRoleFields, UserCreateRequestDto> {
 
+    private static final String PHONE_NUMBER_PATTERN = "^010-\\d{4}-\\d{4}$";
+
     private static final List<DateTimeFormatter> BIRTH_FORMATTERS = List.of(
         DateTimeFormatter.ISO_LOCAL_DATE,
         DateTimeFormatter.ofPattern("uuuuMMdd").withResolverStyle(ResolverStyle.STRICT),
@@ -54,6 +56,11 @@ public class RoleFieldsValidator implements ConstraintValidator<ValidRoleFields,
             }
         }
 
+        if (dto.role() == UserRole.COUNSELOR && !isEmpty(dto.phone()) && !isValidPhone(dto.phone())) {
+            addError(context, "전화번호는 010-1234-5678 형식이어야 합니다.");
+            isValid = false;
+        }
+
         return isValid;
     }
 
@@ -73,6 +80,10 @@ public class RoleFieldsValidator implements ConstraintValidator<ValidRoleFields,
         }
 
         return false;
+    }
+
+    private boolean isValidPhone(String phone) {
+        return phone.trim().matches(PHONE_NUMBER_PATTERN);
     }
 
     private void addError(ConstraintValidatorContext context, String message) {
