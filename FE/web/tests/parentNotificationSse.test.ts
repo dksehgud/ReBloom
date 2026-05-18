@@ -20,6 +20,7 @@ beforeEach(() => {
     anomalyAlertPopup: null,
     latestNotification: null,
     latestNotificationSequence: 0,
+    notificationBadgeCount: 0,
   })
 })
 
@@ -131,6 +132,7 @@ describe('parent notification SSE helpers', () => {
       anomalyAlertPopup: null,
       latestNotification: replyNotification,
       latestNotificationSequence: 1,
+      notificationBadgeCount: 1,
     })
 
     expect(isParentAnomalyAlertNotification(riskNotification)).toBe(true)
@@ -139,11 +141,40 @@ describe('parent notification SSE helpers', () => {
       anomalyAlertPopup: riskNotification,
       latestNotification: riskNotification,
       latestNotificationSequence: 2,
+      notificationBadgeCount: 2,
     })
 
     dismissAnomalyAlertPopup(riskNotification.id)
     expect(
       useParentRealtimeNotificationStore.getState().anomalyAlertPopup,
     ).toBeNull()
+  })
+
+  it('clears the parent notification navigation badge separately from popups', () => {
+    const { clearNotificationBadge, receiveNotification } =
+      useParentRealtimeNotificationStore.getState()
+    const riskNotification = {
+      createdAt: '2026-05-17T10:01:00',
+      id: 12,
+      isRead: false,
+      notificationType: 'RISK_ALERT',
+      payload: {
+        childrenId: 'child-1',
+        content: 'Risk alert arrived.',
+        title: 'Risk',
+      },
+    }
+
+    receiveNotification(riskNotification)
+    expect(useParentRealtimeNotificationStore.getState()).toMatchObject({
+      anomalyAlertPopup: riskNotification,
+      notificationBadgeCount: 1,
+    })
+
+    clearNotificationBadge()
+    expect(useParentRealtimeNotificationStore.getState()).toMatchObject({
+      anomalyAlertPopup: riskNotification,
+      notificationBadgeCount: 0,
+    })
   })
 })

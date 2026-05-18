@@ -1,6 +1,8 @@
+import { useEffect } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 
 import { getParentMockSearch } from '../hooks/useParentMockMode'
+import { useParentRealtimeNotificationStore } from '../../notification/store/useParentRealtimeNotificationStore'
 
 type ParentNavItem = {
   key: 'home' | 'observations' | 'report' | 'notifications' | 'settings'
@@ -132,6 +134,25 @@ function ParentBottomNavigation() {
   const location = useLocation()
   const navigate = useNavigate()
   const mockSearch = getParentMockSearch(location.search)
+  const notificationBadgeCount = useParentRealtimeNotificationStore(
+    (state) => state.notificationBadgeCount,
+  )
+  const clearNotificationBadge = useParentRealtimeNotificationStore(
+    (state) => state.clearNotificationBadge,
+  )
+  const isNotificationsRoute = location.pathname.startsWith(
+    '/parent/notifications',
+  )
+
+  useEffect(() => {
+    if (isNotificationsRoute && notificationBadgeCount > 0) {
+      clearNotificationBadge()
+    }
+  }, [
+    clearNotificationBadge,
+    isNotificationsRoute,
+    notificationBadgeCount,
+  ])
 
   return (
     <nav className="parent-bottom-nav" aria-label="보호자 하단 탐색">
@@ -147,7 +168,17 @@ function ParentBottomNavigation() {
               aria-current={isActive ? 'page' : undefined}
               onClick={() => navigate(`${item.path}${mockSearch}`)}
             >
-              <span className="parent-bottom-nav__icon">{getNavIcon(item.key)}</span>
+              <span className="parent-bottom-nav__icon">
+                {getNavIcon(item.key)}
+                {item.key === 'notifications' && notificationBadgeCount > 0 ? (
+                  <span
+                    className="parent-bottom-nav__badge"
+                    aria-label={`새 알림 ${notificationBadgeCount}개`}
+                  >
+                    {notificationBadgeCount > 9 ? '9+' : notificationBadgeCount}
+                  </span>
+                ) : null}
+              </span>
               <span className="parent-bottom-nav__label">{item.label}</span>
             </button>
           )

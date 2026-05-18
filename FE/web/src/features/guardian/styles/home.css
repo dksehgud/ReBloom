@@ -477,6 +477,34 @@
   height: 20px;
 }
 
+.parent-bottom-nav__icon {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.parent-bottom-nav__badge {
+  position: absolute;
+  top: -7px;
+  right: -11px;
+  min-width: 16px;
+  height: 16px;
+  border: 2px solid #ffffff;
+  border-radius: 999px;
+  background: #dd6356;
+  color: #ffffff;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Inter', 'Noto Sans KR', sans-serif;
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 1;
+  padding: 0 4px;
+}
+
 .parent-bottom-nav__label {
   font-family: 'Inter', 'Noto Sans KR', sans-serif;
   font-size: 11px;
