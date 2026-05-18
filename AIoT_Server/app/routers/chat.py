@@ -86,6 +86,9 @@ async def chat_ws(websocket: WebSocket) -> None:
 
     device_id: str = ""
     session_id: str = ""
+    # 연결 단위로 대화 히스토리 유지 (최대 10턴 = 20개 메시지)
+    conversation_history: list[dict] = []
+    MAX_HISTORY_TURNS = 10
 
     try:
         # 연결이 살아 있는 동안 계속 메시지를 받아 처리
@@ -134,17 +137,20 @@ async def chat_ws(websocket: WebSocket) -> None:
             try:
                 if use_stream:
                     # 문장 단위 스트리밍 모드 (라즈베리파이 TTS 용도)
-                    token_gen = stream_chat(text, is_crisis=crisis)
+                    token_gen = stream_chat(text, is_crisis=crisis, history=conversation_history)
+                    parts: list[str] = []
                     async for sentence in sentence_stream(token_gen):
                         await websocket.send_text(
                             json.dumps({"type": "sentence", "text": sentence}, ensure_ascii=False)
                         )
+                        parts.append(sentence)
                     await websocket.send_text(json.dumps({"type": "done"}))
+                    full_reply = " ".join(parts).strip()
 
                 else:
                     # 전체 답변 한 번에 전송 모드 (채팅 UI 기본)
-                    token_gen = stream_chat(text, is_crisis=crisis)
-                    parts: list[str] = []
+                    token_gen = stream_chat(text, is_crisis=crisis, history=conversation_history)
+                    parts = []
                     async for sentence in sentence_stream(token_gen):
                         parts.append(sentence)
 
@@ -152,6 +158,14 @@ async def chat_ws(websocket: WebSocket) -> None:
                     await websocket.send_text(
                         json.dumps({"type": "reply", "text": full_reply}, ensure_ascii=False)
                     )
+
+                # 히스토리에 이번 턴 추가
+                if full_reply:
+                    conversation_history.append({"role": "user", "content": text})
+                    conversation_history.append({"role": "assistant", "content": full_reply})
+                    # 최대 턴 수 초과 시 오래된 것부터 제거 (2개씩 = 1턴)
+                    if len(conversation_history) > MAX_HISTORY_TURNS * 2:
+                        conversation_history = conversation_history[-(MAX_HISTORY_TURNS * 2):]
 
             except LLMClientError as e:
                 logger.error(f"[ws] LLM 오류: {e}")

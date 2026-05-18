@@ -104,7 +104,7 @@ Python 서버가 만드는 topic
 
 ## Python 서버에서 바로 publish 하는 예시
 
-현재 프로젝트에는 [app/services/mqtt_client.py](/home/jukang/project/ssafy4th/S14P31B109/AI/aiot-ai-service/app/services/mqtt_client.py:21) 가 이미 추가되어 있다.
+현재 프로젝트에는 `app/services/mqtt_client.py` 가 이미 추가되어 있다.
 
 ```python
 from dotenv import load_dotenv
