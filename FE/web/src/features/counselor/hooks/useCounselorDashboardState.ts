@@ -109,6 +109,29 @@ function clearStoredCounselorSelectedChildId() {
   window.sessionStorage.removeItem(COUNSELOR_SELECTED_CHILD_STORAGE_KEY)
 }
 
+function syncStoredCounselorSelectedChildId(childId: string | null) {
+  if (childId) {
+    setStoredCounselorSelectedChildId(childId)
+    return
+  }
+
+  clearStoredCounselorSelectedChildId()
+}
+
+function getSelectedChildIdAfterListLoad(childItems: ChildListItem[]) {
+  if (childItems.length === 0) {
+    return null
+  }
+
+  const storedChildId = getStoredCounselorSelectedChildId()
+
+  if (storedChildId && childItems.some((child) => child.id === storedChildId)) {
+    return storedChildId
+  }
+
+  return childItems[0]?.id ?? null
+}
+
 function getCounselingStatusLabel(status: string) {
   if (status === 'IN_PROGRESS') {
     return '상담 진행 중'
@@ -640,9 +663,8 @@ function useCounselorDashboardState() {
     unreadParentReportNotificationIdsByChildId,
     setUnreadParentReportNotificationIdsByChildId,
   ] = useState<Map<string, number[]>>(() => new Map())
-  const [selectedChildId, setSelectedChildId] = useState<string | null>(
-    getStoredCounselorSelectedChildId,
-  )
+  const [selectedChildId, setSelectedChildId] = useState<string | null>(null)
+  const [isChildSelectionReady, setIsChildSelectionReady] = useState(isMockMode)
   const [isLoadingChildItems, setIsLoadingChildItems] = useState(!isMockMode)
   const [childItemsError, setChildItemsError] = useState<string>()
   const [connectionRequests, setConnectionRequests] = useState(() =>
@@ -1014,17 +1036,14 @@ function useCounselorDashboardState() {
 
   const loadChildItems = useCallback(async () => {
     if (isMockMode) {
-      setChildItems(initialChildList)
-      setSelectedChildId((current) => {
-        if (current && initialChildList.some((child) => child.id === current)) {
-          return current
-        }
+      const nextSelectedChildId = getSelectedChildIdAfterListLoad(initialChildList)
 
-        clearStoredCounselorSelectedChildId()
-        return null
-      })
+      setChildItems(initialChildList)
+      syncStoredCounselorSelectedChildId(nextSelectedChildId)
+      setSelectedChildId(nextSelectedChildId)
       setSelectedObservation(null)
       setChildItemsError(undefined)
+      setIsChildSelectionReady(true)
       setIsLoadingChildItems(false)
       return
     }
@@ -1035,33 +1054,34 @@ function useCounselorDashboardState() {
       setSelectedChildId(null)
       setSelectedObservation(null)
       setChildItemsError(undefined)
+      setIsChildSelectionReady(true)
       setIsLoadingChildItems(false)
       return
     }
 
     try {
+      setIsChildSelectionReady(false)
       setIsLoadingChildItems(true)
       setChildItemsError(undefined)
+      setSelectedChildId(null)
+      setSelectedObservation(null)
 
       const children = await getCounselorChildren(accessToken)
       const nextChildItems = children.map(mapCounselorChildToListItem)
+      const nextSelectedChildId = getSelectedChildIdAfterListLoad(nextChildItems)
 
       setChildItems(nextChildItems)
-      setSelectedChildId((current) => {
-        if (current && nextChildItems.some((child) => child.id === current)) {
-          return current
-        }
-
-        clearStoredCounselorSelectedChildId()
-        return null
-      })
+      syncStoredCounselorSelectedChildId(nextSelectedChildId)
+      setSelectedChildId(nextSelectedChildId)
       setSelectedObservation(null)
+      setIsChildSelectionReady(true)
     } catch (error) {
       console.error(error)
       setChildItems([])
       clearStoredCounselorSelectedChildId()
       setSelectedChildId(null)
       setSelectedObservation(null)
+      setIsChildSelectionReady(true)
       setChildItemsError(
         error instanceof Error
           ? error.message
@@ -1149,7 +1169,7 @@ function useCounselorDashboardState() {
       return
     }
 
-    if (!accessToken || !selectedChildId) {
+    if (!isChildSelectionReady || !accessToken || !selectedChildId) {
       setObservationRecords([])
       setObservationRecordsError(undefined)
       setIsLoadingObservationRecords(false)
@@ -1200,7 +1220,13 @@ function useCounselorDashboardState() {
     } finally {
       setIsLoadingObservationRecords(false)
     }
-  }, [accessToken, isMockMode, selectedChildId, weekOffsets.observation])
+  }, [
+    accessToken,
+    isChildSelectionReady,
+    isMockMode,
+    selectedChildId,
+    weekOffsets.observation,
+  ])
 
   const loadDashboardMetrics = useCallback(async () => {
     const currentChildId =
@@ -1242,7 +1268,7 @@ function useCounselorDashboardState() {
       return
     }
 
-    if (!accessToken || !selectedChildId) {
+    if (!isChildSelectionReady || !accessToken || !selectedChildId) {
       setSleepScoreData([])
       setSleepEfficiencyData([])
       setBiometricRatioData([])
@@ -1334,6 +1360,7 @@ function useCounselorDashboardState() {
     }
   }, [
     accessToken,
+    isChildSelectionReady,
     isMockMode,
     selectedChildId,
     weekOffsets.autonomic,
@@ -1358,7 +1385,7 @@ function useCounselorDashboardState() {
       return
     }
 
-    if (!accessToken || !selectedChildId) {
+    if (!isChildSelectionReady || !accessToken || !selectedChildId) {
       setDashboardExpressionAnalysis(createEmptyExpressionAnalysis())
       setExpressionAnalysisError(undefined)
       setIsLoadingExpressionAnalysis(false)
@@ -1405,7 +1432,13 @@ function useCounselorDashboardState() {
     } finally {
       setIsLoadingExpressionAnalysis(false)
     }
-  }, [accessToken, isMockMode, selectedChildId, weekOffsets.expression])
+  }, [
+    accessToken,
+    isChildSelectionReady,
+    isMockMode,
+    selectedChildId,
+    weekOffsets.expression,
+  ])
 
   const handleAcceptConnectionRequest = async (
     request: CounselorConnectionRequest,
