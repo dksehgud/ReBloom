@@ -32,6 +32,8 @@ function getParentReportApi(
         ...params,
         mockWeekIndex,
       }),
+    getParentStatusCard: (params) =>
+      parentReportMockApi.getParentStatusCard(params),
   }
 }
 
