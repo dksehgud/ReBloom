@@ -7,7 +7,6 @@ import com.ssafy.rebloom.notification_service.repository.UserFcmTokenRepository;
 import com.ssafy.rebloom.notification_service.service.FcmTokenService;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -15,17 +14,12 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class FcmTokenServiceImpl implements FcmTokenService {
 
-    private static final int TOKEN_LOOKUP_RETRY_COUNT = 3;
-
     private final UserFcmTokenRepository userFcmTokenRepository;
 
     @Override
     @Transactional
     public void register(UUID userId, FcmTokenRegisterRequestDto request) {
-        UserFcmToken token = findOrCreateToken(userId, request.fcmToken());
-
-        token.changeUser(userId);
-        token.activate();
+        userFcmTokenRepository.upsertActiveToken(userId, request.fcmToken());
     }
 
     @Override
@@ -33,32 +27,5 @@ public class FcmTokenServiceImpl implements FcmTokenService {
     public void deactivate(UUID userId, FcmTokenDeactivateRequestDto request) {
         userFcmTokenRepository.findByUserIdAndFcmToken(userId, request.fcmToken())
             .ifPresent(UserFcmToken::deactivate);
-    }
-
-    private UserFcmToken findOrCreateToken(UUID userId, String fcmToken) {
-        return userFcmTokenRepository.findByFcmToken(fcmToken)
-            .orElseGet(() -> saveNewToken(userId, fcmToken));
-    }
-
-    private UserFcmToken saveNewToken(UUID userId, String fcmToken) {
-        try {
-            return userFcmTokenRepository.saveAndFlush(UserFcmToken.create(userId, fcmToken));
-        } catch (DataIntegrityViolationException exception) {
-            return findExistingTokenWithRetry(fcmToken, exception);
-        }
-    }
-
-    private UserFcmToken findExistingTokenWithRetry(
-        String fcmToken,
-        DataIntegrityViolationException originalException
-    ) {
-        for (int attempt = 0; attempt < TOKEN_LOOKUP_RETRY_COUNT; attempt++) {
-            var token = userFcmTokenRepository.findByFcmToken(fcmToken);
-            if (token.isPresent()) {
-                return token.get();
-            }
-        }
-
-        throw originalException;
     }
 }
