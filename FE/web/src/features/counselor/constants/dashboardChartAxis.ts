@@ -1,8 +1,8 @@
 const BIOMETRIC_RATIO_Y_AXIS_MAX = 1.5
 const BIOMETRIC_RATIO_Y_AXIS_TICKS = [1.5, 1.2, 0.9, 0.6, 0.3, 0] as const
 
-const AUTONOMIC_Y_AXIS_MAX = 200
-const AUTONOMIC_Y_AXIS_TICKS = [200, 160, 120, 80, 40, 0] as const
+const AUTONOMIC_Y_AXIS_MAX = 300
+const AUTONOMIC_Y_AXIS_TICKS = [300, 240, 180, 120, 60, 0] as const
 
 export {
   AUTONOMIC_Y_AXIS_MAX,
