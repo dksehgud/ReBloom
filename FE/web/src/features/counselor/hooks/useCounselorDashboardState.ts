@@ -40,6 +40,11 @@ import {
   AUTONOMIC_Y_AXIS_MAX,
   BIOMETRIC_RATIO_Y_AXIS_MAX,
 } from '../constants/dashboardChartAxis'
+import {
+  clearStoredCounselorSelectedChildId,
+  getStoredCounselorSelectedChildId,
+  syncStoredCounselorSelectedChildId,
+} from '../session/counselorSelectedChildStorage'
 import type {
   ChildListItem,
   CounselorConnectionRequest,
@@ -82,41 +87,6 @@ import {
 } from '../../notification/utils/counselorNotificationMarkers'
 import type { DiaryEmotionKey } from '../../diary/constants/diaryEmotions'
 import { useCounselorMockMode } from './useCounselorMockMode'
-
-const COUNSELOR_SELECTED_CHILD_STORAGE_KEY = 'rebloom:counselor:selectedChildId'
-
-function getStoredCounselorSelectedChildId() {
-  if (typeof window === 'undefined') {
-    return null
-  }
-
-  return window.sessionStorage.getItem(COUNSELOR_SELECTED_CHILD_STORAGE_KEY)
-}
-
-function setStoredCounselorSelectedChildId(childId: string) {
-  if (typeof window === 'undefined') {
-    return
-  }
-
-  window.sessionStorage.setItem(COUNSELOR_SELECTED_CHILD_STORAGE_KEY, childId)
-}
-
-function clearStoredCounselorSelectedChildId() {
-  if (typeof window === 'undefined') {
-    return
-  }
-
-  window.sessionStorage.removeItem(COUNSELOR_SELECTED_CHILD_STORAGE_KEY)
-}
-
-function syncStoredCounselorSelectedChildId(childId: string | null) {
-  if (childId) {
-    setStoredCounselorSelectedChildId(childId)
-    return
-  }
-
-  clearStoredCounselorSelectedChildId()
-}
 
 function getSelectedChildIdAfterListLoad(childItems: ChildListItem[]) {
   if (childItems.length === 0) {
@@ -885,7 +855,7 @@ function useCounselorDashboardState() {
   )
 
   const handleSelectChild = (childId: string) => {
-    setStoredCounselorSelectedChildId(childId)
+    syncStoredCounselorSelectedChildId(childId)
     setSelectedChildId(childId)
     void markParentReportNotificationsAsRead(childId)
     setSelectedObservation(null)
