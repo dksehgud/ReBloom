@@ -50,6 +50,11 @@ import type {
 } from '../types/dashboard'
 import { getWeekAdjustedLineData } from '../utils/dashboardMetrics'
 import {
+  EXPRESSION_SCORE_MAX,
+  getAverageExpressionPredictionScore,
+  parseExpressionPredictionScore,
+} from '../utils/expressionPrediction'
+import {
   getChildHrAccRatios,
   getChildRmssds,
   getChildSleepEfficiencies,
@@ -351,40 +356,6 @@ function mapEmotionIconToKey(
   return undefined
 }
 
-function getFallbackPredictionValue(emotionKey?: DiaryEmotionKey) {
-  switch (emotionKey) {
-    case 'happy':
-    case 'excited':
-      return 82
-    case 'calm':
-      return 64
-    case 'sad':
-    case 'tired':
-      return 36
-    case 'angry':
-      return 28
-    default:
-      return 50
-  }
-}
-
-function parsePredictionValue(
-  prediction?: string | null,
-  emotionKey?: DiaryEmotionKey,
-) {
-  const match = prediction?.match(/-?\d+(\.\d+)?/)
-  const parsedValue = match ? Number(match[0]) : Number.NaN
-
-  if (Number.isFinite(parsedValue)) {
-    const normalizedValue =
-      parsedValue > 0 && parsedValue <= 1 ? parsedValue * 100 : parsedValue
-
-    return clampMetricValue(normalizedValue)
-  }
-
-  return getFallbackPredictionValue(emotionKey)
-}
-
 function mapDashboardChartPoints(
   points: ChildChartPointDto[],
   warningThreshold?: number,
@@ -418,6 +389,19 @@ function createEmptyExpressionAnalysis(): DashboardExpressionAnalysis {
   }
 }
 
+function normalizeMockExpressionPoints(points: DashboardMetricPoint[]) {
+  return points.map((point) => ({
+    ...point,
+    value: Math.max(
+      0,
+      Math.min(
+        EXPRESSION_SCORE_MAX,
+        Math.round((point.value / 100) * EXPRESSION_SCORE_MAX),
+      ),
+    ),
+  }))
+}
+
 function createMockExpressionAnalysis(
   weekIndex: number,
   childId: string,
@@ -428,16 +412,22 @@ function createMockExpressionAnalysis(
     days: currentWeek.days,
     insight: currentWeek.insight,
     trend: {
-      all: getWeekAdjustedLineData(currentWeek.trend.all, weekIndex, childId),
-      conversation: getWeekAdjustedLineData(
-        currentWeek.trend.conversation,
-        weekIndex,
-        childId,
+      all: normalizeMockExpressionPoints(
+        getWeekAdjustedLineData(currentWeek.trend.all, weekIndex, childId),
       ),
-      diary: getWeekAdjustedLineData(
-        currentWeek.trend.diary,
-        weekIndex,
-        childId,
+      conversation: normalizeMockExpressionPoints(
+        getWeekAdjustedLineData(
+          currentWeek.trend.conversation,
+          weekIndex,
+          childId,
+        ),
+      ),
+      diary: normalizeMockExpressionPoints(
+        getWeekAdjustedLineData(
+          currentWeek.trend.diary,
+          weekIndex,
+          childId,
+        ),
       ),
     },
     weekLabels: currentWeek.trend.all.map((point) => point.label),
@@ -480,18 +470,9 @@ function getCardsAverageValue(
     CounselorDiaryAnalysisCardDto | CounselorConversationAnalysisCardDto
   >,
 ) {
-  if (cards.length === 0) {
-    return 0
-  }
-
-  const total = cards.reduce((sum, card) => {
-    const emotionKey =
-      'emotionIcon' in card ? mapEmotionIconToKey(card.emotionIcon) : undefined
-
-    return sum + parsePredictionValue(card.prediction, emotionKey)
-  }, 0)
-
-  return clampMetricValue(total / cards.length)
+  return getAverageExpressionPredictionScore(
+    cards.map((card) => parseExpressionPredictionScore(card.prediction)),
+  )
 }
 
 function getAnalysisCardsForFilter(

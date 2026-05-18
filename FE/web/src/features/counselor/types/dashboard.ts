@@ -97,6 +97,8 @@ type EmotionFlowPoint = {
   label: string
   diary: number
   conversation: number
+  hasDiary?: boolean
+  hasConversation?: boolean
 }
 
 type EmotionFlowPeriod = {

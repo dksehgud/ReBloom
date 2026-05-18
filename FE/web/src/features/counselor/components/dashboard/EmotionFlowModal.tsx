@@ -10,6 +10,10 @@ import {
   emotionFlowPeriods,
 } from '../../mocks/dashboardMockData'
 import type { EmotionFlowMode, EmotionFlowPeriod } from '../../types/dashboard'
+import {
+  getAverageExpressionPredictionScore,
+  parseExpressionPredictionScore,
+} from '../../utils/expressionPrediction'
 import { useAppSessionStore } from '../../../auth/store/useAppSessionStore'
 import { useCounselorMockMode } from '../../hooks/useCounselorMockMode'
 import EmotionFlowLineChart from './charts/EmotionFlowLineChart'
@@ -80,7 +84,10 @@ function createEmotionFlowPeriod(
   mode: EmotionFlowMode,
   baseDate: Date,
 ): EmotionFlowPeriod {
-  const pointMap = new Map<string, { diary: number; conversation: number; order: number }>()
+  const pointMap = new Map<
+    string,
+    { diaryScores: number[]; conversationScores: number[]; order: number }
+  >()
 
   const getLabel = (dateTimeValue: string) => {
     const date = new Date(dateTimeValue)
@@ -106,19 +113,35 @@ function createEmotionFlowPeriod(
     return date.getTime()
   }
 
-  const addPoint = (label: string, order: number, key: 'diary' | 'conversation') => {
-    const current = pointMap.get(label) ?? { conversation: 0, diary: 0, order }
+  const addPoint = (
+    label: string,
+    order: number,
+    key: 'diaryScores' | 'conversationScores',
+    prediction?: string | null,
+  ) => {
+    const current =
+      pointMap.get(label) ?? { conversationScores: [], diaryScores: [], order }
 
-    current[key] += 1
+    current[key].push(parseExpressionPredictionScore(prediction))
     current.order = Math.min(current.order, order)
     pointMap.set(label, current)
   }
 
   ;(response.diaryList ?? []).forEach((point) => {
-    addPoint(getLabel(point.targetDate), getOrder(point.targetDate), 'diary')
+    addPoint(
+      getLabel(point.targetDate),
+      getOrder(point.targetDate),
+      'diaryScores',
+      point.prediction,
+    )
   })
   ;(response.conversationList ?? []).forEach((point) => {
-    addPoint(getLabel(point.startedAt), getOrder(point.startedAt), 'conversation')
+    addPoint(
+      getLabel(point.startedAt),
+      getOrder(point.startedAt),
+      'conversationScores',
+      point.prediction,
+    )
   })
 
   return {
@@ -127,8 +150,10 @@ function createEmotionFlowPeriod(
     points: [...pointMap.entries()]
       .sort(([, first], [, second]) => first.order - second.order)
       .map(([label, value]) => ({
-        conversation: value.conversation,
-        diary: value.diary,
+        conversation: getAverageExpressionPredictionScore(value.conversationScores),
+        diary: getAverageExpressionPredictionScore(value.diaryScores),
+        hasConversation: value.conversationScores.length > 0,
+        hasDiary: value.diaryScores.length > 0,
         label,
       })),
   }

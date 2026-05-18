@@ -1,4 +1,8 @@
 import type { EmotionFlowPoint, EmotionFlowSeries } from '../../../types/dashboard'
+import {
+  EXPRESSION_SCORE_MAX,
+  EXPRESSION_SCORE_TICKS,
+} from '../../../utils/expressionPrediction'
 
 type EmotionFlowLineChartProps = {
   data: EmotionFlowPoint[]
@@ -11,27 +15,27 @@ function EmotionFlowLineChart({ data }: EmotionFlowLineChartProps) {
   const paddingRight = 26
   const paddingTop = 22
   const paddingBottom = 38
-  const maxDataValue = Math.max(
-    1,
-    ...data.flatMap((point) => [point.diary, point.conversation]),
-  )
-  const maxValue = Math.max(27, Math.ceil(maxDataValue / 9) * 9)
   const chartWidth = width - paddingLeft - paddingRight
   const chartHeight = height - paddingTop - paddingBottom
   const horizontalGap = data.length > 1 ? chartWidth / (data.length - 1) : 0
-  const ticks = [maxValue, Math.round((maxValue * 2) / 3), Math.round(maxValue / 3), 0]
   const seriesColors: Record<EmotionFlowSeries, string> = {
     diary: '#344966',
     conversation: '#88b5c4',
   }
   const hasSeriesData: Record<EmotionFlowSeries, boolean> = {
-    diary: data.some((point) => point.diary > 0),
-    conversation: data.some((point) => point.conversation > 0),
+    diary: data.some((point) => point.hasDiary ?? point.diary > 0),
+    conversation: data.some(
+      (point) => point.hasConversation ?? point.conversation > 0,
+    ),
   }
 
   const getX = (index: number) =>
     data.length > 1 ? paddingLeft + horizontalGap * index : paddingLeft + chartWidth / 2
-  const getY = (value: number) => paddingTop + chartHeight - (value / maxValue) * chartHeight
+  const getY = (value: number) => {
+    const clampedValue = Math.max(0, Math.min(EXPRESSION_SCORE_MAX, value))
+
+    return paddingTop + chartHeight - (clampedValue / EXPRESSION_SCORE_MAX) * chartHeight
+  }
   const buildPath = (series: EmotionFlowSeries) =>
     data
       .map((item, index) => {
@@ -47,7 +51,7 @@ function EmotionFlowLineChart({ data }: EmotionFlowLineChartProps) {
       role="img"
       aria-label="일기와 대화 감정 흐름 선 그래프"
     >
-      {ticks.map((tick) => {
+      {EXPRESSION_SCORE_TICKS.map((tick) => {
         const y = getY(tick)
         return (
           <g key={tick}>

@@ -9,9 +9,23 @@
   overflow: hidden;
 }
 
+.counselor-expression-card .counselor-dashboard-info-wrap {
+  position: static;
+}
+
 .counselor-expression-card .counselor-dashboard-tooltip-row {
-  --tooltip-arrow-offset: 90px;
-  left: calc(50% + 90px);
+  left: 0;
+  width: min(100%, 640px);
+  max-width: 100%;
+  transform: none;
+}
+
+.counselor-expression-card .counselor-dashboard-tooltip {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  text-align: left;
 }
 
 .counselor-expression-tabs {
