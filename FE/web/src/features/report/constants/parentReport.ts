@@ -18,13 +18,11 @@ export type ParentReportWeek = {
   label: string
   moods: ParentReportMood[]
   sleepScores: {
-    hasValue?: boolean
     weekday: ReportWeekday
     score: number
   }[]
   sleepInsight: string
   stabilityScores: {
-    hasValue?: boolean
     weekday: ReportWeekday
     score: number
   }[]

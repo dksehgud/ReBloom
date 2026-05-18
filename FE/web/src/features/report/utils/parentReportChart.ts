@@ -24,8 +24,6 @@ function createStabilityChartData(scores: ParentReportWeek['stabilityScores']) {
         usableHeight
     )
   }
-  const isVisiblePoint = (point: ParentReportWeek['stabilityScores'][number]) =>
-    point.hasValue ?? true
 
   const points = scores.map((item, index) => {
     const x = STABILITY_CHART_PADDING_LEFT + stepX * index
@@ -37,36 +35,13 @@ function createStabilityChartData(scores: ParentReportWeek['stabilityScores']) {
       y,
     }
   })
-  const pathSegments: (typeof points)[] = []
-
-  points.forEach((point, index) => {
-    if (!isVisiblePoint(point)) {
-      return
-    }
-
-    const previousPoint = points[index - 1]
-    const shouldStartSegment = !previousPoint || !isVisiblePoint(previousPoint)
-
-    if (shouldStartSegment) {
-      pathSegments.push([point])
-      return
-    }
-
-    pathSegments[pathSegments.length - 1]?.push(point)
-  })
 
   return {
     axisTicks: STABILITY_CHART_Y_AXIS_TICKS.map((value) => ({
       value,
       y: getY(value),
     })),
-    pathSegments: pathSegments
-      .filter((segment) => segment.length > 1)
-      .map((segment) =>
-        segment
-          .map((point, index) => `${index === 0 ? 'M' : 'L'}${point.x} ${point.y}`)
-          .join(' '),
-      ),
+    path: points.map((point, index) => `${index === 0 ? 'M' : 'L'}${point.x} ${point.y}`).join(' '),
     points,
     verticalGuides: points.map((point) => ({
       weekday: point.weekday,

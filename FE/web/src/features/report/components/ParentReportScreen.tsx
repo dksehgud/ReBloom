@@ -337,28 +337,23 @@ function ParentReportScreen() {
           <div className="parent-report-page__card parent-report-page__card--chart">
             <div className="parent-report-page__bar-chart-placeholder">
               {currentWeek.sleepScores.map((item) => {
-                const hasValue = item.hasValue ?? true
                 const tone = getBarTone(item.score)
 
                 return (
                   <div key={`${currentWeek.id}-${item.weekday}`} className="parent-report-page__bar-column">
-                    {hasValue ? (
-                      <>
-                        <span
-                          className={`parent-report-page__bar-score${
-                            tone === 'warning' ? ' is-warning' : ''
-                          }`}
-                        >
-                          {item.score}
-                        </span>
-                        <span
-                          className={`parent-report-page__bar${
-                            tone === 'warning' ? ' is-warning' : ''
-                          }`}
-                          style={{ height: `${Math.max(44, item.score * 1.8)}px` }}
-                        />
-                      </>
-                    ) : null}
+                    <span
+                      className={`parent-report-page__bar-score${
+                        tone === 'warning' ? ' is-warning' : ''
+                      }`}
+                    >
+                      {item.score}
+                    </span>
+                    <span
+                      className={`parent-report-page__bar${
+                        tone === 'warning' ? ' is-warning' : ''
+                      }`}
+                      style={{ height: `${Math.max(44, item.score * 1.8)}px` }}
+                    />
                     <span className="parent-report-page__bar-day">{item.weekday}</span>
                   </div>
                 )
@@ -433,28 +428,23 @@ function ParentReportScreen() {
                     </text>
                   </g>
                 ))}
-                {stabilityChart.pathSegments.map((path) => (
-                  <path
-                    d={path}
-                    key={path}
-                    stroke="#F4B895"
-                    strokeWidth="3"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                ))}
+                <path
+                  d={stabilityChart.path}
+                  stroke="#F4B895"
+                  strokeWidth="3"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
                 {stabilityChart.points.map((point) => (
-                  (point.hasValue ?? true) ? (
-                    <circle
-                      key={`${currentWeek.id}-${point.weekday}`}
-                      cx={point.x}
-                      cy={point.y}
-                      r="5"
-                      fill="#F4B895"
-                      stroke="white"
-                      strokeWidth="3"
-                    />
-                  ) : null
+                  <circle
+                    key={`${currentWeek.id}-${point.weekday}`}
+                    cx={point.x}
+                    cy={point.y}
+                    r="5"
+                    fill="#F4B895"
+                    stroke="white"
+                    strokeWidth="3"
+                  />
                 ))}
                 {stabilityChart.weekdayLabels.map((label) => (
                   <text
