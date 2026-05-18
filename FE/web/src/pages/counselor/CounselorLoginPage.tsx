@@ -10,6 +10,7 @@ import CounselorAuthLayout from '../../components/templates/CounselorAuthLayout/
 import { authApi, toAppRole } from '../../features/auth/api/authApi'
 import { saveOAuthIntent } from '../../features/auth/oauth/oauthIntent'
 import { useAppSessionStore } from '../../features/auth/store/useAppSessionStore'
+import { clearStoredCounselorSelectedChildId } from '../../features/counselor/session/counselorSelectedChildStorage'
 import { useSelectedChildStore } from '../../features/student/store/useSelectedChildStore'
 
 function getCounselorLoginEntryError(searchParams: URLSearchParams) {
@@ -58,6 +59,7 @@ function CounselorLoginPage() {
     try {
       setIsSubmitting(true)
       setFormLoginError(undefined)
+      clearStoredCounselorSelectedChildId()
 
       const tokens = await authApi.login(email.trim().toLowerCase(), password)
       const myInfo = await authApi.getMyInfo(tokens.accessToken)

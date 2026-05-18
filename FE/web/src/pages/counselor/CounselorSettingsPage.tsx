@@ -8,6 +8,7 @@ import { useAppSessionStore } from '../../features/auth/store/useAppSessionStore
 import SettingsFeedbackModal from '../../features/counselor/components/settings/SettingsFeedbackModal'
 import SettingsInput from '../../features/counselor/components/settings/SettingsInput'
 import { useCounselorMockMode } from '../../features/counselor/hooks/useCounselorMockMode'
+import { clearStoredCounselorSelectedChildId } from '../../features/counselor/session/counselorSelectedChildStorage'
 import {
   MOCK_CURRENT_PASSWORD,
   accountFields,
@@ -394,6 +395,7 @@ function CounselorSettingsPage() {
 
   const handleLogout = () => {
     clearSession()
+    clearStoredCounselorSelectedChildId()
     clearNativeAccessToken()
     navigate('/counselor/login', { replace: true })
   }
