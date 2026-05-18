@@ -23,7 +23,7 @@ public class RecentInsightScheduler {
     private final AuthAccessClient authAccessClient;
     private final AnalysisInferenceService analysisInferenceService;
 
-    @Scheduled(cron = "0 * * * * *", zone = "Asia/Seoul")
+    @Scheduled(cron = "0 0 9 * * *", zone = "Asia/Seoul")
     public void generateWeeklyRecentInsights() {
         LocalDate today = LocalDate.now(SEOUL_ZONE);
         LocalDate startDate = today.minusDays(7);
