@@ -244,10 +244,7 @@ function ChildRouteLayout() {
         baseAddress: '',
         detailAddress: '',
     })
-    const childAccessToken = useAppSessionStore(
-        (state) => state.sessions.child.accessToken,
-    )
-    const guardStatus = useRoleRouteGuard('child', !childAccessToken)
+    const guardStatus = useRoleRouteGuard('child', false)
 
     if (guardStatus === 'blocked') {
         return <Navigate replace to="/login"/>
