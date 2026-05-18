@@ -34,7 +34,12 @@ public class NotificationSseService {
         emitter.onCompletion(() -> remove(userId, emitter));
         emitter.onTimeout(() -> remove(userId, emitter));
         emitter.onError(error -> {
-            log.info("SSE emitter error. userId={}", userId, error);
+            log.warn(
+                "SSE emitter error. userId={}, errorType={}, message={}",
+                userId,
+                error.getClass().getSimpleName(),
+                error.getMessage()
+            );
             remove(userId, emitter);
         });
 
@@ -75,13 +80,22 @@ public class NotificationSseService {
                 .data(data));
             onlineStatusService.refresh(userId);
         } catch (IOException | IllegalStateException e) {
-            log.info(
-                "SSE send failed. userId={}, eventName={}, errorType={}, message={}",
-                userId,
-                eventName,
-                e.getClass().getSimpleName(),
-                e.getMessage()
-            );
+            if ("ping".equals(eventName)) {
+                log.debug(
+                    "SSE heartbeat failed. userId={}, errorType={}, message={}",
+                    userId,
+                    e.getClass().getSimpleName(),
+                    e.getMessage()
+                );
+            } else {
+                log.warn(
+                    "SSE event send failed. userId={}, eventName={}, errorType={}, message={}",
+                    userId,
+                    eventName,
+                    e.getClass().getSimpleName(),
+                    e.getMessage()
+                );
+            }
             remove(userId, emitter);
         }
     }
@@ -91,13 +105,7 @@ public class NotificationSseService {
 
         boolean stillConnected = sseEmitterRepository.existsByUserId(userId);
 
-        log.info(
-            "SSE emitter removed. userId={}, stillConnected={}",
-            userId,
-            stillConnected
-        );
-
-        if (!sseEmitterRepository.existsByUserId(userId)) {
+        if (!stillConnected) {
             onlineStatusService.markOffline(userId);
         }
     }
