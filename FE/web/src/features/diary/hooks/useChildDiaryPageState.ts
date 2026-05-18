@@ -217,6 +217,13 @@ function cloneSampleRecords() {
   return {} satisfies DiaryRecordsByMonth
 }
 
+async function loadNativeDiaryRecordsByMonth(
+  userId: string,
+  monthKey: string,
+) {
+  return diaryBridge.getDiariesByMonth(userId, monthKey).map(nativeDiaryToRecord)
+}
+
 function useChildDiaryPageState() {
   const currentUserId = useAppSessionStore((state) => state.currentUser?.userId ?? null)
   const [currentDate, setCurrentDate] = useState(() => new Date())
@@ -249,20 +256,35 @@ function useChildDiaryPageState() {
       return undefined
     }
 
-    try {
-      const nextRecords = diaryBridge
-        .getDiariesByMonth(currentUserId, currentMonthKey)
-        .map(nativeDiaryToRecord)
+    let isCanceled = false
 
-      setRecordsByMonth((prev) => ({
-        ...prev,
-        [currentMonthKey]: nextRecords,
-      }))
-    } catch (error) {
-      console.error('Failed to load native diary records', error)
+    const loadRecords = async () => {
+      try {
+        const nextRecords = await loadNativeDiaryRecordsByMonth(
+          currentUserId,
+          currentMonthKey,
+        )
+
+        if (isCanceled) {
+          return
+        }
+
+        setRecordsByMonth((prev) => ({
+          ...prev,
+          [currentMonthKey]: nextRecords,
+        }))
+      } catch (error) {
+        if (!isCanceled) {
+          console.error('Failed to load native diary records', error)
+        }
+      }
     }
 
-    return undefined
+    void loadRecords()
+
+    return () => {
+      isCanceled = true
+    }
   }, [currentMonthKey, currentUserId])
 
   const records = useMemo(
