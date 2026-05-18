@@ -109,6 +109,29 @@ function clearStoredCounselorSelectedChildId() {
   window.sessionStorage.removeItem(COUNSELOR_SELECTED_CHILD_STORAGE_KEY)
 }
 
+function syncStoredCounselorSelectedChildId(childId: string | null) {
+  if (childId) {
+    setStoredCounselorSelectedChildId(childId)
+    return
+  }
+
+  clearStoredCounselorSelectedChildId()
+}
+
+function getSelectedChildIdAfterListLoad(childItems: ChildListItem[]) {
+  if (childItems.length === 0) {
+    return null
+  }
+
+  const storedChildId = getStoredCounselorSelectedChildId()
+
+  if (storedChildId && childItems.some((child) => child.id === storedChildId)) {
+    return storedChildId
+  }
+
+  return childItems[0]?.id ?? null
+}
+
 function getCounselingStatusLabel(status: string) {
   if (status === 'IN_PROGRESS') {
     return '상담 진행 중'
@@ -1013,18 +1036,10 @@ function useCounselorDashboardState() {
 
   const loadChildItems = useCallback(async () => {
     if (isMockMode) {
-      const storedChildId = getStoredCounselorSelectedChildId()
-      const nextSelectedChildId =
-        storedChildId && initialChildList.some((child) => child.id === storedChildId)
-          ? storedChildId
-          : initialChildList[0]?.id ?? null
+      const nextSelectedChildId = getSelectedChildIdAfterListLoad(initialChildList)
 
       setChildItems(initialChildList)
-      if (nextSelectedChildId) {
-        setStoredCounselorSelectedChildId(nextSelectedChildId)
-      } else {
-        clearStoredCounselorSelectedChildId()
-      }
+      syncStoredCounselorSelectedChildId(nextSelectedChildId)
       setSelectedChildId(nextSelectedChildId)
       setSelectedObservation(null)
       setChildItemsError(undefined)
@@ -1053,18 +1068,10 @@ function useCounselorDashboardState() {
 
       const children = await getCounselorChildren(accessToken)
       const nextChildItems = children.map(mapCounselorChildToListItem)
-      const storedChildId = getStoredCounselorSelectedChildId()
-      const nextSelectedChildId =
-        storedChildId && nextChildItems.some((child) => child.id === storedChildId)
-          ? storedChildId
-          : nextChildItems[0]?.id ?? null
+      const nextSelectedChildId = getSelectedChildIdAfterListLoad(nextChildItems)
 
       setChildItems(nextChildItems)
-      if (nextSelectedChildId) {
-        setStoredCounselorSelectedChildId(nextSelectedChildId)
-      } else {
-        clearStoredCounselorSelectedChildId()
-      }
+      syncStoredCounselorSelectedChildId(nextSelectedChildId)
       setSelectedChildId(nextSelectedChildId)
       setSelectedObservation(null)
       setIsChildSelectionReady(true)
