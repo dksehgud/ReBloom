@@ -77,13 +77,11 @@ function createEmptyReportWeek(
     })),
     sleepInsight: '',
     sleepScores: reportWeekdays.map((weekday) => ({
-      hasValue: false,
       score: 0,
       weekday,
     })),
     stabilityInsight: '',
     stabilityScores: reportWeekdays.map((weekday) => ({
-      hasValue: false,
       score: 0,
       weekday,
     })),
@@ -185,41 +183,23 @@ function mapDiaryEmotionsToMoods(points: ParentDiaryEmotionPointDto[] = []) {
   )
 }
 
-function hasChartValue(value?: number | null): value is number {
-  return typeof value === 'number' && Number.isFinite(value)
-}
-
 function mapChartPointsToScores(points: ParentChartPointDto[] = []) {
-  const scoreByWeekday = new Map<
-    ReportWeekday,
-    ParentReportWeek['sleepScores'][number]
-  >()
+  const scoreByWeekday = new Map<ReportWeekday, number>()
 
   points.forEach((point) => {
     const weekday = getWeekdayFromChartPoint(point)
 
-    if (!weekday) {
+    if (!weekday || typeof point.value !== 'number') {
       return
     }
 
-    const rawValue = point.value
-    const hasValue = hasChartValue(rawValue)
-
-    scoreByWeekday.set(weekday, {
-      hasValue,
-      score: hasValue ? Math.round(rawValue) : 0,
-      weekday,
-    })
+    scoreByWeekday.set(weekday, Math.round(point.value))
   })
 
-  return reportWeekdays.map(
-    (weekday) =>
-      scoreByWeekday.get(weekday) ?? {
-        hasValue: false,
-        score: 0,
-        weekday,
-      },
-  )
+  return reportWeekdays.map((weekday) => ({
+    score: scoreByWeekday.get(weekday) ?? 0,
+    weekday,
+  }))
 }
 
 function mergeReportWeekWithApiData({
@@ -353,5 +333,3 @@ export function useParentReportData({
     isLoading,
   }
 }
-
-export { mapChartPointsToScores }

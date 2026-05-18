@@ -62,7 +62,6 @@ type ExpressionTrendPoint = {
   value: number
   emotionKey?: DiaryEmotionKey
   hasConversation?: boolean
-  hasValue?: boolean
   variant?: string
 }
 

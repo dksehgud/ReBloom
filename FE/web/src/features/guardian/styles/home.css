@@ -1323,7 +1323,8 @@ body[data-shell-mode='webview'] .parent-bottom-nav__indicator {
 }
 
 .parent-report-page__week-label,
-.parent-report-page__bar-day {
+.parent-report-page__bar-day,
+.parent-report-page__line-chart-labels span {
   color: #718096;
   font-family: 'Inter', 'Noto Sans KR', sans-serif;
   font-size: 12px;
@@ -1500,7 +1501,27 @@ body[data-shell-mode='webview'] .parent-bottom-nav__indicator {
 
 .parent-report-page__line-chart-placeholder {
   position: relative;
-  min-height: 180px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 220px;
+}
+
+.parent-report-page__line-chart-grid {
+  position: absolute;
+  inset: 0 0 28px;
+  border-bottom: 1px solid rgba(229, 231, 235, 0.9);
+  background-image:
+    linear-gradient(rgba(229, 231, 235, 0.95) 1px, transparent 1px),
+    linear-gradient(
+      90deg,
+      transparent calc(14.2857% - 0.5px),
+      rgba(229, 231, 235, 0.35) calc(14.2857% - 0.5px),
+      rgba(229, 231, 235, 0.35) calc(14.2857% + 0.5px),
+      transparent calc(14.2857% + 0.5px)
+    );
+  background-size: 100% 25%, 14.2857% 100%;
+  border-radius: 16px;
 }
 
 .parent-report-page__line-chart-plot {
@@ -1510,27 +1531,12 @@ body[data-shell-mode='webview'] .parent-bottom-nav__indicator {
   z-index: 1;
 }
 
-.parent-report-page__line-chart-vertical-axis {
-  stroke: rgba(229, 231, 235, 0.45);
-  stroke-width: 1;
-}
-
-.parent-report-page__line-chart-axis {
-  stroke: rgba(229, 231, 235, 0.95);
-  stroke-width: 1;
-}
-
-.parent-report-page__line-chart-axis-label {
-  fill: #a0aec0;
-  font-family: 'Inter', 'Noto Sans KR', sans-serif;
-  font-size: 8px;
-}
-
-.parent-report-page__line-chart-weekday-label {
-  fill: #718096;
-  font-family: 'Inter', 'Noto Sans KR', sans-serif;
-  font-size: 10px;
-  font-weight: 500;
+.parent-report-page__line-chart-labels {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  justify-items: center;
+  position: relative;
+  z-index: 1;
 }
 
 .parent-notifications-page {
