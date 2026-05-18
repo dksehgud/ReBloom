@@ -24,6 +24,8 @@ server:
 rebloom:
   client:
     auth-service-url: ${AUTH_SERVICE_URL:http://localhost:8081}
+    biometric-service-url: ${BIOMETRIC_SERVICE_URL:http://localhost:8083}
+    bio-ml-service-url: ${BIO_ML_SERVICE_URL:http://localhost:8002}
   security:
     permit-all: /api/v1/analyses/conversations
 

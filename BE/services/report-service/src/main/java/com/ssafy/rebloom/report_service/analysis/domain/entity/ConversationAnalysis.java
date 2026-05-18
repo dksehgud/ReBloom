@@ -35,7 +35,7 @@ public class ConversationAnalysis extends BaseTime {
     private String embeddingText;
 
     @Column(nullable = false)
-    private String prediction;
+    private Double prediction;
 
     @Column(name = "is_ai_initiated", nullable = false)
     private boolean aiInitiated;

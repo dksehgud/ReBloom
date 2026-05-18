@@ -12,7 +12,7 @@ public record DiaryAnalysisCardResponse(
     LocalDateTime targetDate,
     String emotionIcon,
     String embeddingText,
-    String prediction,
+    Double prediction,
     List<String> keywords
 ) {
 }

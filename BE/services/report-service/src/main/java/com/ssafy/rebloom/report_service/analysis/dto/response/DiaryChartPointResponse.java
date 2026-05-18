@@ -7,6 +7,6 @@ import lombok.Builder;
 public record DiaryChartPointResponse(
     LocalDateTime targetDate,
     String emotionIcon,
-    String prediction
+    Double prediction
 ) {
 }

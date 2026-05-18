@@ -7,6 +7,6 @@ import lombok.Builder;
 public record ConversationChartPointResponse(
     LocalDateTime startedAt,
     LocalDateTime endedAt,
-    String prediction
+    Double prediction
 ) {
 }

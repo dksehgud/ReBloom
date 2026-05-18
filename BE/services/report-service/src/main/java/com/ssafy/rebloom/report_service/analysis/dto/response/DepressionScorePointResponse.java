@@ -8,8 +8,8 @@ import lombok.Builder;
 public record DepressionScorePointResponse(
     LocalDate date,
     String label,
-    String diaryPrediction,
-    String conversationPrediction,
-    String averagePrediction
+    Double diaryPrediction,
+    Double conversationPrediction,
+    Double averagePrediction
 ) {
 }
