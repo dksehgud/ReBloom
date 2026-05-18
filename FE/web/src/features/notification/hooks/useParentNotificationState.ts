@@ -1,15 +1,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
-import { authApi } from '../../auth/api/authApi'
 import { useAppSessionStore } from '../../auth/store/useAppSessionStore'
 import { useParentMockMode } from '../../guardian/hooks/useParentMockMode'
-import { subscribeParentNotifications } from '../api/parentNotificationSse'
 import type {
   ParentNotificationAction,
   ParentNotificationItem,
 } from '../constants/parentNotifications'
 import { isParentNotificationActionExpired } from '../constants/parentNotifications'
 import { getParentNotificationApi } from '../services/parentNotificationService'
+import { useParentRealtimeNotificationStore } from '../store/useParentRealtimeNotificationStore'
 import type {
   ParentNotificationDto,
   ParentNotificationPayloadDto,
@@ -30,9 +29,6 @@ function useParentNotificationState(initialItems: ParentNotificationItem[] = [])
   const [currentTime, setCurrentTime] = useState(() => Date.now())
   const selectedActionNotificationIdsRef = useRef<Set<string>>(new Set())
   const accessToken = useAppSessionStore((state) => state.accessToken)
-  const refreshToken = useAppSessionStore((state) => state.refreshToken)
-  const clearSession = useAppSessionStore((state) => state.clearSession)
-  const setSessionTokens = useAppSessionStore((state) => state.setSessionTokens)
   const isMockMode = useParentMockMode()
   const parentNotificationApi = useMemo(
     () => getParentNotificationApi(isMockMode),
@@ -206,52 +202,42 @@ function useParentNotificationState(initialItems: ParentNotificationItem[] = [])
   }, [hasPendingAnomalyAction])
 
   useEffect(() => {
-    if (isMockMode || !accessToken) {
-      return undefined
-    }
+    return useParentRealtimeNotificationStore.subscribe((state, previousState) => {
+      if (
+        state.latestNotificationSequence ===
+          previousState.latestNotificationSequence ||
+        !state.latestNotification
+      ) {
+        return
+      }
 
-    return subscribeParentNotifications({
-      accessToken,
-      refreshToken,
-      reissueAccessToken: authApi.reissue,
-      onAuthExpired: () => {
-        clearSession('parent')
-      },
-      onError: (error) => {
-        console.error(error)
-      },
-      onNotification: (notification) => {
-        const storedActionKey = readSelectedParentNotificationAction(
-          String(notification.id),
+      const storedActionKey = readSelectedParentNotificationAction(
+        String(state.latestNotification.id),
+      )
+      const notificationItem = mapNotificationDtoToItem(
+        state.latestNotification,
+        storedActionKey,
+      )
+
+      setNotifications((currentItems) => {
+        const currentItem = currentItems.find(
+          (item) => item.id === notificationItem.id,
         )
-        const notificationItem = mapNotificationDtoToItem(
-          notification,
-          storedActionKey,
-        )
+        const nextNotificationItem = currentItem?.selectedActionKey
+          ? {
+              ...notificationItem,
+              selectedActionKey: currentItem.selectedActionKey,
+              unread: false,
+            }
+          : notificationItem
 
-        setNotifications((currentItems) => {
-          const currentItem = currentItems.find(
-            (item) => item.id === notificationItem.id,
-          )
-          const nextNotificationItem = currentItem?.selectedActionKey
-            ? {
-                ...notificationItem,
-                selectedActionKey: currentItem.selectedActionKey,
-                unread: false,
-              }
-            : notificationItem
-
-          return [
-            nextNotificationItem,
-            ...currentItems.filter((item) => item.id !== notificationItem.id),
-          ]
-        })
-      },
-      onTokenRefresh: (tokens) => {
-        setSessionTokens(tokens, 'parent')
-      },
+        return [
+          nextNotificationItem,
+          ...currentItems.filter((item) => item.id !== notificationItem.id),
+        ]
+      })
     })
-  }, [accessToken, clearSession, isMockMode, refreshToken, setSessionTokens])
+  }, [])
 
   return {
     currentTime,

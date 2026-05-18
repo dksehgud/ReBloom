@@ -23,6 +23,8 @@ import {isUserExpectedSessionRole, type SessionRole,} from '../../features/auth/
 import {useAppSessionStore} from '../../features/auth/store/useAppSessionStore'
 import {isCounselorMockModeSearch} from '../../features/counselor/hooks/useCounselorMockMode'
 import {isParentMockModeSearch} from '../../features/guardian/hooks/useParentMockMode'
+import ParentAnomalyAlertPopup from '../../features/notification/components/ParentAnomalyAlertPopup'
+import ParentRealtimeNotificationBridge from '../../features/notification/components/ParentRealtimeNotificationBridge'
 import {useSelectedChildStore} from '../../features/student/store/useSelectedChildStore'
 import {
   getChildDiaryNotificationSettings,
@@ -298,7 +300,9 @@ function ParentRouteLayout() {
 
     return (
         <PhoneShell>
+            <ParentRealtimeNotificationBridge isMockMode={isMockMode}/>
             <Outlet/>
+            <ParentAnomalyAlertPopup/>
         </PhoneShell>
     )
 }

@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 vi.mock('../src/shared/api/client', () => ({
   API_BASE_URL: 'https://api.example.com',
@@ -10,6 +10,18 @@ import {
   parseParentNotificationSseEvent,
   parseSseEvent,
 } from '../src/features/notification/api/parentNotificationSse'
+import {
+  isParentAnomalyAlertNotification,
+  useParentRealtimeNotificationStore,
+} from '../src/features/notification/store/useParentRealtimeNotificationStore'
+
+beforeEach(() => {
+  useParentRealtimeNotificationStore.setState({
+    anomalyAlertPopup: null,
+    latestNotification: null,
+    latestNotificationSequence: 0,
+  })
+})
 
 describe('parent notification SSE helpers', () => {
   it('builds the subscribe endpoint from the configured API base URL', () => {
@@ -85,6 +97,53 @@ describe('parent notification SSE helpers', () => {
         notificationId: 'not-a-number',
         notificationType: 'RISK_ALERT',
       }),
+    ).toBeNull()
+  })
+
+  it('stores only risk alert realtime notifications as parent popups', () => {
+    const replyNotification = {
+      createdAt: '2026-05-17T10:00:00',
+      id: 11,
+      isRead: false,
+      notificationType: 'PARENT_REPORT_REPLY',
+      payload: {
+        content: 'A counselor reply arrived.',
+        title: 'Reply',
+      },
+    }
+    const riskNotification = {
+      createdAt: '2026-05-17T10:01:00',
+      id: 12,
+      isRead: false,
+      notificationType: 'RISK_ALERT',
+      payload: {
+        childrenId: 'child-1',
+        content: 'Risk alert arrived.',
+        title: 'Risk',
+      },
+    }
+    const { receiveNotification, dismissAnomalyAlertPopup } =
+      useParentRealtimeNotificationStore.getState()
+
+    expect(isParentAnomalyAlertNotification(replyNotification)).toBe(false)
+    receiveNotification(replyNotification)
+    expect(useParentRealtimeNotificationStore.getState()).toMatchObject({
+      anomalyAlertPopup: null,
+      latestNotification: replyNotification,
+      latestNotificationSequence: 1,
+    })
+
+    expect(isParentAnomalyAlertNotification(riskNotification)).toBe(true)
+    receiveNotification(riskNotification)
+    expect(useParentRealtimeNotificationStore.getState()).toMatchObject({
+      anomalyAlertPopup: riskNotification,
+      latestNotification: riskNotification,
+      latestNotificationSequence: 2,
+    })
+
+    dismissAnomalyAlertPopup(riskNotification.id)
+    expect(
+      useParentRealtimeNotificationStore.getState().anomalyAlertPopup,
     ).toBeNull()
   })
 })
