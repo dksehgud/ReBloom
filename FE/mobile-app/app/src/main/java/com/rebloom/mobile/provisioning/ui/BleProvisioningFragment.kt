@@ -142,6 +142,8 @@ class BleProvisioningFragment : Fragment() {
             viewModel.retry()
             checkAndStartBleScan()
         }
+
+        binding.btnClose.setOnClickListener { activity?.finish() }
     }
 
     private fun observeState() {
@@ -206,7 +208,7 @@ class BleProvisioningFragment : Fragment() {
             is ProvisioningState.Success -> {
                 binding.successPanel.isVisible = true
                 binding.tvStatus.text = "연결 완료!"
-                binding.tvSuccessMessage.text = "${state.ssid}에 연결됐어요 🎉"
+                binding.tvSuccessMessage.text = "${state.ssid}에 연결됐어요"
                 binding.root.postDelayed({ activity?.finish() }, 3000)
             }
 
@@ -287,18 +289,35 @@ class BleProvisioningFragment : Fragment() {
      */
     private fun showWifiList(networks: List<ScanResult>) {
         binding.wifiListContainer.removeAllViews()
+        val dp = resources.displayMetrics.density
 
         networks.forEachIndexed { index, network ->
-            val itemView = createWifiItem(network, isLast = index == networks.size - 1)
-            binding.wifiListContainer.addView(itemView)
+            binding.wifiListContainer.addView(createWifiItem(network))
+            if (index < networks.size - 1) {
+                binding.wifiListContainer.addView(View(requireContext()).apply {
+                    layoutParams = LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT,
+                        (1 * dp).toInt()
+                    ).also {
+                        it.marginStart = (16 * dp).toInt()
+                        it.marginEnd = (16 * dp).toInt()
+                    }
+                    setBackgroundColor(Color.parseColor("#E8EDF5"))
+                })
+            }
         }
 
         binding.wifiListContainer.isVisible = true
     }
 
-    private fun createWifiItem(network: ScanResult, isLast: Boolean): View {
+    private fun createWifiItem(network: ScanResult): View {
         val ctx = requireContext()
         val dp = resources.displayMetrics.density
+
+        val attrs = intArrayOf(android.R.attr.selectableItemBackground)
+        val typedArray = ctx.obtainStyledAttributes(attrs)
+        val rippleResId = typedArray.getResourceId(0, 0)
+        typedArray.recycle()
 
         val row = LinearLayout(ctx).apply {
             orientation = LinearLayout.HORIZONTAL
@@ -314,29 +333,24 @@ class BleProvisioningFragment : Fragment() {
             )
             isClickable = true
             isFocusable = true
-            setBackgroundColor(Color.TRANSPARENT)
-            // 구분선 (마지막 항목 제외)
-            if (!isLast) {
-                setBackgroundResource(android.R.drawable.list_selector_background)
-            }
+            setBackgroundResource(rippleResId)
         }
 
-        // Wi-Fi 신호 강도 이모지
-        val signalEmoji = getSignalEmoji(network.level)
+        val (signalLabel, signalColor) = getSignalInfo(network.level)
         val signalView = TextView(ctx).apply {
-            text = signalEmoji
-            textSize = 18f
+            text = signalLabel
+            textSize = 11f
+            setTextColor(Color.parseColor(signalColor))
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.WRAP_CONTENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT,
             ).also { it.marginEnd = (10 * dp).toInt() }
         }
 
-        // SSID + 보안 타입
         val ssidView = TextView(ctx).apply {
             text = network.SSID
             textSize = 15f
-            setTextColor(Color.parseColor("#1A1A2E"))
+            setTextColor(Color.parseColor("#1B1D22"))
             layoutParams = LinearLayout.LayoutParams(
                 0,
                 LinearLayout.LayoutParams.WRAP_CONTENT,
@@ -344,20 +358,18 @@ class BleProvisioningFragment : Fragment() {
             )
         }
 
-        // 보안 아이콘
+        val isSecure = network.capabilities.contains("WPA") || network.capabilities.contains("WEP")
         val secureView = TextView(ctx).apply {
-            text = if (network.capabilities.contains("WPA") || network.capabilities.contains("WEP")) "🔒" else "🔓"
-            textSize = 14f
+            text = if (isSecure) "잠금" else "공개"
+            textSize = 11f
+            setTextColor(Color.parseColor(if (isSecure) "#4F5D75" else "#3DAA6E"))
         }
 
         row.addView(signalView)
         row.addView(ssidView)
         row.addView(secureView)
 
-        // 클릭 시 해당 SSID 선택
-        row.setOnClickListener {
-            onWifiNetworkSelected(network.SSID)
-        }
+        row.setOnClickListener { onWifiNetworkSelected(network.SSID) }
 
         return row
     }
@@ -370,13 +382,12 @@ class BleProvisioningFragment : Fragment() {
         binding.etPassword.requestFocus()
     }
 
-    // 신호 강도에 따른 이모지
-    private fun getSignalEmoji(level: Int): String {
+    private fun getSignalInfo(level: Int): Pair<String, String> {
         return when {
-            level >= -55 -> "▐▐▐▐"   // 매우 강함
-            level >= -65 -> "▐▐▐░"   // 강함
-            level >= -75 -> "▐▐░░"   // 보통
-            else         -> "▐░░░"   // 약함
+            level >= -55 -> Pair("●●●●", "#3DAA6E")
+            level >= -65 -> Pair("●●●○", "#344966")
+            level >= -75 -> Pair("●●○○", "#4F5D75")
+            else         -> Pair("●○○○", "#9AABB8")
         }
     }
 

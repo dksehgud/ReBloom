@@ -19,6 +19,7 @@ import com.rebloom.mobile.provisioning.data.DeviceRegistrationRepository
 import com.rebloom.mobile.provisioning.data.ProvisioningRegistrationContext
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import retrofit2.HttpException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -314,10 +315,17 @@ class BleProvisioningViewModel(
                 _state.value = ProvisioningState.Success(pendingSuccessLabel())
             }.onFailure { error ->
                 Log.e(TAG, "기기 등록 실패: ${error.message}", error)
-                isRegisteringDevice = false
-                _state.value = ProvisioningState.Fail(
-                    error.message ?: "프로비저닝은 완료됐지만 기기 등록에 실패했습니다.",
-                )
+                val is406 = (error is HttpException && error.code() == 406) ||
+                    error.message?.contains("406") == true
+                if (is406) {
+                    Log.d(TAG, "406 응답 → 프로비저닝 성공으로 처리")
+                    _state.value = ProvisioningState.Success(pendingSuccessLabel())
+                } else {
+                    isRegisteringDevice = false
+                    _state.value = ProvisioningState.Fail(
+                        error.message ?: "프로비저닝은 완료됐지만 기기 등록에 실패했습니다.",
+                    )
+                }
             }
         }
     }
