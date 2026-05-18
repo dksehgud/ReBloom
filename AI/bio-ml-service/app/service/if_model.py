@@ -77,7 +77,7 @@ def predict_if_model(user_id: str, biometric: dict) -> dict:
     score      = model.score_samples(X)[0]
 
     return {
-        "is_anomaly" : prediction == -1,
+        "is_anomaly" : bool(prediction == -1),
         "score"      : round(float(score), 4),
     }
 
