@@ -15,7 +15,7 @@ public final class Constants {
     public static final long ANOMALY_ALERT_PHASE_LOCK_TTL_SECONDS = 60L;
 
     public static final String ANOMALY_ALERT_PHASE_KEY_PREFIX =
-        "notification:anomaly:parent-response:phase:";
+        "notification:anomaly:parent-response:phase:state:";
     public static final String ANOMALY_ALERT_PHASE_LOCK_KEY_PREFIX =
         "notification:anomaly:parent-response:phase:lock:";
 

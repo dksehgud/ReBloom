@@ -134,7 +134,14 @@ public class AnomalyAlertServiceImpl implements AnomalyAlertService {
         LocalDateTime now = now();
 
         for (String key : keys) {
-            processPhase(key, now);
+            try {
+                processPhase(key, now);
+            } catch (IllegalStateException e) {
+                log.warn("Invalid anomaly alert phase state. key={}", key, e);
+                redisService.delete(key);
+            } catch (RuntimeException e) {
+                log.error("Failed to process anomaly alert phase. key={}", key, e);
+            }
         }
     }
 
