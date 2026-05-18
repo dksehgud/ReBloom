@@ -69,7 +69,6 @@ import {
 import {
   canChooseParentNotificationAction,
   mapNotificationDtoToItem,
-  markParentNotificationItemsAsRead,
 } from '../src/features/notification/hooks/useParentNotificationState'
 import {
   PARENT_ANOMALY_ACTION_WINDOW_MS,
@@ -494,6 +493,7 @@ describe('parent notification API functions', () => {
     expect(riskAlert.childrenId).toBe('child-1')
     expect(riskAlert.createdAt).toBe(anomalyAlertCreatedAt)
     expect(riskAlert.notificationType).toBe('RISK_ALERT')
+    expect(riskAlert.unread).toBe(true)
     expect(riskAlert.actions?.map((action) => action.key)).toEqual([
       'reject',
       'confirm',
@@ -549,34 +549,6 @@ describe('parent notification API functions', () => {
         anomalyAlertExpiredTime,
       ),
     ).toBe(false)
-  })
-
-  it('maps parent notification items as read when the notification tab is opened', () => {
-    const unreadRiskAlert = mapNotificationDtoToItem({
-      createdAt: anomalyAlertCreatedAt,
-      id: 1,
-      isRead: false,
-      notificationType: 'RISK_ALERT',
-      payload: {
-        childrenId: 'child-1',
-      },
-    })
-    const unreadConversationAlert = mapNotificationDtoToItem({
-      createdAt: anomalyAlertCreatedAt,
-      id: 2,
-      isRead: false,
-      notificationType: 'CONVERSATION_ALERT',
-      payload: {
-        childrenId: 'child-1',
-      },
-    })
-
-    expect(
-      markParentNotificationItemsAsRead([
-        unreadRiskAlert,
-        unreadConversationAlert,
-      ]).map((notification) => notification.unread),
-    ).toEqual([false, false])
   })
 
   it('keeps a persisted parent anomaly alert action selected after remapping', () => {

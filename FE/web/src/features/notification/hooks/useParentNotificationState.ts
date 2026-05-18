@@ -20,7 +20,7 @@ type SelectedParentNotificationActions = Record<
 >
 
 type UseParentNotificationStateOptions = {
-  markAllAsReadOnInitialLoad?: boolean
+  requestMarkAllAsReadOnInitialLoad?: boolean
 }
 
 const SELECTED_PARENT_NOTIFICATION_ACTIONS_STORAGE_KEY =
@@ -35,7 +35,7 @@ function useParentNotificationState(
   )
   const [currentTime, setCurrentTime] = useState(() => Date.now())
   const markAllAsReadOnInitialLoadRef = useRef(
-    options.markAllAsReadOnInitialLoad ?? false,
+    options.requestMarkAllAsReadOnInitialLoad ?? false,
   )
   const selectedActionNotificationIdsRef = useRef<Set<string>>(new Set())
   const accessToken = useAppSessionStore((state) => state.accessToken)
@@ -60,11 +60,7 @@ function useParentNotificationState(
       const shouldMarkAllAsRead = markAllAsReadOnInitialLoadRef.current
 
       markAllAsReadOnInitialLoadRef.current = false
-      setNotifications(
-        shouldMarkAllAsRead
-          ? markParentNotificationItemsAsRead(nextNotifications)
-          : nextNotifications,
-      )
+      setNotifications(nextNotifications)
 
       if (shouldMarkAllAsRead) {
         void parentNotificationApi
@@ -517,5 +513,4 @@ export default useParentNotificationState
 export {
   canChooseParentNotificationAction,
   mapNotificationDtoToItem,
-  markParentNotificationItemsAsRead,
 }
