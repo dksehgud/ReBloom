@@ -11,6 +11,7 @@ type CounselorSidebarProps = {
   childrenError?: string
   onToggle: () => void
   onSelectChild: (childId: string) => void
+  onResetDashboard: () => void
   onOpenSettings: () => void
 }
 
@@ -23,15 +24,20 @@ function CounselorSidebar({
   childrenError,
   onToggle,
   onSelectChild,
+  onResetDashboard,
   onOpenSettings,
 }: CounselorSidebarProps) {
   return (
     <aside className="counselor-dashboard-sidebar">
       <header className="counselor-dashboard-brand">
-        <div>
+        <button
+          type="button"
+          className="counselor-dashboard-brand-link"
+          onClick={onResetDashboard}
+        >
           <h1>RE:BLOOM</h1>
           <p>상담사 대시보드</p>
-        </div>
+        </button>
         <button
           type="button"
           aria-expanded={!isCollapsed}

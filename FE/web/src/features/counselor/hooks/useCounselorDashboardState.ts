@@ -589,7 +589,13 @@ function mapAnalysisContentToExpressionAnalysis(
   }
 }
 
-function useCounselorDashboardState() {
+type UseCounselorDashboardStateOptions = {
+  initialSelectedChildId?: string | null
+}
+
+function useCounselorDashboardState({
+  initialSelectedChildId = null,
+}: UseCounselorDashboardStateOptions = {}) {
   const accessToken = useAppSessionStore((state) => state.accessToken)
   const refreshToken = useAppSessionStore((state) => state.refreshToken)
   const clearSession = useAppSessionStore((state) => state.clearSession)
@@ -605,7 +611,9 @@ function useCounselorDashboardState() {
     unreadParentReportNotificationIdsByChildId,
     setUnreadParentReportNotificationIdsByChildId,
   ] = useState<Map<string, number[]>>(() => new Map())
-  const [selectedChildId, setSelectedChildId] = useState<string | null>(null)
+  const [selectedChildId, setSelectedChildId] = useState<string | null>(
+    initialSelectedChildId,
+  )
   const [isLoadingChildItems, setIsLoadingChildItems] = useState(!isMockMode)
   const [childItemsError, setChildItemsError] = useState<string>()
   const [connectionRequests, setConnectionRequests] = useState(() =>
@@ -827,6 +835,12 @@ function useCounselorDashboardState() {
     setWeekOffsets(INITIAL_DASHBOARD_WEEK_OFFSETS)
   }
 
+  const handleClearSelectedChild = () => {
+    setSelectedChildId(null)
+    setSelectedObservation(null)
+    setWeekOffsets(INITIAL_DASHBOARD_WEEK_OFFSETS)
+  }
+
   const handleSaveObservationComment = async (
     record: ObservationRecord,
     context: string,
@@ -965,7 +979,11 @@ function useCounselorDashboardState() {
   const loadChildItems = useCallback(async () => {
     if (isMockMode) {
       setChildItems(initialChildList)
-      setSelectedChildId(null)
+      setSelectedChildId((current) =>
+        current && initialChildList.some((child) => child.id === current)
+          ? current
+          : null,
+      )
       setSelectedObservation(null)
       setChildItemsError(undefined)
       setIsLoadingChildItems(false)
@@ -1600,6 +1618,7 @@ function useCounselorDashboardState() {
     handleDeleteObservationComment,
     handleRejectConnectionRequest,
     handleSaveObservationComment,
+    handleClearSelectedChild,
     handleSelectChild,
     isLoadingObservationComment,
     isLoadingConnectionRequests,

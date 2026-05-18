@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import {
   FiActivity,
   FiBell,
@@ -24,6 +24,8 @@ import { useAppSessionStore } from '../../features/auth/store/useAppSessionStore
 
 function CounselorDashboardPage() {
   const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
+  const initialSelectedChildId = searchParams.get('childId')
   const counselorName =
     useAppSessionStore((state) => state.currentUser?.name?.trim()) || '상담사'
   const {
@@ -41,6 +43,7 @@ function CounselorDashboardPage() {
     dashboardMetricsError,
     expressionWeek,
     handleAcceptConnectionRequest,
+    handleClearSelectedChild,
     handleDeleteObservationComment,
     handleRejectConnectionRequest,
     handleSaveObservationComment,
@@ -70,7 +73,7 @@ function CounselorDashboardPage() {
     sleepScoreData,
     sleepScoreWeek,
     canRejectConnectionRequests,
-  } = useCounselorDashboardState()
+  } = useCounselorDashboardState({ initialSelectedChildId })
   const selectedChildMetaItems = selectedChildProfile
     ? [
         selectedChildProfile.age,
@@ -124,7 +127,20 @@ function CounselorDashboardPage() {
   }
 
   const handleSelectSidebarChild = (childId: string) => {
+    const nextSearchParams = new URLSearchParams(searchParams)
+
+    nextSearchParams.set('childId', childId)
+    setSearchParams(nextSearchParams, { replace: true })
     handleSelectChild(childId)
+    closeCompactSidebar()
+  }
+
+  const handleResetDashboard = () => {
+    const nextSearchParams = new URLSearchParams(searchParams)
+
+    nextSearchParams.delete('childId')
+    setSearchParams(nextSearchParams, { replace: true })
+    handleClearSelectedChild()
     closeCompactSidebar()
   }
 
@@ -168,6 +184,7 @@ function CounselorDashboardPage() {
         childrenError={childItemsError}
         onToggle={() => setIsSidebarCollapsed((current) => !current)}
         onSelectChild={handleSelectSidebarChild}
+        onResetDashboard={handleResetDashboard}
         onOpenSettings={handleOpenSettings}
       />
 
