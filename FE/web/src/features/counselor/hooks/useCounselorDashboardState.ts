@@ -505,6 +505,20 @@ function getAnalysisCardsForFilter(
   return [...diaryCards, ...conversationCards]
 }
 
+function formatPredictionContent(prediction?: number | string | null) {
+  if (typeof prediction === 'number') {
+    return Number.isFinite(prediction) ? String(prediction) : null
+  }
+
+  if (typeof prediction === 'string') {
+    const normalized = prediction.trim()
+
+    return normalized || null
+  }
+
+  return null
+}
+
 function mapAnalysisContentToExpressionAnalysis(
   response: CounselorAnalysisContentResponseDto,
   weekLabels: string[] = [],
@@ -565,7 +579,7 @@ function mapAnalysisContentToExpressionAnalysis(
           return {
             content:
               diary.embeddingText ??
-              diary.prediction ??
+              formatPredictionContent(diary.prediction) ??
               '표현 분석 내용이 없습니다.',
             emotionKey: mapEmotionIconToKey(diary.emotionIcon),
             id: entryId,
@@ -582,7 +596,7 @@ function mapAnalysisContentToExpressionAnalysis(
         return {
           content:
             conversation.embeddingText ??
-            conversation.prediction ??
+            formatPredictionContent(conversation.prediction) ??
             '대화 분석 내용이 없습니다.',
           id: entryId,
           tags: conversation.keywords ?? [],

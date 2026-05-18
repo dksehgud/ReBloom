@@ -2,20 +2,37 @@ const EXPRESSION_SCORE_MAX = 24
 const EXPRESSION_SCORE_TICKS = [24, 18, 12, 6, 0] as const
 
 const DEPRESSION_STAGE_SCORES: Record<string, number> = {
-  minimal: 2,
-  mild: 7,
-  moderate: 12,
-  moderately_severe: 17,
-  moderatelysevere: 17,
-  severe: 22,
+  minimal: 0,
+  mild: 1,
+  moderate: 2,
+  moderately_severe: 2,
+  moderatelysevere: 2,
+  severe: 3,
+  uncertain: 0,
 }
 
 function clampExpressionScore(value: number) {
   return Math.max(0, Math.min(EXPRESSION_SCORE_MAX, Math.round(value)))
 }
 
-function parseExpressionPredictionScore(prediction?: string | null) {
-  const normalized = prediction?.trim().toLowerCase()
+function normalizeNumericPredictionScore(value: number) {
+  if (!Number.isFinite(value)) {
+    return 0
+  }
+
+  return clampExpressionScore(value)
+}
+
+function parseExpressionPredictionScore(prediction?: number | string | null) {
+  if (typeof prediction === 'number') {
+    return normalizeNumericPredictionScore(prediction)
+  }
+
+  if (typeof prediction !== 'string') {
+    return 0
+  }
+
+  const normalized = prediction.trim().toLowerCase()
 
   if (!normalized) {
     return 0
@@ -34,12 +51,7 @@ function parseExpressionPredictionScore(prediction?: string | null) {
     return 0
   }
 
-  const score =
-    parsedValue > 0 && parsedValue <= 1
-      ? parsedValue * EXPRESSION_SCORE_MAX
-      : parsedValue
-
-  return clampExpressionScore(score)
+  return normalizeNumericPredictionScore(parsedValue)
 }
 
 function getAverageExpressionPredictionScore(scores: number[]) {
