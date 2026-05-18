@@ -1,6 +1,6 @@
 package com.ssafy.rebloom.event.core;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
 public record EventEnvelope<T>(
     String eventId,
@@ -9,7 +9,7 @@ public record EventEnvelope<T>(
     String producer,
     String correlationId,
     String idempotencyKey,
-    LocalDateTime occurredAt,
+    OffsetDateTime occurredAt,
     T payload
 ) {
 }
