@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 )
 public interface AuthServiceInternalClient {
 
-    @GetMapping("/api/v1/children/{childrenId}/parent-receiver")
+    @GetMapping("/api/v1/internal/children/{childrenId}/parent-receiver")
     BaseResponse<ParentReceiverResponseDto> getParentReceiver(
         @PathVariable UUID childrenId
     );

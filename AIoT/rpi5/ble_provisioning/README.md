@@ -13,6 +13,7 @@ Raspberry Pi 5가 BLE GATT 서버로 동작하면서 앱에서 Wi-Fi 정보를 �
 7. Raspberry Pi는 payload를 복호화한 뒤 `nmcli`로 Wi-Fi 연결을 시도합니다.
 8. 연결 상태는 `STATUS` characteristic notify로 앱에 전달됩니다.
 9. 연결이 성공하면 BLE 루프를 종료하고 이후 정상 동작으로 넘어갑니다.
+10. 앱은 성공 payload 또는 `DEVINFO` read 값으로 받은 `serialNumber`, `deviceType`을 백엔드에 등록합니다.
 
 ## GATT Structure
 
@@ -47,3 +48,18 @@ sudo .venv/bin/python main.py
 ```
 
 권한 문제가 없다면 `STATUS` notify로 `CONNECTING`, `SUCCESS`, `FAIL` 상태를 확인할 수 있습니다.
+
+Wi-Fi 연결 성공 시 `STATUS` notify는 기기 등록에 필요한 JSON payload를 전달합니다.
+
+```json
+{
+  "status": "SUCCESS",
+  "serialNumber": "0000fe10-0000-1000-8000-00805f9b34fb",
+  "deviceType": "IOT",
+  "device_id": "0000fe10-0000-1000-8000-00805f9b34fb",
+  "name": "Re:Bloom Speaker",
+  "firmware": "1.0.0"
+}
+```
+
+`DEVINFO` characteristic을 read해도 같은 기기 정보를 받을 수 있습니다.

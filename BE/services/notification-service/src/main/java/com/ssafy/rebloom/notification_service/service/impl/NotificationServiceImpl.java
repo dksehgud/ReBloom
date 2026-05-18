@@ -40,7 +40,7 @@ public class NotificationServiceImpl implements NotificationService {
         }
 
         UUID childrenId = event.userId();
-
+        log.info("notification-service, anomaly-analysed");
         ParentReceiverInfo receiverInfo =
             authServiceResolveService.resolveParentByChildrenId(childrenId);
 

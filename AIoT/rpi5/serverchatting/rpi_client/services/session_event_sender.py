@@ -6,6 +6,7 @@ import socket
 import time
 import urllib.error
 import urllib.request
+import uuid
 from datetime import datetime
 from typing import Optional
 
@@ -17,8 +18,7 @@ def now_iso() -> str:
 
 
 def make_session_id() -> str:
-    timestamp = datetime.now().astimezone().strftime("%Y%m%d-%H%M%S")
-    return f"session-{timestamp}"
+    return str(uuid.uuid4())
 
 
 class SessionEventSender:
@@ -31,9 +31,15 @@ class SessionEventSender:
         window_seconds: float = 300,
         timeout: float = 5,
         session_id: Optional[str] = None,
+        auth_header: str = "Authorization",
+        auth_token: str = "",
+        auth_scheme: str = "Bearer",
     ) -> None:
         self.url = url
         self.device_id = device_id or socket.gethostname()
+        self.auth_header = auth_header
+        self.auth_token = auth_token
+        self.auth_scheme = auth_scheme
         self.window_seconds = window_seconds
         self.timeout = timeout
         self.session_id = session_id or make_session_id()
@@ -55,7 +61,10 @@ class SessionEventSender:
         if role == "user":
             self.events.append({"child": content})
         elif role == "assistant":
-            self.events.append({"bot": content})
+            if self.events and "bot" not in self.events[-1]:
+                self.events[-1]["bot"] = content
+            else:
+                self.events.append({"bot": content})
 
     async def flush_if_due(self) -> bool:
         """전송 주기가 지났으면 대화 이벤트를 서버로 보낸다."""
@@ -86,6 +95,7 @@ class SessionEventSender:
             return False
 
         logger.info("대화 이벤트 전송 완료: %d개", len(self.events))
+        print(f"[세션] 대화 이벤트 전송 완료: {len(self.events)}개", flush=True)
         self.events = []
         self.session_id = make_session_id()
         self.started_at = now_iso()
@@ -94,10 +104,17 @@ class SessionEventSender:
 
     def _post_payload(self, payload: dict) -> bool:
         data = json.dumps(payload, ensure_ascii=False).encode("utf-8")
+        headers = {"Content-Type": "application/json"}
+        if self.auth_header and self.auth_token:
+            if self.auth_scheme:
+                headers[self.auth_header] = f"{self.auth_scheme} {self.auth_token}"
+            else:
+                headers[self.auth_header] = self.auth_token
+
         request = urllib.request.Request(
             self.url,
             data=data,
-            headers={"Content-Type": "application/json"},
+            headers=headers,
             method="POST",
         )
 
@@ -116,4 +133,3 @@ class SessionEventSender:
 
         self.last_error = ""
         return True
-

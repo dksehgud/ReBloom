@@ -1,6 +1,6 @@
 # MQTT 사용 가이드
 
-이 문서는 `aiot-ai-service`에서 Mosquitto broker로 MQTT publish 하는 방법을 정리한다.
+이 문서는 `AIoT_Server`에서 Mosquitto broker로 MQTT publish 하는 방법을 정리한다.
 현재 구성은 Kafka 없이 MQTT만 사용한다.
 
 ## 포트 기준
@@ -12,11 +12,11 @@
 
 ## Docker 실행
 
-`MQTT` 폴더에서 broker를 올린다.
+프로젝트 루트에서 broker를 올린다.
 
 ```bash
-cd /home/jukang/project/ssafy4th/S14P31B109/AI/aiot-ai-service/MQTT
-docker compose up -d
+cd /path/to/AIoT_Server
+docker compose -f MQTT/docker-compose.yml up -d
 docker ps | grep mosquitto
 ```
 
@@ -34,7 +34,7 @@ services:
 
 ## 백엔드 `.env` 예시
 
-`aiot-ai-service/.env`에는 아래 값을 넣으면 된다.
+프로젝트 루트의 `.env`에는 아래 값을 넣으면 된다.
 
 ```env
 MQTT_HOST=jukang.duckdns.org
@@ -87,12 +87,12 @@ mosquitto_pub \
 
 ## 프로젝트 내부 Python 호출 예시
 
-현재 프로젝트에는 [app/services/mqtt_client.py](/home/jukang/project/ssafy4th/S14P31B109/AI/aiot-ai-service/app/services/mqtt_client.py:21)에 publish 유틸이 추가되어 있다.
+현재 프로젝트에는 `app/services/mqtt_client.py` 에 publish 유틸이 추가되어 있다.
 
 필요 패키지가 아직 없다면 먼저 설치한다.
 
 ```bash
-cd /home/jukang/project/ssafy4th/S14P31B109/AI/aiot-ai-service
+cd /path/to/AIoT_Server
 pip install -r requirements.txt
 ```
 
@@ -117,7 +117,7 @@ print(payload)
 
 ## FastAPI API 호출 예시
 
-현재 프로젝트에는 [app/routers/mqtt.py](/home/jukang/project/ssafy4th/S14P31B109/AI/aiot-ai-service/app/routers/mqtt.py:18) 기준으로 `POST /api/v1/mqtt/conversation/start` 예제 API가 추가되어 있다.
+현재 프로젝트에는 `app/routers/mqtt.py` 기준으로 `POST /api/v1/mqtt/conversation/start` 예제 API가 추가되어 있다.
 
 여기서 `AI_SERVICE_PORT`는 FastAPI 서버 포트다.
 이 값은 MQTT broker 포트 `7000`과 다른 값일 수 있다.

@@ -8,13 +8,16 @@ import com.ssafy.rebloom.auth_service.user.domain.entity.ChildrenCounselorRelati
 import com.ssafy.rebloom.auth_service.user.domain.entity.Counselor;
 import com.ssafy.rebloom.auth_service.user.domain.entity.User;
 import com.ssafy.rebloom.auth_service.user.domain.enums.RelationStatus;
+import com.ssafy.rebloom.auth_service.user.dto.query.ParentReceiverDto;
 import com.ssafy.rebloom.auth_service.user.dto.response.ActiveChildResponseDto;
 import com.ssafy.rebloom.auth_service.user.dto.response.ChildAgeResponseDto;
 import com.ssafy.rebloom.auth_service.user.dto.response.ChildConnectedCounselorResponseDto;
 import com.ssafy.rebloom.auth_service.user.dto.response.ChildGpsResponseDto;
 import com.ssafy.rebloom.auth_service.user.dto.response.ChildrenIotInfoResponseDto;
+import com.ssafy.rebloom.auth_service.user.dto.response.ParentReceiverResponseDto;
 import com.ssafy.rebloom.auth_service.user.repository.ChildrenCounselorRelationRepository;
 import com.ssafy.rebloom.auth_service.user.repository.UserRepository;
+import com.ssafy.rebloom.auth_service.user.repository.query.ParentQueryRepository;
 import com.ssafy.rebloom.auth_service.user.service.InternalUserService;
 import com.ssafy.rebloom.common.exception.CustomException;
 import com.ssafy.rebloom.common.exception.ErrorCode;
@@ -37,6 +40,7 @@ public class InternalUserServiceImpl implements InternalUserService {
 
     private final UserRepository userRepository;
     private final DeviceRepository deviceRepository;
+    private final ParentQueryRepository parentRepository;
 
     private final ChildrenCounselorRelationRepository childrenCounselorRelationRepository;
 
@@ -137,6 +141,22 @@ public class InternalUserServiceImpl implements InternalUserService {
             counselor.getName(),
             counselor.getEmail(),
             counselor.getHospitalName()
+        );
+    }
+
+    @Override
+    public ParentReceiverResponseDto getParentReceiverByChildrenId(UUID childrenId) {
+        return parentRepository.findParentReceiverByChildrenId(childrenId)
+            .map(this::toParentReceiverResponse)
+            .orElseGet(() -> ParentReceiverResponseDto.disconnected(childrenId));
+    }
+
+    private ParentReceiverResponseDto toParentReceiverResponse(ParentReceiverDto parentReceiverDto) {
+        return new ParentReceiverResponseDto(
+            true,
+            parentReceiverDto.parentId(),
+            parentReceiverDto.childrenId(),
+            parentReceiverDto.childrenName()
         );
     }
 }

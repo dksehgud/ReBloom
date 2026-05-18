@@ -97,6 +97,8 @@ async def _vllm_stream(
         "max_tokens": settings.MAX_NEW_TOKENS,
         "temperature": settings.TEMPERATURE,
         "top_p": settings.TOP_P,
+        "frequency_penalty": settings.FREQUENCY_PENALTY,
+        "presence_penalty": settings.PRESENCE_PENALTY,
         "stream": True,
     }
 
@@ -265,6 +267,7 @@ async def _filter_language(
 async def stream_chat(
     user_text: str,
     is_crisis: bool = False,
+    history: list[dict] | None = None,
 ) -> AsyncGenerator[str, None]:
     """
     사용자 발화 텍스트를 받아 LLM 응답 토큰을 비동기 스트리밍으로 yield한다.
@@ -273,15 +276,16 @@ async def stream_chat(
     Args:
         user_text: 사용자가 말한 텍스트 (STT 결과)
         is_crisis: True이면 안전 대응 프롬프트를 사용
+        history: 이전 대화 기록 [{"role": "user"|"assistant", "content": "..."}, ...]
 
     Yields:
         str: thinking 블록이 제거된 실제 답변 토큰
     """
     system_prompt = get_system_prompt(is_crisis=is_crisis)
-    messages = [
-        {"role": "system", "content": system_prompt},
-        {"role": "user", "content": user_text},
-    ]
+    messages = [{"role": "system", "content": system_prompt}]
+    if history:
+        messages.extend(history)
+    messages.append({"role": "user", "content": user_text})
 
     if settings.USE_MOCK_LLM:
         logger.info("[MOCK] mock LLM 모드로 응답 생성")
@@ -289,7 +293,7 @@ async def stream_chat(
         async for token in _filter_language(_filter_thinking(_mock_stream(mock_text))):
             yield token
     else:
-        logger.info(f"[vLLM] 모델={settings.LLM_MODEL}, 위기모드={is_crisis}")
+        logger.info(f"[vLLM] 모델={settings.LLM_MODEL}, 위기모드={is_crisis}, 히스토리={len(history) if history else 0}턴")
         async for token in _filter_language(_filter_thinking(_vllm_stream(messages))):
             yield token
 
@@ -297,6 +301,7 @@ async def stream_chat(
 async def complete_chat(
     user_text: str,
     is_crisis: bool = False,
+    history: list[dict] | None = None,
 ) -> str:
     """
     스트리밍 없이 전체 응답 텍스트를 한 번에 반환한다.
@@ -305,11 +310,12 @@ async def complete_chat(
     Args:
         user_text: 사용자 발화 텍스트
         is_crisis: True이면 안전 대응 프롬프트 사용
+        history: 이전 대화 기록
 
     Returns:
         str: LLM 전체 응답 문자열
     """
     tokens: list[str] = []
-    async for token in stream_chat(user_text, is_crisis=is_crisis):
+    async for token in stream_chat(user_text, is_crisis=is_crisis, history=history):
         tokens.append(token)
     return "".join(tokens).strip()

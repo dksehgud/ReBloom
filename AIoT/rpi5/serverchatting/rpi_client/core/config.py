@@ -79,6 +79,9 @@ class Settings(BaseModel):
     melotts_speaker: str = "KR"
     melotts_speed: float = Field(default=1.0, ge=0.5, le=2.0)
     session_events_url: str = ""
+    session_auth_header: str = "Authorization"
+    session_auth_token: str = ""
+    session_auth_scheme: str = "Bearer"
     session_window_seconds: float = Field(default=300.0, ge=1)
     session_send_timeout: float = Field(default=5.0, ge=0.1)
     start_conversation_on_boot: bool = False
@@ -177,6 +180,9 @@ def get_settings() -> Settings:
         melotts_speaker=os.getenv("MELOTTS_SPEAKER", "KR").strip(),
         melotts_speed=_get_float_env("MELOTTS_SPEED", 1.0),
         session_events_url=os.getenv("SESSION_EVENTS_URL", "").strip(),
+        session_auth_header=os.getenv("SESSION_AUTH_HEADER", "Authorization").strip(),
+        session_auth_token=os.getenv("SESSION_AUTH_TOKEN", "").strip(),
+        session_auth_scheme=os.getenv("SESSION_AUTH_SCHEME", "Bearer").strip(),
         session_window_seconds=_get_float_env("SESSION_WINDOW_SECONDS", 300.0),
         session_send_timeout=_get_float_env("SESSION_SEND_TIMEOUT", 5.0),
         start_conversation_on_boot=_get_bool_env("START_CONVERSATION_ON_BOOT", False),

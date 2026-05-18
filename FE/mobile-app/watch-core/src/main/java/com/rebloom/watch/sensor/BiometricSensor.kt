@@ -48,6 +48,12 @@ class BiometricSensor(private val context: Context) {
         tracker.setEventListener(object : HealthTracker.TrackerEventListener {
             override fun onDataReceived(dataPoints: List<DataPoint>) {
                 dataPoints.forEach { dp ->
+                    // HEART_RATE_STATUS: 1 = 측정 성공(착용), 2 = 미착용/신호 없음
+                    val status = dp.getValue(ValueKey.HeartRateSet.HEART_RATE_STATUS)
+                    if (status != 1) {
+                        Log.d("BiometricSensor", "워치 미착용 (status=$status), 데이터 무시")
+                        return@forEach
+                    }
                     val hr = dp.getValue(ValueKey.HeartRateSet.HEART_RATE)
                     val ibiList = dp.getValue(ValueKey.HeartRateSet.IBI_LIST)
                     Log.d("BiometricSensor", "HR: $hr, IBI: $ibiList")

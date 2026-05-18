@@ -125,6 +125,10 @@
   text-align: left;
 }
 
+.parent-home-page__section-title-line {
+  display: block;
+}
+
 .parent-home-page__section-description {
   margin: 0;
   width: 100%;

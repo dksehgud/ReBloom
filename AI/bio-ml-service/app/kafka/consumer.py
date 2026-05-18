@@ -16,7 +16,6 @@ from app.config.settings import (
     KAFKA_TOPIC_GPS_CHECK_REQUEST,
     REDIS_HOST,
     REDIS_PORT,
-    IF_READY_THRESHOLD,
     KAFKA_TOPIC_STATUS_CARD_REQUESTED,
 )
 from app.service import anomaly, gps_check, if_model, phq, status_card
@@ -31,7 +30,7 @@ def _unwrap_event_envelope(message: dict) -> dict:
     return message
 
 # ──────────────────────────────────────────────
-# Redis 클라이언트 (biometric_count 조회용)
+# Redis 클라이언트 (biometric_train_requested 조회용)
 # ──────────────────────────────────────────────
 _redis: redis.Redis | None = None
 
@@ -43,14 +42,28 @@ def _get_redis() -> redis.Redis:
     return _redis
 
 
-def _get_biometric_count(user_id: str) -> int:
-    """Redis에서 유저별 biometric 수집 건수 조회"""
+def _normalize_biometrics(biometrics: list[dict]) -> list[dict]:
+    """camelCase → snake_case 변환 (BE Kafka 이벤트 필드명 정규화)"""
+    return [
+        {
+            "hr"          : b.get("hr"),
+            "rmssd"       : b.get("rmssd"),
+            "pnn50"       : b.get("pnn50"),
+            "lf_hf"       : b.get("lfHf"),
+            "acc_mag"     : b.get("accMag"),
+            "hr_acc_ratio": b.get("hrAccRatio"),
+        }
+        for b in biometrics
+    ]
+
+
+def _is_if_model_ready(user_id: str) -> bool:
+    """Redis에서 IF 모델 학습 완료 여부 조회"""
     try:
-        val = _get_redis().get(f"biometric_count:{user_id}")
-        return int(val) if val else 0
+        return _get_redis().exists(f"biometric_train_requested:{user_id}") == 1
     except Exception as e:
-        logger.warning("[Redis] biometric_count 조회 실패 | userId=%s err=%s", user_id, e)
-        return 0
+        logger.warning("[Redis] biometric_train_requested 조회 실패 | userId=%s err=%s", user_id, e)
+        return False
 
 
 # ──────────────────────────────────────────────
@@ -61,8 +74,8 @@ def _handle_biometric_raw(payload: dict) -> None:
     """
     rebloom.biometric.received.v1 처리
 
-    biometric_count < 288  → 임계치 기반 이상치 탐지 (anomaly.py)
-    biometric_count >= 288 → IF 모델 이상치 탐지 (if_model.py)
+    biometric_train_requested 없음 → 임계치 기반 이상치 탐지 (anomaly.py)
+    biometric_train_requested 있음 → IF 모델 이상치 탐지 (if_model.py)
     이상치 확정 시 → rebloom.anomaly.analysed.v1 발행
     """
 
@@ -78,10 +91,10 @@ def _handle_biometric_raw(payload: dict) -> None:
     ts_start     = payload["tsStart"]
     ts_end       = payload["tsEnd"]
 
-    count = _get_biometric_count(user_id)
-    logger.info("[biometric.raw] userId=%s biometric_count=%d", user_id, count)
+    if_ready = _is_if_model_ready(user_id)
+    logger.info("[biometric.raw] userId=%s if_model_ready=%s", user_id, if_ready)
 
-    if count < IF_READY_THRESHOLD:
+    if not if_ready:
         result = anomaly.detect_anomaly(
             hr=hr, rmssd=rmssd, pnn50=pnn50,
             lf_hf=lf_hf, acc_mag=acc_mag, hr_acc_ratio=hr_acc_ratio,
@@ -135,9 +148,9 @@ def _handle_ai_train(payload: dict) -> None:
                 user_id, len(biometrics))
 
     if_model.train_if_model(
-        user_id      = user_id,
-        biometrics      = biometrics,
-        contamination= payload.get("contamination", 0.01),
+        user_id       = user_id,
+        biometrics    = _normalize_biometrics(biometrics),
+        contamination = payload.get("contamination", 0.01),
     )
     logger.info("[ai.train] IF 최초 학습 완료 | userId=%s", user_id)
 
@@ -174,9 +187,9 @@ def _handle_ai_analyze(payload: dict) -> None:
 
         result = phq.analyze_and_retrain(
             user_id    = user_id,
-            age        = age,              # ← 추가
+            age        = age,
             sleeps     = sleeps,
-            biometrics = biometrics,
+            biometrics = _normalize_biometrics(biometrics),
         )
 
         publish_phq_result(
@@ -194,9 +207,9 @@ def _handle_ai_analyze(payload: dict) -> None:
         logger.info("[ai.analyze] IF 재학습만 시작 | userId=%s", user_id)
 
         if_model.train_if_model(
-            user_id      = user_id,
-            biometrics      = biometrics,
-            contamination= 0.01,
+            user_id       = user_id,
+            biometrics    = _normalize_biometrics(biometrics),
+            contamination = 0.01,
         )
         logger.info("[ai.analyze] IF 재학습 완료 | userId=%s", user_id)
 

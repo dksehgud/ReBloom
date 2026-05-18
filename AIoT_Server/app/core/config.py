@@ -46,9 +46,11 @@ class Settings(BaseSettings):
     )
 
     # ---------- 생성 파라미터 ----------
-    MAX_NEW_TOKENS: int = Field(default=150, description="최대 생성 토큰 수")
-    TEMPERATURE: float = Field(default=0.7, description="샘플링 온도")
+    MAX_NEW_TOKENS: int = Field(default=100, description="최대 생성 토큰 수 (2~3문장 기준 90~100)")
+    TEMPERATURE: float = Field(default=0.75, description="샘플링 온도 (0.75: 감정 표현 다양성 확보)")
     TOP_P: float = Field(default=0.9, description="Top-p 샘플링")
+    FREQUENCY_PENALTY: float = Field(default=0.4, description="빈도 패널티 (반복 표현 방지)")
+    PRESENCE_PENALTY: float = Field(default=0.2, description="존재 패널티 (다양한 화제 유도)")
 
     # ---------- 연결/타임아웃 ----------
     LLM_TIMEOUT: float = Field(default=30.0, description="LLM API 호출 타임아웃 (초)")

@@ -51,7 +51,7 @@ requirements.txt
 ### 1. 의존성 설치
 
 ```bash
-cd AI/aiot-ai-service
+cd /path/to/AIoT_Server
 pip install -r requirements.txt
 ```
 
@@ -84,7 +84,7 @@ cp .env.example .env
 
 ```bash
 # .env에서 USE_MOCK_LLM=True 설정 후
-cd AI/aiot-ai-service
+cd /path/to/AIoT_Server
 uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
@@ -120,6 +120,51 @@ python -m vllm.entrypoints.openai.api_server \
 ```
 
 vLLM이 준비되면 `.env`에서 `USE_MOCK_LLM=False`로 설정하고 LLM 서버를 재시작한다.
+
+### vLLM 모델 ID 오류 해결
+
+`OSError: ... is not a local folder and is not a valid model identifier`가 발생하면
+`--model`에 지정한 Hugging Face repo ID가 잘못되었거나 private repo일 가능성이 높다.
+
+예를 들어 아래 ID는 공개 모델로 조회되지 않는다.
+
+```bash
+hugging-quants/LGAI-EXAONE-3.5-7.8B-Instruct-AWQ-INT4
+```
+
+Qwen AWQ를 사용할 경우 README 예시처럼 실행한다.
+
+```bash
+python -m vllm.entrypoints.openai.api_server \
+    --model Qwen/Qwen3-8B-AWQ \
+    --served-model-name qwen3-8b-instruct \
+    --host 0.0.0.0 \
+    --port 8001 \
+    --max-model-len 4096 \
+    --gpu-memory-utilization 0.85
+```
+
+EXAONE AWQ를 사용할 경우 공개 repo ID는 다음 형식이다.
+
+```bash
+python -m vllm.entrypoints.openai.api_server \
+    --model LGAI-EXAONE/EXAONE-3.5-7.8B-Instruct-AWQ \
+    --served-model-name exaone-3.5-7.8b-instruct-awq \
+    --host 0.0.0.0 \
+    --port 8001 \
+    --max-model-len 4096 \
+    --gpu-memory-utilization 0.85 \
+    --trust-remote-code \
+    --revision f2699f35d5b4ba511ab93826c22bd07370296b5c \
+    --code-revision f2699f35d5b4ba511ab93826c22bd07370296b5c
+```
+
+이때 FastAPI의 `.env`에 있는 `LLM_MODEL` 값은 vLLM의
+`--served-model-name`과 반드시 같아야 한다.
+
+`RopeParameters` import 오류가 발생하면 EXAONE repo의 `main` 코드가
+현재 설치된 vLLM의 `transformers<5` 제약과 맞지 않는 상태다. 위 명령어처럼
+`--revision`과 `--code-revision`을 고정해서 실행한다.
 
 ---
 
