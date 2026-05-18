@@ -1,9 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- BLE Provisioning 화면 전용 색상 — 기존 colors.xml과 이름 충돌 없음 -->
 <resources>
-    <color name="ble_accent_primary">#4361EE</color>
-    <color name="ble_accent_secondary">#6C757D</color>
-    <color name="ble_bg_primary">#F8F9FA</color>
-    <color name="ble_text_primary">#1A1A2E</color>
-    <color name="ble_text_secondary">#6C757D</color>
+    <color name="ble_accent_primary">#344966</color>
+    <color name="ble_accent_secondary">#6C8EC4</color>
+    <color name="ble_bg_primary">#FFFFFF</color>
+    <color name="ble_bg_surface">#FFFFFF</color>
+    <color name="ble_text_primary">#1A1A1A</color>
+    <color name="ble_text_secondary">#888888</color>
+    <color name="ble_text_hint">#BBBBBB</color>
+    <color name="ble_success">#3DAA6E</color>
+    <color name="ble_success_bg">#EBF7F1</color>
+    <color name="ble_error">#E05252</color>
+    <color name="ble_error_bg">#FDEEEE</color>
+    <color name="ble_divider">#EEEEEE</color>
+    <color name="ble_icon_bg">#F0F0F0</color>
 </resources>
