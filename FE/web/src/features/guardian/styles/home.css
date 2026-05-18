@@ -513,10 +513,7 @@
 }
 
 .parent-bottom-nav__indicator {
-  width: 134px;
-  height: 5px;
-  border-radius: 999px;
-  background: rgba(168, 178, 188, 0.45);
+  display: none;
 }
 
 body[data-shell-mode='webview'] .parent-bottom-nav {
@@ -539,8 +536,7 @@ body[data-shell-mode='webview'] .parent-bottom-nav__label {
 }
 
 body[data-shell-mode='webview'] .parent-bottom-nav__indicator {
-  width: 112px;
-  height: 4px;
+  display: none;
 }
 
 .parent-home-page__placeholder-card {
