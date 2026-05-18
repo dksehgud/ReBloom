@@ -49,7 +49,7 @@ MODEL_S3_BUCKET       = os.environ["MODEL_S3_BUCKET"]
 BASE_PHQ_MODEL_S3_KEY = os.getenv("BASE_PHQ_MODEL_S3_KEY", "models/base/phq_model.pkl")
 BASE_DEPRESSION_SVR_MODEL_S3_KEY = os.getenv(
     "BASE_DEPRESSION_SVR_MODEL_S3_KEY",
-    "models/base/depression_svr_model.pkl",
+    "models/base/depression_svr_model.joblib",
 )
 USER_MODEL_S3_PREFIX  = os.getenv("USER_MODEL_S3_PREFIX", "models/users")
 

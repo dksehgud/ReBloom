@@ -35,7 +35,7 @@ def _phq_local_path() -> Path:
 
 
 def _depression_svr_local_path() -> Path:
-    return Path(MODEL_DIR) / "depression_svr_model.pkl"
+    return Path(MODEL_DIR) / "depression_svr_model.joblib"
 
 
 def _if_s3_key(user_id: str) -> str:
