@@ -66,9 +66,16 @@ function PhoneShell({children, className}: PhoneShellProps) {
 
 type RoleGuardStatus = 'allowed' | 'blocked' | 'checking'
 
+function hasMockModeParams(search: string) {
+    const searchParams = new URLSearchParams(search)
+
+    return searchParams.has('mock') || searchParams.get('mode') === 'mock'
+}
+
 function useRoleRouteGuard(
     expectedRole: SessionRole,
     isMockMode: boolean,
+    forceBlocked = false,
 ): RoleGuardStatus {
     const activeAccessToken = useAppSessionStore((state) => state.accessToken)
     const activeRole = useAppSessionStore((state) => state.activeRole)
@@ -82,6 +89,12 @@ function useRoleRouteGuard(
 
     useEffect(() => {
         let isCanceled = false
+
+        if (forceBlocked) {
+            return () => {
+                isCanceled = true
+            }
+        }
 
         if (isMockMode) {
             setActiveRole(expectedRole)
@@ -155,6 +168,7 @@ function useRoleRouteGuard(
         clearSelectedChild,
         clearSession,
         expectedRole,
+        forceBlocked,
         isMockMode,
         roleSession.accessToken,
         roleSession.currentUser,
@@ -164,6 +178,10 @@ function useRoleRouteGuard(
 
     if (isMockMode) {
         return activeRole === expectedRole ? 'allowed' : 'checking'
+    }
+
+    if (forceBlocked) {
+        return 'blocked'
     }
 
     if (!roleSession.accessToken) {
@@ -226,7 +244,11 @@ function CounselorAuthRouteLayout() {
 function CounselorRouteLayout() {
     const location = useLocation()
     const isMockMode = isCounselorMockModeSearch(location.search)
-    const guardStatus = useRoleRouteGuard('counselor', isMockMode)
+    const guardStatus = useRoleRouteGuard(
+        'counselor',
+        isMockMode,
+        hasMockModeParams(location.search),
+    )
 
     if (guardStatus === 'blocked') {
         return <Navigate replace to="/counselor/login"/>
@@ -260,7 +282,11 @@ function ChildRouteLayout() {
 function ParentRouteLayout() {
     const location = useLocation()
     const isMockMode = isParentMockModeSearch(location.search)
-    const guardStatus = useRoleRouteGuard('parent', isMockMode)
+    const guardStatus = useRoleRouteGuard(
+        'parent',
+        isMockMode,
+        hasMockModeParams(location.search),
+    )
 
     if (guardStatus === 'blocked') {
         return <Navigate replace to="/login"/>
@@ -358,7 +384,7 @@ function LoginRoute() {
             onSignUpClick={() => navigate('/signup')}
             onSubmit={handleLoginSubmit}
             onStartChildClick={() => navigate('/child/diary')}
-            onStartParentClick={() => navigate('/parent/home?mock=1')}
+            onStartParentClick={() => navigate('/parent/home')}
             onSocialLoginClick={handleSocialLogin}
         />
     )
