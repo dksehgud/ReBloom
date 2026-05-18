@@ -29,6 +29,41 @@ type SignUpPageProps = {
   onBackToLogin: () => void
 }
 
+function parseBirthDate(value: string) {
+  const match = value.match(/^(\d{4})\.(\d{2})\.(\d{2})$/)
+
+  if (!match) {
+    return null
+  }
+
+  const [, yearValue, monthValue, dayValue] = match
+  const year = Number(yearValue)
+  const month = Number(monthValue)
+  const day = Number(dayValue)
+  const date = new Date(year, month - 1, day)
+
+  if (
+    date.getFullYear() !== year ||
+    date.getMonth() !== month - 1 ||
+    date.getDate() !== day
+  ) {
+    return null
+  }
+
+  return date
+}
+
+function isFutureDate(date: Date) {
+  const today = new Date()
+  const todayDateOnly = new Date(
+    today.getFullYear(),
+    today.getMonth(),
+    today.getDate(),
+  )
+
+  return date.getTime() > todayDateOnly.getTime()
+}
+
 function SignUpPage({ onBackToLogin }: SignUpPageProps) {
   const [searchParams] = useSearchParams()
   const registerUUID = searchParams.get('registerUUID') ?? undefined
@@ -102,6 +137,19 @@ function SignUpPage({ onBackToLogin }: SignUpPageProps) {
     hasParentEmailValue && !isParentEmailValid
       ? '올바른 이메일 형식으로 입력해주세요.'
       : undefined
+  const birthDateDigitsLength = birthDate.replace(/\D/g, '').length
+  const parsedBirthDate = parseBirthDate(birthDate)
+  const isBirthDateComplete = birthDateDigitsLength === 8
+  const isBirthDateValid =
+    isBirthDateComplete &&
+    parsedBirthDate !== null &&
+    !isFutureDate(parsedBirthDate)
+  const birthDateError =
+    birthDate.trim().length > 0 && !isBirthDateValid
+      ? parsedBirthDate && isFutureDate(parsedBirthDate)
+        ? '생년월일은 오늘 이후 날짜일 수 없습니다.'
+        : '생년월일을 YYYY.MM.DD 형식의 올바른 날짜로 입력해주세요.'
+      : undefined
   const hasPasswordRuleMatch =
     hasPasswordLengthRule &&
     hasPasswordLetterRule &&
@@ -117,7 +165,7 @@ function SignUpPage({ onBackToLogin }: SignUpPageProps) {
   const childFormValid =
     isNameValid &&
     gender !== null &&
-    birthDate.trim().length > 0 &&
+    isBirthDateValid &&
     baseAddress.trim().length > 0 &&
     detailAddress.trim().length > 0 &&
     (isOAuthSignup || (hasPasswordRuleMatch && passwordsMatch)) &&
@@ -449,6 +497,10 @@ function SignUpPage({ onBackToLogin }: SignUpPageProps) {
         return '생년월일을 입력해주세요.'
       }
 
+      if (!isBirthDateValid) {
+        return birthDateError ?? '생년월일을 올바르게 입력해주세요.'
+      }
+
       if (!baseAddress.trim()) {
         return '기본 주소를 입력해주세요.'
       }
@@ -651,6 +703,7 @@ function SignUpPage({ onBackToLogin }: SignUpPageProps) {
           addressError={addressError}
           baseAddress={baseAddress}
           birthDate={birthDate}
+          birthDateError={birthDateError}
           childFormValid={childFormValid}
           detailAddress={detailAddress}
           email={email}
