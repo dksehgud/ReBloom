@@ -8,6 +8,7 @@ import type {
   ParentNotificationAction,
   ParentNotificationItem,
 } from '../constants/parentNotifications'
+import { isParentNotificationActionExpired } from '../constants/parentNotifications'
 import { getParentNotificationApi } from '../services/parentNotificationService'
 import type {
   ParentNotificationDto,
@@ -26,6 +27,7 @@ function useParentNotificationState(initialItems: ParentNotificationItem[] = [])
   const [notifications, setNotifications] = useState<ParentNotificationItem[]>(
     () => initialItems,
   )
+  const [currentTime, setCurrentTime] = useState(() => Date.now())
   const selectedActionNotificationIdsRef = useRef<Set<string>>(new Set())
   const accessToken = useAppSessionStore((state) => state.accessToken)
   const refreshToken = useAppSessionStore((state) => state.refreshToken)
@@ -113,7 +115,11 @@ function useParentNotificationState(initialItems: ParentNotificationItem[] = [])
 
       if (
         selectedActionNotificationIdsRef.current.has(notificationId) ||
-        !canChooseParentNotificationAction(targetNotification, actionKey)
+        !canChooseParentNotificationAction(
+          targetNotification,
+          actionKey,
+          Date.now(),
+        )
       ) {
         return
       }
@@ -180,6 +186,25 @@ function useParentNotificationState(initialItems: ParentNotificationItem[] = [])
     return () => window.clearTimeout(timeoutId)
   }, [loadNotifications])
 
+  const hasPendingAnomalyAction = notifications.some(
+    (notification) =>
+      Boolean(notification.actions?.length) &&
+      !notification.selectedActionKey &&
+      !isParentNotificationActionExpired(notification, currentTime),
+  )
+
+  useEffect(() => {
+    if (!hasPendingAnomalyAction) {
+      return undefined
+    }
+
+    const intervalId = window.setInterval(() => {
+      setCurrentTime(Date.now())
+    }, 1000)
+
+    return () => window.clearInterval(intervalId)
+  }, [hasPendingAnomalyAction])
+
   useEffect(() => {
     if (isMockMode || !accessToken) {
       return undefined
@@ -229,6 +254,7 @@ function useParentNotificationState(initialItems: ParentNotificationItem[] = [])
   }, [accessToken, clearSession, isMockMode, refreshToken, setSessionTokens])
 
   return {
+    currentTime,
     notifications,
     markAsRead,
     markAllAsRead,
@@ -239,10 +265,12 @@ function useParentNotificationState(initialItems: ParentNotificationItem[] = [])
 function canChooseParentNotificationAction(
   notification: ParentNotificationItem | undefined,
   actionKey: string,
+  now = Date.now(),
 ): actionKey is ParentNotificationAction['key'] {
   return Boolean(
     notification &&
       !notification.selectedActionKey &&
+      !isParentNotificationActionExpired(notification, now) &&
       notification.actions?.some((action) => action.key === actionKey),
   )
 }
@@ -362,6 +390,7 @@ function mapNotificationDtoToItem(
         ]
       : undefined,
     childrenId: payload?.childrenId,
+    createdAt: notification.createdAt,
     highlightLabel: getHighlightLabel(notification),
     icon: typeMeta.icon,
     id: String(notification.id),

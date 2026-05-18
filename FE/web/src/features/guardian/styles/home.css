@@ -1783,6 +1783,13 @@ body[data-shell-mode='webview'] .parent-bottom-nav__indicator {
   background: #344966;
 }
 
+.parent-notification-card__action-button--neutral {
+  min-width: 64px;
+  background: #edf2f7;
+  color: #718096;
+  box-shadow: none;
+}
+
 .parent-notification-card__action-button.is-selected {
   box-shadow:
     inset 0 0 0 1px rgba(255, 255, 255, 0.34),

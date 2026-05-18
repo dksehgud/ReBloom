@@ -1,11 +1,25 @@
 import { BiError, BiMessageDetail } from 'react-icons/bi'
 
-import type { ParentNotificationItem } from '../constants/parentNotifications'
+import {
+  PARENT_ANOMALY_ACTION_EXPIRED_LABEL,
+  isParentNotificationActionExpired,
+} from '../constants/parentNotifications'
+import type {
+  ParentNotificationAction,
+  ParentNotificationItem,
+} from '../constants/parentNotifications'
 
 type ParentNotificationFeedProps = {
+  currentTime: number
   items: ParentNotificationItem[]
   onCardClick: (notificationId: string) => void
   onActionClick: (notificationId: string, actionKey: string) => void
+}
+
+type ParentNotificationActionsProps = {
+  currentTime: number
+  item: ParentNotificationItem
+  onActionClick: (notificationId: string, actionKey: ParentNotificationAction['key']) => void
 }
 
 function NotificationCardIcon({
@@ -26,7 +40,68 @@ function NotificationCardIcon({
   )
 }
 
+function ParentNotificationActions({
+  currentTime,
+  item,
+  onActionClick,
+}: ParentNotificationActionsProps) {
+  if (!item.actions) {
+    return null
+  }
+
+  const isActionExpired = isParentNotificationActionExpired(item, currentTime)
+
+  if (isActionExpired) {
+    return (
+      <div className="parent-notification-card__actions">
+        <button
+          type="button"
+          className="parent-notification-card__action-button parent-notification-card__action-button--neutral is-muted"
+          disabled
+        >
+          {PARENT_ANOMALY_ACTION_EXPIRED_LABEL}
+        </button>
+      </div>
+    )
+  }
+
+  return (
+    <div className="parent-notification-card__actions">
+      {item.actions
+        .filter(
+          (action) =>
+            !item.selectedActionKey ||
+            item.selectedActionKey === action.key,
+        )
+        .map((action) => {
+          const isActionSelected = item.selectedActionKey === action.key
+          const isActionLocked = Boolean(item.selectedActionKey)
+
+          return (
+            <button
+              key={action.key}
+              type="button"
+              className={`parent-notification-card__action-button parent-notification-card__action-button--${action.tone}${isActionSelected ? ' is-selected' : ''}${isActionLocked && !isActionSelected ? ' is-muted' : ''}`}
+              aria-pressed={isActionSelected}
+              disabled={isActionLocked}
+              onClick={(event) => {
+                event.stopPropagation()
+
+                if (!isActionLocked) {
+                  onActionClick(item.id, action.key)
+                }
+              }}
+            >
+              {action.label}
+            </button>
+          )
+        })}
+    </div>
+  )
+}
+
 function ParentNotificationFeed({
+  currentTime,
   items,
   onCardClick,
   onActionClick,
@@ -65,39 +140,11 @@ function ParentNotificationFeed({
                 <span className="parent-notification-card__highlight">{item.highlightLabel}</span>
               ) : null}
 
-              {item.actions ? (
-                <div className="parent-notification-card__actions">
-                  {item.actions
-                    .filter(
-                      (action) =>
-                        !item.selectedActionKey ||
-                        item.selectedActionKey === action.key,
-                    )
-                    .map((action) => {
-                      const isActionSelected = item.selectedActionKey === action.key
-                      const isActionLocked = Boolean(item.selectedActionKey)
-
-                      return (
-                        <button
-                          key={action.key}
-                          type="button"
-                          className={`parent-notification-card__action-button parent-notification-card__action-button--${action.tone}${isActionSelected ? ' is-selected' : ''}${isActionLocked && !isActionSelected ? ' is-muted' : ''}`}
-                          aria-pressed={isActionSelected}
-                          disabled={isActionLocked}
-                          onClick={(event) => {
-                            event.stopPropagation()
-
-                            if (!isActionLocked) {
-                              onActionClick(item.id, action.key)
-                            }
-                          }}
-                        >
-                          {action.label}
-                        </button>
-                      )
-                    })}
-                </div>
-              ) : null}
+              <ParentNotificationActions
+                currentTime={currentTime}
+                item={item}
+                onActionClick={onActionClick}
+              />
             </div>
           </div>
         </article>
