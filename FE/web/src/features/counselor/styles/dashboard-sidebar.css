@@ -37,8 +37,24 @@
   border-bottom: 0;
 }
 
-.counselor-dashboard.is-sidebar-collapsed .counselor-dashboard-brand div {
+.counselor-dashboard.is-sidebar-collapsed .counselor-dashboard-brand-link {
   display: none;
+}
+
+.counselor-dashboard-brand-link {
+  display: block;
+  min-width: 0;
+  padding: 0;
+  text-align: left;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+}
+
+.counselor-dashboard-brand-link:focus-visible {
+  outline: 2px solid rgba(136, 181, 196, 0.45);
+  outline-offset: 4px;
+  border-radius: 8px;
 }
 
 .counselor-dashboard-brand h1 {
@@ -312,7 +328,7 @@
     padding: 16px 18px;
   }
 
-  .counselor-dashboard.is-sidebar-collapsed .counselor-dashboard-brand div {
+  .counselor-dashboard.is-sidebar-collapsed .counselor-dashboard-brand-link {
     display: none;
   }
 

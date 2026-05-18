@@ -171,6 +171,22 @@ function parseDate(dateValue: string) {
   return new Date(year, month - 1, day)
 }
 
+function getDateKey(dateValue?: string | null) {
+  const match = dateValue?.match(/^\d{4}-\d{2}-\d{2}/)
+
+  return match?.[0] ?? null
+}
+
+function isDateInRange(dateValue: string, startDate?: string, endDate?: string) {
+  if (!startDate || !endDate) {
+    return true
+  }
+
+  const dateKey = getDateKey(dateValue)
+
+  return Boolean(dateKey && dateKey >= startDate && dateKey <= endDate)
+}
+
 function clampMetricValue(value: number) {
   return Math.max(0, Math.min(100, Math.round(value)))
 }
@@ -471,8 +487,11 @@ function getAnalysisCardsForFilter(
 function mapAnalysisContentToExpressionAnalysis(
   response: CounselorAnalysisContentResponseDto,
   weekLabels: string[] = [],
+  dateRange?: { endDate: string; startDate: string },
 ): DashboardExpressionAnalysis {
-  const dailyGroups = response.dailyGroups ?? []
+  const dailyGroups = (response.dailyGroups ?? []).filter((group) =>
+    isDateInRange(group.date, dateRange?.startDate, dateRange?.endDate),
+  )
   const trend = EXPRESSION_FILTERS.reduce<
     Record<ExpressionFilter, DashboardMetricPoint[]>
   >(
@@ -570,7 +589,13 @@ function mapAnalysisContentToExpressionAnalysis(
   }
 }
 
-function useCounselorDashboardState() {
+type UseCounselorDashboardStateOptions = {
+  initialSelectedChildId?: string | null
+}
+
+function useCounselorDashboardState({
+  initialSelectedChildId = null,
+}: UseCounselorDashboardStateOptions = {}) {
   const accessToken = useAppSessionStore((state) => state.accessToken)
   const refreshToken = useAppSessionStore((state) => state.refreshToken)
   const clearSession = useAppSessionStore((state) => state.clearSession)
@@ -586,7 +611,9 @@ function useCounselorDashboardState() {
     unreadParentReportNotificationIdsByChildId,
     setUnreadParentReportNotificationIdsByChildId,
   ] = useState<Map<string, number[]>>(() => new Map())
-  const [selectedChildId, setSelectedChildId] = useState<string | null>(null)
+  const [selectedChildId, setSelectedChildId] = useState<string | null>(
+    initialSelectedChildId,
+  )
   const [isLoadingChildItems, setIsLoadingChildItems] = useState(!isMockMode)
   const [childItemsError, setChildItemsError] = useState<string>()
   const [connectionRequests, setConnectionRequests] = useState(() =>
@@ -654,6 +681,12 @@ function useCounselorDashboardState() {
   const [isLoadingDashboardMetrics, setIsLoadingDashboardMetrics] =
     useState(!isMockMode)
   const [dashboardMetricsError, setDashboardMetricsError] = useState<string>()
+  const [mainColumnElement, setMainColumnElement] =
+    useState<HTMLDivElement | null>(null)
+  const [analysisCardHeight, setAnalysisCardHeight] = useState<number>()
+  const mainColumnRef = useCallback((node: HTMLDivElement | null) => {
+    setMainColumnElement(node)
+  }, [])
   const [selectedObservation, setSelectedObservation] =
     useState<ObservationRecord | null>(null)
   const [observationRecords, setObservationRecords] = useState<
@@ -802,6 +835,12 @@ function useCounselorDashboardState() {
     setWeekOffsets(INITIAL_DASHBOARD_WEEK_OFFSETS)
   }
 
+  const handleClearSelectedChild = () => {
+    setSelectedChildId(null)
+    setSelectedObservation(null)
+    setWeekOffsets(INITIAL_DASHBOARD_WEEK_OFFSETS)
+  }
+
   const handleSaveObservationComment = async (
     record: ObservationRecord,
     context: string,
@@ -940,7 +979,11 @@ function useCounselorDashboardState() {
   const loadChildItems = useCallback(async () => {
     if (isMockMode) {
       setChildItems(initialChildList)
-      setSelectedChildId(null)
+      setSelectedChildId((current) =>
+        current && initialChildList.some((child) => child.id === current)
+          ? current
+          : null,
+      )
       setSelectedObservation(null)
       setChildItemsError(undefined)
       setIsLoadingChildItems(false)
@@ -1247,6 +1290,10 @@ function useCounselorDashboardState() {
         mapAnalysisContentToExpressionAnalysis(
           analysisContent,
           expressionWeekLabels,
+          {
+            endDate: expressionRange.endDate,
+            startDate: expressionRange.startDate,
+          },
         ),
       )
     } catch (error) {
@@ -1422,6 +1469,58 @@ function useCounselorDashboardState() {
   }, [loadDashboardMetrics])
 
   useEffect(() => {
+    if (typeof window === 'undefined' || !mainColumnElement) {
+      return undefined
+    }
+
+    const mediaQuery = window.matchMedia('(min-width: 901px)')
+    let animationFrameId: number | null = null
+
+    const updateAnalysisCardHeight = () => {
+      if (!mediaQuery.matches) {
+        setAnalysisCardHeight((currentHeight) =>
+          currentHeight === undefined ? currentHeight : undefined,
+        )
+        return
+      }
+
+      const nextHeight = Math.round(mainColumnElement.getBoundingClientRect().height)
+
+      setAnalysisCardHeight((currentHeight) =>
+        currentHeight === nextHeight ? currentHeight : nextHeight,
+      )
+    }
+
+    const scheduleAnalysisCardHeightUpdate = () => {
+      if (animationFrameId !== null) {
+        window.cancelAnimationFrame(animationFrameId)
+      }
+
+      animationFrameId = window.requestAnimationFrame(updateAnalysisCardHeight)
+    }
+
+    const resizeObserver =
+      typeof ResizeObserver === 'undefined'
+        ? null
+        : new ResizeObserver(scheduleAnalysisCardHeightUpdate)
+
+    resizeObserver?.observe(mainColumnElement)
+    mediaQuery.addEventListener('change', scheduleAnalysisCardHeightUpdate)
+    window.addEventListener('resize', scheduleAnalysisCardHeightUpdate)
+    scheduleAnalysisCardHeightUpdate()
+
+    return () => {
+      if (animationFrameId !== null) {
+        window.cancelAnimationFrame(animationFrameId)
+      }
+
+      resizeObserver?.disconnect()
+      mediaQuery.removeEventListener('change', scheduleAnalysisCardHeightUpdate)
+      window.removeEventListener('resize', scheduleAnalysisCardHeightUpdate)
+    }
+  }, [mainColumnElement])
+
+  useEffect(() => {
     if (!selectedObservation) {
       return undefined
     }
@@ -1502,6 +1601,7 @@ function useCounselorDashboardState() {
   ])
 
   return {
+    analysisCardHeight,
     autonomicData,
     autonomicWeek,
     biometricRatioData,
@@ -1518,6 +1618,7 @@ function useCounselorDashboardState() {
     handleDeleteObservationComment,
     handleRejectConnectionRequest,
     handleSaveObservationComment,
+    handleClearSelectedChild,
     handleSelectChild,
     isLoadingObservationComment,
     isLoadingConnectionRequests,
@@ -1527,6 +1628,7 @@ function useCounselorDashboardState() {
     isLoadingObservationRecords,
     isSubmittingObservationComment,
     isSidebarCollapsed,
+    mainColumnRef,
     observationCommentError,
     observationComments,
     observationRecordsError,

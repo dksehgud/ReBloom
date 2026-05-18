@@ -27,7 +27,7 @@ function ObservationList({
         <p className="counselor-observation-empty">{error}</p>
       ) : null}
       {!isLoading && !error && records.length === 0 ? (
-        <p className="counselor-observation-empty">선택한 주차의 관찰 기록이 없습니다.</p>
+        <p className="counselor-observation-empty">선택한 주차의 기록이 없습니다.</p>
       ) : null}
       {!isLoading && !error
         ? records.map((record) => (

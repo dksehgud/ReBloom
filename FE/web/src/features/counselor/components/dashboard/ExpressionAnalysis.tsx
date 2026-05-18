@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, type CSSProperties } from 'react'
 
 import DiaryEmotionIcon from '../../../diary/components/DiaryEmotionIcon'
 import {
@@ -19,11 +19,14 @@ type ExpressionAnalysisProps = {
   isFirstWeek: boolean
   isLastWeek: boolean
   isLoading?: boolean
+  maxHeight?: number
   weekLabel: string
   childId: string
   onPrevWeek: () => void
   onNextWeek: () => void
 }
+
+const DEFAULT_EXPRESSION_CARD_HEIGHT = 1092.5
 
 function ExpressionAnalysis({
   analysis,
@@ -31,6 +34,7 @@ function ExpressionAnalysis({
   isFirstWeek,
   isLastWeek,
   isLoading = false,
+  maxHeight,
   weekLabel,
   childId,
   onPrevWeek,
@@ -51,6 +55,13 @@ function ExpressionAnalysis({
       title="최근 표현 분석"
       className="counselor-expression-card"
       info={dashboardInfoMessages.expression}
+      style={
+        {
+          '--counselor-expression-card-height': `${
+            maxHeight ?? DEFAULT_EXPRESSION_CARD_HEIGHT
+          }px`,
+        } as CSSProperties
+      }
     >
       <div className="counselor-expression-tabs" aria-label="분석 범위">
         <div className="counselor-expression-tab-group">
@@ -141,11 +152,15 @@ function ExpressionAnalysis({
                   </section>
                 ))}
               </div>
-            ) : null}
+            ) : (
+              <p className="counselor-timeline-empty counselor-expression-empty">
+                선택한 주차의 기록이 없습니다.
+              </p>
+            )}
           </>
         ) : (
           <p className="counselor-timeline-empty counselor-expression-empty">
-            해당 주차에 표시할 기록이 없습니다.
+            선택한 주차의 기록이 없습니다.
           </p>
         )}
       </div>
