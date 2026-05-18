@@ -37,9 +37,6 @@ rebloom:
       anomaly-analysed: ${KAFKA_TOPIC_ANOMALY_ANALYSED:rebloom.anomaly.analysed.v1}
       parent-report-created: ${KAFKA_TOPIC_PARENT_REPORT_CREATED:rebloom.parent-report.created.v1}
       parent-report-comment-created: ${KAFKA_TOPIC_PARENT_REPORT_COMMENT_CREATED:rebloom.parent-report-comment.created.v1}
-      gps-check-requested: ${KAFKA_TOPIC_GPS_CHECK_REQUEST:rebloom.gps-check.requested.v1}
-      gps-check-same: ${KAFKA_TOPIC_GPS_CHECK_SAME:rebloom.gps-check.same.v1}
-      gps-check-different: ${KAFKA_TOPIC_GPS_CHECK_DIFFERENT:rebloom.gps-check.different.v1}
       event-dlt: ${KAFKA_TOPIC_EVENT_DLT:rebloom.event.dlt.v1}
     producer:
       retries: 3

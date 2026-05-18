@@ -4,11 +4,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ssafy.rebloom.common.exception.CustomException;
 import com.ssafy.rebloom.common.exception.ErrorCode;
-import com.ssafy.rebloom.event.config.property.KafkaCommonProperties;
-import com.ssafy.rebloom.event.core.EventTypes;
-import com.ssafy.rebloom.event.dto.GpsCheckRequestedEvent;
-import com.ssafy.rebloom.event.publisher.EventPublisher;
-import com.ssafy.rebloom.event.support.EventKeyGenerator;
 import com.ssafy.rebloom.notification_service.constants.Constants;
 import com.ssafy.rebloom.notification_service.domain.entity.Notification;
 import com.ssafy.rebloom.notification_service.domain.entity.NotificationPayload;
@@ -18,8 +13,11 @@ import com.ssafy.rebloom.notification_service.domain.enums.ReceiverRole;
 import com.ssafy.rebloom.notification_service.dto.AnomalyAlertPhaseState;
 import com.ssafy.rebloom.notification_service.dto.NotificationCommand;
 import com.ssafy.rebloom.notification_service.dto.ParentReceiverInfo;
+import com.ssafy.rebloom.notification_service.dto.response.ChildrenIotInfoResponseDto;
 import com.ssafy.rebloom.notification_service.repository.NotificationRepository;
 import com.ssafy.rebloom.notification_service.service.AnomalyAlertService;
+import com.ssafy.rebloom.notification_service.service.AuthServiceResolveService;
+import com.ssafy.rebloom.notification_service.service.MqttPublishService;
 import com.ssafy.rebloom.notification_service.service.NotificationAlertSender;
 import com.ssafy.rebloom.notification_service.service.RedisService;
 import java.time.Duration;
@@ -41,26 +39,28 @@ public class AnomalyAlertServiceImpl implements AnomalyAlertService {
     private final ObjectMapper objectMapper;
     private final NotificationAlertSender notificationAlertSender;
     private final NotificationRepository notificationRepository;
-    private final EventPublisher eventPublisher;
-    private final KafkaCommonProperties kafkaProperties;
-    private final EventKeyGenerator eventKeyGenerator;
+    private final AuthServiceResolveService authServiceResolveService;
+    private final MqttPublishService mqttPublishService;
 
     private final String instanceId = UUID.randomUUID().toString();
 
     @Override
-    public boolean requestGpsCheck(UUID childrenId, UUID parentId, String correlationId) {
+    public boolean requestConversationStart(UUID childrenId, UUID parentId, String correlationId) {
         if (!acquireConversationLock(childrenId)) {
-            log.debug("GPS check request ignored by conversation lock. childrenId={}", childrenId);
+            log.debug("Conversation start request ignored by conversation lock. childrenId={}", childrenId);
             return false;
         }
 
         try {
-            publishGpsCheckRequested(childrenId, parentId, correlationId);
+            ChildrenIotInfoResponseDto iotInfo =
+                authServiceResolveService.resolveChildrenIotInfo(childrenId);
+
+            mqttPublishService.publishConversationStart(iotInfo, correlationId);
             return true;
         } catch (RuntimeException e) {
             releaseConversationLock(childrenId);
             log.error(
-                "Failed to publish GPS check requested event. childrenId={}, parentId={}",
+                "Failed to publish MQTT conversation start. childrenId={}, parentId={}",
                 childrenId,
                 parentId,
                 e
@@ -177,7 +177,7 @@ public class AnomalyAlertServiceImpl implements AnomalyAlertService {
                 return;
             }
 
-            requestGpsCheckAndFinishPhase(latest);
+            requestConversationStartAndFinishPhase(latest);
         } finally {
             releasePhaseLock(phase.childrenId(), lockToken.get());
         }
@@ -249,7 +249,7 @@ public class AnomalyAlertServiceImpl implements AnomalyAlertService {
                 AnomalyActionStatus.REJECTED
             );
 
-            boolean requested = requestGpsCheck(
+            boolean requested = requestConversationStart(
                 phase.childrenId(),
                 phase.parentId(),
                 phase.correlationId() != null ? phase.correlationId() : correlationId
@@ -257,7 +257,7 @@ public class AnomalyAlertServiceImpl implements AnomalyAlertService {
 
             if (!requested) {
                 log.debug(
-                    "GPS check request already in progress. childrenId={}, parentId={}",
+                    "Conversation start request already in progress. childrenId={}, parentId={}",
                     phase.childrenId(),
                     phase.parentId()
                 );
@@ -304,8 +304,8 @@ public class AnomalyAlertServiceImpl implements AnomalyAlertService {
         notification.markAnomalyActionStatus(status);
     }
 
-    private void requestGpsCheckAndFinishPhase(AnomalyAlertPhaseState phase) {
-        boolean requested = requestGpsCheck(
+    private void requestConversationStartAndFinishPhase(AnomalyAlertPhaseState phase) {
+        boolean requested = requestConversationStart(
             phase.childrenId(),
             phase.parentId(),
             phase.correlationId()
@@ -313,7 +313,7 @@ public class AnomalyAlertServiceImpl implements AnomalyAlertService {
 
         if (!requested) {
             log.debug(
-                "GPS check request already in progress on phase timeout. childrenId={}, parentId={}",
+                "Conversation start request already in progress on phase timeout. childrenId={}, parentId={}",
                 phase.childrenId(),
                 phase.parentId()
             );
@@ -449,33 +449,6 @@ public class AnomalyAlertServiceImpl implements AnomalyAlertService {
             NotificationCode.RISK_ALERT,
             payload
         ));
-    }
-
-    private void publishGpsCheckRequested(
-        UUID childrenId,
-        UUID parentId,
-        String correlationId
-    ) {
-        GpsCheckRequestedEvent payload = new GpsCheckRequestedEvent(
-            childrenId,
-            parentId
-        );
-
-        String key = eventKeyGenerator.userKey(childrenId);
-        String idempotencyKey = eventKeyGenerator.idempotencyKey(
-            EventTypes.GPS_CHECK_REQUESTED,
-            childrenId.toString(),
-            correlationId != null ? correlationId : parentId.toString()
-        );
-
-        eventPublisher.publish(
-            kafkaProperties.getTopics().getGpsCheckRequested(),
-            key,
-            EventTypes.GPS_CHECK_REQUESTED,
-            correlationId,
-            idempotencyKey,
-            payload
-        );
     }
 
     private boolean acquireConversationLock(UUID childrenId) {

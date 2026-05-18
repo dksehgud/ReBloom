@@ -29,4 +29,9 @@ public interface AuthServiceInternalClient {
     BaseResponse<CounselorReceiverResponseDto> getCounselorReceiver(
         @PathVariable UUID childrenId
     );
+
+    @GetMapping("/api/v1/internal/devices/serial/{serialNumber}/children-id")
+    BaseResponse<UUID> getChildrenIdByDeviceSerial(
+        @PathVariable String serialNumber
+    );
 }
