@@ -40,8 +40,8 @@ function CounselorDashboardPage() {
     connectionRequestsError,
     currentObservationRecords,
     dashboardExpressionAnalysis,
-    dashboardMetricsError,
     expressionWeek,
+    expressionAnalysisError,
     handleAcceptConnectionRequest,
     handleClearSelectedChild,
     handleDeleteObservationComment,
@@ -50,7 +50,7 @@ function CounselorDashboardPage() {
     handleSelectChild,
     isLoadingObservationComment,
     isLoadingConnectionRequests,
-    isLoadingDashboardMetrics,
+    isLoadingExpressionAnalysis,
     isConnectionModalOpen,
     isLoadingChildItems,
     isLoadingObservationRecords,
@@ -263,8 +263,8 @@ function CounselorDashboardPage() {
                 >
                   <ExpressionAnalysis
                     analysis={dashboardExpressionAnalysis}
-                    error={dashboardMetricsError}
-                    isLoading={isLoadingDashboardMetrics}
+                    error={expressionAnalysisError}
+                    isLoading={isLoadingExpressionAnalysis}
                     isFirstWeek={expressionWeek.isFirstWeek}
                     isLastWeek={expressionWeek.isLastWeek}
                     maxHeight={analysisCardHeight}

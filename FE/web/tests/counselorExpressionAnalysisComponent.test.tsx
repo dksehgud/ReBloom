@@ -25,7 +25,7 @@ describe('counselor expression analysis empty state', () => {
       />,
     )
 
-    expect(markup).toContain('해당 주차에 표시할 기록이 없습니다.')
+    expect(markup).toContain('선택한 주차의 기록이 없습니다.')
     expect(markup.match(/counselor-expression-empty/g)).toHaveLength(1)
     expect(markup).not.toContain('counselor-expression-chart')
     expect(markup).not.toContain('counselor-timeline-day')

@@ -681,6 +681,9 @@ function useCounselorDashboardState({
   const [isLoadingDashboardMetrics, setIsLoadingDashboardMetrics] =
     useState(!isMockMode)
   const [dashboardMetricsError, setDashboardMetricsError] = useState<string>()
+  const [isLoadingExpressionAnalysis, setIsLoadingExpressionAnalysis] =
+    useState(!isMockMode)
+  const [expressionAnalysisError, setExpressionAnalysisError] = useState<string>()
   const [mainColumnElement, setMainColumnElement] =
     useState<HTMLDivElement | null>(null)
   const [analysisCardHeight, setAnalysisCardHeight] = useState<number>()
@@ -1191,12 +1194,6 @@ function useCounselorDashboardState({
           currentChildId,
         ),
       )
-      setDashboardExpressionAnalysis(
-        createMockExpressionAnalysis(
-          getMockWeekIndex(weekOffsets.expression),
-          currentChildId,
-        ),
-      )
       setDashboardMetricsError(undefined)
       setIsLoadingDashboardMetrics(false)
       return
@@ -1207,7 +1204,6 @@ function useCounselorDashboardState({
       setSleepEfficiencyData([])
       setBiometricRatioData([])
       setAutonomicData([])
-      setDashboardExpressionAnalysis(createEmptyExpressionAnalysis())
       setDashboardMetricsError(undefined)
       setIsLoadingDashboardMetrics(false)
       return
@@ -1233,52 +1229,33 @@ function useCounselorDashboardState({
       weekOffsets.autonomic,
       weekRangeOptions,
     )
-    const expressionRange = getWeekRangeByOffset(
-      weekOffsets.expression,
-      weekRangeOptions,
-    )
-    const expressionWeekLabels = createWeekdayLabelsFromStartDate(
-      expressionRange.startDate,
-    )
-
     try {
       setIsLoadingDashboardMetrics(true)
       setDashboardMetricsError(undefined)
 
-      const [
-        sleepScores,
-        sleepEfficiencies,
-        hrAccRatios,
-        rmssds,
-        analysisContent,
-      ] = await Promise.all([
-        getChildSleepScores({
-          accessToken,
-          baseDate: sleepScoreRange.baseDate,
-          childrenId: selectedChildId,
-        }),
-        getChildSleepEfficiencies({
-          accessToken,
-          baseDate: sleepEfficiencyRange.baseDate,
-          childrenId: selectedChildId,
-        }),
-        getChildHrAccRatios({
-          accessToken,
-          baseDate: biometricRatioRange.baseDate,
-          childrenId: selectedChildId,
-        }),
-        getChildRmssds({
-          accessToken,
-          baseDate: autonomicRange.baseDate,
-          childrenId: selectedChildId,
-        }),
-        getCounselorAnalysisContent({
-          accessToken,
-          childId: selectedChildId,
-          endDate: expressionRange.endDate,
-          startDate: expressionRange.startDate,
-        }),
-      ])
+      const [sleepScores, sleepEfficiencies, hrAccRatios, rmssds] =
+        await Promise.all([
+          getChildSleepScores({
+            accessToken,
+            baseDate: sleepScoreRange.baseDate,
+            childrenId: selectedChildId,
+          }),
+          getChildSleepEfficiencies({
+            accessToken,
+            baseDate: sleepEfficiencyRange.baseDate,
+            childrenId: selectedChildId,
+          }),
+          getChildHrAccRatios({
+            accessToken,
+            baseDate: biometricRatioRange.baseDate,
+            childrenId: selectedChildId,
+          }),
+          getChildRmssds({
+            accessToken,
+            baseDate: autonomicRange.baseDate,
+            childrenId: selectedChildId,
+          }),
+        ])
 
       setSleepScoreData(mapDashboardChartPoints(sleepScores.contents ?? [], 60))
       setSleepEfficiencyData(
@@ -1286,6 +1263,72 @@ function useCounselorDashboardState({
       )
       setBiometricRatioData(mapDashboardChartPoints(hrAccRatios.contents ?? []))
       setAutonomicData(mapDashboardChartPoints(rmssds.contents ?? []))
+    } catch (error) {
+      console.error(error)
+      setSleepScoreData([])
+      setSleepEfficiencyData([])
+      setBiometricRatioData([])
+      setAutonomicData([])
+      setDashboardMetricsError(
+        error instanceof Error
+          ? error.message
+          : '상담사 대시보드 분석 데이터를 불러오지 못했습니다.',
+      )
+    } finally {
+      setIsLoadingDashboardMetrics(false)
+    }
+  }, [
+    accessToken,
+    isMockMode,
+    selectedChildId,
+    weekOffsets.autonomic,
+    weekOffsets.biometricRatio,
+    weekOffsets.sleepEfficiency,
+    weekOffsets.sleepScore,
+  ])
+
+  const loadDashboardExpressionAnalysis = useCallback(async () => {
+    const currentChildId =
+      selectedChildId ?? initialChildList[0]?.id ?? 'mock-child-1'
+
+    if (isMockMode) {
+      setDashboardExpressionAnalysis(
+        createMockExpressionAnalysis(
+          getMockWeekIndex(weekOffsets.expression),
+          currentChildId,
+        ),
+      )
+      setExpressionAnalysisError(undefined)
+      setIsLoadingExpressionAnalysis(false)
+      return
+    }
+
+    if (!accessToken || !selectedChildId) {
+      setDashboardExpressionAnalysis(createEmptyExpressionAnalysis())
+      setExpressionAnalysisError(undefined)
+      setIsLoadingExpressionAnalysis(false)
+      return
+    }
+
+    const expressionRange = getWeekRangeByOffset(weekOffsets.expression, {
+      baseDateStrategy: 'end',
+      clampEndDateToToday: true,
+    })
+    const expressionWeekLabels = createWeekdayLabelsFromStartDate(
+      expressionRange.startDate,
+    )
+
+    try {
+      setIsLoadingExpressionAnalysis(true)
+      setExpressionAnalysisError(undefined)
+
+      const analysisContent = await getCounselorAnalysisContent({
+        accessToken,
+        childId: selectedChildId,
+        endDate: expressionRange.endDate,
+        startDate: expressionRange.startDate,
+      })
+
       setDashboardExpressionAnalysis(
         mapAnalysisContentToExpressionAnalysis(
           analysisContent,
@@ -1298,20 +1341,16 @@ function useCounselorDashboardState({
       )
     } catch (error) {
       console.error(error)
-      setSleepScoreData([])
-      setSleepEfficiencyData([])
-      setBiometricRatioData([])
-      setAutonomicData([])
       setDashboardExpressionAnalysis(createEmptyExpressionAnalysis())
-      setDashboardMetricsError(
+      setExpressionAnalysisError(
         error instanceof Error
           ? error.message
           : '상담사 대시보드 분석 데이터를 불러오지 못했습니다.',
       )
     } finally {
-      setIsLoadingDashboardMetrics(false)
+      setIsLoadingExpressionAnalysis(false)
     }
-  }, [accessToken, isMockMode, selectedChildId, weekOffsets])
+  }, [accessToken, isMockMode, selectedChildId, weekOffsets.expression])
 
   const handleAcceptConnectionRequest = async (
     request: CounselorConnectionRequest,
@@ -1469,6 +1508,14 @@ function useCounselorDashboardState({
   }, [loadDashboardMetrics])
 
   useEffect(() => {
+    const timeoutId = window.setTimeout(() => {
+      void loadDashboardExpressionAnalysis()
+    }, 0)
+
+    return () => window.clearTimeout(timeoutId)
+  }, [loadDashboardExpressionAnalysis])
+
+  useEffect(() => {
     if (typeof window === 'undefined' || !mainColumnElement) {
       return undefined
     }
@@ -1614,6 +1661,7 @@ function useCounselorDashboardState({
     dashboardExpressionAnalysis,
     dashboardMetricsError,
     expressionWeek,
+    expressionAnalysisError,
     handleAcceptConnectionRequest,
     handleDeleteObservationComment,
     handleRejectConnectionRequest,
@@ -1623,6 +1671,7 @@ function useCounselorDashboardState({
     isLoadingObservationComment,
     isLoadingConnectionRequests,
     isLoadingDashboardMetrics,
+    isLoadingExpressionAnalysis,
     isConnectionModalOpen,
     isLoadingChildItems,
     isLoadingObservationRecords,
