@@ -12,7 +12,7 @@ public record ConversationAnalysisCardResponse(
     LocalDateTime startedAt,
     LocalDateTime endedAt,
     String embeddingText,
-    String prediction,
+    Double prediction,
     boolean aiInitiated,
     List<String> keywords
 ) {

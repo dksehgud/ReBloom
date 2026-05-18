@@ -4,10 +4,14 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.ssafy.rebloom.common.exception.CustomException;
 import com.ssafy.rebloom.common.exception.ErrorCode;
 import com.ssafy.rebloom.report_service.analysis.client.AuthAccessClient;
+import com.ssafy.rebloom.report_service.analysis.client.BiometricAnalysisFeatureClient;
 import com.ssafy.rebloom.report_service.analysis.domain.entity.*;
 import com.ssafy.rebloom.report_service.analysis.dto.request.ConversationSessionCreateRequestDto;
+import com.ssafy.rebloom.report_service.analysis.dto.request.DepressionSvrPredictRequest;
 import com.ssafy.rebloom.report_service.analysis.dto.request.DiaryAnalysisInferenceRequestDto;
 import com.ssafy.rebloom.report_service.analysis.dto.request.RecentInsightInferenceRequestDto;
+import com.ssafy.rebloom.report_service.analysis.dto.response.BiometricAnalysisFeatureResponse;
+import com.ssafy.rebloom.report_service.analysis.dto.response.DepressionSvrPredictResponse;
 import com.ssafy.rebloom.report_service.analysis.repository.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -32,6 +36,9 @@ public class AnalysisInferenceService {
 
     private static final String RUNPOD_COMPLETED_STATUS = "COMPLETED";
     private static final Set<String> RUNPOD_FAILED_STATUSES = Set.of("FAILED", "CANCELLED", "TIMED_OUT");
+    private static final int FEATURE_COUNT = 11;
+    private static final int SLEEP_FEATURE_INDEX = 9;
+    private static final int PHQ_FEATURE_INDEX = 10;
 
     /*
      * RestClient.Builder
@@ -43,6 +50,7 @@ public class AnalysisInferenceService {
     private final RestClient.Builder restClientBuilder;
 
     private final AuthAccessClient authAccessClient;
+    private final BiometricAnalysisFeatureClient biometricAnalysisFeatureClient;
     private final AnalysisKeywordRepository analysisKeywordRepository;
     private final DiaryAnalysisRepository diaryAnalysisRepository;
     private final ConversationAnalysisRepository conversationAnalysisRepository;
@@ -78,6 +86,9 @@ public class AnalysisInferenceService {
 
     @Value("${RECENT_INSIGHT_API_KEY}")
     private String recentInsightApiKey;
+
+    @Value("${rebloom.client.bio-ml-service-url}")
+    private String bioMlServiceUrl;
 
     @Async("analysisTaskExecutor")
     public void analyzeConversation(ConversationSessionCreateRequestDto request) {
@@ -126,7 +137,9 @@ public class AnalysisInferenceService {
         JsonNode output = requestRunpod(text);
         UUID childrenId = authAccessClient.getChildrenIdByDeviceSerial(request.raspberrypiId());
         UUID analysisId = parseSessionId(request.sessionId());
-        String prediction = readRequiredText(output, "prediction");
+        LocalDate targetDate = resolveTargetDate(output, request.endedAt().toLocalDateTime().toLocalDate());
+        LocalDateTime referenceDateTime = request.endedAt().toLocalDateTime();
+        Double prediction = inferPredictionScore(output, childrenId, targetDate, referenceDateTime);
         List<String> keywords = readRequiredTextList(output, "keywords");
 
         transactionTemplate.executeWithoutResult(status -> {
@@ -177,7 +190,9 @@ public class AnalysisInferenceService {
          * The diary content is already a single text body, so it can be sent as-is.
          */
         JsonNode output = requestRunpod(request.content());
-        String prediction = readRequiredText(output, "prediction");
+        LocalDate targetDate = resolveTargetDate(output, request.targetDate());
+        LocalDateTime referenceDateTime = targetDate.plusDays(1).atStartOfDay();
+        Double prediction = inferPredictionScore(output, request.userId(), targetDate, referenceDateTime);
         List<String> keywords = readRequiredTextList(output, "keywords");
 
         transactionTemplate.executeWithoutResult(status -> {
@@ -417,6 +432,67 @@ public class AnalysisInferenceService {
         }
     }
 
+    private Double inferPredictionScore(
+        JsonNode output,
+        UUID childrenId,
+        LocalDate targetDate,
+        LocalDateTime referenceDateTime
+    ) {
+        List<Double> features = new ArrayList<>(readRequiredDoubleList(output, "logits", FEATURE_COUNT));
+        BiometricAnalysisFeatureResponse biometricFeatures = biometricAnalysisFeatureClient.getAnalysisFeatures(
+            childrenId,
+            targetDate,
+            referenceDateTime
+        );
+
+        if (biometricFeatures != null && biometricFeatures.hasSleepData() && biometricFeatures.sleepFeature() != null) {
+            features.set(SLEEP_FEATURE_INDEX, biometricFeatures.sleepFeature());
+        }
+
+        if (biometricFeatures != null && biometricFeatures.hasPhqData() && biometricFeatures.phqFeature() != null) {
+            features.set(PHQ_FEATURE_INDEX, biometricFeatures.phqFeature());
+        }
+
+        return requestDepressionSvr(features);
+    }
+
+    private Double requestDepressionSvr(List<Double> features) {
+        try {
+            DepressionSvrPredictResponse response = restClientBuilder
+                .baseUrl(bioMlServiceUrl)
+                .build()
+                .post()
+                .uri("/api/v1/depression/svr/predict")
+                .contentType(MediaType.APPLICATION_JSON)
+                .accept(MediaType.APPLICATION_JSON)
+                .body(new DepressionSvrPredictRequest(features))
+                .retrieve()
+                .body(DepressionSvrPredictResponse.class);
+
+            if (response == null || response.score() == null) {
+                throw new CustomException("Bio ML SVR response missing score.", ErrorCode.INTERNAL_SERVER_ERROR);
+            }
+
+            return response.score();
+        } catch (RestClientException e) {
+            log.error("Bio ML SVR request failed.", e);
+            throw new CustomException("Bio ML SVR request failed.", ErrorCode.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    private LocalDate resolveTargetDate(JsonNode output, LocalDate defaultDate) {
+        String targetDate = readText(output, "target_date", null);
+        if (!StringUtils.hasText(targetDate)) {
+            return defaultDate;
+        }
+
+        try {
+            return LocalDate.parse(targetDate.trim());
+        } catch (RuntimeException e) {
+            throw new CustomException("RunPod output target_date must be ISO date.", ErrorCode.INTERNAL_SERVER_ERROR);
+        }
+    }
+
     private void validateRunpodText(String text) {
         /*
          * .env.local is managed outside source control, and this branch intentionally
@@ -537,7 +613,7 @@ public class AnalysisInferenceService {
         LocalDate startDate = recentSevenDayStartDate(request);
         StringBuilder prompt = new StringBuilder();
         prompt.append("Summarize the recent depression-stage trend in exactly one Korean sentence.\n");
-        prompt.append("Stage order: minimal < mild < moderate < severe.\n");
+        prompt.append("Score range is continuous. Higher score means stronger depressive signal.\n");
         prompt.append("Period: ")
             .append(startDate)
             .append(" ~ ")
@@ -596,6 +672,33 @@ public class AnalysisInferenceService {
         if (values.isEmpty()) {
             throw new CustomException("RunPod output missing required field: " + fieldName, ErrorCode.INTERNAL_SERVER_ERROR);
         }
+        return values;
+    }
+
+    private List<Double> readRequiredDoubleList(JsonNode output, String fieldName, int expectedSize) {
+        JsonNode value = output.path(fieldName);
+        if (!value.isArray()) {
+            throw new CustomException("RunPod output missing required array field: " + fieldName, ErrorCode.INTERNAL_SERVER_ERROR);
+        }
+
+        List<Double> values = new ArrayList<>();
+        value.forEach(item -> {
+            if (!item.isNumber()) {
+                throw new CustomException(
+                    "RunPod output field must contain only numbers: " + fieldName,
+                    ErrorCode.INTERNAL_SERVER_ERROR
+                );
+            }
+            values.add(item.asDouble());
+        });
+
+        if (values.size() != expectedSize) {
+            throw new CustomException(
+                "RunPod output field " + fieldName + " must contain exactly " + expectedSize + " values.",
+                ErrorCode.INTERNAL_SERVER_ERROR
+            );
+        }
+
         return values;
     }
 
@@ -725,8 +828,8 @@ public class AnalysisInferenceService {
     private static class DailyPredictionSummary {
 
         private final LocalDate date;
-        private DepressionStage diaryPrediction;
-        private DepressionStage conversationPrediction;
+        private Double diaryPrediction;
+        private Double conversationPrediction;
 
         private DailyPredictionSummary(LocalDate date) {
             this.date = date;
@@ -736,12 +839,12 @@ public class AnalysisInferenceService {
             return date;
         }
 
-        private void addDiaryPrediction(String prediction) {
-            diaryPrediction = DepressionStage.max(diaryPrediction, DepressionStage.from(prediction));
+        private void addDiaryPrediction(Double prediction) {
+            diaryPrediction = max(diaryPrediction, prediction);
         }
 
-        private void addConversationPrediction(String prediction) {
-            conversationPrediction = DepressionStage.max(conversationPrediction, DepressionStage.from(prediction));
+        private void addConversationPrediction(Double prediction) {
+            conversationPrediction = max(conversationPrediction, prediction);
         }
 
         private boolean hasAnyPrediction() {
@@ -749,16 +852,26 @@ public class AnalysisInferenceService {
         }
 
         private String diaryPredictionOrNone() {
-            return diaryPrediction == null ? "none" : diaryPrediction.value;
+            return diaryPrediction == null ? "none" : diaryPrediction.toString();
         }
 
         private String conversationPredictionOrNone() {
-            return conversationPrediction == null ? "none" : conversationPrediction.value;
+            return conversationPrediction == null ? "none" : conversationPrediction.toString();
         }
 
         private String overallPrediction() {
-            DepressionStage max = DepressionStage.max(diaryPrediction, conversationPrediction);
-            return max == null ? "none" : max.value;
+            Double max = max(diaryPrediction, conversationPrediction);
+            return max == null ? "none" : max.toString();
+        }
+
+        private Double max(Double left, Double right) {
+            if (left == null) {
+                return right;
+            }
+            if (right == null) {
+                return left;
+            }
+            return left >= right ? left : right;
         }
     }
 }

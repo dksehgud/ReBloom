@@ -30,6 +30,6 @@ public class DiaryAnalysis extends BaseTime {
     private String embeddingText;
 
     @Column(nullable = false)
-    private String prediction;
+    private Double prediction;
 }
 

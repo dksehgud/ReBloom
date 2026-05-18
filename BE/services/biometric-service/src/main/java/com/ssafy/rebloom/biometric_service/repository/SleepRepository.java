@@ -44,6 +44,18 @@ public interface SleepRepository extends JpaRepository<Sleep, SleepId>, SleepQue
     @Query("SELECT MIN(s.id.wakeup) FROM Sleep s WHERE s.id.userId = :userId")
     Optional<LocalDateTime> findFirstWakeup(@Param("userId") UUID userId);
 
+    // Used by report-service inference: among sleeps whose wakeup is in the latest
+    // 24-hour window, use the best sleep score as the sleep feature source.
+    @Query("SELECT MAX(s.sleepScore) FROM Sleep s " +
+        "WHERE s.id.userId = :userId " +
+        "AND s.id.wakeup >= :from " +
+        "AND s.id.wakeup < :to")
+    Optional<Double> findMaxSleepScoreByUserIdAndWakeupBetween(
+        @Param("userId") UUID userId,
+        @Param("from") LocalDateTime from,
+        @Param("to") LocalDateTime to
+    );
+
     @Query("SELECT s FROM Sleep s " +
         "WHERE s.id.userId = :userId " +
         "AND s.id.wakeup >= :from " +

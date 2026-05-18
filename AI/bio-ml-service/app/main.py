@@ -6,7 +6,7 @@ from pydantic import BaseModel
 
 from app.kafka.consumer import start_consumer, stop_consumer
 from app.kafka.producer import flush as flush_producer
-from app.service import gps_check
+from app.service import depression_svr, gps_check
 
 # ──────────────────────────────────────────────
 # 로깅 설정
@@ -70,6 +70,14 @@ class LocationEvaluateResponse(BaseModel):
     topic: str | None = None
 
 
+class DepressionSvrPredictRequest(BaseModel):
+    features: list[float]
+
+
+class DepressionSvrPredictResponse(BaseModel):
+    score: float
+
+
 # ──────────────────────────────────────────────
 # 헬스체크
 # ──────────────────────────────────────────────
@@ -111,3 +119,17 @@ def evaluate_location(request: LocationEvaluateRequest) -> LocationEvaluateRespo
         request_id=result.request_id,
         topic=result.topic,
     )
+
+
+@app.post("/api/v1/depression/svr/predict", response_model=DepressionSvrPredictResponse)
+def predict_depression_score(request: DepressionSvrPredictRequest) -> DepressionSvrPredictResponse:
+    try:
+        score = depression_svr.predict_score(request.features)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+    except RuntimeError as exc:
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+    return DepressionSvrPredictResponse(score=score)

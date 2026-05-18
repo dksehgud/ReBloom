@@ -45,4 +45,8 @@ AWS_SECRET_ACCESS_KEY = os.getenv("AWS_SECRET_ACCESS_KEY", "")
 AWS_REGION            = os.getenv("AWS_REGION", "ap-northeast-2")
 MODEL_S3_BUCKET       = os.getenv("MODEL_S3_BUCKET", "")
 BASE_PHQ_MODEL_S3_KEY = os.getenv("BASE_PHQ_MODEL_S3_KEY", "models/base/phq_model.pkl")
+BASE_DEPRESSION_SVR_MODEL_S3_KEY = os.getenv(
+    "BASE_DEPRESSION_SVR_MODEL_S3_KEY",
+    "models/base/depression_svr_model.pkl",
+)
 USER_MODEL_S3_PREFIX  = os.getenv("USER_MODEL_S3_PREFIX", "models/users")

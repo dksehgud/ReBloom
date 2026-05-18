@@ -28,6 +28,8 @@ server:
 rebloom:
   client:
     auth-service-url: ${AUTH_SERVICE_URL:http://localhost:8081}
+  security:
+    permit-all: /api/v1/internal/**
   scheduler:
     daily-retraining:
       cron: ${DAILY_RETRAINING_CRON:0 0 9 * * *}
