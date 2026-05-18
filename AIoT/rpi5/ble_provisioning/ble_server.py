@@ -1,6 +1,8 @@
 import json
 import logging
+import os
 import threading
+from pathlib import Path
 
 import dbus
 import dbus.exceptions
@@ -37,10 +39,48 @@ _status_characteristic = None
 _mainloop = None
 
 
-def notify_status(status: str) -> None:
+def load_env_file(path: Path) -> None:
+    if not path.exists():
+        return
+    for raw_line in path.read_text(encoding="utf-8").splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, value = line.split("=", 1)
+        key = key.strip()
+        value = value.strip().strip('"').strip("'")
+        if key and key not in os.environ:
+            os.environ[key] = value
+
+
+def get_device_id() -> str:
+    load_env_file(Path(__file__).resolve().parents[1] / "serverchatting" / ".env")
+    return os.getenv("DEVICE_ID", REBLOOM_SERVICE_UUID).strip() or REBLOOM_SERVICE_UUID
+
+
+def get_device_info() -> dict[str, str]:
+    serial_number = get_device_id()
+    return {
+        "serialNumber": serial_number,
+        "deviceType": "IOT",
+        "device_id": serial_number,
+        "name": "Re:Bloom Speaker",
+        "firmware": "1.0.0",
+    }
+
+
+def encode_status_payload(status: str, payload: dict | None = None) -> bytes:
+    if payload is None:
+        return status.encode("utf-8")
+    data = {"status": status, **payload}
+    return json.dumps(data, ensure_ascii=False).encode("utf-8")
+
+
+def notify_status(status: str, payload: dict | None = None) -> None:
     global _status_characteristic
     if _status_characteristic is not None:
         try:
+            data = encode_status_payload(status, payload)
             logger.info(
                 "[BLE] STATUS notify 시도: status=%s, subscribed=%s",
                 status,
@@ -48,10 +88,10 @@ def notify_status(status: str) -> None:
             )
             _status_characteristic.PropertiesChanged(
                 GATT_CHRC_IFACE,
-                {"Value": dbus.Array(list(status.encode()), signature="y")},
+                {"Value": dbus.Array(list(data), signature="y")},
                 [],
             )
-            logger.info(f"[BLE] Notify 전송: {status}")
+            logger.info("[BLE] Notify 전송: %s", data.decode("utf-8", errors="replace"))
         except Exception as e:
             logger.error(f"[BLE] Notify 실패: {e}")
     else:
@@ -254,7 +294,7 @@ class WiFiCredentialCharacteristic(Characteristic):
             success = connect_wifi(ssid, password, timeout=30)
 
             if success:
-                notify_status("SUCCESS")
+                notify_status("SUCCESS", get_device_info())
                 logger.info("[BLE] Wi-Fi 연결 성공 → BLE 서버 종료 예약")
                 threading.Timer(3.0, self._stop_ble).start()
             else:
@@ -288,18 +328,13 @@ class StatusCharacteristic(Characteristic):
 
 
 class DeviceInfoCharacteristic(Characteristic):
-    DEVICE_ID = "0000fe10-0000-1000-8000-00805f9b34fb"
-
     def __init__(self, bus, index, service):
         super().__init__(bus, index, DEVINFO_CHAR_UUID, ["read"], service)
 
     @dbus.service.method(GATT_CHRC_IFACE, in_signature="a{sv}", out_signature="ay")
     def ReadValue(self, options):
-        info = {
-            "device_id": self.DEVICE_ID,
-            "name": "Re:Bloom Speaker",
-            "firmware": "1.0.0",
-        }
+        info = get_device_info()
+        logger.info("[BLE] DeviceInfo Read: serialNumber=%s deviceType=%s", info["serialNumber"], info["deviceType"])
         data = list(json.dumps(info).encode("utf-8"))
         return dbus.Array(data, signature="y")
 

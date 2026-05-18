@@ -203,7 +203,7 @@ Raspberry Pi에서 서버로 보내는 요청:
 ```json
 {
   "device_id": "rpi-001",
-  "session_id": "session-abc",
+  "session_id": "4b9e3145-ebb2-4d32-9680-f35eaae07915",
   "text": "오늘 너무 피곤했어"
 }
 ```
@@ -330,6 +330,9 @@ CONVERSATION_EMPTY_TURNS_TO_END=1
 
 ```env
 SESSION_EVENTS_URL=http://example.com/api/session-events
+SESSION_AUTH_HEADER=Authorization
+SESSION_AUTH_TOKEN=로그인해서_받은_JWT
+SESSION_AUTH_SCHEME=Bearer
 SESSION_WINDOW_SECONDS=300
 SESSION_SEND_TIMEOUT=5
 ```
@@ -338,13 +341,15 @@ SESSION_SEND_TIMEOUT=5
 
 ```json
 {
-  "session_id": "session-20260507-105200",
+  "session_id": "4b9e3145-ebb2-4d32-9680-f35eaae07915",
   "raspberrypi_id": "rpi-001",
   "started_at": "2026-05-07T10:52:00+09:00",
   "ended_at": "2026-05-07T10:57:00+09:00",
   "events": [
-    {"child": "안녕 만나서 반가워"},
-    {"bot": "나도 만나서 반가워."}
+    {
+      "child": "안녕 만나서 반가워",
+      "bot": "나도 만나서 반가워."
+    }
   ]
 }
 ```

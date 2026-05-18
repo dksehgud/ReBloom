@@ -30,6 +30,9 @@ async def async_main() -> None:
     session_sender = SessionEventSender(
         url=config.session_events_url,
         device_id=config.device_id,
+        auth_header=config.session_auth_header,
+        auth_token=config.session_auth_token,
+        auth_scheme=config.session_auth_scheme,
         window_seconds=config.session_window_seconds,
         timeout=config.session_send_timeout,
     )

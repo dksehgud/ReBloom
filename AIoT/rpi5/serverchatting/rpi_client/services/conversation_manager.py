@@ -2,6 +2,7 @@ import logging
 import asyncio
 import re
 import sys
+import time
 import uuid
 from difflib import SequenceMatcher
 from pathlib import Path
@@ -9,7 +10,7 @@ from types import SimpleNamespace
 
 from rpi_client.core.config import Settings
 from rpi_client.schemas.message import ChatRequest
-from rpi_client.services.session_event_sender import SessionEventSender
+from rpi_client.services.session_event_sender import SessionEventSender, now_iso
 from rpi_client.services.stt_service import (
     BaseSTTService,
     STTInputUnavailableError,
@@ -159,34 +160,41 @@ class ConversationManager:
         """한 번의 활성 대화 세션을 실행하고 끝나면 대기 상태로 돌아간다."""
 
         async with self._conversation_lock:
+            self.session_id = self._create_session_id()
+            self.session_sender.session_id = self.session_id
+            self.session_sender.started_at = now_iso()
+            self.session_sender.window_started_monotonic = time.monotonic()
             logger.info("대화 활성화: %s", self.session_id)
-            async with self._stt_lock:
-                if greeting:
-                    print(f"[봇] {greeting}", flush=True)
-                    await self.tts.speak(greeting)
-                    await self.tts.wait_until_idle()
+            try:
+                async with self._stt_lock:
+                    if greeting:
+                        print(f"[봇] {greeting}", flush=True)
+                        await self.tts.speak(greeting)
+                        await self.tts.wait_until_idle()
 
-                if initial_text:
-                    should_continue = await self._handle_user_turn(initial_text)
-                    if not should_continue:
-                        return
-
-                empty_turns = 0
-                while True:
-                    user_text = await self._listen_for_user_turn()
-                    if user_text is None:
-                        continue
-                    if user_text == "__no_input__":
-                        empty_turns += 1
-                        if empty_turns >= self.config.conversation_empty_turns_to_end:
-                            print("[대화 종료] 입력이 없어 대기 상태로 돌아갑니다.", flush=True)
+                    if initial_text:
+                        should_continue = await self._handle_user_turn(initial_text)
+                        if not should_continue:
                             return
-                        print("[듣기] 입력이 없어 한 번 더 기다립니다.", flush=True)
-                        continue
+
                     empty_turns = 0
-                    should_continue = await self._handle_user_turn(user_text)
-                    if not should_continue:
-                        return
+                    while True:
+                        user_text = await self._listen_for_user_turn()
+                        if user_text is None:
+                            continue
+                        if user_text == "__no_input__":
+                            empty_turns += 1
+                            if empty_turns >= self.config.conversation_empty_turns_to_end:
+                                print("[대화 종료] 입력이 없어 대기 상태로 돌아갑니다.", flush=True)
+                                return
+                            print("[듣기] 입력이 없어 한 번 더 기다립니다.", flush=True)
+                            continue
+                        empty_turns = 0
+                        should_continue = await self._handle_user_turn(user_text)
+                        if not should_continue:
+                            return
+            finally:
+                await self.session_sender.flush(force=True)
 
     async def _listen_for_user_turn(self) -> str | None:
         try:
@@ -296,7 +304,7 @@ class ConversationManager:
 
     @staticmethod
     def _create_session_id() -> str:
-        return f"session-{uuid.uuid4().hex[:12]}"
+        return str(uuid.uuid4())
 
     def _is_meaningful_user_text(self, text: str) -> bool:
         checker = getattr(self.stt, "is_meaningful", None)
