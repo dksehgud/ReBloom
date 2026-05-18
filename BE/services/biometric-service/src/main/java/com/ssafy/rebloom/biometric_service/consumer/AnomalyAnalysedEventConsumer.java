@@ -1,10 +1,10 @@
 package com.ssafy.rebloom.biometric_service.consumer;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ssafy.rebloom.biometric_service.service.AnomalyService;
 import com.ssafy.rebloom.event.core.EventEnvelope;
 import com.ssafy.rebloom.event.core.EventTypes;
 import com.ssafy.rebloom.event.dto.AnomalyEvent;
+import com.ssafy.rebloom.event.support.KafkaPayloadMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.MDC;
@@ -17,7 +17,7 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class AnomalyAnalysedEventConsumer {
 
-    private final ObjectMapper objectMapper;
+    private final KafkaPayloadMapper kafkaPayloadMapper;
     private final AnomalyService anomalyService;
 
     @KafkaListener(
@@ -34,7 +34,7 @@ public class AnomalyAnalysedEventConsumer {
                 return;
             }
 
-            AnomalyEvent payload = objectMapper.convertValue(
+            AnomalyEvent payload = kafkaPayloadMapper.convertValue(
                 envelope.payload(),
                 AnomalyEvent.class
             );

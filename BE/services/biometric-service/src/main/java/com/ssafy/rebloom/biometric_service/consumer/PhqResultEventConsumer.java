@@ -1,10 +1,10 @@
 package com.ssafy.rebloom.biometric_service.consumer;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ssafy.rebloom.biometric_service.service.PhqResultService;
 import com.ssafy.rebloom.event.core.EventEnvelope;
 import com.ssafy.rebloom.event.core.EventTypes;
 import com.ssafy.rebloom.event.dto.PhqResultEvent;
+import com.ssafy.rebloom.event.support.KafkaPayloadMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.MDC;
@@ -17,7 +17,7 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class PhqResultEventConsumer {
 
-    private final ObjectMapper objectMapper;
+    private final KafkaPayloadMapper kafkaPayloadMapper;
     private final PhqResultService phqResultService;
 
     @KafkaListener(
@@ -34,7 +34,7 @@ public class PhqResultEventConsumer {
                 return;
             }
 
-            PhqResultEvent payload = objectMapper.convertValue(
+            PhqResultEvent payload = kafkaPayloadMapper.convertValue(
                 envelope.payload(),
                 PhqResultEvent.class
             );
