@@ -24,6 +24,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
+import org.springframework.web.client.RestClientResponseException;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -91,6 +92,8 @@ public class AnalysisInferenceService {
 
     @Value("${rebloom.client.bio-ml-service-url}")
     private String bioMlServiceUrl;
+    @Value("${RECENT_INSIGHT_MODEL:gpt-4o-mini}")
+    private String recentInsightModel;
 
     @Async("analysisTaskExecutor")
     public void analyzeConversation(ConversationSessionCreateRequestDto request) {
@@ -396,21 +399,6 @@ public class AnalysisInferenceService {
         validateRecentInsightText(text);
 
         try {
-            /*
-             * 최근 추이 API 요청 body는 RunPod와 다릅니다.
-             *
-             * request:
-             * {
-             *   "text": "최근 7일 우울 단계 데이터와 지시문"
-             * }
-             *
-             * response:
-             * {
-             *   "summary": "최근 우울 단계 추이를 설명하는 한 문장"
-             * }
-             *
-             * 그래서 이 메서드는 response.summary가 있는지 검사합니다.
-             */
             JsonNode response = restClientBuilder
                 .build()
                 .post()
@@ -418,7 +406,7 @@ public class AnalysisInferenceService {
                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + recentInsightApiKey)
                 .contentType(MediaType.APPLICATION_JSON)
                 .accept(MediaType.APPLICATION_JSON)
-                .body(Map.of("text", text))
+                .body(recentInsightRequestBody(text))
                 .retrieve()
                 .body(JsonNode.class);
 
@@ -426,11 +414,19 @@ public class AnalysisInferenceService {
                 throw new CustomException("Recent insight API returned empty response.", ErrorCode.INTERNAL_SERVER_ERROR);
             }
 
-            if (!StringUtils.hasText(response.path("summary").asText(null))) {
+            if (!StringUtils.hasText(readInsightText(response))) {
                 throw new CustomException("Recent insight API response missing summary.", ErrorCode.INTERNAL_SERVER_ERROR);
             }
 
             return response;
+        } catch (RestClientResponseException e) {
+            log.error(
+                "Recent insight API request failed. status={}, body={}",
+                e.getStatusCode(),
+                e.getResponseBodyAsString(),
+                e
+            );
+            throw new CustomException("Recent insight API request failed.", ErrorCode.INTERNAL_SERVER_ERROR);
         } catch (RestClientException e) {
             log.error("Recent insight API request failed.", e);
             throw new CustomException("Recent insight API request failed.", ErrorCode.INTERNAL_SERVER_ERROR);
@@ -496,6 +492,21 @@ public class AnalysisInferenceService {
         } catch (RuntimeException e) {
             throw new CustomException("RunPod output target_date must be ISO date.", ErrorCode.INTERNAL_SERVER_ERROR);
         }
+    private Map<String, Object> recentInsightRequestBody(String text) {
+        return Map.of(
+            "model", recentInsightModel,
+            "messages", List.of(
+                Map.of(
+                    "role", "system",
+                    "content", "You summarize child depression-stage trends in exactly one concise Korean sentence."
+                ),
+                Map.of(
+                    "role", "user",
+                    "content", text
+                )
+            ),
+            "temperature", 0.2
+        );
     }
 
     private void validateRunpodText(String text) {
@@ -661,6 +672,24 @@ public class AnalysisInferenceService {
                 return value;
             }
         }
+
+        String chatCompletionContent = output.path("choices")
+            .path(0)
+            .path("message")
+            .path("content")
+            .asText(null);
+        if (StringUtils.hasText(chatCompletionContent)) {
+            return chatCompletionContent;
+        }
+
+        String completionText = output.path("choices")
+            .path(0)
+            .path("text")
+            .asText(null);
+        if (StringUtils.hasText(completionText)) {
+            return completionText;
+        }
+
         throw new CustomException("RunPod insight output does not contain insight text.", ErrorCode.INTERNAL_SERVER_ERROR);
     }
 
