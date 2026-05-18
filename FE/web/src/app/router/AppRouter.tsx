@@ -492,10 +492,16 @@ function SignUpRoute() {
 
 function ChildDiaryRoute() {
     const navigate = useNavigate()
+    const currentUserId = useAppSessionStore(
+        (state) => state.currentUser?.userId ?? null,
+    )
 
     return (
         <PhoneShell>
-            <ChildDiaryListPage onOpenSettings={() => navigate('/child/settings')}/>
+            <ChildDiaryListPage
+                key={currentUserId ?? 'anonymous-child'}
+                onOpenSettings={() => navigate('/child/settings')}
+            />
         </PhoneShell>
     )
 }

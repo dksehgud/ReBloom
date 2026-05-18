@@ -240,13 +240,6 @@ function useChildDiaryPageState() {
     preloadDiaryEmotionAssets()
   }, [])
 
-  useEffect(() => {
-    setRecordsByMonth(diaryBridge.isAvailable() ? {} : cloneSampleRecords())
-    setSelectedDiaryId(null)
-    setEditingDiaryId(null)
-    setViewMode('calendar')
-  }, [currentUserId])
-
   const currentYear = currentDate.getFullYear()
   const currentMonth = currentDate.getMonth() + 1
   const currentMonthKey = getMonthKey(currentYear, currentMonth)
