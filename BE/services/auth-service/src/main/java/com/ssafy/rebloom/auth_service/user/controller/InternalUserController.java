@@ -5,6 +5,7 @@ import com.ssafy.rebloom.auth_service.user.dto.response.ChildAgeResponseDto;
 import com.ssafy.rebloom.auth_service.user.dto.response.ChildConnectedCounselorResponseDto;
 import com.ssafy.rebloom.auth_service.user.dto.response.ChildGpsResponseDto;
 import com.ssafy.rebloom.auth_service.user.dto.response.ChildrenIotInfoResponseDto;
+import com.ssafy.rebloom.auth_service.user.dto.response.ParentReceiverResponseDto;
 import com.ssafy.rebloom.auth_service.user.service.InternalUserService;
 import com.ssafy.rebloom.common.dto.BaseResponse;
 import java.util.List;
@@ -67,5 +68,17 @@ public class InternalUserController {
     public ResponseEntity<BaseResponse<List<ActiveChildResponseDto>>> getActiveChildren() {
         List<ActiveChildResponseDto> response = internalUserService.getActiveChildren();
         return ResponseEntity.ok(BaseResponse.success("활동 중인 자녀 조회 성공", response));
+    }
+
+    @GetMapping("/children/{childrenId}/parent-receiver")
+    public ResponseEntity<BaseResponse<ParentReceiverResponseDto>> getParentReceiver(
+        @PathVariable UUID childrenId
+    ) {
+        ParentReceiverResponseDto response =
+            internalUserService.getParentReceiverByChildrenId(childrenId);
+
+        return ResponseEntity.ok(
+            BaseResponse.success("자녀의 부모 알림 수신자 조회 성공", response)
+        );
     }
 }

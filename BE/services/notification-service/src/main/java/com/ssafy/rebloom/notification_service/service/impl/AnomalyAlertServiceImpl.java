@@ -85,6 +85,7 @@ public class AnomalyAlertServiceImpl implements AnomalyAlertService {
             );
             return;
         }
+        log.info("notification-service, anomaly-analysed, phase-start");
 
         LocalDateTime now = now();
         AnomalyAlertPhaseState phase = new AnomalyAlertPhaseState(
@@ -421,6 +422,8 @@ public class AnomalyAlertServiceImpl implements AnomalyAlertService {
     }
 
     private void sendAnomalyRiskAlert(AnomalyAlertPhaseState phase) {
+        log.info("notification-service, anomaly-analysed, RISK_ALERT SENT");
+
         NotificationPayload payload = NotificationPayload.builder()
             .title("주의 필요")
             .content(String.format(
