@@ -1,10 +1,10 @@
 package com.ssafy.rebloom.notification_service.consumer;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ssafy.rebloom.event.core.EventEnvelope;
 import com.ssafy.rebloom.event.core.EventTypes;
 import com.ssafy.rebloom.event.dto.ParentReportCommentCreatedEvent;
 import com.ssafy.rebloom.event.dto.ParentReportCreatedEvent;
+import com.ssafy.rebloom.event.support.KafkaPayloadMapper;
 import com.ssafy.rebloom.notification_service.service.ParentReportNotificationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -18,7 +18,7 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class ParentReportNotificationConsumer {
 
-    private final ObjectMapper objectMapper;
+    private final KafkaPayloadMapper kafkaPayloadMapper;
     private final ParentReportNotificationService parentReportNotificationService;
 
     @KafkaListener(
@@ -39,7 +39,7 @@ public class ParentReportNotificationConsumer {
                 return;
             }
 
-            ParentReportCreatedEvent payload = objectMapper.convertValue(
+            ParentReportCreatedEvent payload = kafkaPayloadMapper.convertValue(
                 envelope.payload(),
                 ParentReportCreatedEvent.class
             );
@@ -72,7 +72,7 @@ public class ParentReportNotificationConsumer {
                 return;
             }
 
-            ParentReportCommentCreatedEvent payload = objectMapper.convertValue(
+            ParentReportCommentCreatedEvent payload = kafkaPayloadMapper.convertValue(
                 envelope.payload(),
                 ParentReportCommentCreatedEvent.class
             );

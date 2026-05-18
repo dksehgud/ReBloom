@@ -1,10 +1,10 @@
 package com.ssafy.rebloom.biometric_service.consumer;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ssafy.rebloom.biometric_service.service.BiometricService;
 import com.ssafy.rebloom.event.core.EventEnvelope;
 import com.ssafy.rebloom.event.core.EventTypes;
 import com.ssafy.rebloom.event.dto.BiometricDataEvent;
+import com.ssafy.rebloom.event.support.KafkaPayloadMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.MDC;
@@ -17,7 +17,7 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class BiometricRawEventConsumer {
 
-    private final ObjectMapper objectMapper;
+    private final KafkaPayloadMapper kafkaPayloadMapper;
     private final BiometricService biometricService;
 
     @KafkaListener(
@@ -34,7 +34,7 @@ public class BiometricRawEventConsumer {
                 return;
             }
 
-            BiometricDataEvent payload = objectMapper.convertValue(
+            BiometricDataEvent payload = kafkaPayloadMapper.convertValue(
                 envelope.payload(),
                 BiometricDataEvent.class
             );

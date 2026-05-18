@@ -1,10 +1,10 @@
 package com.ssafy.rebloom.notification_service.consumer;
 
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ssafy.rebloom.event.core.EventEnvelope;
 import com.ssafy.rebloom.event.core.EventTypes;
 import com.ssafy.rebloom.event.dto.AnomalyEvent;
+import com.ssafy.rebloom.event.support.KafkaPayloadMapper;
 import com.ssafy.rebloom.notification_service.service.NotificationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -18,7 +18,7 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class AnomalyAnalysedNotificationConsumer {
 
-    private final ObjectMapper objectMapper;
+    private final KafkaPayloadMapper kafkaPayloadMapper;
     private final NotificationService notificationService;
 
     @KafkaListener(
@@ -37,7 +37,7 @@ public class AnomalyAnalysedNotificationConsumer {
                 return;
             }
 
-            AnomalyEvent payload = objectMapper.convertValue(
+            AnomalyEvent payload = kafkaPayloadMapper.convertValue(
                 envelope.payload(),
                 AnomalyEvent.class
             );

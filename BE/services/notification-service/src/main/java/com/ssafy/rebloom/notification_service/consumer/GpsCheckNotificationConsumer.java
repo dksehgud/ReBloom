@@ -1,9 +1,9 @@
 package com.ssafy.rebloom.notification_service.consumer;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ssafy.rebloom.event.core.EventEnvelope;
 import com.ssafy.rebloom.event.core.EventTypes;
 import com.ssafy.rebloom.event.dto.GpsCheckResultEvent;
+import com.ssafy.rebloom.event.support.KafkaPayloadMapper;
 import com.ssafy.rebloom.notification_service.service.GpsCheckNotificationService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -17,7 +17,7 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class GpsCheckNotificationConsumer {
 
-    private final ObjectMapper objectMapper;
+    private final KafkaPayloadMapper kafkaPayloadMapper;
     private final GpsCheckNotificationService gpsCheckNotificationService;
 
     @KafkaListener(
@@ -38,7 +38,7 @@ public class GpsCheckNotificationConsumer {
                 return;
             }
 
-            GpsCheckResultEvent payload = objectMapper.convertValue(
+            GpsCheckResultEvent payload = kafkaPayloadMapper.convertValue(
                 envelope.payload(),
                 GpsCheckResultEvent.class
             );
@@ -72,7 +72,7 @@ public class GpsCheckNotificationConsumer {
                 return;
             }
 
-            GpsCheckResultEvent payload = objectMapper.convertValue(
+            GpsCheckResultEvent payload = kafkaPayloadMapper.convertValue(
                 envelope.payload(),
                 GpsCheckResultEvent.class
             );

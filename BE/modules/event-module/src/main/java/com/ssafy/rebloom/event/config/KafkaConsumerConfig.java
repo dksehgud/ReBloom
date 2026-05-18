@@ -1,9 +1,12 @@
 package com.ssafy.rebloom.event.config;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ssafy.rebloom.event.core.EventEnvelope;
 import java.util.HashMap;
 import java.util.Map;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.common.serialization.StringDeserializer;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -19,27 +22,42 @@ public class KafkaConsumerConfig {
 
     @Value("${spring.kafka.bootstrap-servers:localhost:9092}")
     private String bootstrapServers;
+    private final ObjectMapper kafkaObjectMapper;
 
-    @Bean
-    public ConsumerFactory<String, Object> rebloomConsumerFactory() {
-        Map<String, Object> props = new HashMap<>();
-        props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
-        props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, ErrorHandlingDeserializer.class);
-        props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, ErrorHandlingDeserializer.class);
-        props.put(ErrorHandlingDeserializer.KEY_DESERIALIZER_CLASS, StringDeserializer.class);
-        props.put(ErrorHandlingDeserializer.VALUE_DESERIALIZER_CLASS, JsonDeserializer.class);
-        props.put(JsonDeserializer.TRUSTED_PACKAGES, "com.ssafy.rebloom.event.*");
-        props.put(JsonDeserializer.VALUE_DEFAULT_TYPE, "com.ssafy.rebloom.event.core.EventEnvelope");
-        props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
-        return new DefaultKafkaConsumerFactory<>(props);
+    public KafkaConsumerConfig(
+        @Qualifier("kafkaObjectMapper") ObjectMapper kafkaObjectMapper
+    ) {
+        this.kafkaObjectMapper = kafkaObjectMapper;
     }
 
     @Bean
-    public ConcurrentKafkaListenerContainerFactory<String, Object> rebloomKafkaListenerContainerFactory(
-        ConsumerFactory<String, Object> rebloomConsumerFactory,
+    public ConsumerFactory<String, EventEnvelope<?>> rebloomConsumerFactory() {
+        Map<String, Object> props = new HashMap<>();
+        props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
+        props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
+
+        JsonDeserializer<EventEnvelope<?>> jsonDeserializer = new JsonDeserializer<>(
+            EventEnvelope.class,
+            kafkaObjectMapper,
+            false
+        );
+        jsonDeserializer.addTrustedPackages("com.ssafy.rebloom.event.*");
+        jsonDeserializer.setUseTypeHeaders(false);
+        jsonDeserializer.setRemoveTypeHeaders(false);
+
+        return new DefaultKafkaConsumerFactory<>(
+            props,
+            new ErrorHandlingDeserializer<>(new StringDeserializer()),
+            new ErrorHandlingDeserializer<>(jsonDeserializer)
+        );
+    }
+
+    @Bean
+    public ConcurrentKafkaListenerContainerFactory<String, EventEnvelope<?>> rebloomKafkaListenerContainerFactory(
+        ConsumerFactory<String, EventEnvelope<?>> rebloomConsumerFactory,
         CommonErrorHandler rebloomKafkaErrorHandler
     ) {
-        ConcurrentKafkaListenerContainerFactory<String, Object> factory =
+        ConcurrentKafkaListenerContainerFactory<String, EventEnvelope<?>> factory =
             new ConcurrentKafkaListenerContainerFactory<>();
         factory.setConsumerFactory(rebloomConsumerFactory);
         factory.setCommonErrorHandler(rebloomKafkaErrorHandler);
