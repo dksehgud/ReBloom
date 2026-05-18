@@ -1,4 +1,11 @@
-import { useState, type CSSProperties, type ReactNode } from 'react'
+import {
+  useCallback,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+  type ReactNode,
+} from 'react'
 import { FiInfo } from 'react-icons/fi'
 
 type DashboardCardProps = {
@@ -11,6 +18,41 @@ type DashboardCardProps = {
 
 function DashboardCard({ title, children, className, info, style }: DashboardCardProps) {
   const [isInfoOpen, setIsInfoOpen] = useState(false)
+  const infoButtonRef = useRef<HTMLButtonElement | null>(null)
+  const tooltipRef = useRef<HTMLSpanElement | null>(null)
+
+  const updateTooltipArrowPosition = useCallback(() => {
+    const infoButton = infoButtonRef.current
+    const tooltip = tooltipRef.current
+
+    if (!infoButton || !tooltip) {
+      return
+    }
+
+    const infoButtonRect = infoButton.getBoundingClientRect()
+    const tooltipRect = tooltip.getBoundingClientRect()
+    const arrowLeft =
+      infoButtonRect.left + infoButtonRect.width / 2 - tooltipRect.left
+    const boundedArrowLeft = Math.max(
+      12,
+      Math.min(tooltipRect.width - 12, arrowLeft),
+    )
+
+    tooltip.style.setProperty('--tooltip-arrow-left', `${boundedArrowLeft}px`)
+  }, [])
+
+  useLayoutEffect(() => {
+    if (!isInfoOpen) {
+      return undefined
+    }
+
+    updateTooltipArrowPosition()
+    window.addEventListener('resize', updateTooltipArrowPosition)
+
+    return () => {
+      window.removeEventListener('resize', updateTooltipArrowPosition)
+    }
+  }, [isInfoOpen, updateTooltipArrowPosition])
 
   return (
     <section
@@ -26,6 +68,7 @@ function DashboardCard({ title, children, className, info, style }: DashboardCar
         {info ? (
           <span className="counselor-dashboard-info-wrap">
             <button
+              ref={infoButtonRef}
               type="button"
               className="counselor-dashboard-info-button"
               aria-label={`${title} 설명 보기`}
@@ -43,7 +86,11 @@ function DashboardCard({ title, children, className, info, style }: DashboardCar
                 onClick={(event) => event.stopPropagation()}
                 onMouseDown={(event) => event.stopPropagation()}
               >
-                <span className="counselor-dashboard-tooltip" role="note">
+                <span
+                  ref={tooltipRef}
+                  className="counselor-dashboard-tooltip"
+                  role="note"
+                >
                   {info}
                 </span>
               </span>

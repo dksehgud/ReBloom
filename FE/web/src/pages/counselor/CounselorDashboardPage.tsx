@@ -18,6 +18,12 @@ import ExpressionAnalysis from '../../features/counselor/components/dashboard/Ex
 import ObservationCommentModal from '../../features/counselor/components/dashboard/ObservationCommentModal'
 import ObservationList from '../../features/counselor/components/dashboard/ObservationList'
 import WeekNavigator from '../../features/counselor/components/dashboard/WeekNavigator'
+import {
+  AUTONOMIC_Y_AXIS_MAX,
+  AUTONOMIC_Y_AXIS_TICKS,
+  BIOMETRIC_RATIO_Y_AXIS_MAX,
+  BIOMETRIC_RATIO_Y_AXIS_TICKS,
+} from '../../features/counselor/constants/dashboardChartAxis'
 import { dashboardInfoMessages } from '../../features/counselor/mocks/dashboardMockData'
 import useCounselorDashboardState from '../../features/counselor/hooks/useCounselorDashboardState'
 import { useAppSessionStore } from '../../features/auth/store/useAppSessionStore'
@@ -306,6 +312,8 @@ function CounselorDashboardPage() {
                     <LineChart
                       data={biometricRatioData}
                       color="#6B9AC4"
+                      yAxisMax={BIOMETRIC_RATIO_Y_AXIS_MAX}
+                      yAxisTicks={BIOMETRIC_RATIO_Y_AXIS_TICKS}
                     />
                   </DashboardCard>
 
@@ -320,6 +328,8 @@ function CounselorDashboardPage() {
                     <LineChart
                       data={autonomicData}
                       color="#9b78f0"
+                      yAxisMax={AUTONOMIC_Y_AXIS_MAX}
+                      yAxisTicks={AUTONOMIC_Y_AXIS_TICKS}
                     />
                   </DashboardCard>
                 </div>

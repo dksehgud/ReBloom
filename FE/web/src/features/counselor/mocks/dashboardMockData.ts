@@ -21,7 +21,7 @@ const dashboardInfoMessages = {
   sleepEfficiency:
     '침대에 머문 시간 중 실제로 잠든 시간의 비율입니다. 높을수록 수면의 질이 안정적일 수 있습니다.',
   expression:
-    '최근 일기와 대화에서 반복적으로 나타난 감정 표현과 주요 문장을 모아 보여줍니다.',
+    '최근 일기와 대화에서 반복적으로 나타난 감정 표현과 주요 문장을 모아 보여줍니다.\n그래프는 가용한 생체 데이터와 언어표현 데이터를 융합하여 나온 PHQ-8 예측 점수 입니다.',
   biometricRatio:
     '행동 활성은 신체 움직임 대비 심박 효율(ACC/HR+1)을 통해 정신운동 지체 유무를 나타내는 지표입니다.',
   autonomic:
@@ -298,23 +298,23 @@ const INITIAL_DASHBOARD_WEEK_OFFSETS: DashboardWeekOffsets = {
 }
 
 const biometricRatio = [
-  { label: '월', value: 52 },
-  { label: '화', value: 55 },
-  { label: '수', value: 31 },
-  { label: '목', value: 43 },
-  { label: '금', value: 58 },
-  { label: '토', value: 72 },
-  { label: '일', value: 64 },
+  { label: '월', value: 0.92 },
+  { label: '화', value: 0.87 },
+  { label: '수', value: 0.54 },
+  { label: '목', value: 0.71 },
+  { label: '금', value: 0.96 },
+  { label: '토', value: 1.18 },
+  { label: '일', value: 1.04 },
 ]
 
 const hrvTrend = [
-  { label: '월', value: 55 },
-  { label: '화', value: 64 },
-  { label: '수', value: 29 },
-  { label: '목', value: 48 },
-  { label: '금', value: 61 },
-  { label: '토', value: 77 },
-  { label: '일', value: 70 },
+  { label: '월', value: 110 },
+  { label: '화', value: 128 },
+  { label: '수', value: 58 },
+  { label: '목', value: 96 },
+  { label: '금', value: 122 },
+  { label: '토', value: 154 },
+  { label: '일', value: 140 },
 ]
 
 const timelineDays: TimelineDay[] = [

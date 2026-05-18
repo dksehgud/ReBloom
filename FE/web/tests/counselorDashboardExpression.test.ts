@@ -26,6 +26,7 @@ describe('counselor dashboard expression analysis mapping', () => {
 
     expect(analysis.trend.all).toHaveLength(1)
     expect(analysis.trend.all[0]?.hasConversation).toBe(false)
+    expect(analysis.trend.all[0]?.value).toBe(19)
     expect(analysis.trend.diary).toHaveLength(1)
     expect(analysis.trend.diary[0]?.hasConversation).toBeUndefined()
     expect(analysis.trend.conversation).toEqual([])
@@ -52,9 +53,41 @@ describe('counselor dashboard expression analysis mapping', () => {
 
     expect(analysis.trend.all).toHaveLength(1)
     expect(analysis.trend.all[0]?.hasConversation).toBe(true)
+    expect(analysis.trend.all[0]?.value).toBe(24)
     expect(analysis.trend.conversation).toHaveLength(1)
     expect(analysis.trend.conversation[0]?.hasConversation).toBe(true)
     expect(analysis.trend.diary).toEqual([])
+  })
+
+  it('maps depression stage predictions onto the PHQ-8 score range', () => {
+    const response: CounselorAnalysisContentResponseDto = {
+      dailyGroups: [
+        {
+          conversationList: [
+            {
+              analysisId: 'conversation-analysis-1',
+              prediction: 'severe',
+              startedAt: '2026-05-14T10:00:00',
+            },
+          ],
+          date: '2026-05-14',
+          diaryList: [
+            {
+              analysisId: 'diary-analysis-1',
+              emotionIcon: 'sad',
+              prediction: 'moderate',
+              targetDate: '2026-05-14T10:00:00',
+            },
+          ],
+        },
+      ],
+    }
+
+    const analysis = mapAnalysisContentToExpressionAnalysis(response)
+
+    expect(analysis.trend.diary[0]?.value).toBe(12)
+    expect(analysis.trend.conversation[0]?.value).toBe(22)
+    expect(analysis.trend.all[0]?.value).toBe(17)
   })
 
   it('keeps the selected week labels separate from sparse graph points', () => {

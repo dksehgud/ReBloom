@@ -14,7 +14,12 @@ type LineChartProps = {
   showLine?: boolean
   showEmoji?: boolean
   xAxisLabels?: string[]
+  yAxisMax?: number
+  yAxisTicks?: readonly number[]
 }
+
+const DEFAULT_Y_AXIS_MAX = 100
+const DEFAULT_Y_AXIS_TICKS = [100, 75, 50, 25, 0] as const
 
 function LineChart({
   data,
@@ -22,6 +27,8 @@ function LineChart({
   showLine = true,
   showEmoji = false,
   xAxisLabels,
+  yAxisMax = DEFAULT_Y_AXIS_MAX,
+  yAxisTicks = DEFAULT_Y_AXIS_TICKS,
 }: LineChartProps) {
   const width = 520
   const height = 180
@@ -31,10 +38,15 @@ function LineChart({
   const chartHeight = height - paddingTop - paddingBottom
   const axisLabels = xAxisLabels?.length ? xAxisLabels : data.map((item) => item.label)
   const gap = (width - paddingX * 2) / Math.max(axisLabels.length - 1, 1)
+  const getY = (value: number) => {
+    const clampedValue = Math.max(0, Math.min(yAxisMax, value))
+
+    return paddingTop + chartHeight - (clampedValue / yAxisMax) * chartHeight
+  }
   const points = data.map((item, index) => {
     const axisIndex = axisLabels.indexOf(item.label)
     const x = paddingX + gap * (axisIndex >= 0 ? axisIndex : index)
-    const y = paddingTop + chartHeight - (item.value / 100) * chartHeight
+    const y = getY(item.value)
     return { ...item, x, y }
   })
   const linePoints = points.filter((point) => point.hasConversation ?? true)
@@ -49,8 +61,8 @@ function LineChart({
       role="img"
       aria-label="주간 추이 그래프"
     >
-      {[100, 75, 50, 25, 0].map((value) => {
-        const y = paddingTop + chartHeight - (value / 100) * chartHeight
+      {yAxisTicks.map((value) => {
+        const y = getY(value)
         return (
           <g key={value}>
             <line x1={paddingX} x2={width - 24} y1={y} y2={y} />

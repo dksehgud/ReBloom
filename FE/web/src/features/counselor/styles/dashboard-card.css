@@ -78,7 +78,7 @@
   justify-content: center;
   width: max-content;
   max-width: min(300px, calc(100vw - 96px));
-  pointer-events: auto;
+  pointer-events: none;
   transform: translateX(-50%);
 }
 
@@ -96,7 +96,7 @@
   font-weight: 500;
   line-height: 1.5;
   text-align: center;
-  white-space: normal;
+  white-space: pre-line;
   overflow-wrap: anywhere;
   word-break: keep-all;
 }
@@ -104,7 +104,7 @@
 .counselor-dashboard-tooltip::before {
   position: absolute;
   top: -6px;
-  left: calc(50% - var(--tooltip-arrow-offset, 0px));
+  left: var(--tooltip-arrow-left, 50%);
   width: 12px;
   height: 12px;
   background: #f8fafc;

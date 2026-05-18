@@ -7,6 +7,10 @@ import {
 } from '../../mocks/dashboardMockData'
 import type { DashboardExpressionAnalysis, ExpressionFilter } from '../../types/dashboard'
 import { getFilteredTimelineDays } from '../../utils/dashboardTimeline'
+import {
+  EXPRESSION_SCORE_MAX,
+  EXPRESSION_SCORE_TICKS,
+} from '../../utils/expressionPrediction'
 import DashboardCard from './DashboardCard'
 import EmotionFlowModal from './EmotionFlowModal'
 import MetricTag from './MetricTag'
@@ -110,6 +114,8 @@ function ExpressionAnalysis({
                   showLine={activeFilter !== 'diary'}
                   showEmoji={activeFilter !== 'conversation'}
                   xAxisLabels={analysis.weekLabels}
+                  yAxisMax={EXPRESSION_SCORE_MAX}
+                  yAxisTicks={EXPRESSION_SCORE_TICKS}
                 />
               </div>
             ) : null}
