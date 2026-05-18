@@ -2,6 +2,7 @@ declare global {
   interface Window {
     Android?: {
       saveToken?: (token: string) => void
+      saveRefreshToken?: (token: string) => void
       clearToken?: () => void
       clearHistory?: () => void
       checkSleepPermission?: () => void
@@ -31,6 +32,14 @@ function saveNativeAccessToken(
   }
 
   window.Android?.saveToken?.(accessToken)
+}
+
+function saveNativeRefreshToken(refreshToken: string | null | undefined) {
+  if (!refreshToken || typeof window === 'undefined') {
+    return
+  }
+
+  window.Android?.saveRefreshToken?.(refreshToken)
 }
 
 function clearNativeAccessToken() {
@@ -80,5 +89,6 @@ export {
   clearNativeNavigationHistory,
   requestNativeSleepPermission,
   saveNativeAccessToken,
+  saveNativeRefreshToken,
   startNativeBleProvisioning,
 }
