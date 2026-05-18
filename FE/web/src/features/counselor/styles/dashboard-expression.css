@@ -1,9 +1,12 @@
 .counselor-expression-card {
   display: flex;
   flex-direction: column;
-  flex: 1;
+  flex: 0 0 var(--counselor-expression-card-height, 1092.5px);
+  width: 100%;
+  height: var(--counselor-expression-card-height, 1092.5px);
+  max-height: var(--counselor-expression-card-height, 1092.5px);
   min-height: 0;
-  overflow: visible;
+  overflow: hidden;
 }
 
 .counselor-expression-card .counselor-dashboard-tooltip-row {
@@ -72,6 +75,36 @@
   background: transparent;
 }
 
+.counselor-expression-scroll {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+  padding-right: 0;
+  scrollbar-color: rgba(136, 181, 196, 0.55) rgba(136, 181, 196, 0.08);
+  scrollbar-width: thin;
+}
+
+.counselor-expression-scroll::-webkit-scrollbar {
+  width: 8px;
+}
+
+.counselor-expression-scroll::-webkit-scrollbar-track {
+  background: rgba(136, 181, 196, 0.08);
+  border-radius: 999px;
+}
+
+.counselor-expression-scroll::-webkit-scrollbar-thumb {
+  background: rgba(136, 181, 196, 0.55);
+  border: 2px solid rgba(248, 250, 252, 0.92);
+  border-radius: 999px;
+}
+
+.counselor-expression-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(136, 181, 196, 0.78);
+}
+
 @media (max-width: 1180px) {
   .counselor-expression-tabs {
     align-items: center;
@@ -117,9 +150,10 @@
 }
 
 .counselor-expression-empty {
-  flex: 1;
-  min-height: 220px;
+  flex: 1 1 auto;
+  min-height: 0;
   margin-bottom: 0;
+  overflow-y: auto;
 }
 
 .counselor-timeline {
@@ -128,6 +162,12 @@
   flex: 1;
   gap: 16px;
   min-height: 0;
+  overflow-y: auto;
+  padding-right: 8px;
+}
+
+.counselor-expression-scroll .counselor-timeline {
+  flex: 1 1 auto;
   overflow-y: auto;
   padding-right: 8px;
 }
@@ -195,10 +235,15 @@
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
   gap: 12px;
+  min-width: 0;
   padding: 13px;
   background: rgba(136, 181, 196, 0.02);
   border: 1px solid rgba(168, 178, 188, 0.15);
   border-radius: 12px;
+}
+
+.counselor-timeline-entry > div {
+  min-width: 0;
 }
 
 .entry-time {
@@ -237,7 +282,11 @@
 
 @media (max-width: 900px) {
   .counselor-expression-card {
+    flex: 1 1 auto;
+    height: auto;
+    max-height: none;
     min-height: 0;
+    overflow: visible;
   }
 
   .counselor-expression-tabs {

@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import {
   FiActivity,
   FiBell,
@@ -24,6 +24,8 @@ import { useAppSessionStore } from '../../features/auth/store/useAppSessionStore
 
 function CounselorDashboardPage() {
   const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
+  const initialSelectedChildId = searchParams.get('childId')
   const counselorName =
     useAppSessionStore((state) => state.currentUser?.name?.trim()) || '상담사'
   const {
@@ -41,6 +43,7 @@ function CounselorDashboardPage() {
     dashboardMetricsError,
     expressionWeek,
     handleAcceptConnectionRequest,
+    handleClearSelectedChild,
     handleDeleteObservationComment,
     handleRejectConnectionRequest,
     handleSaveObservationComment,
@@ -70,7 +73,7 @@ function CounselorDashboardPage() {
     sleepScoreData,
     sleepScoreWeek,
     canRejectConnectionRequests,
-  } = useCounselorDashboardState()
+  } = useCounselorDashboardState({ initialSelectedChildId })
   const selectedChildMetaItems = selectedChildProfile
     ? [
         selectedChildProfile.age,
@@ -84,12 +87,16 @@ function CounselorDashboardPage() {
     ? '상담 아동을 불러오는 중입니다'
     : childItemsError
       ? '상담 아동 목록을 불러오지 못했습니다'
-      : '연결된 상담 아동이 없습니다'
+      : childItems.length > 0
+        ? '확인할 아이를 선택해 주세요'
+        : '연결된 상담 아동이 없습니다'
   const dashboardEmptyMessage = isLoadingChildItems
     ? '연결된 아이 목록을 확인하고 있어요.'
     : childItemsError
       ? childItemsError
-      : '보호자의 연결 요청을 수락하면 이곳에서 아이의 기록을 확인할 수 있어요.'
+      : childItems.length > 0
+        ? '왼쪽 목록에서 아이를 선택하면 관찰기록과 분석 정보를 볼 수 있어요.'
+        : '보호자의 연결 요청을 수락하면 이곳에서 아이의 기록을 확인할 수 있어요.'
   const hasSelectedChild = Boolean(selectedChildProfile && selectedChildId)
 
   useEffect(() => {
@@ -120,7 +127,20 @@ function CounselorDashboardPage() {
   }
 
   const handleSelectSidebarChild = (childId: string) => {
+    const nextSearchParams = new URLSearchParams(searchParams)
+
+    nextSearchParams.set('childId', childId)
+    setSearchParams(nextSearchParams, { replace: true })
     handleSelectChild(childId)
+    closeCompactSidebar()
+  }
+
+  const handleResetDashboard = () => {
+    const nextSearchParams = new URLSearchParams(searchParams)
+
+    nextSearchParams.delete('childId')
+    setSearchParams(nextSearchParams, { replace: true })
+    handleClearSelectedChild()
     closeCompactSidebar()
   }
 
@@ -164,6 +184,7 @@ function CounselorDashboardPage() {
         childrenError={childItemsError}
         onToggle={() => setIsSidebarCollapsed((current) => !current)}
         onSelectChild={handleSelectSidebarChild}
+        onResetDashboard={handleResetDashboard}
         onOpenSettings={handleOpenSettings}
       />
 
@@ -234,9 +255,6 @@ function CounselorDashboardPage() {
                       data={sleepEfficiencyData}
                       color="#f2a57d"
                     />
-                    <p className="counselor-card-note">
-                      수면 추세 시간 중 실제로 잠든 시간의 비율을 의미합니다.
-                    </p>
                   </DashboardCard>
                 </div>
                 <div
@@ -249,7 +267,7 @@ function CounselorDashboardPage() {
                     isLoading={isLoadingDashboardMetrics}
                     isFirstWeek={expressionWeek.isFirstWeek}
                     isLastWeek={expressionWeek.isLastWeek}
-                    minHeight={analysisCardHeight}
+                    maxHeight={analysisCardHeight}
                     weekLabel={expressionWeek.currentWeek.label}
                     childId={selectedChildId}
                     onPrevWeek={expressionWeek.goPrevWeek}
@@ -278,10 +296,6 @@ function CounselorDashboardPage() {
                       data={biometricRatioData}
                       color="#6B9AC4"
                     />
-                    <p className="counselor-card-note">
-                      수요일에 행동 활성 지표가 유독 낮게 관찰되며 이후 점진적으로
-                      활력을 회복하는 추세입니다.
-                    </p>
                   </DashboardCard>
 
                   <DashboardCard title="자율 신경 안정도" info={dashboardInfoMessages.autonomic}>
@@ -296,10 +310,6 @@ function CounselorDashboardPage() {
                       data={autonomicData}
                       color="#9b78f0"
                     />
-                    <p className="counselor-card-note">
-                      주말로 갈수록 RMSSD 수치가 상승하며 자율 신경 안정도가 개선이
-                      되는 추세입니다.
-                    </p>
                   </DashboardCard>
                 </div>
               </section>

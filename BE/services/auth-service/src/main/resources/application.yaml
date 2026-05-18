@@ -97,3 +97,4 @@ rebloom:
       - "/api/v1/internal/devices/serial/*/children-id"
       - "/api/v1/internal/children/*/iot-info"
       - "/api/v1/internal/children/*/counselor-receiver"
+      - "/api/v1/internal/children/active"

@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
 
 public interface UserRepository extends JpaRepository<User, UUID> {
 
@@ -14,4 +15,13 @@ public interface UserRepository extends JpaRepository<User, UUID> {
     Optional<User> findByEmail(String email);
 
     List<User> findAllByEmailAndRole(String email, UserRole userRole);
+
+    @Query(value = """
+        SELECT id, name
+        FROM users
+        WHERE role = 'CHILDREN'
+          AND status = 'ACTIVE'
+        ORDER BY id ASC
+        """, nativeQuery = true)
+    List<Object[]> findActiveChildrenRows();
 }

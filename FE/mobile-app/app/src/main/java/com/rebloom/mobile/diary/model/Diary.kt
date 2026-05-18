@@ -10,7 +10,8 @@ data class Diary(
     val emotionKey: String?,
     val createdAt: Long,
     val updatedAt: Long,
-) {
+
+    ) {
     companion object {
         fun from(entity: DiaryEntity): Diary =
             Diary(

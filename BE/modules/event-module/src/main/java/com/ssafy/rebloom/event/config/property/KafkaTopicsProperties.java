@@ -19,4 +19,6 @@ public class KafkaTopicsProperties {
     private String gpsCheckRequested;
     private String gpsCheckSame;
     private String gpsCheckDifferent;
+    private String statusCardRequested;
+    private String statusCardCreated;
 }

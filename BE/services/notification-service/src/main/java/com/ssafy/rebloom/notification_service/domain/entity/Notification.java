@@ -1,6 +1,7 @@
 package com.ssafy.rebloom.notification_service.domain.entity;
 
 import com.ssafy.rebloom.common.entity.BaseTime;
+import com.ssafy.rebloom.notification_service.domain.enums.AnomalyActionStatus;
 import com.ssafy.rebloom.notification_service.domain.enums.DeliveryStatus;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -64,5 +65,11 @@ public class Notification extends BaseTime {
 
     public void markRead() {
         this.isRead = true;
+    }
+
+    public void markAnomalyActionStatus(AnomalyActionStatus status) {
+        this.notificationPayload = this.notificationPayload.toBuilder()
+            .anomalyActionStatus(status)
+            .build();
     }
 }

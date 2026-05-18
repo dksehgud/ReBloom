@@ -18,22 +18,31 @@ function NotificationsHeaderIcon() {
   )
 }
 
-function ParentNotificationsHeader({ childName }: { childName?: string }) {
+type ParentNotificationsHeaderProps = {
+  childName?: string
+}
+
+function ParentNotificationsHeader({
+  childName,
+}: ParentNotificationsHeaderProps) {
   const displayName = childName?.trim() || '아이'
 
   return (
     <div className="parent-notifications-page__header">
-      <div className="parent-notifications-page__header-copy">
-        <div className="parent-notifications-page__title-row">
-          <span className="parent-notifications-page__title-icon">
-            <NotificationsHeaderIcon />
-          </span>
-          <h1 className="parent-notifications-page__title">알림</h1>
+      <div className="parent-notifications-page__header-main">
+        <div className="parent-notifications-page__header-copy">
+          <div className="parent-notifications-page__title-row">
+            <span className="parent-notifications-page__title-icon">
+              <NotificationsHeaderIcon />
+            </span>
+            <h1 className="parent-notifications-page__title">알림</h1>
+          </div>
+          <p className="parent-notifications-page__subtitle">
+            {displayName}의 감정 변화와 중요한 소식을 확인하세요
+          </p>
         </div>
-        <p className="parent-notifications-page__subtitle">
-          {displayName}의 감정 변화와 중요한 소식을 확인하세요
-        </p>
       </div>
+      {/* 전체 읽음 버튼은 부모앱에서 노출하지 않습니다. */}
     </div>
   )
 }
@@ -44,7 +53,11 @@ function ParentNotificationsScreen() {
 
   return (
     <MobilePageLayout
-      header={<ParentNotificationsHeader childName={selectedChild?.name} />}
+      header={
+        <ParentNotificationsHeader
+          childName={selectedChild?.name}
+        />
+      }
       className="parent-home-page parent-notifications-page"
       contentClassName="parent-notifications-page__content"
       bottomNavigation={<ParentBottomNavigation />}

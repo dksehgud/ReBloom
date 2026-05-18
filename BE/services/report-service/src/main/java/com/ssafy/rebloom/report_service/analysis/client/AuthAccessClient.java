@@ -1,6 +1,8 @@
 package com.ssafy.rebloom.report_service.analysis.client;
 
 import com.ssafy.rebloom.common.dto.BaseResponse;
+import com.ssafy.rebloom.report_service.analysis.dto.response.ActiveChildResponseDto;
+import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
@@ -21,6 +23,11 @@ public class AuthAccessClient {
 
     public UUID getChildrenIdByDeviceSerial(String serialNumber) {
         BaseResponse<UUID> response = internalAuthClient.getChildrenIdByDeviceSerial(serialNumber);
+        return response.getData();
+    }
+
+    public List<ActiveChildResponseDto> getActiveChildren() {
+        BaseResponse<List<ActiveChildResponseDto>> response = internalAuthClient.getActiveChildren();
         return response.getData();
     }
 }

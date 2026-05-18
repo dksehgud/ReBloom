@@ -34,6 +34,7 @@ rebloom:
     topics:
       parent-report-created: ${KAFKA_TOPIC_PARENT_REPORT_CREATED:rebloom.parent-report.created.v1}
       parent-report-comment-created: ${KAFKA_TOPIC_PARENT_REPORT_COMMENT_CREATED:rebloom.parent-report-comment.created.v1}
+      status-card-created: ${KAFKA_TOPIC_STATUS_CARD_CREATED:rebloom.status-card.created.v1}
       event-dlt: ${KAFKA_TOPIC_EVENT_DLT:rebloom.event.dlt.v1}
     producer:
       retries: 3

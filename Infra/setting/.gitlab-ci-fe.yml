@@ -28,6 +28,14 @@ build-mobile-apk:
     - echo "----- FE mobile debug APK build start -----"
     - cd FE/mobile-app
     - cp $FCM_CLIENT_JSON ./app/google-services.json
+    - |
+      KEYSTORE_BASE64="$(printf "%s" "$REBLOOM_KEYSTORE_BASE64" | tr -d '[:space:]')"
+      echo "REBLOOM_KEYSTORE_BASE64 length: ${#KEYSTORE_BASE64}"
+      if printf "%s" "$KEYSTORE_BASE64" | grep -q '[^A-Za-z0-9+/=]'; then
+        echo "REBLOOM_KEYSTORE_BASE64 contains invalid base64 characters"
+        exit 1
+      fi
+      printf "%s" "$KEYSTORE_BASE64" | base64 -d > rebloom.keystore
     - chmod +x ./gradlew
     - ./gradlew :app:assembleDebug --no-daemon -PWEB_APP_BASE_URL="${MOBILE_WEB_APP_BASE_URL}" -PAPI_BASE_URL="${MOBILE_API_BASE_URL}" -PDIARY_ANALYSIS_API_URL="${MOBILE_DIARY_ANALYSIS_API_URL}"
   artifacts:
@@ -37,7 +45,6 @@ build-mobile-apk:
   rules:
     - changes:
         - "FE/mobile-app/**/*"
-
 
 # deploy-web에서는 build-web에서 생성된 dist 폴더를 S3에 업로드하고 CloudFront 무효화 요청을 보냅니다.
 deploy-web:

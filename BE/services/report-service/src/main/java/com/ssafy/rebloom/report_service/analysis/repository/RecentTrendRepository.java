@@ -32,6 +32,23 @@ public interface RecentTrendRepository extends JpaRepository<RecentTrend, Recent
                summary
         FROM recent_trend
         WHERE user_id = :userId
+          AND report_date BETWEEN :startDate AND :endDate
+        ORDER BY report_date DESC
+        LIMIT 1
+        """, nativeQuery = true)
+    Optional<RecentTrend> findLatestByUserIdAndReportDateBetween(
+        @Param("userId") UUID userId,
+        @Param("startDate") LocalDate startDate,
+        @Param("endDate") LocalDate endDate
+    );
+
+    @Query(value = """
+        SELECT id,
+               user_id,
+               report_date,
+               summary
+        FROM recent_trend
+        WHERE user_id = :userId
           AND report_date = :reportDate
         ORDER BY id
         LIMIT 1

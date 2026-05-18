@@ -1,6 +1,7 @@
 package com.rebloom.mobile.network
 
 import retrofit2.http.Body
+import retrofit2.http.GET
 import retrofit2.http.HTTP
 import retrofit2.http.Path
 import retrofit2.http.POST
@@ -58,6 +59,14 @@ data class DeviceRegistrationData(
     val childrenId: String?
 )
 
+data class ParentConnectedChildData(
+    val connected: Boolean,
+    val childrenId: String?,
+    val name: String?,
+    val email: String?,
+    val birth: String?
+)
+
 data class LocationEvaluateRequest(
     val children_id: String,
     val parent_id: String?,
@@ -103,6 +112,9 @@ interface ApiService {
         @Path("childrenId") childrenId: String,
         @Body request: DeviceRegistrationRequest
     ): ApiBaseResponse<DeviceRegistrationData>
+
+    @GET("auth/api/v1/parents/children")
+    suspend fun getParentConnectedChild(): ApiBaseResponse<ParentConnectedChildData>
 
     @HTTP(method = "DELETE", path = "notification/api/v1/notifications/fcm-tokens", hasBody = true)
     suspend fun deactivateFcmToken(@Body request: FcmTokenRequest): IntakeResponse

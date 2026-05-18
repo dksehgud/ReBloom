@@ -1,6 +1,7 @@
 package com.ssafy.rebloom.security.config;
 
 import com.ssafy.rebloom.security.filter.HeaderAuthenticationFilter;
+import jakarta.servlet.DispatcherType;
 import java.util.List;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -33,6 +34,7 @@ public class CommonSecurityConfig {
             .httpBasic(basic -> basic.disable())
             .addFilterBefore(new HeaderAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class)
             .authorizeHttpRequests(auth -> {
+                auth.dispatcherTypeMatchers(DispatcherType.ASYNC, DispatcherType.ERROR).permitAll();
                 auth.requestMatchers("/actuator/**").permitAll();
 
                 List<String> patterns = securityProperties.getPermitAll();

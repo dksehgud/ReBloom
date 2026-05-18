@@ -58,6 +58,7 @@ services:
       - ../services/intake-service/.env
     environment:
       DB_HOST: postgres
+      KAFKA_BOOTSTRAP_SERVERS: kafka-1:9092,kafka-2:9092,kafka-3:9092
       TZ: Asia/Seoul
       JAVA_TOOL_OPTIONS: -Duser.timezone=Asia/Seoul
     expose:
@@ -74,6 +75,7 @@ services:
       - ../services/biometric-service/.env
     environment:
       DB_HOST: postgres
+      KAFKA_BOOTSTRAP_SERVERS: kafka-1:9092,kafka-2:9092,kafka-3:9092
       TZ: Asia/Seoul
       JAVA_TOOL_OPTIONS: -Duser.timezone=Asia/Seoul
     expose:
@@ -111,6 +113,7 @@ services:
       - ../services/report-service/.env
     environment:
       DB_HOST: postgres
+      KAFKA_BOOTSTRAP_SERVERS: kafka-1:9092,kafka-2:9092,kafka-3:9092
       TZ: Asia/Seoul
       JAVA_TOOL_OPTIONS: -Duser.timezone=Asia/Seoul
     expose:
@@ -129,6 +132,7 @@ services:
       DB_HOST: postgres
       REDIS_HOST: redis
       REDIS_PORT: 6379
+      KAFKA_BOOTSTRAP_SERVERS: kafka-1:9092,kafka-2:9092,kafka-3:9092
       TZ: Asia/Seoul
       JAVA_TOOL_OPTIONS: -Duser.timezone=Asia/Seoul
     expose:
@@ -152,6 +156,7 @@ services:
       BIO_ML_SERVICE_URI: http://bio-ml-service:8002
       FRONTEND_URL: ${FRONTEND_URL:-https://d1zs5r6o9orkcb.cloudfront.net}
       FRONTEND_REDIRECT_URL: ${FRONTEND_REDIRECT_URL:-https://d1zs5r6o9orkcb.cloudfront.net}
+      FRONTEND_WEBVIEW_URL: ${FRONTEND_WEBVIEW_URL:-https://d1zs5r6o9orkcb.cloudfront.net}
       TZ: Asia/Seoul
       JAVA_TOOL_OPTIONS: -Duser.timezone=Asia/Seoul
     expose:
