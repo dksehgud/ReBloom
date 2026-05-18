@@ -7,18 +7,25 @@ import type {
   ParentNotificationReadRequest,
 } from '../types/parentNotification'
 
-const mockNotificationCreatedAts = [
-  '2026-05-14T08:00:00',
-  '2026-05-13T20:00:00',
+const mockNotificationCreatedAtOffsets = [
+  2 * 60 * 1000,
+  24 * 60 * 60 * 1000,
 ]
+
+function getMockNotificationCreatedAt(index: number) {
+  const offset =
+    mockNotificationCreatedAtOffsets[index] ??
+    (index + 2) * 24 * 60 * 60 * 1000
+
+  return new Date(Date.now() - offset).toISOString()
+}
 
 function createMockNotificationDto(
   notification: (typeof parentNotificationsMock)[number],
   index: number,
 ): ParentNotificationDto {
   return {
-    createdAt:
-      mockNotificationCreatedAts[index] ?? `2026-05-${String(12 - index).padStart(2, '0')}T09:00:00`,
+    createdAt: getMockNotificationCreatedAt(index),
     deliveryStatus: 'SENT',
     id: index + 1,
     isRead: !notification.unread,

@@ -1,14 +1,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
-import { authApi } from '../../auth/api/authApi'
 import { useAppSessionStore } from '../../auth/store/useAppSessionStore'
 import { useParentMockMode } from '../../guardian/hooks/useParentMockMode'
-import { subscribeParentNotifications } from '../api/parentNotificationSse'
 import type {
   ParentNotificationAction,
   ParentNotificationItem,
 } from '../constants/parentNotifications'
+import { isParentNotificationActionExpired } from '../constants/parentNotifications'
 import { getParentNotificationApi } from '../services/parentNotificationService'
+import { useParentRealtimeNotificationStore } from '../store/useParentRealtimeNotificationStore'
 import type {
   ParentNotificationDto,
   ParentNotificationPayloadDto,
@@ -19,18 +19,26 @@ type SelectedParentNotificationActions = Record<
   ParentNotificationAction['key']
 >
 
+type UseParentNotificationStateOptions = {
+  requestMarkAllAsReadOnInitialLoad?: boolean
+}
+
 const SELECTED_PARENT_NOTIFICATION_ACTIONS_STORAGE_KEY =
   'rebloom-parent-notification-actions'
 
-function useParentNotificationState(initialItems: ParentNotificationItem[] = []) {
+function useParentNotificationState(
+  initialItems: ParentNotificationItem[] = [],
+  options: UseParentNotificationStateOptions = {},
+) {
   const [notifications, setNotifications] = useState<ParentNotificationItem[]>(
     () => initialItems,
   )
+  const [currentTime, setCurrentTime] = useState(() => Date.now())
+  const markAllAsReadOnInitialLoadRef = useRef(
+    options.requestMarkAllAsReadOnInitialLoad ?? false,
+  )
   const selectedActionNotificationIdsRef = useRef<Set<string>>(new Set())
   const accessToken = useAppSessionStore((state) => state.accessToken)
-  const refreshToken = useAppSessionStore((state) => state.refreshToken)
-  const clearSession = useAppSessionStore((state) => state.clearSession)
-  const setSessionTokens = useAppSessionStore((state) => state.setSessionTokens)
   const isMockMode = useParentMockMode()
   const parentNotificationApi = useMemo(
     () => getParentNotificationApi(isMockMode),
@@ -43,15 +51,24 @@ function useParentNotificationState(initialItems: ParentNotificationItem[] = [])
         accessToken,
       })
       const selectedActions = readSelectedParentNotificationActions()
-
-      setNotifications(
-        (response.contents ?? []).map((notification) =>
-          mapNotificationDtoToItem(
-            notification,
-            selectedActions[String(notification.id)],
-          ),
+      const nextNotifications = (response.contents ?? []).map((notification) =>
+        mapNotificationDtoToItem(
+          notification,
+          selectedActions[String(notification.id)],
         ),
       )
+      const shouldMarkAllAsRead = markAllAsReadOnInitialLoadRef.current
+
+      markAllAsReadOnInitialLoadRef.current = false
+      setNotifications(nextNotifications)
+
+      if (shouldMarkAllAsRead) {
+        void parentNotificationApi
+          .markAllParentNotificationsAsRead(accessToken)
+          .catch((error: unknown) => {
+            console.error(error)
+          })
+      }
     } catch (error) {
       console.error(error)
       setNotifications([])
@@ -88,14 +105,7 @@ function useParentNotificationState(initialItems: ParentNotificationItem[] = [])
 
   const markAllAsRead = useCallback(() => {
     setNotifications((currentItems) =>
-      currentItems.map((item) =>
-        item.unread
-          ? {
-              ...item,
-              unread: false,
-            }
-          : item,
-      ),
+      markParentNotificationItemsAsRead(currentItems),
     )
 
     void parentNotificationApi
@@ -113,7 +123,11 @@ function useParentNotificationState(initialItems: ParentNotificationItem[] = [])
 
       if (
         selectedActionNotificationIdsRef.current.has(notificationId) ||
-        !canChooseParentNotificationAction(targetNotification, actionKey)
+        !canChooseParentNotificationAction(
+          targetNotification,
+          actionKey,
+          Date.now(),
+        )
       ) {
         return
       }
@@ -180,55 +194,65 @@ function useParentNotificationState(initialItems: ParentNotificationItem[] = [])
     return () => window.clearTimeout(timeoutId)
   }, [loadNotifications])
 
+  const hasPendingAnomalyAction = notifications.some(
+    (notification) =>
+      Boolean(notification.actions?.length) &&
+      !notification.selectedActionKey &&
+      !isParentNotificationActionExpired(notification, currentTime),
+  )
+
   useEffect(() => {
-    if (isMockMode || !accessToken) {
+    if (!hasPendingAnomalyAction) {
       return undefined
     }
 
-    return subscribeParentNotifications({
-      accessToken,
-      refreshToken,
-      reissueAccessToken: authApi.reissue,
-      onAuthExpired: () => {
-        clearSession('parent')
-      },
-      onError: (error) => {
-        console.error(error)
-      },
-      onNotification: (notification) => {
-        const storedActionKey = readSelectedParentNotificationAction(
-          String(notification.id),
-        )
-        const notificationItem = mapNotificationDtoToItem(
-          notification,
-          storedActionKey,
-        )
+    const intervalId = window.setInterval(() => {
+      setCurrentTime(Date.now())
+    }, 1000)
 
-        setNotifications((currentItems) => {
-          const currentItem = currentItems.find(
-            (item) => item.id === notificationItem.id,
-          )
-          const nextNotificationItem = currentItem?.selectedActionKey
-            ? {
-                ...notificationItem,
-                selectedActionKey: currentItem.selectedActionKey,
-                unread: false,
-              }
-            : notificationItem
+    return () => window.clearInterval(intervalId)
+  }, [hasPendingAnomalyAction])
 
-          return [
-            nextNotificationItem,
-            ...currentItems.filter((item) => item.id !== notificationItem.id),
-          ]
-        })
-      },
-      onTokenRefresh: (tokens) => {
-        setSessionTokens(tokens, 'parent')
-      },
+  useEffect(() => {
+    return useParentRealtimeNotificationStore.subscribe((state, previousState) => {
+      if (
+        state.latestNotificationSequence ===
+          previousState.latestNotificationSequence ||
+        !state.latestNotification
+      ) {
+        return
+      }
+
+      const storedActionKey = readSelectedParentNotificationAction(
+        String(state.latestNotification.id),
+      )
+      const notificationItem = mapNotificationDtoToItem(
+        state.latestNotification,
+        storedActionKey,
+      )
+
+      setNotifications((currentItems) => {
+        const currentItem = currentItems.find(
+          (item) => item.id === notificationItem.id,
+        )
+        const nextNotificationItem = currentItem?.selectedActionKey
+          ? {
+              ...notificationItem,
+              selectedActionKey: currentItem.selectedActionKey,
+              unread: false,
+            }
+          : notificationItem
+
+        return [
+          nextNotificationItem,
+          ...currentItems.filter((item) => item.id !== notificationItem.id),
+        ]
+      })
     })
-  }, [accessToken, clearSession, isMockMode, refreshToken, setSessionTokens])
+  }, [])
 
   return {
+    currentTime,
     notifications,
     markAsRead,
     markAllAsRead,
@@ -239,11 +263,26 @@ function useParentNotificationState(initialItems: ParentNotificationItem[] = [])
 function canChooseParentNotificationAction(
   notification: ParentNotificationItem | undefined,
   actionKey: string,
+  now = Date.now(),
 ): actionKey is ParentNotificationAction['key'] {
   return Boolean(
     notification &&
       !notification.selectedActionKey &&
+      !isParentNotificationActionExpired(notification, now) &&
       notification.actions?.some((action) => action.key === actionKey),
+  )
+}
+
+function markParentNotificationItemsAsRead(
+  notifications: ParentNotificationItem[],
+) {
+  return notifications.map((item) =>
+    item.unread
+      ? {
+          ...item,
+          unread: false,
+        }
+      : item,
   )
 }
 
@@ -362,6 +401,7 @@ function mapNotificationDtoToItem(
         ]
       : undefined,
     childrenId: payload?.childrenId,
+    createdAt: notification.createdAt,
     highlightLabel: getHighlightLabel(notification),
     icon: typeMeta.icon,
     id: String(notification.id),
@@ -470,4 +510,7 @@ function formatRelativeTimeLabel(createdAt?: string | null) {
 }
 
 export default useParentNotificationState
-export { canChooseParentNotificationAction, mapNotificationDtoToItem }
+export {
+  canChooseParentNotificationAction,
+  mapNotificationDtoToItem,
+}

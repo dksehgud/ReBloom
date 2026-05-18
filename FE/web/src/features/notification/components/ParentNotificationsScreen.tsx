@@ -49,7 +49,8 @@ function ParentNotificationsHeader({
 
 function ParentNotificationsScreen() {
   const { selectedChild } = useParentConnectedChild()
-  const { notifications, markAsRead, chooseAction } = useParentNotificationState()
+  const { currentTime, notifications, markAsRead, chooseAction } =
+    useParentNotificationState([], { requestMarkAllAsReadOnInitialLoad: true })
 
   return (
     <MobilePageLayout
@@ -64,6 +65,7 @@ function ParentNotificationsScreen() {
     >
       <section className="parent-notifications-page__body" aria-label="보호자 알림 목록 영역">
         <ParentNotificationFeed
+          currentTime={currentTime}
           items={notifications}
           onCardClick={markAsRead}
           onActionClick={chooseAction}

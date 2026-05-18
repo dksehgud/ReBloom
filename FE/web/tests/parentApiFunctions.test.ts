@@ -70,6 +70,10 @@ import {
   canChooseParentNotificationAction,
   mapNotificationDtoToItem,
 } from '../src/features/notification/hooks/useParentNotificationState'
+import {
+  PARENT_ANOMALY_ACTION_WINDOW_MS,
+  isParentNotificationActionExpired,
+} from '../src/features/notification/constants/parentNotifications'
 import { getParentNotificationApi } from '../src/features/notification/services/parentNotificationService'
 import {
   getParentDiaryEmotions,
@@ -386,6 +390,11 @@ describe('parent report API functions', () => {
 })
 
 describe('parent notification API functions', () => {
+  const anomalyAlertCreatedAt = '2026-05-17T10:00:00'
+  const anomalyAlertOpenTime = new Date('2026-05-17T10:04:59').getTime()
+  const anomalyAlertExpiredTime =
+    new Date(anomalyAlertCreatedAt).getTime() + PARENT_ANOMALY_ACTION_WINDOW_MS
+
   it('loads and marks parent notifications', async () => {
     apiRequestMock
       .mockResolvedValueOnce({ data: { contents: [{ id: 1, isRead: false }] } })
@@ -459,7 +468,7 @@ describe('parent notification API functions', () => {
 
   it('maps action buttons only for risk alert notifications', () => {
     const riskAlert = mapNotificationDtoToItem({
-      createdAt: '2026-05-17T10:00:00',
+      createdAt: anomalyAlertCreatedAt,
       id: 1,
       isRead: false,
       notificationType: 'RISK_ALERT',
@@ -470,7 +479,7 @@ describe('parent notification API functions', () => {
       },
     })
     const conversationAlert = mapNotificationDtoToItem({
-      createdAt: '2026-05-17T10:00:00',
+      createdAt: anomalyAlertCreatedAt,
       id: 2,
       isRead: false,
       notificationType: 'CONVERSATION_ALERT',
@@ -482,7 +491,9 @@ describe('parent notification API functions', () => {
     })
 
     expect(riskAlert.childrenId).toBe('child-1')
+    expect(riskAlert.createdAt).toBe(anomalyAlertCreatedAt)
     expect(riskAlert.notificationType).toBe('RISK_ALERT')
+    expect(riskAlert.unread).toBe(true)
     expect(riskAlert.actions?.map((action) => action.key)).toEqual([
       'reject',
       'confirm',
@@ -492,7 +503,7 @@ describe('parent notification API functions', () => {
 
   it('blocks changing an already selected parent anomaly alert action', () => {
     const riskAlert = mapNotificationDtoToItem({
-      createdAt: '2026-05-17T10:00:00',
+      createdAt: anomalyAlertCreatedAt,
       id: 1,
       isRead: false,
       notificationType: 'RISK_ALERT',
@@ -501,11 +512,41 @@ describe('parent notification API functions', () => {
       },
     })
 
-    expect(canChooseParentNotificationAction(riskAlert, 'confirm')).toBe(true)
+    expect(
+      canChooseParentNotificationAction(
+        riskAlert,
+        'confirm',
+        anomalyAlertOpenTime,
+      ),
+    ).toBe(true)
     expect(
       canChooseParentNotificationAction(
         { ...riskAlert, selectedActionKey: 'confirm' },
         'reject',
+        anomalyAlertOpenTime,
+      ),
+    ).toBe(false)
+  })
+
+  it('blocks parent anomaly alert actions after five minutes', () => {
+    const riskAlert = mapNotificationDtoToItem({
+      createdAt: anomalyAlertCreatedAt,
+      id: 1,
+      isRead: false,
+      notificationType: 'RISK_ALERT',
+      payload: {
+        childrenId: 'child-1',
+      },
+    })
+
+    expect(
+      isParentNotificationActionExpired(riskAlert, anomalyAlertExpiredTime),
+    ).toBe(true)
+    expect(
+      canChooseParentNotificationAction(
+        riskAlert,
+        'confirm',
+        anomalyAlertExpiredTime,
       ),
     ).toBe(false)
   })
@@ -560,7 +601,13 @@ describe('parent notification API functions', () => {
     expect(confirmedAlert.selectedActionKey).toBe('confirm')
     expect(confirmedAlert.unread).toBe(false)
     expect(pendingAlert.selectedActionKey).toBeUndefined()
-    expect(canChooseParentNotificationAction(pendingAlert, 'confirm')).toBe(true)
+    expect(
+      canChooseParentNotificationAction(
+        pendingAlert,
+        'confirm',
+        anomalyAlertOpenTime,
+      ),
+    ).toBe(true)
   })
 })
 
