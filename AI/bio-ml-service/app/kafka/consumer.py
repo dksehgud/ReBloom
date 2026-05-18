@@ -43,7 +43,7 @@ def _get_redis() -> redis.Redis:
 
 
 def _normalize_biometrics(biometrics: list[dict]) -> list[dict]:
-    """camelCase → snake_case 변환 (BE Kafka 이벤트 필드명 정규화)"""
+    """camelCase → snake_case 변환 + sentinel 행 제거 (lf_hf=-1, pnn50=1.0)"""
     return [
         {
             "hr"          : b.get("hr"),
@@ -54,6 +54,7 @@ def _normalize_biometrics(biometrics: list[dict]) -> list[dict]:
             "hr_acc_ratio": b.get("hrAccRatio"),
         }
         for b in biometrics
+        if b.get("lfHf") != -1 and b.get("pnn50") != 1.0
     ]
 
 
@@ -81,11 +82,15 @@ def _handle_biometric_raw(payload: dict) -> None:
 
     payload = _unwrap_event_envelope(payload)
 
+    # sentinel 값: IBI 부족으로 계산 불가 → 논문 데이터 중앙값으로 대체
+    LF_HF_MEDIAN = 0.616
+    PNN50_MEDIAN = 0.429
+
     user_id      = payload["userId"]
     hr           = payload["hr"]
     rmssd        = payload["rmssd"]
-    pnn50        = payload["pnn50"]
-    lf_hf        = payload["lfHf"]
+    pnn50        = payload["pnn50"] if payload["pnn50"] != 1.0 else PNN50_MEDIAN
+    lf_hf        = payload["lfHf"]  if payload["lfHf"]  != -1  else LF_HF_MEDIAN
     acc_mag      = payload["accMag"]
     hr_acc_ratio = payload["hrAccRatio"]
     ts_start     = payload["tsStart"]
