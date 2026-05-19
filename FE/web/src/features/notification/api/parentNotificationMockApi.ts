@@ -32,6 +32,7 @@ function createMockNotificationDto(
     notificationType: notification.notificationType ?? 'BIOMETRIC_ANOMALY',
     payload: {
       childrenId: notification.childrenId,
+      childrenReportId: notification.childrenReportId,
       content: notification.message,
       depressionScoreText: notification.highlightLabel,
       title: notification.title,

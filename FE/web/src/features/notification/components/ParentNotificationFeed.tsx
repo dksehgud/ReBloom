@@ -12,7 +12,7 @@ import type {
 type ParentNotificationFeedProps = {
   currentTime: number
   items: ParentNotificationItem[]
-  onCardClick: (notificationId: string) => void
+  onCardClick: (item: ParentNotificationItem) => void
   onActionClick: (notificationId: string, actionKey: string) => void
 }
 
@@ -112,11 +112,11 @@ function ParentNotificationFeed({
         <article
           key={item.id}
           className={`parent-notification-card parent-notification-card--${item.tone} parent-notification-card--interactive${item.unread ? '' : ' is-read'}`}
-          onClick={() => onCardClick(item.id)}
+          onClick={() => onCardClick(item)}
           onKeyDown={(event) => {
             if (event.key === 'Enter' || event.key === ' ') {
               event.preventDefault()
-              onCardClick(item.id)
+              onCardClick(item)
             }
           }}
           role="button"

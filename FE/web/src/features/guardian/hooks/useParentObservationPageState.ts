@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { useAppSessionStore } from '../../auth/store/useAppSessionStore'
 import { type ParentObservationMood } from '../constants/parentObservationMoods'
@@ -9,6 +9,11 @@ import { useParentObservationList } from './useParentObservationList'
 import { useParentMockMode } from './useParentMockMode'
 
 type ParentObservationModalMode = 'detail' | 'create' | 'edit' | 'delete' | null
+
+export type ParentObservationOpenRequest = {
+  childrenId?: string | null
+  reportId: string
+}
 
 type DraftDate = {
   year: number
@@ -96,7 +101,10 @@ function sortRecords(records: ParentObservationRecord[]) {
   })
 }
 
-export function useParentObservationPageState(childrenId?: string) {
+export function useParentObservationPageState(
+  childrenId?: string,
+  openRequest?: ParentObservationOpenRequest | null,
+) {
   const accessToken = useAppSessionStore((state) => state.accessToken)
   const isMockMode = useParentMockMode()
   const parentObservationApi = useMemo(
@@ -130,6 +138,7 @@ export function useParentObservationPageState(childrenId?: string) {
   const [draftMood, setDraftMood] = useState<ParentObservationMood | null>(null)
   const [draftDescription, setDraftDescription] = useState('')
   const [isMutating, setIsMutating] = useState(false)
+  const openedRequestKeyRef = useRef<string | null>(null)
 
   const monthKey = getMonthKey(currentYear, currentMonth)
   const canUseObservationApi = Boolean(childrenId)
@@ -206,12 +215,8 @@ export function useParentObservationPageState(childrenId?: string) {
       return ''
     }
 
-    return formatModalDateLabel(
-      currentMonth,
-      selectedRecord.day,
-      selectedRecord.weekday,
-    )
-  }, [currentMonth, selectedRecord])
+    return `${selectedRecord.date} ${selectedRecord.weekday}`
+  }, [selectedRecord])
 
   const draftDateLabel = useMemo(() => {
     const draftWeekday = ['일', '월', '화', '수', '목', '금', '토'][
@@ -241,7 +246,7 @@ export function useParentObservationPageState(childrenId?: string) {
     handleNextMonth()
   }
 
-  const handleSelectRecord = (recordId: string) => {
+  const handleSelectRecord = useCallback((recordId: string) => {
     const fallbackRecord =
       localRecords.find((record) => record.id === recordId) ?? null
 
@@ -260,13 +265,49 @@ export function useParentObservationPageState(childrenId?: string) {
     })
       .then((record) => {
         setSelectedRecordDetail((currentRecord) =>
-          currentRecord?.id === recordId ? record : currentRecord,
+          !currentRecord || currentRecord.id === recordId
+            ? record
+            : currentRecord,
         )
       })
       .catch((error) => {
         console.error(error)
       })
-  }
+  }, [
+    accessToken,
+    canUseObservationApi,
+    childrenId,
+    localRecords,
+    parentObservationApi,
+  ])
+
+  useEffect(() => {
+    const reportId = openRequest?.reportId?.trim()
+
+    if (!childrenId || !reportId) {
+      return
+    }
+
+    const targetChildrenId = openRequest?.childrenId?.trim()
+
+    if (targetChildrenId && targetChildrenId !== childrenId) {
+      return
+    }
+
+    const requestKey = `${childrenId}:${reportId}`
+
+    if (openedRequestKeyRef.current === requestKey) {
+      return
+    }
+
+    openedRequestKeyRef.current = requestKey
+    handleSelectRecord(reportId)
+  }, [
+    childrenId,
+    handleSelectRecord,
+    openRequest?.childrenId,
+    openRequest?.reportId,
+  ])
 
   const handleCloseModal = () => {
     setModalMode(null)

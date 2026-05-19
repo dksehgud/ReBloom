@@ -9,6 +9,7 @@ export type ParentNotificationAction = {
 export type ParentNotificationItem = {
   id: string
   childrenId?: string | null
+  childrenReportId?: string | null
   notificationType?: string
   tone: 'pink' | 'orange'
   icon: 'alert' | 'response'
@@ -22,6 +23,18 @@ export type ParentNotificationItem = {
 }
 
 export const parentNotificationsMock: ParentNotificationItem[] = [
+  {
+    id: 'notification-parent-report-reply-1',
+    childrenId: 'mock-child-1',
+    childrenReportId: 'observation-2026-04-15-1940',
+    notificationType: 'PARENT_REPORT_REPLY',
+    tone: 'orange',
+    icon: 'response',
+    title: 'Counselor comment',
+    timeLabel: 'Just now',
+    unread: true,
+    message: 'A counselor comment was added to a parent observation.',
+  },
   {
     id: 'notification-attention-1',
     childrenId: 'mock-child-1',

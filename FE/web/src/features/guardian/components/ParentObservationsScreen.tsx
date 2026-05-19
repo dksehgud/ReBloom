@@ -1,6 +1,10 @@
+import { useMemo } from 'react'
+import { useLocation } from 'react-router-dom'
+
 import MobilePageLayout from '../../../components/templates/MobilePageLayout/MobilePageLayout'
 import { useParentConnectedChild } from '../hooks/useParentConnectedChild'
 import { useParentObservationPageState } from '../hooks/useParentObservationPageState'
+import type { ParentObservationOpenRequest } from '../hooks/useParentObservationPageState'
 import ParentBottomNavigation from './ParentBottomNavigation'
 import ParentObservationCalendar from './ParentObservationCalendar'
 import ParentObservationDeleteModal from './ParentObservationDeleteModal'
@@ -21,9 +25,39 @@ function ParentObservationsHeader({ childName }: { childName?: string }) {
   )
 }
 
+function getParentObservationOpenRequest(
+  state: unknown,
+): ParentObservationOpenRequest | null {
+  if (!state || typeof state !== 'object') {
+    return null
+  }
+
+  const navigationState = state as {
+    openObservationChildrenId?: unknown
+    openObservationReportId?: unknown
+  }
+
+  if (typeof navigationState.openObservationReportId !== 'string') {
+    return null
+  }
+
+  return {
+    childrenId:
+      typeof navigationState.openObservationChildrenId === 'string'
+        ? navigationState.openObservationChildrenId
+        : null,
+    reportId: navigationState.openObservationReportId,
+  }
+}
+
 function ParentObservationsScreen() {
+  const location = useLocation()
   const { isLoading: isChildLoading, selectedChild } = useParentConnectedChild()
   const hasConnectedChild = Boolean(selectedChild?.id)
+  const openRequest = useMemo(
+    () => getParentObservationOpenRequest(location.state),
+    [location.state],
+  )
   const {
     currentYear,
     currentMonth,
@@ -62,7 +96,7 @@ function ParentObservationsScreen() {
     handleSelectDraftMood,
     handleDraftDescriptionChange,
     handleSubmitDraft,
-  } = useParentObservationPageState(selectedChild?.id)
+  } = useParentObservationPageState(selectedChild?.id, openRequest)
 
   return (
     <MobilePageLayout
