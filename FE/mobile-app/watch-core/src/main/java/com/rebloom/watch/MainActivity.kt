@@ -21,9 +21,9 @@ class MainActivity : Activity() {
     private fun requestPermissionsIfNeeded() {
         val permissions = arrayOf(
             Manifest.permission.BODY_SENSORS,
-            Manifest.permission.ACTIVITY_RECOGNITION,
-            Manifest.permission.ACCESS_FINE_LOCATION,
-            Manifest.permission.ACCESS_COARSE_LOCATION
+            Manifest.permission.ACTIVITY_RECOGNITION
+            // Manifest.permission.ACCESS_FINE_LOCATION,
+            // Manifest.permission.ACCESS_COARSE_LOCATION
         )
 
         val notGranted = permissions.filter {
