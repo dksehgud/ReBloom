@@ -9,15 +9,16 @@ import {
   PARENT_REPORT_VISIBLE_WEEK_COUNT,
   reportWeekdays,
   type ParentReportMood,
-  type ParentReportWeek,
 } from '../constants/parentReport'
 import { useParentReportData } from '../hooks/useParentReportData'
+import {
+  STABILITY_CHART_HEIGHT,
+  STABILITY_CHART_PADDING_LEFT,
+  STABILITY_CHART_PADDING_RIGHT,
+  STABILITY_CHART_WIDTH,
+  createStabilityChartData,
+} from '../utils/parentReportChart'
 
-const STABILITY_CHART_WIDTH = 300
-const STABILITY_CHART_HEIGHT = 180
-const STABILITY_CHART_PADDING_X = 12
-const STABILITY_CHART_PADDING_TOP = 12
-const STABILITY_CHART_PADDING_BOTTOM = 26
 const TOOLTIP_AUTO_CLOSE_MS = 1800
 
 function EmotionsIcon() {
@@ -160,35 +161,11 @@ function getBarTone(score: number) {
   return score <= 55 ? 'warning' : 'default'
 }
 
-function createStabilityChartData(scores: ParentReportWeek['stabilityScores']) {
-  const usableWidth = STABILITY_CHART_WIDTH - STABILITY_CHART_PADDING_X * 2
-  const usableHeight =
-    STABILITY_CHART_HEIGHT - STABILITY_CHART_PADDING_TOP - STABILITY_CHART_PADDING_BOTTOM
-  const stepX = usableWidth / Math.max(scores.length - 1, 1)
-
-  const points = scores.map((item, index) => {
-    const x = STABILITY_CHART_PADDING_X + stepX * index
-    const y =
-      STABILITY_CHART_PADDING_TOP +
-      ((100 - item.score) / 100) * usableHeight
-
-    return {
-      ...item,
-      x,
-      y,
-    }
-  })
-
-  return {
-    points,
-    path: points.map((point, index) => `${index === 0 ? 'M' : 'L'}${point.x} ${point.y}`).join(' '),
-  }
-}
-
 function ParentReportScreen() {
   const { isLoading: isChildLoading, selectedChild } = useParentConnectedChild()
   const [selectedWeekIndex, setSelectedWeekIndex] = useState(PARENT_REPORT_VISIBLE_WEEK_COUNT - 1)
   const [isEmotionInfoOpen, setIsEmotionInfoOpen] = useState(false)
+  const [isSleepInfoOpen, setIsSleepInfoOpen] = useState(false)
   const [isStabilityInfoOpen, setIsStabilityInfoOpen] = useState(false)
 
   const { currentWeek } = useParentReportData({
@@ -223,13 +200,31 @@ function ParentReportScreen() {
     return () => window.clearTimeout(timeoutId)
   }, [isStabilityInfoOpen])
 
+  useEffect(() => {
+    if (!isSleepInfoOpen) return undefined
+
+    const timeoutId = window.setTimeout(() => {
+      setIsSleepInfoOpen(false)
+    }, TOOLTIP_AUTO_CLOSE_MS)
+
+    return () => window.clearTimeout(timeoutId)
+  }, [isSleepInfoOpen])
+
   const handleOpenEmotionInfo = () => {
+    setIsSleepInfoOpen(false)
     setIsStabilityInfoOpen(false)
     setIsEmotionInfoOpen(true)
   }
 
+  const handleOpenSleepInfo = () => {
+    setIsEmotionInfoOpen(false)
+    setIsStabilityInfoOpen(false)
+    setIsSleepInfoOpen(true)
+  }
+
   const handleOpenStabilityInfo = () => {
     setIsEmotionInfoOpen(false)
+    setIsSleepInfoOpen(false)
     setIsStabilityInfoOpen(true)
   }
 
@@ -320,6 +315,22 @@ function ParentReportScreen() {
               <h2 id="sleep-score-report" className="parent-report-page__section-title">
                 수면 점수 추이
               </h2>
+              <div className="parent-report-page__info-wrap">
+                <button
+                  type="button"
+                  className="parent-report-page__info-button"
+                  onClick={handleOpenSleepInfo}
+                  aria-label="수면 점수 추이 안내 보기"
+                  aria-expanded={isSleepInfoOpen}
+                >
+                  <InfoIcon />
+                </button>
+                {isSleepInfoOpen ? (
+                  <div className="parent-report-page__tooltip-row">
+                    <ReportInfoTooltip message="수면 시간, 규칙성, 회복 상태를 바탕으로 계산한 주간 수면 점수 추이입니다." />
+                  </div>
+                ) : null}
+              </div>
             </div>
           </div>
 
@@ -382,7 +393,6 @@ function ParentReportScreen() {
 
           <div className="parent-report-page__card parent-report-page__card--line-chart">
             <div className="parent-report-page__line-chart-placeholder">
-              <div className="parent-report-page__line-chart-grid" />
               <svg
                 aria-hidden="true"
                 className="parent-report-page__line-chart-plot"
@@ -390,6 +400,34 @@ function ParentReportScreen() {
                 fill="none"
                 xmlns="http://www.w3.org/2000/svg"
               >
+                {stabilityChart.verticalGuides.map((guide) => (
+                  <line
+                    className="parent-report-page__line-chart-vertical-axis"
+                    key={`${currentWeek.id}-${guide.weekday}-guide`}
+                    x1={guide.x}
+                    x2={guide.x}
+                    y1={guide.y1}
+                    y2={guide.y2}
+                  />
+                ))}
+                {stabilityChart.axisTicks.map((tick) => (
+                  <g key={tick.value}>
+                    <line
+                      className="parent-report-page__line-chart-axis"
+                      x1={STABILITY_CHART_PADDING_LEFT}
+                      x2={STABILITY_CHART_WIDTH - STABILITY_CHART_PADDING_RIGHT}
+                      y1={tick.y}
+                      y2={tick.y}
+                    />
+                    <text
+                      className="parent-report-page__line-chart-axis-label"
+                      x="4"
+                      y={tick.y + 3}
+                    >
+                      {tick.value}
+                    </text>
+                  </g>
+                ))}
                 <path
                   d={stabilityChart.path}
                   stroke="#F4B895"
@@ -408,12 +446,18 @@ function ParentReportScreen() {
                     strokeWidth="3"
                   />
                 ))}
-              </svg>
-              <div className="parent-report-page__line-chart-labels">
-                {currentWeek.stabilityScores.map((point) => (
-                  <span key={`${currentWeek.id}-${point.weekday}`}>{point.weekday}</span>
+                {stabilityChart.weekdayLabels.map((label) => (
+                  <text
+                    className="parent-report-page__line-chart-weekday-label"
+                    key={`${currentWeek.id}-${label.weekday}-label`}
+                    x={label.x}
+                    y={label.y}
+                    textAnchor="middle"
+                  >
+                    {label.weekday}
+                  </text>
                 ))}
-              </div>
+              </svg>
             </div>
             <div className="parent-report-page__insight-line">{currentWeek.stabilityInsight}</div>
           </div>

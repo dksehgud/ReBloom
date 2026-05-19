@@ -80,11 +80,13 @@ class BiometricService : Service() {
                 }
         }
 
+        repository.start()
         sensor.connect()
     }
 
     override fun onDestroy() {
         if (wakeLock.isHeld) wakeLock.release()
+        repository.stop()
         sensor.disconnect()
         super.onDestroy()
     }

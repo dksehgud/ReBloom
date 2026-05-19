@@ -20,16 +20,16 @@ describe('counselor dashboard biometric metric mapping', () => {
     expect(points.map((point) => point.value)).toEqual([0.92, 1.5])
   })
 
-  it('keeps autonomic stability values above 100 on the 0 to 200 range', () => {
+  it('keeps autonomic stability values above 100 on the 0 to 300 range', () => {
     const points = mapDashboardChartPoints(
       [
         { date: '2026-05-18', value: 128 },
-        { date: '2026-05-19', value: 240 },
+        { date: '2026-05-19', value: 340 },
       ],
       undefined,
       AUTONOMIC_Y_AXIS_MAX,
     )
 
-    expect(points.map((point) => point.value)).toEqual([128, 200])
+    expect(points.map((point) => point.value)).toEqual([128, 300])
   })
 })

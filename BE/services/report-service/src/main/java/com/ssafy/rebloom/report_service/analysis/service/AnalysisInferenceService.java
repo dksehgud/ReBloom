@@ -7,11 +7,9 @@ import com.ssafy.rebloom.report_service.analysis.client.AuthAccessClient;
 import com.ssafy.rebloom.report_service.analysis.client.BiometricAnalysisFeatureClient;
 import com.ssafy.rebloom.report_service.analysis.domain.entity.*;
 import com.ssafy.rebloom.report_service.analysis.dto.request.ConversationSessionCreateRequestDto;
-import com.ssafy.rebloom.report_service.analysis.dto.request.DepressionSvrPredictRequest;
 import com.ssafy.rebloom.report_service.analysis.dto.request.DiaryAnalysisInferenceRequestDto;
 import com.ssafy.rebloom.report_service.analysis.dto.request.RecentInsightInferenceRequestDto;
 import com.ssafy.rebloom.report_service.analysis.dto.response.BiometricAnalysisFeatureResponse;
-import com.ssafy.rebloom.report_service.analysis.dto.response.DepressionSvrPredictResponse;
 import com.ssafy.rebloom.report_service.analysis.repository.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -36,19 +34,10 @@ import java.util.*;
 @RequiredArgsConstructor
 public class AnalysisInferenceService {
 
+    private static final String RUNPOD_COMPLETED_STATUS = "COMPLETED";
     private static final Set<String> RUNPOD_FAILED_STATUSES = Set.of("FAILED", "CANCELLED", "TIMED_OUT");
-    private static final int FEATURE_COUNT = 11;
-    private static final int SLEEP_FEATURE_INDEX = 9;
-    private static final int PHQ_FEATURE_INDEX = 10;
     private static final ZoneId SEOUL_ZONE = ZoneId.of("Asia/Seoul");
 
-    /*
-     * RestClient.Builder
-     * - Spring이 제공하는 HTTP 클라이언트 생성기입니다.
-     * - 이 서비스에서는 외부 HTTP API를 두 군데 호출합니다.
-     *   1. RunPod: 일기/대화 우울 단계 추론
-     *   2. Recent Insight API: 최근 7일 추이 한 문장 요약
-     */
     private final RestClient.Builder restClientBuilder;
 
     private final AuthAccessClient authAccessClient;
@@ -61,13 +50,6 @@ public class AnalysisInferenceService {
     private final RecentTrendRepository recentTrendRepository;
     private final TransactionTemplate transactionTemplate;
 
-    /*
-     * @Value("${...}")
-     * - application.yaml 또는 .env.local 환경변수에서 값을 읽어옵니다.
-     * - 지금은 default 값을 넣지 않았습니다.
-     * - 따라서 .env.local에 값이 없으면 애플리케이션이 시작할 때 바로 실패합니다.
-     *   잘못된 endpoint로 조용히 요청하는 것보다 빨리 실패하는 편이 안전합니다.
-     */
     @Value("${RUNPOD_API_KEY}")
     private String runpodApiKey;
 
@@ -77,40 +59,23 @@ public class AnalysisInferenceService {
     @Value("${RUNPOD_BASE_URL}")
     private String runpodBaseUrl;
 
+    @Value("${RUNPOD_WAIT_MS}")
+    private long runpodWaitMs;
+
+    @Value("${RUNPOD_POLL_INTERVAL_MS:2000}")
+    private long runpodPollIntervalMs;
+
     @Value("${RECENT_INSIGHT_API_URL}")
     private String recentInsightApiUrl;
 
     @Value("${RECENT_INSIGHT_API_KEY}")
     private String recentInsightApiKey;
 
-    @Value("${rebloom.client.bio-ml-service-url}")
-    private String bioMlServiceUrl;
     @Value("${RECENT_INSIGHT_MODEL:gpt-4o-mini}")
     private String recentInsightModel;
 
     @Async("analysisTaskExecutor")
     public void analyzeConversation(ConversationSessionCreateRequestDto request) {
-        /*
-         * 이 메서드는 IoT 기기에서 대화 세션이 끝난 뒤 호출됩니다.
-         *
-         * request 예시:
-         * {
-         *   "session_id": "...",
-         *   "raspberrypi_id": "...",
-         *   "started_at": "...",
-         *   "ended_at": "...",
-         *   "events": [
-         *     { "child": "..." },
-         *     { "bot": "..." }
-         *   ]
-         * }
-         *
-         * 전체 흐름:
-         * 1. events를 RunPod가 원하는 text 형식으로 바꾼다.
-         * 2. RunPod에 text를 보내 prediction을 받는다.
-         * 3. raspberrypi_id로 기기 소유 아동 ID를 조회한다.
-         * 4. RunPod output을 conversation_analysis와 conversation_keywords에 저장한다.
-         */
         log.info(
             "conversation analysis requested. sessionId={}, raspberrypiId={}, startedAt={}, endedAt={}, eventCount={}",
             request.sessionId(),
@@ -120,24 +85,17 @@ public class AnalysisInferenceService {
             request.events().size()
         );
 
-        /*
-         * RunPod receives only one "prompt" field. Conversation events are flattened in
-         * chronological order, with child utterances marked as User and bot utterances
-         * marked as Bot, matching the agreed model input contract:
-         *
-         *   {
-         *     "input": {
-         *       "prompt": "User: ...\nBot: ..."
-         *     }
-         *   }
-         */
-        UUID childrenId = authAccessClient.getChildrenIdByDeviceSerial(request.raspberrypiId());
-        UUID analysisId = parseSessionId(request.sessionId());
         String text = buildConversationText(request.events());
         JsonNode output = requestRunpod(text);
+        UUID childrenId = authAccessClient.getChildrenIdByDeviceSerial(request.raspberrypiId());
+        UUID analysisId = parseSessionId(request.sessionId());
         LocalDate targetDate = resolveTargetDate(output, request.endedAt().toLocalDateTime().toLocalDate());
-        LocalDateTime referenceDateTime = request.endedAt().toLocalDateTime();
-        Double prediction = inferPredictionScore(output, childrenId, targetDate, referenceDateTime);
+        Double prediction = addPhqFeature(
+            toPredictionScore(readRequiredText(output, "prediction")),
+            childrenId,
+            targetDate,
+            request.endedAt().toLocalDateTime()
+        );
         List<String> keywords = readRequiredTextList(output, "keywords");
 
         transactionTemplate.executeWithoutResult(status -> {
@@ -165,17 +123,6 @@ public class AnalysisInferenceService {
 
     @Async("analysisTaskExecutor")
     public void analyzeDiary(DiaryAnalysisInferenceRequestDto request) {
-        /*
-         * 이 메서드는 일기 분석 요청이 들어왔을 때 호출됩니다.
-         *
-         * 대화와 달리 일기 DTO에는 user_id가 이미 들어있습니다.
-         * 그래서 raspberrypi_id -> userId 변환 과정이 필요 없습니다.
-         *
-         * 전체 흐름:
-         * 1. request.content()를 RunPod input.prompt로 보낸다.
-         * 2. RunPod output에서 embedding_text, prediction, keywords를 읽는다.
-         * 3. 요청에 포함된 emotion_icon과 RunPod output을 diary_analysis / diary_keywords에 저장한다.
-         */
         log.info(
             "diary analysis requested. diaryId={}, userId={}, targetDate={}",
             request.diaryId(),
@@ -183,14 +130,14 @@ public class AnalysisInferenceService {
             request.targetDate()
         );
 
-        /*
-         * Diary analysis uses the same RunPod contract as conversation analysis.
-         * The diary content is already a single text body, so it can be sent as-is.
-         */
         JsonNode output = requestRunpod(request.content());
         LocalDate targetDate = resolveTargetDate(output, request.targetDate());
-        LocalDateTime referenceDateTime = targetDate.plusDays(1).atStartOfDay();
-        Double prediction = inferPredictionScore(output, request.userId(), targetDate, referenceDateTime);
+        Double prediction = addPhqFeature(
+            toPredictionScore(readRequiredText(output, "prediction")),
+            request.userId(),
+            targetDate,
+            targetDate.plusDays(1).atStartOfDay()
+        );
         List<String> keywords = readRequiredTextList(output, "keywords");
 
         transactionTemplate.executeWithoutResult(status -> {
@@ -217,22 +164,6 @@ public class AnalysisInferenceService {
 
     @Async("analysisTaskExecutor")
     public void generateRecentInsight(RecentInsightInferenceRequestDto request) {
-        /*
-         * 이 메서드는 최근 우울 단계 추이를 한 문장으로 요약할 때 호출됩니다.
-         *
-         * 주의:
-         * - 이 메서드는 RunPod를 호출하지 않습니다.
-         * - RunPod는 일기/대화 각각의 prediction을 만드는 모델 추론용입니다.
-         * - 최근 7일 요약은 별도의 RECENT_INSIGHT_API_URL API를 호출합니다.
-         *
-         * 전체 흐름:
-         * 1. 요청 날짜 범위가 올바른지 확인한다.
-         * 2. 최근 최대 7일 동안 저장된 diary_analysis / conversation_analysis를 읽는다.
-         * 3. 대화는 하루에 여러 세션이 있을 수 있으므로 날짜별 가장 높은 단계만 고른다.
-         * 4. 일기 단계와 대화 단계 중에서도 날짜별 최대 단계를 계산한다.
-         * 5. 이 데이터를 text prompt로 만들어 Recent Insight API에 보낸다.
-         * 6. 지금 단계에서는 DB에 저장하지 않고 summary를 로그로만 확인한다.
-         */
         validateDateRange(request);
         log.info(
             "recent insight requested. userId={}, startDate={}, endDate={}",
@@ -241,25 +172,6 @@ public class AnalysisInferenceService {
             request.endDate()
         );
 
-        /*
-         * Recent insight is generated from recent depression stages.
-         *
-         * The frontend rule says conversation analysis is produced per session, but
-         * only the highest depression stage in a day should be shown. That same daily
-         * maximum is used here. Diary stages are already daily. For each date we keep:
-         *   - diary prediction, if a diary analysis exists
-         *   - conversation daily max prediction, if sessions exist
-         *   - overall daily max across diary and conversation
-         *
-         * The generated text is passed to the recent-insight API, not RunPod. The API
-         * contract is intentionally small:
-         *
-         *   request  = { "text": "..." }
-         *   response = { "summary": "one Korean sentence about the recent trend" }
-         *
-         * That keeps the RunPod endpoint focused on prediction inference while the
-         * LLM/RAG summarization can live behind a separate API.
-         */
         List<DailyPredictionSummary> summaries = loadDailyPredictionSummaries(request);
         String insightPrompt = buildRecentInsightPrompt(request, summaries);
         JsonNode output = requestRecentInsightApi(insightPrompt);
@@ -295,33 +207,70 @@ public class AnalysisInferenceService {
         }
     }
 
+    Double toPredictionScore(String prediction) {
+        if (!StringUtils.hasText(prediction)) {
+            throw new CustomException("RunPod output missing required field: prediction", ErrorCode.INTERNAL_SERVER_ERROR);
+        }
+
+        return switch (prediction.trim().toLowerCase(Locale.ROOT)) {
+            case "minimal", "uncertain" -> 3.5;
+            case "mild" -> 10.5;
+            case "moderate" -> 14.0;
+            case "severe" -> 17.5;
+            default -> throw new CustomException(
+                "Unsupported RunPod prediction: " + prediction,
+                ErrorCode.INTERNAL_SERVER_ERROR
+            );
+        };
+    }
+
+    Double addPhqFeature(
+        Double predictionScore,
+        UUID childrenId,
+        LocalDate targetDate,
+        LocalDateTime referenceDateTime
+    ) {
+        BiometricAnalysisFeatureResponse features = biometricAnalysisFeatureClient.getAnalysisFeatures(
+            childrenId,
+            targetDate,
+            referenceDateTime
+        );
+
+        if (features == null || !features.hasPhqData() || features.phqFeature() == null) {
+            return predictionScore;
+        }
+
+        return predictionScore + features.phqFeature();
+    }
+
+    LocalDate resolveTargetDate(JsonNode output, LocalDate defaultDate) {
+        String targetDate = readText(output, "target_date", null);
+        if (!StringUtils.hasText(targetDate)) {
+            return defaultDate;
+        }
+
+        try {
+            return LocalDate.parse(targetDate.trim());
+        } catch (RuntimeException e) {
+            throw new CustomException("RunPod output target_date must be ISO date.", ErrorCode.INTERNAL_SERVER_ERROR);
+        }
+    }
+
     private JsonNode requestRunpod(String text) {
         validateRunpodText(text);
 
         try {
-            /*
-             * RunPod 요청 body는 반드시 아래 형태여야 합니다.
-             *
-             * {
-             *   "input": {
-             *     "prompt": "분석할 텍스트"
-             *   }
-             * }
-             *
-             * response 전체에는 status, output 등이 들어옵니다.
-             * 이 서비스는 status가 COMPLETED인지 확인한 뒤 output만 반환합니다.
-             */
             RestClient runpodClient = restClientBuilder
                 .baseUrl(runpodBaseUrl)
                 .build();
 
             JsonNode response = runpodClient
                 .post()
-                .uri("/{endpointId}/runsync", runpodEndpointId)
+                .uri("/{endpointId}/run", runpodEndpointId)
                 .header(HttpHeaders.AUTHORIZATION, "Bearer " + runpodApiKey)
                 .contentType(MediaType.APPLICATION_JSON)
                 .accept(MediaType.APPLICATION_JSON)
-                .body(Map.of("input", Map.of("prompt", text)))
+                .body(Map.of("input", Map.of("text", text)))
                 .retrieve()
                 .body(JsonNode.class);
 
@@ -329,24 +278,62 @@ public class AnalysisInferenceService {
                 throw new CustomException("RunPod returned empty response.", ErrorCode.INTERNAL_SERVER_ERROR);
             }
 
-            String status = response.path("status").asText();
-            if (RUNPOD_FAILED_STATUSES.contains(status)) {
-                throw new CustomException(
-                    "RunPod inference failed. status=" + status,
-                    ErrorCode.INTERNAL_SERVER_ERROR
-                );
+            String jobId = response.path("id").asText(null);
+            if (!StringUtils.hasText(jobId)) {
+                throw new CustomException("RunPod response does not contain job id.", ErrorCode.INTERNAL_SERVER_ERROR);
             }
 
-            JsonNode output = response.path("output");
-            if (output.isMissingNode() || output.isNull()) {
-                throw new CustomException("RunPod response does not contain output.", ErrorCode.INTERNAL_SERVER_ERROR);
+            log.info("RunPod async job submitted. jobId={}", jobId);
+            long deadline = System.currentTimeMillis() + runpodWaitMs;
+
+            while (System.currentTimeMillis() <= deadline) {
+                JsonNode statusResponse = runpodClient
+                    .get()
+                    .uri("/{endpointId}/status/{jobId}", runpodEndpointId, jobId)
+                    .header(HttpHeaders.AUTHORIZATION, "Bearer " + runpodApiKey)
+                    .accept(MediaType.APPLICATION_JSON)
+                    .retrieve()
+                    .body(JsonNode.class);
+
+                if (statusResponse == null) {
+                    throw new CustomException("RunPod returned empty status response.", ErrorCode.INTERNAL_SERVER_ERROR);
+                }
+
+                String status = statusResponse.path("status").asText();
+                if (RUNPOD_COMPLETED_STATUS.equals(status)) {
+                    JsonNode output = statusResponse.path("output");
+                    if (output.isMissingNode() || output.isNull()) {
+                        throw new CustomException("RunPod response does not contain output.", ErrorCode.INTERNAL_SERVER_ERROR);
+                    }
+
+                    log.info("RunPod async job completed. jobId={}", jobId);
+                    return output;
+                }
+
+                if (RUNPOD_FAILED_STATUSES.contains(status)) {
+                    throw new CustomException(
+                        "RunPod inference failed. jobId=" + jobId + ", status=" + status,
+                        ErrorCode.INTERNAL_SERVER_ERROR
+                    );
+                }
+
+                sleepBeforeNextRunpodPoll(jobId, status);
             }
 
-            log.info("RunPod sync job completed. status={}", status);
-            return output;
+            throw new CustomException("RunPod inference timed out. jobId=" + jobId, ErrorCode.INTERNAL_SERVER_ERROR);
         } catch (RestClientException e) {
             log.error("RunPod inference request failed.", e);
             throw new CustomException("RunPod inference request failed.", ErrorCode.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    private void sleepBeforeNextRunpodPoll(String jobId, String status) {
+        try {
+            log.debug("RunPod async job pending. jobId={}, status={}", jobId, status);
+            Thread.sleep(runpodPollIntervalMs);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new CustomException("RunPod polling interrupted.", ErrorCode.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -388,74 +375,13 @@ public class AnalysisInferenceService {
         }
     }
 
-    private Double inferPredictionScore(
-        JsonNode output,
-        UUID childrenId,
-        LocalDate targetDate,
-        LocalDateTime referenceDateTime
-    ) {
-        List<Double> features = new ArrayList<>(readRequiredDoubleList(output, "logits", FEATURE_COUNT));
-        BiometricAnalysisFeatureResponse biometricFeatures = biometricAnalysisFeatureClient.getAnalysisFeatures(
-            childrenId,
-            targetDate,
-            referenceDateTime
-        );
-
-        if (biometricFeatures != null && biometricFeatures.hasSleepData() && biometricFeatures.sleepFeature() != null) {
-            features.set(SLEEP_FEATURE_INDEX, biometricFeatures.sleepFeature());
-        }
-
-        if (biometricFeatures != null && biometricFeatures.hasPhqData() && biometricFeatures.phqFeature() != null) {
-            features.set(PHQ_FEATURE_INDEX, biometricFeatures.phqFeature());
-        }
-
-        return requestDepressionSvr(features);
-    }
-
-    private Double requestDepressionSvr(List<Double> features) {
-        try {
-            DepressionSvrPredictResponse response = restClientBuilder
-                .baseUrl(bioMlServiceUrl)
-                .build()
-                .post()
-                .uri("/api/v1/depression/svr/predict")
-                .contentType(MediaType.APPLICATION_JSON)
-                .accept(MediaType.APPLICATION_JSON)
-                .body(new DepressionSvrPredictRequest(features))
-                .retrieve()
-                .body(DepressionSvrPredictResponse.class);
-
-            if (response == null || response.score() == null) {
-                throw new CustomException("Bio ML SVR response missing score.", ErrorCode.INTERNAL_SERVER_ERROR);
-            }
-
-            return response.score();
-        } catch (RestClientException e) {
-            log.error("Bio ML SVR request failed.", e);
-            throw new CustomException("Bio ML SVR request failed.", ErrorCode.INTERNAL_SERVER_ERROR);
-        }
-    }
-
-    private LocalDate resolveTargetDate(JsonNode output, LocalDate defaultDate) {
-        String targetDate = readText(output, "target_date", null);
-        if (!StringUtils.hasText(targetDate)) {
-            return defaultDate;
-        }
-
-        try {
-            return LocalDate.parse(targetDate.trim());
-        } catch (RuntimeException e) {
-            throw new CustomException("RunPod output target_date must be ISO date.", ErrorCode.INTERNAL_SERVER_ERROR);
-        }
-    }
-
     private Map<String, Object> recentInsightRequestBody(String text) {
         return Map.of(
             "model", recentInsightModel,
             "messages", List.of(
                 Map.of(
                     "role", "system",
-                    "content", "You summarize child depression-stage trends in exactly one concise Korean sentence."
+                    "content", "You summarize child depression-score trends in exactly one concise Korean sentence."
                 ),
                 Map.of(
                     "role", "user",
@@ -467,45 +393,18 @@ public class AnalysisInferenceService {
     }
 
     private void validateRunpodText(String text) {
-        /*
-         * .env.local is managed outside source control, and this branch intentionally
-         * does not define default values in @Value. If any RunPod setting is missing,
-         * Spring will fail during startup instead of silently calling a wrong endpoint.
-         * This method only validates the per-request model input.
-         */
         if (!StringUtils.hasText(text)) {
             throw new CustomException("RunPod input text must not be blank.", ErrorCode.INVALID_PARAMETER);
         }
     }
 
     private void validateRecentInsightText(String text) {
-        /*
-         * RECENT_INSIGHT_API_URL and RECENT_INSIGHT_API_KEY are also required without
-         * default values. Missing values should fail app startup through @Value rather
-         * than falling back to a wrong summarization target. This method validates the
-         * actual request body sent to the API.
-         */
         if (!StringUtils.hasText(text)) {
             throw new CustomException("Recent insight API text must not be blank.", ErrorCode.INVALID_PARAMETER);
         }
     }
 
     private String buildConversationText(List<ConversationSessionCreateRequestDto.ConversationEventDto> events) {
-        /*
-         * IoT에서 받은 events 배열을 RunPod 모델이 이해하는 한 덩어리 text로 바꿉니다.
-         *
-         * 입력 events:
-         * [
-         *   { "child": "안녕" },
-         *   { "bot": "응, 안녕" }
-         * ]
-         *
-         * 변환 결과:
-         * User: 안녕
-         * Bot: 응, 안녕
-         *
-         * child는 User, bot은 Bot으로 표시합니다.
-         */
         List<String> lines = new ArrayList<>();
         for (ConversationSessionCreateRequestDto.ConversationEventDto event : events) {
             if (StringUtils.hasText(event.child())) {
@@ -524,10 +423,6 @@ public class AnalysisInferenceService {
     }
 
     private String normalizeUtterance(String utterance) {
-        /*
-         * The sample RunPod input removes trailing ASCII periods from each utterance.
-         * Keep question marks/exclamation marks because they may carry emotional signal.
-         */
         String normalized = utterance.trim();
         if (normalized.endsWith(".")) {
             return normalized.substring(0, normalized.length() - 1);
@@ -536,17 +431,6 @@ public class AnalysisInferenceService {
     }
 
     private List<DailyPredictionSummary> loadDailyPredictionSummaries(RecentInsightInferenceRequestDto request) {
-        /*
-         * 최근 추이 요약에 필요한 데이터를 DB에서 읽습니다.
-         *
-         * 사용 범위:
-         * - request.endDate 기준 최대 7일
-         * - request.startDate가 더 늦으면 startDate부터 endDate까지만 사용
-         *
-         * 예:
-         * - startDate=2026-05-01, endDate=2026-05-10 -> 실제 사용: 2026-05-04 ~ 2026-05-10
-         * - startDate=2026-05-08, endDate=2026-05-10 -> 실제 사용: 2026-05-08 ~ 2026-05-10
-         */
         Map<LocalDate, DailyPredictionSummary> summaries = new LinkedHashMap<>();
         LocalDate startDate = recentSevenDayStartDate(request);
 
@@ -575,18 +459,10 @@ public class AnalysisInferenceService {
         RecentInsightInferenceRequestDto request,
         List<DailyPredictionSummary> summaries
     ) {
-        /*
-         * Recent Insight API로 보낼 text를 만듭니다.
-         *
-         * API에는 JSON으로 { "text": prompt }가 전송됩니다.
-         * prompt 안에는 날짜별 우울 단계 데이터가 들어갑니다.
-         *
-         * daily_max는 diary와 conversation_daily_max 중 더 심한 단계를 의미합니다.
-         */
         LocalDate startDate = recentSevenDayStartDate(request);
         StringBuilder prompt = new StringBuilder();
-        prompt.append("Summarize the recent depression-stage trend in exactly one Korean sentence.\n");
-        prompt.append("Score range is continuous. Higher score means stronger depressive signal.\n");
+        prompt.append("Summarize the recent depression-score trend in exactly one Korean sentence.\n");
+        prompt.append("Higher scores mean stronger depression risk. RunPod label score mapping is minimal/uncertain=3.5, mild=10.5, moderate=14.0, severe=17.5, plus PHQ score divided by 100 when available.\n");
         prompt.append("Period: ")
             .append(startDate)
             .append(" ~ ")
@@ -666,33 +542,6 @@ public class AnalysisInferenceService {
         return values;
     }
 
-    private List<Double> readRequiredDoubleList(JsonNode output, String fieldName, int expectedSize) {
-        JsonNode value = output.path(fieldName);
-        if (!value.isArray()) {
-            throw new CustomException("RunPod output missing required array field: " + fieldName, ErrorCode.INTERNAL_SERVER_ERROR);
-        }
-
-        List<Double> values = new ArrayList<>();
-        value.forEach(item -> {
-            if (!item.isNumber()) {
-                throw new CustomException(
-                    "RunPod output field must contain only numbers: " + fieldName,
-                    ErrorCode.INTERNAL_SERVER_ERROR
-                );
-            }
-            values.add(item.asDouble());
-        });
-
-        if (values.size() != expectedSize) {
-            throw new CustomException(
-                "RunPod output field " + fieldName + " must contain exactly " + expectedSize + " values.",
-                ErrorCode.INTERNAL_SERVER_ERROR
-            );
-        }
-
-        return values;
-    }
-
     private List<String> readTextList(JsonNode output, String fieldName) {
         JsonNode value = output.path(fieldName);
         if (value.isMissingNode() || value.isNull()) {
@@ -764,58 +613,6 @@ public class AnalysisInferenceService {
         return value.asText(defaultValue);
     }
 
-    private enum DepressionStage {
-        /*
-         * RunPod prediction으로 올 수 있는 값입니다.
-         *
-         * rank는 심각도 비교용 숫자입니다.
-         * minimal  = 0
-         * mild     = 1
-         * moderate = 2
-         * severe   = 3
-         *
-         * 숫자가 클수록 더 높은 우울 단계입니다.
-         */
-        MINIMAL("minimal", 0),
-        MILD("mild", 1),
-        MODERATE("moderate", 2),
-        SEVERE("severe", 3);
-
-        private final String value;
-        private final int rank;
-
-        DepressionStage(String value, int rank) {
-            this.value = value;
-            this.rank = rank;
-        }
-
-        static boolean isValid(String value) {
-            return from(value) != null;
-        }
-
-        static DepressionStage from(String value) {
-            if (!StringUtils.hasText(value)) {
-                return null;
-            }
-            for (DepressionStage stage : values()) {
-                if (stage.value.equalsIgnoreCase(value.trim())) {
-                    return stage;
-                }
-            }
-            return null;
-        }
-
-        static DepressionStage max(DepressionStage left, DepressionStage right) {
-            if (left == null) {
-                return right;
-            }
-            if (right == null) {
-                return left;
-            }
-            return left.rank >= right.rank ? left : right;
-        }
-    }
-
     private static class DailyPredictionSummary {
 
         private final LocalDate date;
@@ -843,16 +640,15 @@ public class AnalysisInferenceService {
         }
 
         private String diaryPredictionOrNone() {
-            return diaryPrediction == null ? "none" : diaryPrediction.toString();
+            return formatPrediction(diaryPrediction);
         }
 
         private String conversationPredictionOrNone() {
-            return conversationPrediction == null ? "none" : conversationPrediction.toString();
+            return formatPrediction(conversationPrediction);
         }
 
         private String overallPrediction() {
-            Double max = max(diaryPrediction, conversationPrediction);
-            return max == null ? "none" : max.toString();
+            return formatPrediction(max(diaryPrediction, conversationPrediction));
         }
 
         private Double max(Double left, Double right) {
@@ -862,7 +658,11 @@ public class AnalysisInferenceService {
             if (right == null) {
                 return left;
             }
-            return left >= right ? left : right;
+            return Math.max(left, right);
+        }
+
+        private String formatPrediction(Double prediction) {
+            return prediction == null ? "none" : prediction.toString();
         }
     }
 }

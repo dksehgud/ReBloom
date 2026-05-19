@@ -43,6 +43,7 @@ import {
   clearNativeNavigationHistory,
   requestNativeSleepPermission,
   saveNativeAccessToken,
+  saveNativeRefreshToken,
 } from '../../shared/utils/nativeTokenBridge'
 
 type AuthRouteContextValue = {
@@ -147,6 +148,17 @@ function useRoleRouteGuard(
             }
         }
 
+        if (!roleSession.refreshToken) {
+            clearSession(expectedRole)
+            if (activeRole === expectedRole) {
+                setActiveRole(null)
+                clearSelectedChild()
+            }
+            return () => {
+                isCanceled = true
+            }
+        }
+
         const allowRoleSession = () => {
             if (isCanceled) {
                 return
@@ -155,6 +167,7 @@ function useRoleRouteGuard(
             setActiveRole(expectedRole)
             clearSelectedChild()
             saveNativeAccessToken(roleSession.accessToken ?? '', expectedRole)
+            saveNativeRefreshToken(roleSession.refreshToken)
         }
 
         const blockRoleSession = () => {
@@ -205,6 +218,7 @@ function useRoleRouteGuard(
         isMockMode,
         roleSession.accessToken,
         roleSession.currentUser,
+        roleSession.refreshToken,
         setActiveRole,
         setCurrentUser,
     ])
@@ -401,6 +415,7 @@ function LoginRoute() {
                 refreshToken: tokens.refreshToken,
             })
             saveNativeAccessToken(tokens.accessToken, nextRole)
+            saveNativeRefreshToken(tokens.refreshToken)
             setActiveRole(nextRole)
 
             if (nextRole === 'child') {
@@ -489,6 +504,7 @@ function OAuthCallbackRoute() {
                         refreshToken,
                     })
                     saveNativeAccessToken(accessToken, nextRole)
+                    saveNativeRefreshToken(refreshToken)
                     setActiveRole(nextRole)
                     clearSelectedChild()
 

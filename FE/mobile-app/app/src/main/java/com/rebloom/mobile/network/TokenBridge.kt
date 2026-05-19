@@ -36,6 +36,14 @@ class TokenBridge(
     }
 
     @JavascriptInterface
+    fun saveRefreshToken(token: String) {
+        scope.launch {
+            TokenDataStore.saveRefreshToken(context, token)
+            Log.d("TokenBridge", "Refresh token saved")
+        }
+    }
+
+    @JavascriptInterface
     fun clearToken() {
         scope.launch {
             val accessToken = TokenDataStore.getToken(context)

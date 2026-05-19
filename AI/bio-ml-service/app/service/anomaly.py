@@ -14,12 +14,18 @@
 # =====================================================================
 
 THRESHOLDS: dict[str, tuple[float, float]] = {
-    "hr"           : (40.0, 130.0),   # TODO: 논문 계산값으로 교체
-    "rmssd"        : (10.0, 100.0),
-    "pnn50"        : (0.0, 50.0),
-    "lf_hf"        : (0.5, 4.0),
-    "acc_mag"      : (0.0, 20.0),
-    "hr_acc_ratio" : (0.0, 50.0),
+    "hr"           : (40.0, 130.0),
+    "rmssd"        : (0.0, 250.0),
+    "pnn50"        : (0.0, 0.9),
+    "lf_hf"        : (0.0, 4.0),
+    "acc_mag"      : (0.0, 13.0),
+    "hr_acc_ratio" : (2.0, 15.0),
+}
+
+# 계산 불가 sentinel 값 — 해당 피처는 이상치 판정에서 제외
+SENTINELS: dict[str, float] = {
+    "lf_hf": -1.0,   # IBI 30개 미만 또는 HF power = 0
+    "pnn50": 1.0,    # IBI 샘플 극소수로 신뢰 불가
 }
 
 
@@ -64,7 +70,8 @@ def detect_anomaly(
     anomaly_features = [
         feature
         for feature, value in features.items()
-        if value < THRESHOLDS[feature][0] or value > THRESHOLDS[feature][1]
+        if SENTINELS.get(feature) != value
+        and (value < THRESHOLDS[feature][0] or value > THRESHOLDS[feature][1])
     ]
 
     return {

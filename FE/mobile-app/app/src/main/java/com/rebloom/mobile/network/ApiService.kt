@@ -3,6 +3,7 @@ package com.rebloom.mobile.network
 import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.HTTP
+import retrofit2.http.Header
 import retrofit2.http.Path
 import retrofit2.http.POST
 
@@ -41,6 +42,11 @@ data class SleepRequest(
 
 data class IntakeResponse(
     val message: String
+)
+
+data class ReissueResponse(
+    val accessToken: String,
+    val refreshToken: String
 )
 
 data class FcmTokenRequest(
@@ -121,4 +127,7 @@ interface ApiService {
 
     @HTTP(method = "DELETE", path = "notification/api/v1/notifications/fcm-tokens", hasBody = true)
     suspend fun deactivateFcmToken(@Body request: FcmTokenRequest): IntakeResponse
+
+    @POST("auth/api/v1/auth/reissue")
+    suspend fun reissue(@Header("refresh-token") refreshToken: String): ApiBaseResponse<ReissueResponse>
 }

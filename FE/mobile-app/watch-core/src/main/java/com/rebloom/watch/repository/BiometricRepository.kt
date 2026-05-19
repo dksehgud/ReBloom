@@ -7,6 +7,8 @@ import org.apache.commons.math3.complex.Complex
 import org.apache.commons.math3.transform.DftNormalization
 import org.apache.commons.math3.transform.FastFourierTransformer
 import org.apache.commons.math3.transform.TransformType
+import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
 import kotlin.math.abs
 import kotlin.math.sqrt
 
@@ -16,10 +18,9 @@ class BiometricRepository {
     private val accBuffer = mutableListOf<AccelerometerData>()
 
     private val bufferDurationMs = 5 * 60 * 1000L
-
-    // 테스트용 (30초로 단축)
-    // private val bufferDurationMs = 30 * 1000L
     private var bufferStartTime: Long = System.currentTimeMillis()
+
+    private val scheduler = Executors.newSingleThreadScheduledExecutor()
 
     companion object {
         const val MIN_LFHF_IBI_SIZE = 30
@@ -27,27 +28,44 @@ class BiometricRepository {
 
     var onRecordReady: ((BiometricRecord) -> Unit)? = null
 
+    fun start() {
+        bufferStartTime = System.currentTimeMillis()
+        scheduler.scheduleAtFixedRate(
+            { flush() },
+            bufferDurationMs,
+            bufferDurationMs,
+            TimeUnit.MILLISECONDS
+        )
+    }
+
+    fun stop() {
+        scheduler.shutdownNow()
+    }
+
     fun addHeartRateData(data: HeartRateData) {
-        if (hrBuffer.isEmpty()) {
-            bufferStartTime = data.timestamp
-            accBuffer.clear()
+        synchronized(this) {
+            hrBuffer.add(data)
         }
-        hrBuffer.add(data)
-        checkAndFlush()
     }
 
     fun addAccelerometerData(data: AccelerometerData) {
-        accBuffer.add(data)
+        synchronized(this) {
+            accBuffer.add(data)
+        }
     }
 
-    private fun checkAndFlush() {
-        val now = System.currentTimeMillis()
-        if (now - bufferStartTime >= bufferDurationMs) {
+    private fun flush() {
+        synchronized(this) {
+            val now = System.currentTimeMillis()
+            if (hrBuffer.isEmpty()) {
+                bufferStartTime = now
+                return
+            }
             val record = buildRecord(bufferStartTime, now)
-            onRecordReady?.invoke(record)
             hrBuffer.clear()
             accBuffer.clear()
             bufferStartTime = now
+            onRecordReady?.invoke(record)
         }
     }
 

@@ -105,6 +105,9 @@ class Settings(BaseModel):
     mqtt_client_id: str = ""
     mqtt_conversation_start_topic: str = ""
     mqtt_keepalive_seconds: int = Field(default=60, ge=5)
+    conversation_attempt_result_url: str = ""
+    conversation_attempt_result_timeout: float = Field(default=3.0, ge=0.1)
+    serial_number: str = ""
     ir_sensor_enabled: bool = False
     ir_sensor_gpio_pin: int = Field(default=23, ge=1)
     ir_motion_timeout_seconds: float = Field(default=30.0, ge=1.0)
@@ -206,6 +209,9 @@ def get_settings() -> Settings:
         mqtt_client_id=os.getenv("MQTT_CLIENT_ID", "").strip(),
         mqtt_conversation_start_topic=os.getenv("MQTT_CONVERSATION_START_TOPIC", "").strip(),
         mqtt_keepalive_seconds=_get_int_env("MQTT_KEEPALIVE_SECONDS", 60),
+        conversation_attempt_result_url=os.getenv("CONVERSATION_ATTEMPT_RESULT_URL", "").strip(),
+        conversation_attempt_result_timeout=_get_float_env("CONVERSATION_ATTEMPT_RESULT_TIMEOUT", 3.0),
+        serial_number=os.getenv("SERIAL_NUMBER", os.getenv("DEVICE_ID", "")).strip(),
         ir_sensor_enabled=_get_bool_env("IR_SENSOR_ENABLED", False),
         ir_sensor_gpio_pin=_get_int_env("IR_SENSOR_GPIO_PIN", 23),
         ir_motion_timeout_seconds=_get_float_env("IR_MOTION_TIMEOUT_SECONDS", 30.0),

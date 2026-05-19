@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Any
 import paho.mqtt.client as mqtt
 
 from rpi_client.core.config import Settings
+from rpi_client.services.conversation_attempt_result_sender import ConversationAttemptResultSender
 from rpi_client.services.conversation_manager import ConversationManager
 
 if TYPE_CHECKING:
@@ -29,6 +30,7 @@ class MQTTConversationSubscriber:
         self._loop: asyncio.AbstractEventLoop | None = None
         self._client: mqtt.Client | None = None
         self._subscribed_event: asyncio.Event | None = None
+        self._attempt_result_sender = ConversationAttemptResultSender(config)
 
     async def start(self) -> None:
         if not self.config.mqtt_enabled:
@@ -111,7 +113,7 @@ class MQTTConversationSubscriber:
             )
         else:
             future = asyncio.run_coroutine_threadsafe(
-                self.conversation_manager.trigger_conversation(greeting=greeting),
+                self._notify_then_trigger(greeting, conversation_started=True),
                 self._loop,
             )
         future.add_done_callback(self._log_trigger_result)
@@ -126,9 +128,18 @@ class MQTTConversationSubscriber:
         if not motion_detected:
             logger.info("IR 센서: %.0f초 동안 움직임이 없어 MQTT 대화 트리거를 건너뜁니다.", timeout)
             print(f"[MQTT] {timeout:.0f}초 동안 움직임 없음 — 대화 시작 생략", flush=True)
+            await self._attempt_result_sender.send(conversation_started=False)
             return False
 
         print("[MQTT] IR 센서 움직임 감지 — 대화 시작", flush=True)
+        return await self._notify_then_trigger(greeting, conversation_started=True)
+
+    async def _notify_then_trigger(self, greeting: str, conversation_started: bool) -> bool:
+        if conversation_started and not self.conversation_manager.can_trigger_conversation():
+            await self._attempt_result_sender.send(conversation_started=False)
+            return False
+
+        await self._attempt_result_sender.send(conversation_started=conversation_started)
         return await self.conversation_manager.trigger_conversation(greeting=greeting)
 
     def _extract_greeting(self, payload_text: str) -> str | None:
