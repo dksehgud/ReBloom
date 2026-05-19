@@ -1,4 +1,5 @@
 .parent-home-page {
+  --parent-webview-bottom-nav-height: calc(70px + var(--app-safe-area-bottom));
   background: linear-gradient(180deg, #ffffff 0%, #fbfcfd 100%);
 }
 
@@ -17,6 +18,14 @@
   background: rgba(255, 255, 255, 0.94);
   border-bottom: 1px solid rgba(243, 244, 246, 0.65);
   padding: 48px 24px 16px;
+}
+
+body[data-shell-mode='webview'] .parent-home-page__header {
+  padding:
+    calc(48px + var(--app-safe-area-top))
+    calc(24px + var(--app-safe-area-right))
+    14px
+    calc(24px + var(--app-safe-area-left));
 }
 
 .parent-home-page__header-copy {
@@ -48,6 +57,14 @@
   flex-direction: column;
   gap: 24px;
   padding: 24px 24px 32px;
+}
+
+body[data-shell-mode='webview'] .parent-home-page__body,
+body[data-shell-mode='webview'] .parent-observations-page__body,
+body[data-shell-mode='webview'] .parent-report-page__body,
+body[data-shell-mode='webview'] .parent-notifications-page__body,
+body[data-shell-mode='webview'] .parent-settings-page__body {
+  padding-bottom: calc(24px + var(--parent-webview-bottom-nav-height));
 }
 
 .parent-home-page__summary-card {
@@ -539,6 +556,15 @@ body[data-shell-mode='webview'] .parent-bottom-nav__indicator {
   display: none;
 }
 
+body[data-shell-mode='webview'] .parent-home-page .mobile-page-bottom-slot {
+  bottom: 0;
+  flex: 0 0 auto;
+  left: 0;
+  position: fixed;
+  right: 0;
+  z-index: 30;
+}
+
 .parent-home-page__placeholder-card {
   display: flex;
   flex-direction: column;
@@ -751,6 +777,15 @@ body[data-shell-mode='webview'] .parent-bottom-nav__indicator {
   display: none;
   width: 0;
   height: 0;
+}
+
+body[data-shell-mode='webview'] .parent-observation-modal {
+  min-height: min(360px, calc(var(--app-viewport-height) - 72px));
+  max-height: min(620px, calc(var(--app-viewport-height) - 72px));
+}
+
+body[data-shell-mode='webview'] .parent-observation-modal__body {
+  max-height: min(572px, calc(var(--app-viewport-height) - 120px));
 }
 
 .parent-observation-modal__scrollbar {
@@ -1548,6 +1583,14 @@ body[data-shell-mode='webview'] .parent-bottom-nav__indicator {
   align-items: stretch;
   background: rgba(255, 255, 255, 0.94);
   padding: 48px 20px 0;
+}
+
+body[data-shell-mode='webview'] .parent-notifications-page__header {
+  padding:
+    calc(48px + var(--app-safe-area-top))
+    calc(20px + var(--app-safe-area-right))
+    0
+    calc(20px + var(--app-safe-area-left));
 }
 
 .parent-notifications-page__header-main {
