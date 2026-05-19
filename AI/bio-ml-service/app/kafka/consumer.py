@@ -23,11 +23,9 @@ from app.kafka.producer import publish_anomaly_verified, publish_phq_result, pub
 
 logger = logging.getLogger(__name__)
 
-
-def _unwrap_event_envelope(message: dict) -> dict:
-    if isinstance(message, dict) and isinstance(message.get("payload"), dict):
-        return message["payload"]
-    return message
+# IBI 부족으로 계산 불가 시 사용하는 논문 데이터 중앙값 (탐지 판단 전용)
+_LF_HF_MEDIAN = 0.616
+_PNN50_MEDIAN = 0.429
 
 # ──────────────────────────────────────────────
 # Redis 클라이언트 (biometric_train_requested 조회용)
@@ -40,6 +38,12 @@ def _get_redis() -> redis.Redis:
     if _redis is None:
         _redis = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, decode_responses=True)
     return _redis
+
+
+def _unwrap_event_envelope(message: dict) -> dict:
+    if isinstance(message, dict) and isinstance(message.get("payload"), dict):
+        return message["payload"]
+    return message
 
 
 def _normalize_biometrics(biometrics: list[dict]) -> list[dict]:
@@ -59,7 +63,6 @@ def _normalize_biometrics(biometrics: list[dict]) -> list[dict]:
 
 
 def _is_if_model_ready(user_id: str) -> bool:
-    """Redis에서 IF 모델 학습 완료 여부 조회"""
     try:
         return _get_redis().exists(f"biometric_train_requested:{user_id}") == 1
     except Exception as e:
@@ -67,34 +70,30 @@ def _is_if_model_ready(user_id: str) -> bool:
         return False
 
 
+def _today_seoul() -> str:
+    return datetime.now(ZoneInfo("Asia/Seoul")).date().isoformat()
+
+
 # ──────────────────────────────────────────────
 # 토픽별 핸들러
 # ──────────────────────────────────────────────
 
 def _handle_biometric_raw(payload: dict) -> None:
-    """
-    rebloom.biometric.received.v1 처리
-
-    biometric_train_requested 없음 → 임계치 기반 이상치 탐지 (anomaly.py)
-    biometric_train_requested 있음 → IF 모델 이상치 탐지 (if_model.py)
-    이상치 확정 시 → rebloom.anomaly.analysed.v1 발행
-    """
-
     payload = _unwrap_event_envelope(payload)
-
-    # sentinel 값: IBI 부족으로 계산 불가 → 논문 데이터 중앙값으로 대체
-    LF_HF_MEDIAN = 0.616
-    PNN50_MEDIAN = 0.429
 
     user_id      = payload["userId"]
     hr           = payload["hr"]
     rmssd        = payload["rmssd"]
-    pnn50        = payload["pnn50"] if payload["pnn50"] != 1.0 else PNN50_MEDIAN
-    lf_hf        = payload["lfHf"]  if payload["lfHf"]  != -1  else LF_HF_MEDIAN
+    pnn50_raw    = payload["pnn50"]
+    lf_hf_raw    = payload["lfHf"]
     acc_mag      = payload["accMag"]
     hr_acc_ratio = payload["hrAccRatio"]
     ts_start     = payload["tsStart"]
     ts_end       = payload["tsEnd"]
+
+    # sentinel이면 중앙값으로 대체 — 탐지 판단에만 사용, DB 적재는 pnn50_raw/lf_hf_raw
+    pnn50 = pnn50_raw if pnn50_raw != 1.0 else _PNN50_MEDIAN
+    lf_hf = lf_hf_raw if lf_hf_raw != -1  else _LF_HF_MEDIAN
 
     if_ready = _is_if_model_ready(user_id)
     logger.info("[biometric.raw] userId=%s if_model_ready=%s", user_id, if_ready)
@@ -121,8 +120,8 @@ def _handle_biometric_raw(payload: dict) -> None:
         ts_end           = ts_end,
         hr               = hr,
         rmssd            = rmssd,
-        pnn50            = pnn50,
-        lf_hf            = lf_hf,
+        pnn50            = pnn50_raw,
+        lf_hf            = lf_hf_raw,
         acc_mag          = acc_mag,
         hr_acc_ratio     = hr_acc_ratio,
         is_anomaly       = result["is_anomaly"],
@@ -131,15 +130,6 @@ def _handle_biometric_raw(payload: dict) -> None:
 
 
 def _handle_ai_train(payload: dict) -> None:
-    """
-    rebloom.model.training.requested.v1 처리
-
-    payload:
-        {
-          "userId"    : "uuid",
-          "biometrics": [ {hr, rmssd, pnn50, lfHf, accMag, hrAccRatio}, ... ]
-        }
-    """
     payload = _unwrap_event_envelope(payload)
 
     user_id    = payload.get("userId")
@@ -149,9 +139,7 @@ def _handle_ai_train(payload: dict) -> None:
         logger.warning("[ai.train] biometrics 없음 | userId=%s", user_id)
         return
 
-    logger.info("[ai.train] IF 최초 학습 시작 | userId=%s biometrics=%d",
-                user_id, len(biometrics))
-
+    logger.info("[ai.train] IF 최초 학습 시작 | userId=%s biometrics=%d", user_id, len(biometrics))
     if_model.train_if_model(
         user_id       = user_id,
         biometrics    = _normalize_biometrics(biometrics),
@@ -161,24 +149,10 @@ def _handle_ai_train(payload: dict) -> None:
 
 
 def _handle_ai_analyze(payload: dict) -> None:
-    """
-    rebloom.model.retraining.requested.v1 처리
-
-    payload:
-        {
-          "userId"    : "string",
-          "age"       : int | null,
-          "biometrics": [ ... ],
-          "sleeps"    : [ ... 14일치 or [] ]
-        }
-
-    sleeps 있으면 → PHQ 예측 + IF 재학습 → rebloom.phq.completed.v1 발행
-    sleeps 없으면 → IF 재학습만
-    """
     payload = _unwrap_event_envelope(payload)
 
     user_id    = payload.get("userId")
-    age        = payload.get("age")        # ← 추가
+    age        = payload.get("age")
     biometrics = payload.get("biometrics", [])
     sleeps     = payload.get("sleeps", [])
 
@@ -187,16 +161,13 @@ def _handle_ai_analyze(payload: dict) -> None:
         return
 
     if sleeps:
-        # ── PHQ 예측 + IF 재학습 ────────────────────────────
         logger.info("[ai.analyze] PHQ 예측 + IF 재학습 시작 | userId=%s", user_id)
-
         result = phq.analyze_and_retrain(
             user_id    = user_id,
             age        = age,
             sleeps     = sleeps,
             biometrics = _normalize_biometrics(biometrics),
         )
-
         publish_phq_result(
             user_id      = user_id,
             date         = datetime.now(timezone.utc).strftime("%Y-%m-%d"),
@@ -206,11 +177,8 @@ def _handle_ai_analyze(payload: dict) -> None:
         )
         logger.info("[ai.analyze] PHQ 예측 완료 | userId=%s result=%s score=%s",
                     user_id, result["phq_result"], result["phq_score"])
-
     else:
-        # ── IF 재학습만 ────────────────────────────────────
         logger.info("[ai.analyze] IF 재학습만 시작 | userId=%s", user_id)
-
         if_model.train_if_model(
             user_id       = user_id,
             biometrics    = _normalize_biometrics(biometrics),
@@ -219,22 +187,18 @@ def _handle_ai_analyze(payload: dict) -> None:
         logger.info("[ai.analyze] IF 재학습 완료 | userId=%s", user_id)
 
 
-# ──────────────────────────────────────────────
-# Consumer 루프
-# ──────────────────────────────────────────────
-
 def _handle_gps_check_request(payload: dict) -> None:
     payload = _unwrap_event_envelope(payload)
 
     children_id = payload.get("childrenId")
-    parent_id = payload.get("parentId")
-    request_id = payload.get("requestId")
+    parent_id   = payload.get("parentId")
+    request_id  = payload.get("requestId")
 
     if not children_id:
         logger.warning("[gps-check.requested] childrenId missing | payload=%s", payload)
         return
 
-    latitude = payload.get("latitude")
+    latitude  = payload.get("latitude")
     longitude = payload.get("longitude")
     if latitude is None or longitude is None:
         gps_check.save_pending_request(
@@ -258,9 +222,55 @@ def _handle_gps_check_request(payload: dict) -> None:
     )
 
 
-def _today_seoul() -> str:
-    return datetime.now(ZoneInfo("Asia/Seoul")).date().isoformat()
+def _extract_status_card_payload(message: dict) -> tuple[dict, dict]:
+    if "payload" in message and "eventType" in message:
+        payload = message.get("payload") or {}
+        if not isinstance(payload, dict):
+            raise ValueError("Kafka envelope payload must be an object")
+        return payload, message
+    return message, {}
 
+
+def _handle_status_card_requested(message: dict) -> None:
+    payload, envelope = _extract_status_card_payload(message)
+
+    user_id    = payload.get("userId")
+    name       = payload.get("name")
+    biometrics = payload.get("biometrics", [])
+    sleeps     = payload.get("sleeps", [])
+
+    if not user_id:
+        logger.warning("[status-card.requested] userId missing | payload=%s", payload)
+        return
+    if not name:
+        logger.warning("[status-card.requested] name missing | userId=%s", user_id)
+        return
+    if not biometrics or not sleeps:
+        logger.warning(
+            "[status-card.requested] data missing | userId=%s biometrics=%d sleeps=%d",
+            user_id, len(biometrics), len(sleeps),
+        )
+        return
+
+    result = status_card.generate_status_card(
+        name=name,
+        biometrics=biometrics,
+        sleeps=sleeps,
+    )
+    publish_status_card_created(
+        user_id=user_id,
+        date=_today_seoul(),
+        title=result["title"],
+        description=result["description"],
+        sub_title=result["subTitle"],
+        suggestion=result["suggestion"],
+        correlation_id=(envelope or {}).get("eventId"),
+    )
+
+
+# ──────────────────────────────────────────────
+# Consumer 루프
+# ──────────────────────────────────────────────
 
 _stop_event = threading.Event()
 
@@ -270,14 +280,16 @@ def _consume_loop() -> None:
     Kafka Consumer 메인 루프 (별도 스레드에서 실행)
     구독 토픽:
         - rebloom.biometric.received.v1
-        - rebloom.model.training.requested.v1  
+        - rebloom.model.training.requested.v1
         - rebloom.model.retraining.requested.v1
+        - rebloom.gps-check.requested.v1
+        - rebloom.status-card.requested.v1
     """
     consumer = Consumer({
-        "bootstrap.servers"  : KAFKA_BOOTSTRAP_SERVERS,
-        "group.id"           : KAFKA_GROUP_ID,
-        "auto.offset.reset"  : "latest",      # 서비스 시작 이후 메시지만 수신
-        "enable.auto.commit" : True,
+        "bootstrap.servers"      : KAFKA_BOOTSTRAP_SERVERS,
+        "group.id"               : KAFKA_GROUP_ID,
+        "auto.offset.reset"      : "latest",
+        "enable.auto.commit"     : True,
         "auto.commit.interval.ms": 5000,
     })
 
@@ -291,12 +303,11 @@ def _consume_loop() -> None:
     consumer.subscribe(topics)
     logger.info("[Kafka] Consumer 구독 시작 | topics=%s", topics)
 
-    # 토픽 → 핸들러 라우팅 테이블
     handlers = {
-        KAFKA_TOPIC_BIOMETRIC_RAW : _handle_biometric_raw,
-        KAFKA_TOPIC_AI_TRAIN      : _handle_ai_train,
-        KAFKA_TOPIC_AI_ANALYZE    : _handle_ai_analyze,
-        KAFKA_TOPIC_GPS_CHECK_REQUEST: _handle_gps_check_request,
+        KAFKA_TOPIC_BIOMETRIC_RAW        : _handle_biometric_raw,
+        KAFKA_TOPIC_AI_TRAIN             : _handle_ai_train,
+        KAFKA_TOPIC_AI_ANALYZE           : _handle_ai_analyze,
+        KAFKA_TOPIC_GPS_CHECK_REQUEST    : _handle_gps_check_request,
         KAFKA_TOPIC_STATUS_CARD_REQUESTED: _handle_status_card_requested,
     }
 
@@ -309,7 +320,6 @@ def _consume_loop() -> None:
 
             if msg.error():
                 if msg.error().code() == KafkaError._PARTITION_EOF:
-                    # 파티션 끝 도달 (정상)
                     continue
                 raise KafkaException(msg.error())
 
@@ -319,8 +329,7 @@ def _consume_loop() -> None:
             try:
                 payload = json.loads(raw_val)
             except (json.JSONDecodeError, TypeError) as e:
-                logger.error("[Kafka] JSON 파싱 실패 | topic=%s err=%s raw=%s",
-                             topic, e, raw_val)
+                logger.error("[Kafka] JSON 파싱 실패 | topic=%s err=%s raw=%s", topic, e, raw_val)
                 continue
 
             handler = handlers.get(topic)
@@ -337,63 +346,12 @@ def _consume_loop() -> None:
                     if topic == KAFKA_TOPIC_GPS_CHECK_REQUEST
                     else entity_payload.get("userId")
                 )
-                logger.exception("[Kafka] 핸들러 예외 | topic=%s entityId=%s err=%s",
-                                 topic, entity_id, e)
+                logger.exception("[Kafka] 핸들러 예외 | topic=%s entityId=%s err=%s", topic, entity_id, e)
 
     finally:
         consumer.close()
         logger.info("[Kafka] Consumer 종료")
 
-# ──────────────────────────────────────────────
-# Status Card
-# ──────────────────────────────────────────────
-
-def _extract_status_card_payload(message: dict) -> tuple[dict, dict]:
-    if "payload" in message and "eventType" in message:
-        payload = message.get("payload") or {}
-        if not isinstance(payload, dict):
-            raise ValueError("Kafka envelope payload must be an object")
-        return payload, message
-    return message, {}
-
-def _handle_status_card_requested(message: dict) -> None:
-    payload, envelope = _extract_status_card_payload(message)
-
-    user_id = payload.get("userId")
-    name = payload.get("name")
-    biometrics = payload.get("biometrics", [])
-    sleeps = payload.get("sleeps", [])
-
-    if not user_id:
-        logger.warning("[status-card.requested] userId missing | payload=%s", payload)
-        return
-    if not name:
-        logger.warning("[status-card.requested] name missing | userId=%s", user_id)
-        return
-    if not biometrics or not sleeps:
-        logger.warning(
-            "[status-card.requested] data missing | userId=%s biometrics=%d sleeps=%d",
-            user_id,
-            len(biometrics),
-            len(sleeps),
-        )
-        return
-
-    result = status_card.generate_status_card(
-        name=name,
-        biometrics=biometrics,
-        sleeps=sleeps,
-    )
-
-    publish_status_card_created(
-        user_id=user_id,
-        date=_today_seoul(),
-        title=result["title"],
-        description=result["description"],
-        sub_title=result["subTitle"],
-        suggestion=result["suggestion"],
-        correlation_id=(envelope or {}).get("eventId"),
-    )
 
 # ──────────────────────────────────────────────
 # 외부 인터페이스
