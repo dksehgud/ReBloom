@@ -68,18 +68,18 @@ class WearDataListenerService : WearableListenerService() {
         )
     }
 
-    @Deprecated("GPS flow removed")
-    private fun handleLocation(event: DataEvent) {
-        val dataMap = DataMapItem.fromDataItem(event.dataItem).dataMap
+    // @Deprecated("GPS flow removed")
+    // private fun handleLocation(event: DataEvent) {
+    //     val dataMap = DataMapItem.fromDataItem(event.dataItem).dataMap
 
-        val timestamp = dataMap.getLong("timestamp")
-        val latitude = dataMap.getDouble("latitude")
-        val longitude = dataMap.getDouble("longitude")
+    //     val timestamp = dataMap.getLong("timestamp")
+    //     val latitude = dataMap.getDouble("latitude")
+    //     val longitude = dataMap.getDouble("longitude")
 
-        Log.d(TAG, "Location received: lat=$latitude, lon=$longitude")
+    //     Log.d(TAG, "Location received: lat=$latitude, lon=$longitude")
 
-        sendLocation(timestamp, latitude, longitude)
-    }
+    //     sendLocation(timestamp, latitude, longitude)
+    // }
 
     private fun sendBiometric(
         tsStart: Long,

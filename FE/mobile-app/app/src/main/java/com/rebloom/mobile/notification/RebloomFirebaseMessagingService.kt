@@ -30,12 +30,12 @@ class RebloomFirebaseMessagingService : FirebaseMessagingService() {
     override fun onMessageReceived(message: RemoteMessage) {
         super.onMessageReceived(message)
 
-        if (isGpsCheckRequest(message.data)) {
-            requestWatchLocation()
-            if (message.notification == null) {
-                return
-            }
-        }
+        // if (isGpsCheckRequest(message.data)) {
+        //     requestWatchLocation()
+        //     if (message.notification == null) {
+        //         return
+        //     }
+        // }
 
         val title = message.notification?.title ?: message.data["title"] ?: DEFAULT_TITLE
         val body = message.notification?.body
@@ -44,6 +44,7 @@ class RebloomFirebaseMessagingService : FirebaseMessagingService() {
 
         showNotification(title, body)
     }
+    
     // @Deprecated("GPS flow removed")
     // private fun isGpsCheckRequest(data: Map<String, String>): Boolean {
     //     return data["type"] == GPS_CHECK_REQUEST_TYPE ||

@@ -28,7 +28,7 @@
                 android:foregroundServiceType="health"
                 android:exported="false"/>
 
-        <service
+        <!-- <service
                 android:name=".service.LocationRequestListenerService"
                 android:exported="true">
             <intent-filter>
@@ -38,7 +38,7 @@
                         android:pathPrefix="/location/request"
                         android:scheme="wear"/>
             </intent-filter>
-        </service>
+        </service> -->
 
     </application>
 
