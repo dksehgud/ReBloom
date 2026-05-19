@@ -44,12 +44,13 @@ class RebloomFirebaseMessagingService : FirebaseMessagingService() {
 
         showNotification(title, body)
     }
-
+    @Deprecated
     private fun isGpsCheckRequest(data: Map<String, String>): Boolean {
         return data["type"] == GPS_CHECK_REQUEST_TYPE ||
             data["topic"] == GPS_CHECK_REQUEST_TOPIC
     }
 
+    @Deprecated
     private fun requestWatchLocation() {
         Wearable.getNodeClient(this)
             .connectedNodes
@@ -123,10 +124,10 @@ class RebloomFirebaseMessagingService : FirebaseMessagingService() {
         private const val CHANNEL_NAME = "Re:Bloom notification"
         private const val DEFAULT_TITLE = "Re:Bloom"
         private const val DEFAULT_BODY = "You have a new notification."
-        private const val GPS_CHECK_REQUEST_TYPE = "GPS_CHECK_REQUEST"
-        private const val GPS_CHECK_REQUEST_TOPIC = "rebloom.gps-check.requested.v1"
-        private const val LOCATION_REQUEST_PATH = "/location/request"
-        private const val TAG = "RebloomFCM"
+        // private const val GPS_CHECK_REQUEST_TYPE = "GPS_CHECK_REQUEST"
+        // private const val GPS_CHECK_REQUEST_TOPIC = "rebloom.gps-check.requested.v1"
+        // private const val LOCATION_REQUEST_PATH = "/location/request"
+        // private const val TAG = "RebloomFCM"
     }
 }
 

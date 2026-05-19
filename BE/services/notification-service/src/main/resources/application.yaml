@@ -30,6 +30,9 @@ rebloom:
   clients:
     auth-service:
       url: ${AUTH_SERVICE_URL:http://auth-service:8081}
+  security:
+    permit-all:
+      - "/api/v1/internal/notifications/conversation-attempt-result"
 
   kafka:
     producer-name: notification-service

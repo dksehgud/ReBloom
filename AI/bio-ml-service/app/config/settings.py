@@ -14,28 +14,17 @@ KAFKA_GROUP_ID                = os.getenv("KAFKA_GROUP_ID", "bio-ml-service")
 KAFKA_TOPIC_BIOMETRIC_RAW     = os.getenv("KAFKA_TOPIC_BIOMETRIC_RAW", "rebloom.biometric.received.v1")
 KAFKA_TOPIC_AI_TRAIN          = os.getenv("KAFKA_TOPIC_AI_MODEL_TRAIN_REQUESTED", "rebloom.model.training.requested.v1")
 KAFKA_TOPIC_AI_ANALYZE        = os.getenv("KAFKA_TOPIC_AI_ANALYZE_REQUESTED", "rebloom.model.retraining.requested.v1")
-KAFKA_TOPIC_GPS_CHECK_REQUEST = os.getenv("KAFKA_TOPIC_GPS_CHECK_REQUEST", "rebloom.gps-check.requested.v1")
 KAFKA_TOPIC_STATUS_CARD_REQUESTED = os.getenv("KAFKA_TOPIC_STATUS_CARD_REQUESTED", "rebloom.status-card.requested.v1")
 
 # Kafka Topics - Produce
 KAFKA_TOPIC_ANOMALY_VERIFIED    = os.getenv("KAFKA_TOPIC_ANOMALY_VERIFIED", "rebloom.anomaly.analysed.v1")
 KAFKA_TOPIC_PHQ_RESULT          = os.getenv("KAFKA_TOPIC_PHQ_RESULT", "rebloom.phq.completed.v1")
-KAFKA_TOPIC_GPS_CHECK_SAME      = os.getenv("KAFKA_TOPIC_GPS_CHECK_SAME", "rebloom.gps-check.same.v1")
-KAFKA_TOPIC_GPS_CHECK_DIFFERENT = os.getenv("KAFKA_TOPIC_GPS_CHECK_DIFFERENT", "rebloom.gps-check.different.v1")
 KAFKA_TOPIC_STATUS_CARD_CREATED = os.getenv("KAFKA_TOPIC_STATUS_CARD_CREATED", "rebloom.status-card.created.v1")
 
 # Redis
 REDIS_HOST = os.environ["REDIS_HOST"]
 REDIS_PORT = int(os.environ["REDIS_PORT"])
 
-# GPS check
-AUTH_SERVICE_URL = os.getenv("AUTH_SERVICE_URL", "http://auth-service:8081")
-AUTH_SERVICE_LOCATION_PATH = os.getenv(
-    "AUTH_SERVICE_LOCATION_PATH",
-    "/api/v1/internal/children/{children_id}/target-location",
-)
-GPS_CHECK_RADIUS_METERS       = float(os.getenv("GPS_CHECK_RADIUS_METERS", 100))
-GPS_CHECK_PENDING_TTL_SECONDS = int(os.getenv("GPS_CHECK_PENDING_TTL_SECONDS", 300))
 
 # Model
 MODEL_DIR          = os.getenv("MODEL_DIR", "/app/model")

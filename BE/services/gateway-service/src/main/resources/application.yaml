@@ -129,6 +129,18 @@ spring:
           filters: *secured-filters
 
         # ==========================================
+        # NOTIFICATION SERVICE - Public AIoT callback
+        # 인증 불필요
+        # ==========================================
+        - id: notification-service-conversation-attempt-result-public
+          order: -1
+          uri: ${NOTIFICATION_SERVICE_URI:http://localhost:8085}
+          predicates:
+            - Path=/notification/api/v1/internal/notifications/conversation-attempt-result
+            - Method=POST
+          filters: *public-filters
+
+        # ==========================================
         # NOTIFICATION SERVICE - Secured
         # ==========================================
         - id: notification-service

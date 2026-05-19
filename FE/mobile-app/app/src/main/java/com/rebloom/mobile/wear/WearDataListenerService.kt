@@ -8,7 +8,7 @@ import com.google.android.gms.wearable.DataMapItem
 import com.google.android.gms.wearable.WearableListenerService
 import com.rebloom.mobile.network.ApiClient
 import com.rebloom.mobile.network.BiometricRequest
-import com.rebloom.mobile.network.LocationEvaluateRequest
+// import com.rebloom.mobile.network.LocationEvaluateRequest
 import com.rebloom.mobile.network.TokenDataStore
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -35,9 +35,9 @@ class WearDataListenerService : WearableListenerService() {
                     handleBiometric(event)
                 }
 
-                event.dataItem.uri.path?.startsWith("/location/") == true -> {
-                    handleLocation(event)
-                }
+                // event.dataItem.uri.path?.startsWith("/location/") == true -> {
+                //     handleLocation(event)
+                // }
             }
         }
     }
@@ -68,6 +68,7 @@ class WearDataListenerService : WearableListenerService() {
         )
     }
 
+    @Deprecated
     private fun handleLocation(event: DataEvent) {
         val dataMap = DataMapItem.fromDataItem(event.dataItem).dataMap
 
