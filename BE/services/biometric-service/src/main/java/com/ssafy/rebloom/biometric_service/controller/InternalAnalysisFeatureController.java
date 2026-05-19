@@ -4,6 +4,7 @@ import com.ssafy.rebloom.biometric_service.dto.response.AnalysisFeatureResponseD
 import com.ssafy.rebloom.biometric_service.scheduler.steps.DailyStatusCardBatch;
 import com.ssafy.rebloom.biometric_service.service.AnalysisFeatureService;
 import com.ssafy.rebloom.common.dto.BaseResponse;
+import com.ssafy.rebloom.security.annotation.LoginUserId;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -40,7 +41,7 @@ public class InternalAnalysisFeatureController {
     }
 
     @PostMapping("/batch-test")
-    public ResponseEntity<BaseResponse<Void>> runDailyStatusCardBatch() {
+    public ResponseEntity<BaseResponse<Void>> runDailyStatusCardBatch(@LoginUserId UUID userId) {
         dailyStatusCardBatch.run();
         return ResponseEntity.ok(BaseResponse.success("daily status card batch executed"));
     }
