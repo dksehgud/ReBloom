@@ -1,55 +1,56 @@
-import { useEffect } from 'react'
-import { useLocation } from 'react-router-dom'
+import {useEffect} from 'react'
+import {useLocation} from 'react-router-dom'
 
 import './App.css'
 import AppRouter from './app/router/AppRouter'
-import { resolveShellMode } from './shared/utils/shellMode'
+import {resolveShellMode} from './shared/utils/shellMode'
 
 function App() {
-  const location = useLocation()
-  const shellMode = resolveShellMode(location.search)
 
-  useEffect(() => {
-    window.__REBLOOM_SHELL_MODE__ = shellMode
-    document.documentElement.dataset.shellMode = shellMode
-    document.body.dataset.shellMode = shellMode
+    const location = useLocation()
+    const shellMode = resolveShellMode(location.search)
 
-    return () => {
-      delete document.documentElement.dataset.shellMode
-      delete document.body.dataset.shellMode
-    }
-  }, [shellMode])
+    useEffect(() => {
+        window.__REBLOOM_SHELL_MODE__ = shellMode
+        document.documentElement.dataset.shellMode = shellMode
+        document.body.dataset.shellMode = shellMode
 
-  useEffect(() => {
-    if (shellMode !== 'webview') {
-      document.documentElement.style.removeProperty('--app-viewport-height')
-      return
-    }
+        return () => {
+            delete document.documentElement.dataset.shellMode
+            delete document.body.dataset.shellMode
+        }
+    }, [shellMode])
 
-    const visualViewport = window.visualViewport
-    const updateViewportHeight = () => {
-      const viewportHeight = visualViewport?.height ?? window.innerHeight
+    useEffect(() => {
+        if (shellMode !== 'webview') {
+            document.documentElement.style.removeProperty('--app-viewport-height')
+            return
+        }
 
-      document.documentElement.style.setProperty(
-        '--app-viewport-height',
-        `${Math.round(viewportHeight)}px`,
-      )
-    }
+        const visualViewport = window.visualViewport
+        const updateViewportHeight = () => {
+            const viewportHeight = visualViewport?.height ?? window.innerHeight
 
-    updateViewportHeight()
-    window.addEventListener('resize', updateViewportHeight)
-    window.addEventListener('orientationchange', updateViewportHeight)
-    visualViewport?.addEventListener('resize', updateViewportHeight)
+            document.documentElement.style.setProperty(
+                '--app-viewport-height',
+                `${Math.round(viewportHeight)}px`,
+            )
+        }
 
-    return () => {
-      window.removeEventListener('resize', updateViewportHeight)
-      window.removeEventListener('orientationchange', updateViewportHeight)
-      visualViewport?.removeEventListener('resize', updateViewportHeight)
-      document.documentElement.style.removeProperty('--app-viewport-height')
-    }
-  }, [shellMode])
+        updateViewportHeight()
+        window.addEventListener('resize', updateViewportHeight)
+        window.addEventListener('orientationchange', updateViewportHeight)
+        visualViewport?.addEventListener('resize', updateViewportHeight)
 
-  return <AppRouter />
+        return () => {
+            window.removeEventListener('resize', updateViewportHeight)
+            window.removeEventListener('orientationchange', updateViewportHeight)
+            visualViewport?.removeEventListener('resize', updateViewportHeight)
+            document.documentElement.style.removeProperty('--app-viewport-height')
+        }
+    }, [shellMode])
+
+    return <AppRouter/>
 }
 
 export default App
