@@ -1,5 +1,6 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 
+import { getReportRange } from '../src/features/report/hooks/useParentReportData'
 import { createStabilityChartData } from '../src/features/report/utils/parentReportChart'
 
 describe('parent report stability chart layout', () => {
@@ -27,5 +28,27 @@ describe('parent report stability chart layout', () => {
     expect(chart.weekdayLabels.map((label) => label.x)).toEqual(
       chart.points.map((point) => point.x),
     )
+  })
+})
+
+describe('parent report biometric week range', () => {
+  it('uses the selected week end date as the biometric chart baseDate', () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date(2026, 4, 19, 12))
+
+    try {
+      expect(getReportRange(2)).toMatchObject({
+        baseDate: '2026-05-19',
+        endDate: '2026-05-19',
+        startDate: '2026-05-18',
+      })
+      expect(getReportRange(1)).toMatchObject({
+        baseDate: '2026-05-17',
+        endDate: '2026-05-17',
+        startDate: '2026-05-11',
+      })
+    } finally {
+      vi.useRealTimers()
+    }
   })
 })
