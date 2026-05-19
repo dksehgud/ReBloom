@@ -186,45 +186,10 @@ def _handle_ai_analyze(payload: dict) -> None:
         logger.info("[ai.analyze] IF 재학습 완료 | userId=%s", user_id)
 
 
-<<<<<<< HEAD
 # ──────────────────────────────────────────────
 # Consumer 루프
 # ──────────────────────────────────────────────
-=======
-def _handle_gps_check_request(payload: dict) -> None:
-    payload = _unwrap_event_envelope(payload)
 
-    children_id = payload.get("childrenId")
-    parent_id   = payload.get("parentId")
-    request_id  = payload.get("requestId")
-
-    if not children_id:
-        logger.warning("[gps-check.requested] childrenId missing | payload=%s", payload)
-        return
-
-    latitude  = payload.get("latitude")
-    longitude = payload.get("longitude")
-    if latitude is None or longitude is None:
-        gps_check.save_pending_request(
-            children_id=children_id,
-            parent_id=parent_id,
-            request_id=request_id,
-        )
-        return
-
-    result = gps_check.evaluate_and_publish(
-        children_id=children_id,
-        parent_id=parent_id,
-        latitude=float(latitude),
-        longitude=float(longitude),
-        request_id=request_id,
-    )
-    logger.info(
-        "[gps-check.requested] evaluated inline | childrenId=%s matched=%s",
-        children_id,
-        result.matched,
-    )
->>>>>>> develop
 
 
 def _extract_status_card_payload(message: dict) -> tuple[dict, dict]:
@@ -308,16 +273,9 @@ def _consume_loop() -> None:
     logger.info("[Kafka] Consumer 구독 시작 | topics=%s", topics)
 
     handlers = {
-<<<<<<< HEAD
         KAFKA_TOPIC_BIOMETRIC_RAW : _handle_biometric_raw,
         KAFKA_TOPIC_AI_TRAIN      : _handle_ai_train,
         KAFKA_TOPIC_AI_ANALYZE    : _handle_ai_analyze,
-=======
-        KAFKA_TOPIC_BIOMETRIC_RAW        : _handle_biometric_raw,
-        KAFKA_TOPIC_AI_TRAIN             : _handle_ai_train,
-        KAFKA_TOPIC_AI_ANALYZE           : _handle_ai_analyze,
-        KAFKA_TOPIC_GPS_CHECK_REQUEST    : _handle_gps_check_request,
->>>>>>> develop
         KAFKA_TOPIC_STATUS_CARD_REQUESTED: _handle_status_card_requested,
     }
 
@@ -351,18 +309,9 @@ def _consume_loop() -> None:
                 handler(payload)
             except Exception as e:
                 entity_payload = _unwrap_event_envelope(payload)
-<<<<<<< HEAD
                 entity_id = entity_payload.get("userId")
                 logger.exception("[Kafka] 핸들러 예외 | topic=%s entityId=%s err=%s",
                                  topic, entity_id, e)
-=======
-                entity_id = (
-                    entity_payload.get("childrenId")
-                    if topic == KAFKA_TOPIC_GPS_CHECK_REQUEST
-                    else entity_payload.get("userId")
-                )
-                logger.exception("[Kafka] 핸들러 예외 | topic=%s entityId=%s err=%s", topic, entity_id, e)
->>>>>>> develop
 
     finally:
         consumer.close()
