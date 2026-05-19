@@ -6,7 +6,6 @@ import AppRouter from './app/router/AppRouter'
 import {resolveShellMode} from './shared/utils/shellMode'
 
 function App() {
-
     const location = useLocation()
     const shellMode = resolveShellMode(location.search)
 
