@@ -68,7 +68,7 @@ class WearDataListenerService : WearableListenerService() {
         )
     }
 
-    @Deprecated
+    @Deprecated("GPS flow removed")
     private fun handleLocation(event: DataEvent) {
         val dataMap = DataMapItem.fromDataItem(event.dataItem).dataMap
 
@@ -127,31 +127,32 @@ class WearDataListenerService : WearableListenerService() {
         }
     }
 
-    private fun sendLocation(timestamp: Long, latitude: Double, longitude: Double) {
-        scope.launch {
-            try {
-                val childrenId = getUserIdFromToken()
+    // @Deprecated("GPS flow removed")
+    // private fun sendLocation(timestamp: Long, latitude: Double, longitude: Double) {
+    //     scope.launch {
+    //         try {
+    //             val childrenId = getUserIdFromToken()
 
-                val request = LocationEvaluateRequest(
-                    children_id = childrenId,
-                    parent_id = null,
-                    latitude = latitude,
-                    longitude = longitude,
-                    measured_at = dateFormat.format(Date(timestamp))
-                )
+    //             val request = LocationEvaluateRequest(
+    //                 children_id = childrenId,
+    //                 parent_id = null,
+    //                 latitude = latitude,
+    //                 longitude = longitude,
+    //                 measured_at = dateFormat.format(Date(timestamp))
+    //             )
 
-                val response = ApiClient.create(applicationContext).evaluateLocation(request)
-                Log.d(
-                    TAG,
-                    "Location evaluate success: matched=${response.matched}, action=${response.action}"
-                )
-            } catch (e: AuthTokenException) {
-                handleAuthTokenFailure("Location evaluate", e)
-            } catch (e: Exception) {
-                Log.e(TAG, "Location evaluate failed: ${e.message}")
-            }
-        }
-    }
+    //             val response = ApiClient.create(applicationContext).evaluateLocation(request)
+    //             Log.d(
+    //                 TAG,
+    //                 "Location evaluate success: matched=${response.matched}, action=${response.action}"
+    //             )
+    //         } catch (e: AuthTokenException) {
+    //             handleAuthTokenFailure("Location evaluate", e)
+    //         } catch (e: Exception) {
+    //             Log.e(TAG, "Location evaluate failed: ${e.message}")
+    //         }
+    //     }
+    // }
 
     private suspend fun getUserIdFromToken(): String {
         val token = TokenDataStore.getToken(applicationContext)

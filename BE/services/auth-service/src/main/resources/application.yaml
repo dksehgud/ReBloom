@@ -99,4 +99,3 @@ rebloom:
       - "/api/v1/internal/children/*/parent-receiver"
       - "/api/v1/internal/children/*/counselor-receiver"
       - "/api/v1/internal/children/active"
-      - "/api/v1/internal/notifications/conversation-attempt-result"

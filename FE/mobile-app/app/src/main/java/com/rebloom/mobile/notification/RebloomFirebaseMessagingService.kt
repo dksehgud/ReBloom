@@ -44,38 +44,38 @@ class RebloomFirebaseMessagingService : FirebaseMessagingService() {
 
         showNotification(title, body)
     }
-    @Deprecated
-    private fun isGpsCheckRequest(data: Map<String, String>): Boolean {
-        return data["type"] == GPS_CHECK_REQUEST_TYPE ||
-            data["topic"] == GPS_CHECK_REQUEST_TOPIC
-    }
+    // @Deprecated("GPS flow removed")
+    // private fun isGpsCheckRequest(data: Map<String, String>): Boolean {
+    //     return data["type"] == GPS_CHECK_REQUEST_TYPE ||
+    //         data["topic"] == GPS_CHECK_REQUEST_TOPIC
+    // }
 
-    @Deprecated
-    private fun requestWatchLocation() {
-        Wearable.getNodeClient(this)
-            .connectedNodes
-            .addOnSuccessListener { nodes ->
-                nodes.forEach { node ->
-                    Wearable.getMessageClient(this)
-                        .sendMessage(node.id, LOCATION_REQUEST_PATH, ByteArray(0))
-                        .addOnSuccessListener {
-                            android.util.Log.d(
-                                TAG,
-                                "GPS check location request sent to watch node=${node.id}"
-                            )
-                        }
-                        .addOnFailureListener { error ->
-                            android.util.Log.e(
-                                TAG,
-                                "GPS check location request failed: ${error.message}"
-                            )
-                        }
-                }
-            }
-            .addOnFailureListener { error ->
-                android.util.Log.e(TAG, "Failed to load connected watch nodes: ${error.message}")
-            }
-    }
+    // @Deprecated("GPS flow removed")
+    // private fun requestWatchLocation() {
+    //     Wearable.getNodeClient(this)
+    //         .connectedNodes
+    //         .addOnSuccessListener { nodes ->
+    //             nodes.forEach { node ->
+    //                 Wearable.getMessageClient(this)
+    //                     .sendMessage(node.id, LOCATION_REQUEST_PATH, ByteArray(0))
+    //                     .addOnSuccessListener {
+    //                         android.util.Log.d(
+    //                             TAG,
+    //                             "GPS check location request sent to watch node=${node.id}"
+    //                         )
+    //                     }
+    //                     .addOnFailureListener { error ->
+    //                         android.util.Log.e(
+    //                             TAG,
+    //                             "GPS check location request failed: ${error.message}"
+    //                         )
+    //                     }
+    //             }
+    //         }
+    //         .addOnFailureListener { error ->
+    //             android.util.Log.e(TAG, "Failed to load connected watch nodes: ${error.message}")
+    //         }
+    // }
 
     private fun showNotification(title: String, body: String) {
         val notificationManager =

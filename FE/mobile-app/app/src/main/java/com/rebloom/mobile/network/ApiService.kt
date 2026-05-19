@@ -67,7 +67,7 @@ data class ParentConnectedChildData(
     val birth: String?
 )
 
-@Deprecated
+@Deprecated("GPS flow removed")
 data class LocationEvaluateRequest(
     val children_id: String,
     val parent_id: String?,
@@ -77,7 +77,7 @@ data class LocationEvaluateRequest(
     val request_id: String? = null
 )
 
-@Deprecated
+@Deprecated("GPS flow removed")
 data class LocationEvaluateResponse(
     val children_id: String,
     val parent_id: String?,
@@ -98,7 +98,7 @@ interface ApiService {
     @POST("intake/api/v1/intakes/sleeps/raw")
     suspend fun sendSleep(@Body request: SleepRequest): IntakeResponse
 
-    @Deprecated
+    @Deprecated("GPS flow removed")
     @POST("ai/api/v1/location/evaluate")
     suspend fun evaluateLocation(@Body request: LocationEvaluateRequest): LocationEvaluateResponse
 
