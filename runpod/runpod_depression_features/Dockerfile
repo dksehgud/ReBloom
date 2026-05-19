@@ -5,7 +5,8 @@ ENV DEBIAN_FRONTEND=noninteractive \
     PIP_NO_CACHE_DIR=1 \
     HF_HOME=/workspace/.cache/huggingface \
     TRANSFORMERS_CACHE=/workspace/.cache/huggingface \
-    TORCH_HOME=/workspace/.cache/torch
+    TORCH_HOME=/workspace/.cache/torch \
+    USE_FAISS=0
 
 WORKDIR /app
 
@@ -24,7 +25,6 @@ RUN python3 -m pip install --upgrade pip \
 
 COPY runpod_depression_features/handler.py /app/handler.py
 COPY faiss_knn_classifier.py /app/faiss_knn_classifier.py
-COPY faiss_openai_large /workspace/output/faiss_openai_large
 COPY faiss_keywords /workspace/output/faiss_keywords
 
 CMD ["python3", "/app/handler.py"]

@@ -114,7 +114,7 @@ When `include_debug` is true, the response also includes `features`, `feature_or
 ```text
 MODEL_DIR=/workspace/output/faiss_openai_large
 KEYWORD_MODEL_DIR=/workspace/output/faiss_keywords
-USE_FAISS=1
+USE_FAISS=0
 NO_GPU=1
 EMBEDDING_API_URL=https://gms.ssafy.io/gmsapi/api.openai.com/v1/embeddings
 EMBEDDING_API_KEY=

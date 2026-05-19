@@ -18,7 +18,6 @@ FAISS + kNN voting 기반 텍스트 분류기.
 from __future__ import annotations
 
 import argparse
-import http.client
 import json
 import os
 import re
@@ -114,34 +113,62 @@ def parse_json_object_from_response(raw_body: str) -> Dict[str, Any]:
     return parsed
 
 
+def _extract_embeddings_from_dict(body: Dict[str, Any]) -> Optional[np.ndarray]:
+    """OpenAI \ud615\uc2dd dict\uc5d0\uc11c embedding \ubc30\uc5f4\uc744 \ucd94\ucd9c\ud569\ub2c8\ub2e4. \uc2e4\ud328\uc2dc None \ubc18\ud658."""
+    data = body.get("data")
+    if isinstance(data, list):
+        ordered = sorted(data, key=lambda item: int(item.get("index", 0)))
+        return np.array([item["embedding"] for item in ordered], dtype=np.float32)
+    if isinstance(body.get("embedding"), list):
+        return np.asarray([body["embedding"]], dtype=np.float32)
+    if isinstance(body.get("embeddings"), list):
+        embeddings = body["embeddings"]
+        if embeddings and isinstance(embeddings[0], (int, float)):
+            return np.asarray([embeddings], dtype=np.float32)
+        return np.asarray(embeddings, dtype=np.float32)
+    return None
+
+
 def parse_embedding_response(raw_body: str) -> np.ndarray:
     cleaned = raw_body.lstrip("\ufeff").strip()
     if not cleaned:
         raise ValueError("Embedding response is empty.")
 
+    # 1\ucc28: \uc815\uc0c1 JSON \ud30c\uc2f1
     try:
         body = parse_json_object_from_response(cleaned)
-        data = body.get("data")
-        if isinstance(data, list):
-            ordered = sorted(data, key=lambda item: int(item.get("index", 0)))
-            return np.array([item["embedding"] for item in ordered], dtype=np.float32)
-        if isinstance(body.get("embedding"), list):
-            return np.asarray([body["embedding"]], dtype=np.float32)
-        if isinstance(body.get("embeddings"), list):
-            embeddings = body["embeddings"]
-            if embeddings and isinstance(embeddings[0], (int, float)):
-                return np.asarray([embeddings], dtype=np.float32)
-            return np.asarray(embeddings, dtype=np.float32)
+        result = _extract_embeddings_from_dict(body)
+        if result is not None:
+            return result
     except Exception:
         pass
 
+    # 2\ucc28: \ud504\ub85d\uc2dc\uac00 OpenAI \uc751\ub2f5\uc744 JSON \ubb38\uc790\uc5f4\ub85c \uc774\uc911 \uc778\ucf54\ub529\ud55c \uacbd\uc6b0 \ucc98\ub9ac
+    # \uc608: {"result": "{\"data\":[{\"embedding\":[...]}]}"} \ub610\ub294 \uc678\ubd80 \ub530\uc634\ud45c\ub85c \uac10\uc2fc \ud615\ud0dc
     try:
         parsed = json.loads(cleaned)
-        if isinstance(parsed, list):
+        if isinstance(parsed, str):
+            inner = _extract_embeddings_from_dict(parse_json_object_from_response(parsed))
+            if inner is not None:
+                return inner
+        elif isinstance(parsed, dict):
+            for key in ("result", "response", "body", "output"):
+                val = parsed.get(key)
+                if isinstance(val, str):
+                    try:
+                        inner = _extract_embeddings_from_dict(parse_json_object_from_response(val))
+                        if inner is not None:
+                            return inner
+                    except Exception:
+                        pass
+            result = _extract_embeddings_from_dict(parsed)
+            if result is not None:
+                return result
+        elif isinstance(parsed, list):
             if parsed and isinstance(parsed[0], (int, float)):
                 return np.asarray([parsed], dtype=np.float32)
             return np.asarray(parsed, dtype=np.float32)
-    except json.JSONDecodeError:
+    except (json.JSONDecodeError, Exception):
         pass
 
     number_pattern = r"[-+]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][-+]?\d+)?"
@@ -338,15 +365,18 @@ class FaissKNNTextClassifier:
                     method="POST",
                 )
                 with urllib.request.urlopen(http_request, timeout=int(os.getenv("EMBEDDING_TIMEOUT", "120"))) as response:
-                    try:
-                        raw_body = response.read().decode("utf-8")
-                    except http.client.IncompleteRead as exc:
-                        raw_body = exc.partial.decode("utf-8", errors="replace")
+                    raw_body = response.read().decode("utf-8")
                 embeddings = parse_embedding_response(raw_body)
                 if embeddings.ndim != 2 or embeddings.shape[0] != len(texts):
                     raise ValueError(
                         "Embedding response shape does not match request. "
                         f"Expected ({len(texts)}, dim), got {embeddings.shape}."
+                    )
+                expected_dim = self.openai_dimensions or (self.index.d if self.index is not None else None)
+                if expected_dim is not None and embeddings.shape[1] != expected_dim:
+                    raise ValueError(
+                        f"Embedding response vector length does not match expected dimension. "
+                        f"Got {embeddings.shape[1]}, expected {expected_dim}."
                     )
                 return embeddings
             except Exception as exc:
