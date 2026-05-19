@@ -58,8 +58,16 @@ object ApiClient {
                 val result = runBlocking {
                     try {
                         plainService().reissue(refreshToken)
+                    } catch (e: retrofit2.HttpException) {
+                        if (e.code() == 401 || e.code() == 400) {
+                            Log.e("ApiClient", "Refresh token invalid, clearing tokens")
+                            TokenDataStore.clearToken(context)
+                        } else {
+                            Log.e("ApiClient", "Reissue server error: ${e.code()}")
+                        }
+                        null
                     } catch (e: Exception) {
-                        Log.e("ApiClient", "Reissue failed: ${e.message}")
+                        Log.e("ApiClient", "Reissue network error: ${e.message}")
                         null
                     }
                 }
@@ -68,7 +76,6 @@ object ApiClient {
                 val newRefreshToken = result?.data?.refreshToken
 
                 if (newAccessToken == null) {
-                    runBlocking { TokenDataStore.clearToken(context) }
                     return@synchronized null
                 }
 
