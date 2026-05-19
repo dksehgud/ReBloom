@@ -26,6 +26,41 @@ def _int_env(name, default):
         return default
 
 
+def post_chat_stream(host, model, messages):
+    payload = {
+        "model": model,
+        "messages": messages,
+        "stream": True,
+        "keep_alive": os.getenv("REBLOOM_OLLAMA_KEEP_ALIVE", "30m"),
+        "options": {
+            "num_predict": _int_env("REBLOOM_NUM_PREDICT", 96),
+            "num_ctx": _int_env("REBLOOM_NUM_CTX", 2048),
+        },
+    }
+    data = json.dumps(payload, ensure_ascii=False).encode("utf-8")
+    request = urllib.request.Request(
+        host,
+        data=data,
+        headers={"Content-Type": "application/json"},
+        method="POST",
+    )
+    timeout = float(os.getenv("REBLOOM_OLLAMA_TIMEOUT", "120"))
+    with urllib.request.urlopen(request, timeout=timeout) as response:
+        for raw_line in response:
+            line = raw_line.strip()
+            if not line:
+                continue
+            try:
+                chunk = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            content = (chunk.get("message") or {}).get("content", "")
+            if content:
+                yield content
+            if chunk.get("done"):
+                break
+
+
 def post_chat(host, model, messages):
     payload = {
         "model": model,

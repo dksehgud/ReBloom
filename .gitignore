@@ -51,3 +51,4 @@ AIoT/rpi5/smart_speaker/rebloom-speaker.service
 FE/mobile-app/rebloom copy.keystore
 AIoT/rpi5/command
 AIoT_Server/command
+AIoT/rpi5/serverchatting/.env_text

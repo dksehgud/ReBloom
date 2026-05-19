@@ -452,6 +452,27 @@ def record_wav_until_silence(
     return True
 
 
+_SENT_END_PAT = re.compile(r'(?<=[.?!。？！])\s')
+
+
+def iter_sentences(token_iter):
+    """Buffer streaming LLM tokens and yield at sentence-ending punctuation boundaries."""
+    buffer = ""
+    for token in token_iter:
+        buffer += token
+        while True:
+            m = _SENT_END_PAT.search(buffer)
+            if not m:
+                break
+            sentence = buffer[:m.start() + 1].strip()
+            buffer = buffer[m.end():]
+            if sentence:
+                yield sentence
+    remainder = buffer.strip()
+    if remainder:
+        yield remainder
+
+
 def clean_transcript(text):
     text = text.strip()
     text = re.sub(r"\[[^\]]+\]|\([^\)]+\)", " ", text)
@@ -959,31 +980,65 @@ def speak_elevenlabs(
     tts_output_file="",
     timeout_seconds=30.0,
 ):
+    voice_settings = {
+        "stability": stability,
+        "similarity_boost": similarity_boost,
+        "style": style,
+        "use_speaker_boost": use_speaker_boost,
+        "speed": speed,
+    }
+
+    # 전체 다운로드 없이 즉시 재생 시작 (ffplay로 스트리밍)
+    if not tts_output_file and has_command("ffplay"):
+        _speak_elevenlabs_stream(text, api_key, voice_id, model_id, output_format, voice_settings, timeout_seconds)
+        return
+
     if not tts_output_file:
         require_command(mp3_player)
 
     with tempfile.TemporaryDirectory(prefix="rebloom_elevenlabs_tts_") as temp_dir:
         mp3_path = Path(tts_output_file) if tts_output_file else Path(temp_dir) / "answer.mp3"
         save_elevenlabs_tts_mp3(
-            text,
-            mp3_path,
-            api_key,
-            voice_id,
-            model_id,
-            output_format,
-            {
-                "stability": stability,
-                "similarity_boost": similarity_boost,
-                "style": style,
-                "use_speaker_boost": use_speaker_boost,
-                "speed": speed,
-            },
-            timeout_seconds,
+            text, mp3_path, api_key, voice_id, model_id, output_format, voice_settings, timeout_seconds,
         )
         if tts_output_file:
             print(f"[tts] MP3 저장됨: {mp3_path}")
             return
         play_mp3(mp3_path, mp3_player, mp3_player_args)
+
+
+def _speak_elevenlabs_stream(text, api_key, voice_id, model_id, output_format, voice_settings, timeout_seconds):
+    """ElevenLabs /stream 엔드포인트에서 받은 MP3를 ffplay로 즉시 재생한다."""
+    ensure_pipewire_runtime_env()
+    url = f"https://api.elevenlabs.io/v1/text-to-speech/{voice_id}/stream?output_format={output_format}"
+    payload = json_dumps_bytes({"text": text, "model_id": model_id, "voice_settings": voice_settings})
+    request = urllib.request.Request(
+        url,
+        data=payload,
+        headers={"Content-Type": "application/json", "Accept": "audio/mpeg", "xi-api-key": api_key},
+        method="POST",
+    )
+    proc = subprocess.Popen(
+        ["ffplay", "-nodisp", "-autoexit", "-loglevel", "error", "-i", "pipe:0"],
+        stdin=subprocess.PIPE,
+    )
+    try:
+        with urllib.request.urlopen(request, timeout=timeout_seconds) as response:
+            while True:
+                chunk = response.read(8192)
+                if not chunk:
+                    break
+                proc.stdin.write(chunk)
+    except urllib.error.HTTPError as exc:
+        proc.kill()
+        detail = exc.read().decode("utf-8", errors="replace").strip()
+        raise RuntimeError(f"ElevenLabs TTS 요청 실패: HTTP {exc.code} {detail}") from exc
+    finally:
+        try:
+            proc.stdin.close()
+        except BrokenPipeError:
+            pass
+        proc.wait()
 
 
 def list_edge_voices():
