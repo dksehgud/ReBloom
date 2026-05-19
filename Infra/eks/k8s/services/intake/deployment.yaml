@@ -1,0 +1,24 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: intake-service
+  namespace: rebloom
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: intake-service
+  template:
+    metadata:
+      labels:
+        app: intake-service
+    spec:
+      containers:
+        - name: intake-service
+          image: cramfull99/rebloom-intake:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8082
+          envFrom:
+            - configMapRef:
+                name: intake-config

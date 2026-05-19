@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: bio-ml-service
+  namespace: rebloom
+spec:
+  type: ClusterIP
+  selector:
+    app: bio-ml-service
+  ports:
+    - port: 8002
+      targetPort: 8002
