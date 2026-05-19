@@ -38,13 +38,6 @@ public class AnalysisInferenceService {
     private static final Set<String> RUNPOD_FAILED_STATUSES = Set.of("FAILED", "CANCELLED", "TIMED_OUT");
     private static final ZoneId SEOUL_ZONE = ZoneId.of("Asia/Seoul");
 
-    /*
-     * RestClient.Builder
-     * - Spring???œê³µ?˜ëŠ” HTTP ?´ë¼?´ì–¸???ì„±ê¸°ì…?ˆë‹¤.
-     * - ???œë¹„?¤ì—?œëŠ” ?¸ë? HTTP APIë¥???êµ°ë° ?¸ì¶œ?©ë‹ˆ??
-     *   1. RunPod: ?¼ê¸°/?€???°ìš¸ ?¨ê³„ ì¶”ë¡ 
-     *   2. Recent Insight API: ìµœê·¼ 7??ì¶”ì´ ??ë¬¸ì¥ ?”ì•½
-     */
     private final RestClient.Builder restClientBuilder;
 
     private final AuthAccessClient authAccessClient;
@@ -57,13 +50,6 @@ public class AnalysisInferenceService {
     private final RecentTrendRepository recentTrendRepository;
     private final TransactionTemplate transactionTemplate;
 
-    /*
-     * @Value("${...}")
-     * - application.yaml ?ëŠ” .env.local ?˜ê²½ë³€?˜ì—??ê°’ì„ ?½ì–´?µë‹ˆ??
-     * - ì§€ê¸ˆì? default ê°’ì„ ?£ì? ?Šì•˜?µë‹ˆ??
-     * - ?°ë¼??.env.local??ê°’ì´ ?†ìœ¼ë©?? í”Œë¦¬ì??´ì…˜???œì‘????ë°”ë¡œ ?¤íŒ¨?©ë‹ˆ??
-     *   ?˜ëª»??endpointë¡?ì¡°ìš©???”ì²­?˜ëŠ” ê²ƒë³´??ë¹¨ë¦¬ ?¤íŒ¨?˜ëŠ” ?¸ì´ ?ˆì „?©ë‹ˆ??
-     */
     @Value("${RUNPOD_API_KEY}")
     private String runpodApiKey;
 
@@ -90,24 +76,6 @@ public class AnalysisInferenceService {
 
     @Async("analysisTaskExecutor")
     public void analyzeConversation(ConversationSessionCreateRequestDto request) {
-         * ??ë©”ì„œ?œëŠ” IoT ê¸°ê¸°?ì„œ ?€???¸ì…˜???ë‚œ ???¸ì¶œ?©ë‹ˆ??
-         * request ?ˆì‹œ:
-         * {
-         *   "session_id": "...",
-         *   "raspberrypi_id": "...",
-         *   "started_at": "...",
-         *   "ended_at": "...",
-         *   "events": [
-         *     { "child": "..." },
-         *     { "bot": "..." }
-         *   ]
-         * }
-         * ?„ì²´ ?ë¦„:
-         * 1. eventsë¥?RunPodê°€ ?í•˜??text ?•ì‹?¼ë¡œ ë°”ê¾¼??
-         * 2. RunPod??textë¥?ë³´ë‚´ prediction??ë°›ëŠ”??
-         * 3. raspberrypi_idë¡?ê¸°ê¸° ?Œìœ  ?„ë™ IDë¥?ì¡°íšŒ?œë‹¤.
-         * 4. RunPod output??conversation_analysis?€ conversation_keywords???€?¥í•œ??
-         */
         log.info(
             "conversation analysis requested. sessionId={}, raspberrypiId={}, startedAt={}, endedAt={}, eventCount={}",
             request.sessionId(),
@@ -117,15 +85,6 @@ public class AnalysisInferenceService {
             request.events().size()
         );
 
-         * RunPod receives only one "text" field. Conversation events are flattened in
-         * chronological order, with child utterances marked as User and bot utterances
-         * marked as Bot, matching the agreed model input contract:
-         *   {
-         *     "input": {
-         *       "text": "User: ...\nBot: ..."
-         *     }
-         *   }
-         */
         String text = buildConversationText(request.events());
         JsonNode output = requestRunpod(text);
         UUID childrenId = authAccessClient.getChildrenIdByDeviceSerial(request.raspberrypiId());
@@ -164,16 +123,6 @@ public class AnalysisInferenceService {
 
     @Async("analysisTaskExecutor")
     public void analyzeDiary(DiaryAnalysisInferenceRequestDto request) {
-         * ??ë©”ì„œ?œëŠ” ?¼ê¸° ë¶„ì„ ?”ì²­???¤ì–´?”ì„ ???¸ì¶œ?©ë‹ˆ??
-         *
-         * ?€?”ì? ?¬ë¦¬ ?¼ê¸° DTO?ëŠ” user_idê°€ ?´ë? ?¤ì–´?ˆìŠµ?ˆë‹¤.
-         * ê·¸ë˜??raspberrypi_id -> userId ë³€??ê³¼ì •???„ìš” ?†ìŠµ?ˆë‹¤.
-         *
-         * ?„ì²´ ?ë¦„:
-         * 1. request.content()ë¥?RunPod input.textë¡?ë³´ë‚¸??
-         * 2. RunPod output?ì„œ embedding_text, prediction, keywordsë¥??½ëŠ”??
-         * 3. ?”ì²­???¬í•¨??emotion_iconê³?RunPod output??diary_analysis / diary_keywords???€?¥í•œ??
-         */
         log.info(
             "diary analysis requested. diaryId={}, userId={}, targetDate={}",
             request.diaryId(),
@@ -181,9 +130,6 @@ public class AnalysisInferenceService {
             request.targetDate()
         );
 
-        /*
-         * Diary analysis uses the same RunPod contract as conversation analysis.
-         * The diary content is already a single text body, so it can be sent as-is.
         JsonNode output = requestRunpod(request.content());
         LocalDate targetDate = resolveTargetDate(output, request.targetDate());
         Double prediction = addPhqFeature(
@@ -218,22 +164,6 @@ public class AnalysisInferenceService {
 
     @Async("analysisTaskExecutor")
     public void generateRecentInsight(RecentInsightInferenceRequestDto request) {
-        /*
-         * ??ë©”ì„œ?œëŠ” ìµœê·¼ ?°ìš¸ ?¨ê³„ ì¶”ì´ë¥???ë¬¸ì¥?¼ë¡œ ?”ì•½?????¸ì¶œ?©ë‹ˆ??
-         *
-         * ì£¼ì˜:
-         * - ??ë©”ì„œ?œëŠ” RunPodë¥??¸ì¶œ?˜ì? ?ŠìŠµ?ˆë‹¤.
-         * - RunPod???¼ê¸°/?€??ê°ê°??prediction??ë§Œë“œ??ëª¨ë¸ ì¶”ë¡ ?©ì…?ˆë‹¤.
-         * - ìµœê·¼ 7???”ì•½?€ ë³„ë„??RECENT_INSIGHT_API_URL APIë¥??¸ì¶œ?©ë‹ˆ??
-         *
-         * ?„ì²´ ?ë¦„:
-         * 1. ?”ì²­ ? ì§œ ë²”ìœ„ê°€ ?¬ë°”ë¥¸ì? ?•ì¸?œë‹¤.
-         * 2. ìµœê·¼ ìµœë? 7???™ì•ˆ ?€?¥ëœ diary_analysis / conversation_analysisë¥??½ëŠ”??
-         * 3. ?€?”ëŠ” ?˜ë£¨???¬ëŸ¬ ?¸ì…˜???ˆì„ ???ˆìœ¼ë¯€ë¡?? ì§œë³?ê°€???’ì? ?¨ê³„ë§?ê³ ë¥¸??
-         * 4. ?¼ê¸° ?¨ê³„?€ ?€???¨ê³„ ì¤‘ì—?œë„ ? ì§œë³?ìµœë? ?¨ê³„ë¥?ê³„ì‚°?œë‹¤.
-         * 5. ???°ì´?°ë? text promptë¡?ë§Œë“¤??Recent Insight API??ë³´ë‚¸??
-         * 6. ì§€ê¸??¨ê³„?ì„œ??DB???€?¥í•˜ì§€ ?Šê³  summaryë¥?ë¡œê·¸ë¡œë§Œ ?•ì¸?œë‹¤.
-         */
         validateDateRange(request);
         log.info(
             "recent insight requested. userId={}, startDate={}, endDate={}",
@@ -242,25 +172,6 @@ public class AnalysisInferenceService {
             request.endDate()
         );
 
-        /*
-         * Recent insight is generated from recent depression stages.
-         *
-         * The frontend rule says conversation analysis is produced per session, but
-         * only the highest depression stage in a day should be shown. That same daily
-         * maximum is used here. Diary stages are already daily. For each date we keep:
-         *   - diary prediction, if a diary analysis exists
-         *   - conversation daily max prediction, if sessions exist
-         *   - overall daily max across diary and conversation
-         *
-         * The generated text is passed to the recent-insight API, not RunPod. The API
-         * contract is intentionally small:
-         *
-         *   request  = { "text": "..." }
-         *   response = { "summary": "one Korean sentence about the recent trend" }
-         *
-         * That keeps the RunPod endpoint focused on prediction inference while the
-         * LLM/RAG summarization can live behind a separate API.
-         */
         List<DailyPredictionSummary> summaries = loadDailyPredictionSummaries(request);
         String insightPrompt = buildRecentInsightPrompt(request, summaries);
         JsonNode output = requestRecentInsightApi(insightPrompt);
@@ -349,18 +260,6 @@ public class AnalysisInferenceService {
         validateRunpodText(text);
 
         try {
-            /*
-             * RunPod ?”ì²­ body??ë°˜ë“œ???„ë˜ ?•íƒœ?¬ì•¼ ?©ë‹ˆ??
-             *
-             * {
-             *   "input": {
-             *     "text": "ë¶„ì„???ìŠ¤??
-             *   }
-             * }
-             *
-             * response ?„ì²´?ëŠ” status, output ?±ì´ ?¤ì–´?µë‹ˆ??
-             * ???œë¹„?¤ëŠ” statusê°€ COMPLETED?¸ì? ?•ì¸????outputë§?ë°˜í™˜?©ë‹ˆ??
-             */
             RestClient runpodClient = restClientBuilder
                 .baseUrl(runpodBaseUrl)
                 .build();
@@ -442,21 +341,6 @@ public class AnalysisInferenceService {
         validateRecentInsightText(text);
 
         try {
-            /*
-             * ìµœê·¼ ì¶”ì´ API ?”ì²­ body??RunPod?€ ?¤ë¦…?ˆë‹¤.
-             *
-             * request:
-             * {
-             *   "text": "ìµœê·¼ 7???°ìš¸ ?¨ê³„ ?°ì´?°ì? ì§€?œë¬¸"
-             * }
-             *
-             * response:
-             * {
-             *   "summary": "ìµœê·¼ ?°ìš¸ ?¨ê³„ ì¶”ì´ë¥??¤ëª…?˜ëŠ” ??ë¬¸ì¥"
-             * }
-             *
-             * ê·¸ë˜????ë©”ì„œ?œëŠ” response.summaryê°€ ?ˆëŠ”ì§€ ê²€?¬í•©?ˆë‹¤.
-             */
             JsonNode response = restClientBuilder
                 .build()
                 .post()
@@ -509,45 +393,18 @@ public class AnalysisInferenceService {
     }
 
     private void validateRunpodText(String text) {
-        /*
-         * .env.local is managed outside source control, and this branch intentionally
-         * does not define default values in @Value. If any RunPod setting is missing,
-         * Spring will fail during startup instead of silently calling a wrong endpoint.
-         * This method only validates the per-request model input.
-         */
         if (!StringUtils.hasText(text)) {
             throw new CustomException("RunPod input text must not be blank.", ErrorCode.INVALID_PARAMETER);
         }
     }
 
     private void validateRecentInsightText(String text) {
-        /*
-         * RECENT_INSIGHT_API_URL and RECENT_INSIGHT_API_KEY are also required without
-         * default values. Missing values should fail app startup through @Value rather
-         * than falling back to a wrong summarization target. This method validates the
-         * actual request body sent to the API.
-         */
         if (!StringUtils.hasText(text)) {
             throw new CustomException("Recent insight API text must not be blank.", ErrorCode.INVALID_PARAMETER);
         }
     }
 
     private String buildConversationText(List<ConversationSessionCreateRequestDto.ConversationEventDto> events) {
-        /*
-         * IoT?ì„œ ë°›ì? events ë°°ì—´??RunPod ëª¨ë¸???´í•´?˜ëŠ” ???©ì–´ë¦?textë¡?ë°”ê¿‰?ˆë‹¤.
-         *
-         * ?…ë ¥ events:
-         * [
-         *   { "child": "?ˆë…•" },
-         *   { "bot": "?? ?ˆë…•" }
-         * ]
-         *
-         * ë³€??ê²°ê³¼:
-         * User: ?ˆë…•
-         * Bot: ?? ?ˆë…•
-         *
-         * child??User, bot?€ Bot?¼ë¡œ ?œì‹œ?©ë‹ˆ??
-         */
         List<String> lines = new ArrayList<>();
         for (ConversationSessionCreateRequestDto.ConversationEventDto event : events) {
             if (StringUtils.hasText(event.child())) {
@@ -566,10 +423,6 @@ public class AnalysisInferenceService {
     }
 
     private String normalizeUtterance(String utterance) {
-        /*
-         * The sample RunPod input removes trailing ASCII periods from each utterance.
-         * Keep question marks/exclamation marks because they may carry emotional signal.
-         */
         String normalized = utterance.trim();
         if (normalized.endsWith(".")) {
             return normalized.substring(0, normalized.length() - 1);
@@ -578,17 +431,6 @@ public class AnalysisInferenceService {
     }
 
     private List<DailyPredictionSummary> loadDailyPredictionSummaries(RecentInsightInferenceRequestDto request) {
-        /*
-         * ìµœê·¼ ì¶”ì´ ?”ì•½???„ìš”???°ì´?°ë? DB?ì„œ ?½ìŠµ?ˆë‹¤.
-         *
-         * ?¬ìš© ë²”ìœ„:
-         * - request.endDate ê¸°ì? ìµœë? 7??
-         * - request.startDateê°€ ????œ¼ë©?startDateë¶€??endDateê¹Œì?ë§??¬ìš©
-         *
-         * ??
-         * - startDate=2026-05-01, endDate=2026-05-10 -> ?¤ì œ ?¬ìš©: 2026-05-04 ~ 2026-05-10
-         * - startDate=2026-05-08, endDate=2026-05-10 -> ?¤ì œ ?¬ìš©: 2026-05-08 ~ 2026-05-10
-         */
         Map<LocalDate, DailyPredictionSummary> summaries = new LinkedHashMap<>();
         LocalDate startDate = recentSevenDayStartDate(request);
 
@@ -617,14 +459,6 @@ public class AnalysisInferenceService {
         RecentInsightInferenceRequestDto request,
         List<DailyPredictionSummary> summaries
     ) {
-        /*
-         * Recent Insight APIë¡?ë³´ë‚¼ textë¥?ë§Œë“­?ˆë‹¤.
-         *
-         * API?ëŠ” JSON?¼ë¡œ { "text": prompt }ê°€ ?„ì†¡?©ë‹ˆ??
-         * prompt ?ˆì—??? ì§œë³??°ìš¸ ?¨ê³„ ?°ì´?°ê? ?¤ì–´ê°‘ë‹ˆ??
-         *
-         * daily_max??diary?€ conversation_daily_max ì¤????¬í•œ ?¨ê³„ë¥??˜ë??©ë‹ˆ??
-         */
         LocalDate startDate = recentSevenDayStartDate(request);
         StringBuilder prompt = new StringBuilder();
         prompt.append("Summarize the recent depression-score trend in exactly one Korean sentence.\n");
