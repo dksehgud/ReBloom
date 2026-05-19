@@ -9,26 +9,22 @@ import com.ssafy.rebloom.auth_service.user.domain.entity.Counselor;
 import com.ssafy.rebloom.auth_service.user.domain.entity.User;
 import com.ssafy.rebloom.auth_service.user.domain.enums.RelationStatus;
 import com.ssafy.rebloom.auth_service.user.dto.query.ParentReceiverDto;
-import com.ssafy.rebloom.auth_service.user.dto.response.ActiveChildResponseDto;
-import com.ssafy.rebloom.auth_service.user.dto.response.ChildAgeResponseDto;
-import com.ssafy.rebloom.auth_service.user.dto.response.ChildConnectedCounselorResponseDto;
-import com.ssafy.rebloom.auth_service.user.dto.response.ChildGpsResponseDto;
-import com.ssafy.rebloom.auth_service.user.dto.response.ChildrenIotInfoResponseDto;
-import com.ssafy.rebloom.auth_service.user.dto.response.ParentReceiverResponseDto;
+import com.ssafy.rebloom.auth_service.user.dto.response.*;
 import com.ssafy.rebloom.auth_service.user.repository.ChildrenCounselorRelationRepository;
 import com.ssafy.rebloom.auth_service.user.repository.UserRepository;
 import com.ssafy.rebloom.auth_service.user.repository.query.ParentQueryRepository;
 import com.ssafy.rebloom.auth_service.user.service.InternalUserService;
 import com.ssafy.rebloom.common.exception.CustomException;
 import com.ssafy.rebloom.common.exception.ErrorCode;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import java.time.LocalDate;
 import java.time.Period;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.UUID;
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -47,6 +43,7 @@ public class InternalUserServiceImpl implements InternalUserService {
     @Override
     public ChildGpsResponseDto getChildGpsInfo(UUID childId) {
         Children children = getChildren(childId);
+
 
         if (children.getLatitude() == null || children.getLongitude() == null) {
             throw new CustomException(
