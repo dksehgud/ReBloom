@@ -7,17 +7,17 @@ import {
 import { mapDashboardChartPoints } from '../src/features/counselor/hooks/useCounselorDashboardState'
 
 describe('counselor dashboard biometric metric mapping', () => {
-  it('keeps action activity values on the 0 to 1.5 range', () => {
+  it('keeps action activity values on the 0 to 15 range', () => {
     const points = mapDashboardChartPoints(
       [
-        { date: '2026-05-18', value: 0.92 },
-        { date: '2026-05-19', value: 2 },
+        { date: '2026-05-18', value: 8 },
+        { date: '2026-05-19', value: 20 },
       ],
       undefined,
       BIOMETRIC_RATIO_Y_AXIS_MAX,
     )
 
-    expect(points.map((point) => point.value)).toEqual([0.92, 1.5])
+    expect(points.map((point) => point.value)).toEqual([8, 15])
   })
 
   it('keeps autonomic stability values above 100 on the 0 to 300 range', () => {

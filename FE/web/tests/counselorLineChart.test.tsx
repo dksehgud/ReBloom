@@ -74,10 +74,10 @@ describe('counselor line chart conversation markers', () => {
     expect(axisValues).toEqual(['24', '18', '12', '6', '0'])
   })
 
-  it('can render the biometric ratio axis using decimal ticks', () => {
+  it('can render the biometric ratio axis using integer ticks', () => {
     const markup = renderToStaticMarkup(
       <LineChart
-        data={[{ label: '월', value: 0.9, hasConversation: true }]}
+        data={[{ label: '월', value: 9, hasConversation: true }]}
         color="#88b5c4"
         yAxisMax={BIOMETRIC_RATIO_Y_AXIS_MAX}
         yAxisTicks={BIOMETRIC_RATIO_Y_AXIS_TICKS}
@@ -88,6 +88,6 @@ describe('counselor line chart conversation markers', () => {
       (match) => match[1],
     )
 
-    expect(axisValues).toEqual(['1.5', '1.2', '0.9', '0.6', '0.3', '0'])
+    expect(axisValues).toEqual(['15', '12', '9', '6', '3', '0'])
   })
 })
