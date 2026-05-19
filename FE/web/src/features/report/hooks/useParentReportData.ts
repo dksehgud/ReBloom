@@ -58,8 +58,9 @@ const emotionToneMap: Record<DiaryEmotionKey, ParentReportMoodTone> = {
   tired: 'purple',
 }
 
-function getReportRange(selectedWeekIndex: number) {
+export function getReportRange(selectedWeekIndex: number) {
   return getWeekRangeByIndex(selectedWeekIndex, CURRENT_REPORT_WEEK_INDEX, {
+    baseDateStrategy: 'end',
     clampEndDateToToday: true,
   })
 }
