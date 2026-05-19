@@ -1,0 +1,26 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: biometric-service
+  namespace: rebloom
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: biometric-service
+  template:
+    metadata:
+      labels:
+        app: biometric-service
+    spec:
+      containers:
+        - name: biometric-service
+          image: cramfull99/rebloom-biometric:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8083
+          envFrom:
+            - configMapRef:
+                name: biometric-config
+            - secretRef:
+                name: biometric-secret

@@ -1,0 +1,29 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: auth-config
+  namespace: rebloom
+data:
+  SERVER_PORT: "8081"
+  DB_HOST: "k14b109.p.ssafy.io"
+  DB_PORT: "5432"
+  DB_NAME: "rebloom_auth"
+  DB_SSL_MODE: "disable"
+  SPRING_PROFILES_ACTIVE: "local"
+
+  REDIS_HOST: "k14b109.p.ssafy.io"
+  REDIS_PORT: "6379"
+
+  JWT_ACCESS_TOKEN_TIME: "1800000"
+  JWT_REFRESH_TOKEN_TIME: "1209600000"
+
+  MAIL_USERNAME: "rebloom109@gmail.com"
+
+  OAUTH2_SUCCESS_REDIRECT_URL: "https://rebloom.cloud/oauth/callback"
+  OAUTH2_ALLOWED_SUCCESS_REDIRECT_ORIGINS: "https://rebloom.cloud"
+  OAUTH2_GATEWAY_PREFIX: "/auth"
+
+  GOOGLE_CLIENT_ID: "499137301072-df8flnc78dq5sb2374ev9mme3kda6ss5.apps.googleusercontent.com"
+  KAKAO_CLIENT_ID: "a957c76e224eb5e4e556637f090727fa"
+  GOOGLE_REDIRECT_URI: "https://api.rebloom.cloud/auth/login/oauth2/code/google"
+  KAKAO_REDIRECT_URI: "https://api.rebloom.cloud/auth/login/oauth2/code/kakao"
