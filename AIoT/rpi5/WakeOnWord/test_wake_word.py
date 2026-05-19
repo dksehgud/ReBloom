@@ -32,7 +32,10 @@ from pathlib import Path
 import numpy as np
 
 SCRIPT_DIR = Path(__file__).parent
-DEFAULT_MODEL = SCRIPT_DIR / "models" / "hi_blooming.onnx"
+ROOT_DIR = SCRIPT_DIR.parent
+# 프로덕션 모델(96-dim OWW 임베딩)을 기본으로 사용, 없으면 로컬 모델로 폴백
+_PROD_MODEL = ROOT_DIR / "serverchatting" / "Wake_Model" / "hi_blooming.onnx"
+DEFAULT_MODEL = _PROD_MODEL if _PROD_MODEL.exists() else SCRIPT_DIR / "models" / "hi_blooming.onnx"
 
 TARGET_SR = 16_000
 FRAME_MS = 80
@@ -87,12 +90,21 @@ def load_onnx_model(model_path: Path):
     try:
         import onnxruntime as ort
         session = ort.InferenceSession(str(model_path))
-        print(f"[test] ONNX 모델 로드: {model_path.name}")
+        input_shape = session.get_inputs()[0].shape
+        feat_dim = int(input_shape[2]) if len(input_shape) >= 3 and isinstance(input_shape[2], int) else 40
+        print(f"[test] ONNX 모델 로드: {model_path.name}  (입력 shape={input_shape}, feat_dim={feat_dim})")
         return session
     except ImportError:
         raise RuntimeError(
             "onnxruntime 미설치. `pip install onnxruntime`으로 설치하세요."
         )
+
+
+def get_model_feat_dim(session) -> int:
+    input_shape = session.get_inputs()[0].shape
+    if len(input_shape) >= 3 and isinstance(input_shape[2], int):
+        return int(input_shape[2])
+    return 40
 
 
 def predict_score(session, feature: np.ndarray) -> float:
@@ -122,8 +134,9 @@ def suppress_stderr():
 class AudioEmbedder:
     """오디오 프레임 → 임베딩 버퍼 (슬라이딩 윈도우)."""
 
-    def __init__(self, n_frames: int = N_FRAMES) -> None:
+    def __init__(self, n_frames: int = N_FRAMES, feat_dim: int | None = None) -> None:
         self.n_frames = n_frames
+        self._target_feat_dim = feat_dim  # 모델이 기대하는 feature 차원 (None이면 자동)
         self._buffer: list[np.ndarray] = []
         self._embedder = None
         self._feat_dim: int | None = None
@@ -131,14 +144,18 @@ class AudioEmbedder:
         self._init_embedder()
 
     def _init_embedder(self) -> None:
-        """openWakeWord 임베딩 모델 초기화."""
+        """openWakeWord 임베딩 모델 초기화. feat_dim=40이면 MFCC를 강제 사용."""
+        if self._target_feat_dim == 40:
+            print("[test] 모델이 40-dim 특징을 기대합니다. MFCC 특징을 사용합니다.")
+            self._use_mfcc = True
+            return
         try:
             with suppress_stderr():
                 with warnings.catch_warnings():
                     warnings.simplefilter("ignore")
                     from openwakeword.utils import AudioFeatures
             self._embedder = AudioFeatures()
-            print("[test] openWakeWord 임베딩 모델 로드 완료")
+            print("[test] openWakeWord 임베딩 모델 로드 완료 (96-dim)")
         except Exception as exc:
             print(f"[test] openWakeWord 임베딩 불가: {exc}")
             print("[test] 간단한 MFCC 특징을 사용합니다.")
@@ -222,7 +239,7 @@ def test_with_file(args: argparse.Namespace) -> None:
 
     model_path = Path(args.model)
     session = load_onnx_model(model_path)
-    embedder = AudioEmbedder(N_FRAMES)
+    embedder = AudioEmbedder(N_FRAMES, feat_dim=get_model_feat_dim(session))
 
     audio_int16 = (np.clip(audio, -1.0, 1.0) * 32767).astype(np.int16)
     max_score = 0.0
@@ -256,7 +273,7 @@ def run_live_detection(args: argparse.Namespace) -> None:
     """arecord 또는 sounddevice로 마이크 스트림 읽어 실시간 감지."""
     model_path = Path(args.model)
     session = load_onnx_model(model_path)
-    embedder = AudioEmbedder(N_FRAMES)
+    embedder = AudioEmbedder(N_FRAMES, feat_dim=get_model_feat_dim(session))
 
     print()
     print("━" * 60)

@@ -26,8 +26,8 @@ DEFAULT_AUDIO_WAIT_SECONDS = 15.0
 SERVER_RESTART_SECONDS = 5.0
 REGISTRATION_TIMEOUT_SECONDS = 5.0
 
-NO_WIFI_PROMPT = "와이파이 연결이 안되어 있어요. 앱에서 연결 연동을 해주세요."
-READY_PROMPT = "만나서 반가워요. 우리 재미있는 대화를 나눠요!"
+NO_WIFI_PROMPT = "네트워크 연결이 안되어 있어요. 앱에서 연결 연동을 해주세요."
+READY_PROMPT = "만나서 반가워요. 블루밍이 이야기 할 준비가 되어 있어요."
 DEFAULT_NO_WIFI_TTS_FILE = SERVERCHATTING_DIR / "music" / "no_wifi_prompt_edge.mp3"
 
 # TODO: main server device registration endpoint. Replace/uncomment when API is ready.
@@ -203,7 +203,7 @@ def play_cached_no_wifi_prompt(voice_runtime) -> bool:
         return False
 
 
-def speak_prompt(voice_runtime, text: str, prefer_offline: bool = False) -> None:
+def speak_prompt(voice_runtime, text: str, prefer_offline: bool = False, **overrides) -> None:
     if os.getenv("BOOT_TTS_ENABLED", "true").strip().lower() in {"0", "false", "no", "off"}:
         logger.info("[Boot] 안내 음성 비활성화: %s", text)
         return
@@ -223,7 +223,10 @@ def speak_prompt(voice_runtime, text: str, prefer_offline: bool = False) -> None
 
     for engine in engine_candidates:
         try:
-            voice_runtime.speak(text, build_tts_args(engine))
+            args = build_tts_args(engine)
+            for key, value in overrides.items():
+                setattr(args, key, value)
+            voice_runtime.speak(text, args)
             return
         except Exception as exc:
             logger.warning("[Boot] 안내 음성 실패: engine=%s error=%s", engine, exc)
@@ -268,7 +271,9 @@ def wait_for_wifi(is_wifi_connected) -> bool:
     return False
 
 
-def run_ble_until_wifi(is_wifi_connected) -> bool:
+def run_ble_until_wifi(is_wifi_connected, voice_runtime=None, repeat_prompt_seconds: float = 40.0) -> bool:
+    last_prompt_at = time.monotonic()
+
     while not _stop_requested and not is_wifi_connected():
         logger.info("[Boot] BLE 프로비저닝 시작")
         command = [str(server_python()), str(BLE_DIR / "main.py")]
@@ -286,6 +291,10 @@ def run_ble_until_wifi(is_wifi_connected) -> bool:
                 except subprocess.TimeoutExpired:
                     process.kill()
                 return True
+            if voice_runtime and time.monotonic() - last_prompt_at >= repeat_prompt_seconds:
+                if not play_cached_no_wifi_prompt(voice_runtime):
+                    speak_prompt(voice_runtime, NO_WIFI_PROMPT, prefer_offline=True)
+                last_prompt_at = time.monotonic()
             time.sleep(1)
 
         if _stop_requested and process.poll() is None:
@@ -434,7 +443,7 @@ def main() -> int:
             logger.info("[Boot] Wi-Fi 미연결, BLE 프로비저닝 모드 진입")
             if not play_cached_no_wifi_prompt(voice_runtime):
                 speak_prompt(voice_runtime, NO_WIFI_PROMPT, prefer_offline=True)
-            if not run_ble_until_wifi(is_wifi_connected):
+            if not run_ble_until_wifi(is_wifi_connected, voice_runtime=voice_runtime):
                 logger.error("[Boot] Wi-Fi 연결 없이 종료")
                 return 1
             provisioned_in_this_cycle = True
@@ -445,7 +454,14 @@ def main() -> int:
         if provisioned_in_this_cycle:
             register_device_after_provisioning(ssid)
 
-        speak_prompt(voice_runtime, READY_PROMPT, prefer_offline=False)
+        speak_prompt(
+            voice_runtime,
+            READY_PROMPT,
+            prefer_offline=False,
+            elevenlabs_stability=0.45,
+            elevenlabs_style=0.30,
+            elevenlabs_speed=0.87,
+        )
         result = run_serverchatting_until_wifi_lost(is_wifi_connected)
         if result != 100:
             return result
