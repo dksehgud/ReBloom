@@ -34,6 +34,14 @@ body,
   min-height: var(--app-viewport-height);
 }
 
+html[data-shell-mode='webview'],
+html[data-shell-mode='webview'] body,
+html[data-shell-mode='webview'] #root {
+  height: var(--app-viewport-height);
+  min-height: 0;
+  overflow: hidden;
+}
+
 body {
   margin: 0;
 }

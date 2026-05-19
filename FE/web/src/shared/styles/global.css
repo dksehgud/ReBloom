@@ -177,12 +177,16 @@
 
 body[data-shell-mode='webview'] .app-shell {
   align-items: stretch;
+  height: var(--app-viewport-height);
   justify-content: stretch;
   min-height: var(--app-viewport-height);
+  overflow: hidden;
   padding: 0;
 }
 
 body[data-shell-mode='webview'] .phone-shell {
+  max-height: var(--app-viewport-height);
+  overflow: hidden;
   width: 100%;
   height: var(--app-viewport-height);
   min-height: var(--app-viewport-height);
@@ -197,9 +201,19 @@ body[data-shell-mode='webview'] .phone-shell--auth {
 }
 
 body[data-shell-mode='webview'] .mobile-page-surface {
-  height: var(--app-viewport-height);
-  min-height: var(--app-viewport-height);
+  height: 100%;
+  min-height: 0;
   border-radius: 0;
+}
+
+body[data-shell-mode='webview'] .mobile-page-layout {
+  height: 100%;
+  min-height: 0;
+}
+
+body[data-shell-mode='webview'] .mobile-page-content {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
 }
 
 body[data-shell-mode='webview'] .phone-shell--signup {
@@ -208,7 +222,7 @@ body[data-shell-mode='webview'] .phone-shell--signup {
 }
 
 body[data-shell-mode='webview'] .mobile-page-header-slot {
-  padding-top: var(--app-safe-area-top);
+  padding-top: 0;
 }
 
 body[data-shell-mode='webview'] .child-header-inner {
