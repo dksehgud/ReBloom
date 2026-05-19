@@ -141,14 +141,17 @@ public class AnalysisInferenceService {
         List<String> keywords = readRequiredTextList(output, "keywords");
 
         transactionTemplate.executeWithoutResult(status -> {
+            LocalDateTime targetDateTime = request.targetDate().atStartOfDay();
+
+            deleteExistingDiaryAnalysisForDate(request.userId(), targetDateTime);
+
             diaryAnalysisRepository.save(DiaryAnalysis.builder()
                 .id(new DiaryAnalysisId(request.diaryId(), request.userId()))
-                .targetDate(request.targetDate().atStartOfDay())
+                .targetDate(targetDateTime)
                 .emotionIcon(request.emotionIcon())
                 .embeddingText(readRequiredText(output, "embedding_text"))
                 .prediction(prediction)
                 .build());
-            diaryKeywordRepository.deleteByAnalysisIdAndUserId(request.diaryId(), request.userId());
             saveDiaryKeywords(request.diaryId(), request.userId(), keywords);
         });
 
@@ -595,6 +598,19 @@ public class AnalysisInferenceService {
             .orElseGet(() -> analysisKeywordRepository.save(AnalysisKeyword.builder()
                 .keyword(keywordText)
                 .build()));
+    }
+
+    private void deleteExistingDiaryAnalysisForDate(UUID userId, LocalDateTime targetDateTime) {
+        List<UUID> existingAnalysisIds =
+            diaryAnalysisRepository.findAnalysisIdsByUserIdAndTargetDate(userId, targetDateTime);
+
+        if (existingAnalysisIds.isEmpty()) {
+            return;
+        }
+
+        diaryKeywordRepository.deleteByAnalysisIdsAndUserId(existingAnalysisIds, userId);
+        diaryAnalysisRepository.deleteByUserIdAndTargetDate(userId, targetDateTime);
+        diaryAnalysisRepository.flush();
     }
 
     private UUID parseSessionId(String sessionId) {
