@@ -13,12 +13,11 @@ from app.config.settings import (
     KAFKA_TOPIC_BIOMETRIC_RAW,
     KAFKA_TOPIC_AI_TRAIN,
     KAFKA_TOPIC_AI_ANALYZE,
-    KAFKA_TOPIC_GPS_CHECK_REQUEST,
     REDIS_HOST,
     REDIS_PORT,
     KAFKA_TOPIC_STATUS_CARD_REQUESTED,
 )
-from app.service import anomaly, gps_check, if_model, phq, status_card
+from app.service import anomaly, if_model, phq, status_card
 from app.kafka.producer import publish_anomaly_verified, publish_phq_result, publish_status_card_created
 
 logger = logging.getLogger(__name__)
@@ -187,39 +186,10 @@ def _handle_ai_analyze(payload: dict) -> None:
         logger.info("[ai.analyze] IF 재학습 완료 | userId=%s", user_id)
 
 
-def _handle_gps_check_request(payload: dict) -> None:
-    payload = _unwrap_event_envelope(payload)
+# ──────────────────────────────────────────────
+# Consumer 루프
+# ──────────────────────────────────────────────
 
-    children_id = payload.get("childrenId")
-    parent_id   = payload.get("parentId")
-    request_id  = payload.get("requestId")
-
-    if not children_id:
-        logger.warning("[gps-check.requested] childrenId missing | payload=%s", payload)
-        return
-
-    latitude  = payload.get("latitude")
-    longitude = payload.get("longitude")
-    if latitude is None or longitude is None:
-        gps_check.save_pending_request(
-            children_id=children_id,
-            parent_id=parent_id,
-            request_id=request_id,
-        )
-        return
-
-    result = gps_check.evaluate_and_publish(
-        children_id=children_id,
-        parent_id=parent_id,
-        latitude=float(latitude),
-        longitude=float(longitude),
-        request_id=request_id,
-    )
-    logger.info(
-        "[gps-check.requested] evaluated inline | childrenId=%s matched=%s",
-        children_id,
-        result.matched,
-    )
 
 
 def _extract_status_card_payload(message: dict) -> tuple[dict, dict]:
@@ -297,17 +267,15 @@ def _consume_loop() -> None:
         KAFKA_TOPIC_BIOMETRIC_RAW,
         KAFKA_TOPIC_AI_TRAIN,
         KAFKA_TOPIC_AI_ANALYZE,
-        KAFKA_TOPIC_GPS_CHECK_REQUEST,
         KAFKA_TOPIC_STATUS_CARD_REQUESTED,
     ]
     consumer.subscribe(topics)
     logger.info("[Kafka] Consumer 구독 시작 | topics=%s", topics)
 
     handlers = {
-        KAFKA_TOPIC_BIOMETRIC_RAW        : _handle_biometric_raw,
-        KAFKA_TOPIC_AI_TRAIN             : _handle_ai_train,
-        KAFKA_TOPIC_AI_ANALYZE           : _handle_ai_analyze,
-        KAFKA_TOPIC_GPS_CHECK_REQUEST    : _handle_gps_check_request,
+        KAFKA_TOPIC_BIOMETRIC_RAW : _handle_biometric_raw,
+        KAFKA_TOPIC_AI_TRAIN      : _handle_ai_train,
+        KAFKA_TOPIC_AI_ANALYZE    : _handle_ai_analyze,
         KAFKA_TOPIC_STATUS_CARD_REQUESTED: _handle_status_card_requested,
     }
 
@@ -341,12 +309,9 @@ def _consume_loop() -> None:
                 handler(payload)
             except Exception as e:
                 entity_payload = _unwrap_event_envelope(payload)
-                entity_id = (
-                    entity_payload.get("childrenId")
-                    if topic == KAFKA_TOPIC_GPS_CHECK_REQUEST
-                    else entity_payload.get("userId")
-                )
-                logger.exception("[Kafka] 핸들러 예외 | topic=%s entityId=%s err=%s", topic, entity_id, e)
+                entity_id = entity_payload.get("userId")
+                logger.exception("[Kafka] 핸들러 예외 | topic=%s entityId=%s err=%s",
+                                 topic, entity_id, e)
 
     finally:
         consumer.close()

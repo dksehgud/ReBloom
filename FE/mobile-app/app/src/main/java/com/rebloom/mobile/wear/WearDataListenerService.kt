@@ -8,7 +8,7 @@ import com.google.android.gms.wearable.DataMapItem
 import com.google.android.gms.wearable.WearableListenerService
 import com.rebloom.mobile.network.ApiClient
 import com.rebloom.mobile.network.BiometricRequest
-import com.rebloom.mobile.network.LocationEvaluateRequest
+// import com.rebloom.mobile.network.LocationEvaluateRequest
 import com.rebloom.mobile.network.TokenDataStore
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -35,9 +35,9 @@ class WearDataListenerService : WearableListenerService() {
                     handleBiometric(event)
                 }
 
-                event.dataItem.uri.path?.startsWith("/location/") == true -> {
-                    handleLocation(event)
-                }
+                // event.dataItem.uri.path?.startsWith("/location/") == true -> {
+                //     handleLocation(event)
+                // }
             }
         }
     }
@@ -68,17 +68,18 @@ class WearDataListenerService : WearableListenerService() {
         )
     }
 
-    private fun handleLocation(event: DataEvent) {
-        val dataMap = DataMapItem.fromDataItem(event.dataItem).dataMap
+    // @Deprecated("GPS flow removed")
+    // private fun handleLocation(event: DataEvent) {
+    //     val dataMap = DataMapItem.fromDataItem(event.dataItem).dataMap
 
-        val timestamp = dataMap.getLong("timestamp")
-        val latitude = dataMap.getDouble("latitude")
-        val longitude = dataMap.getDouble("longitude")
+    //     val timestamp = dataMap.getLong("timestamp")
+    //     val latitude = dataMap.getDouble("latitude")
+    //     val longitude = dataMap.getDouble("longitude")
 
-        Log.d(TAG, "Location received: lat=$latitude, lon=$longitude")
+    //     Log.d(TAG, "Location received: lat=$latitude, lon=$longitude")
 
-        sendLocation(timestamp, latitude, longitude)
-    }
+    //     sendLocation(timestamp, latitude, longitude)
+    // }
 
     private fun sendBiometric(
         tsStart: Long,
@@ -126,31 +127,32 @@ class WearDataListenerService : WearableListenerService() {
         }
     }
 
-    private fun sendLocation(timestamp: Long, latitude: Double, longitude: Double) {
-        scope.launch {
-            try {
-                val childrenId = getUserIdFromToken()
+    // @Deprecated("GPS flow removed")
+    // private fun sendLocation(timestamp: Long, latitude: Double, longitude: Double) {
+    //     scope.launch {
+    //         try {
+    //             val childrenId = getUserIdFromToken()
 
-                val request = LocationEvaluateRequest(
-                    children_id = childrenId,
-                    parent_id = null,
-                    latitude = latitude,
-                    longitude = longitude,
-                    measured_at = dateFormat.format(Date(timestamp))
-                )
+    //             val request = LocationEvaluateRequest(
+    //                 children_id = childrenId,
+    //                 parent_id = null,
+    //                 latitude = latitude,
+    //                 longitude = longitude,
+    //                 measured_at = dateFormat.format(Date(timestamp))
+    //             )
 
-                val response = ApiClient.create(applicationContext).evaluateLocation(request)
-                Log.d(
-                    TAG,
-                    "Location evaluate success: matched=${response.matched}, action=${response.action}"
-                )
-            } catch (e: AuthTokenException) {
-                handleAuthTokenFailure("Location evaluate", e)
-            } catch (e: Exception) {
-                Log.e(TAG, "Location evaluate failed: ${e.message}")
-            }
-        }
-    }
+    //             val response = ApiClient.create(applicationContext).evaluateLocation(request)
+    //             Log.d(
+    //                 TAG,
+    //                 "Location evaluate success: matched=${response.matched}, action=${response.action}"
+    //             )
+    //         } catch (e: AuthTokenException) {
+    //             handleAuthTokenFailure("Location evaluate", e)
+    //         } catch (e: Exception) {
+    //             Log.e(TAG, "Location evaluate failed: ${e.message}")
+    //         }
+    //     }
+    // }
 
     private suspend fun getUserIdFromToken(): String {
         val token = TokenDataStore.getToken(applicationContext)

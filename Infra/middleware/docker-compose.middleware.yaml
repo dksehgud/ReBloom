@@ -114,9 +114,6 @@ services:
         /opt/kafka/bin/kafka-topics.sh --bootstrap-server $$BOOTSTRAP_SERVERS --create --if-not-exists --topic rebloom.event.dlt.v1 --partitions 1 --replication-factor 3
         /opt/kafka/bin/kafka-topics.sh --bootstrap-server $$BOOTSTRAP_SERVERS --create --if-not-exists --topic rebloom.parent-report.created.v1 --partitions 3 --replication-factor 3
         /opt/kafka/bin/kafka-topics.sh --bootstrap-server $$BOOTSTRAP_SERVERS --create --if-not-exists --topic rebloom.parent-report-comment.created.v1 --partitions 3 --replication-factor 3
-        /opt/kafka/bin/kafka-topics.sh --bootstrap-server $$BOOTSTRAP_SERVERS --create --if-not-exists --topic rebloom.gps-check.requested.v1 --partitions 3 --replication-factor 3
-        /opt/kafka/bin/kafka-topics.sh --bootstrap-server $$BOOTSTRAP_SERVERS --create --if-not-exists --topic rebloom.gps-check.same.v1 --partitions 3 --replication-factor 3
-        /opt/kafka/bin/kafka-topics.sh --bootstrap-server $$BOOTSTRAP_SERVERS --create --if-not-exists --topic rebloom.gps-check.different.v1 --partitions 3 --replication-factor 3
         echo "Kafka topics created successfully."
 
 volumes:

@@ -3,11 +3,11 @@
 
     <uses-permission android:name="android.permission.BODY_SENSORS"/>
     <uses-permission android:name="android.permission.ACTIVITY_RECOGNITION"/>
-    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
-    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
+    <!-- <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/> -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_HEALTH"/>
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION"/>
+    <!-- <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION"/> -->
     <uses-permission android:name="android.permission.WAKE_LOCK"/>
 
     <application
@@ -28,7 +28,7 @@
                 android:foregroundServiceType="health"
                 android:exported="false"/>
 
-        <service
+        <!-- <service
                 android:name=".service.LocationRequestListenerService"
                 android:exported="true">
             <intent-filter>
@@ -38,7 +38,7 @@
                         android:pathPrefix="/location/request"
                         android:scheme="wear"/>
             </intent-filter>
-        </service>
+        </service> -->
 
     </application>
 

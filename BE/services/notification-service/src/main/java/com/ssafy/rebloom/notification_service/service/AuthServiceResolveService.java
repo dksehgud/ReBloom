@@ -12,5 +12,7 @@ public interface AuthServiceResolveService {
 
     ChildrenIotInfoResponseDto resolveChildrenIotInfo(UUID childrenId);
 
+    UUID resolveChildrenIdByDeviceSerial(String serialNumber);
+
     Optional<CounselorReceiverInfo> resolveCounselorByChildrenId(UUID childrenId);
 }

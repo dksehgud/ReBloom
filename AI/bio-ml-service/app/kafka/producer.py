@@ -9,8 +9,6 @@ from confluent_kafka import Producer
 from app.config.settings import (
     KAFKA_BOOTSTRAP_SERVERS,
     KAFKA_TOPIC_ANOMALY_VERIFIED,
-    KAFKA_TOPIC_GPS_CHECK_DIFFERENT,
-    KAFKA_TOPIC_GPS_CHECK_SAME,
     KAFKA_TOPIC_PHQ_RESULT,
     KAFKA_TOPIC_STATUS_CARD_CREATED,
 )
@@ -139,43 +137,6 @@ def publish_phq_result(
     )
     producer.poll(0)
     logger.info("[Kafka] phq.completed 발행 | userId=%s result=%s score=%s", user_id, result, score)
-
-
-def publish_gps_check_result(
-    children_id     : str,
-    parent_id       : str | None,
-    matched         : bool,
-    distance_meters : float,
-    threshold_meters: float,
-    request_id      : str | None = None,
-) -> str:
-    topic      = KAFKA_TOPIC_GPS_CHECK_SAME if matched else KAFKA_TOPIC_GPS_CHECK_DIFFERENT
-    event_type = "GPS_CHECK_SAME" if matched else "GPS_CHECK_DIFFERENT"
-    payload = {
-        "childrenId": children_id,
-        "parentId"  : parent_id,
-        "isSame"    : matched,
-    }
-    envelope = _event_envelope(
-        event_type     = event_type,
-        payload        = payload,
-        correlation_id = request_id,
-        idempotency_key= f"{event_type}:{children_id}:{request_id or _now_seoul_datetime()}",
-    )
-
-    producer = get_producer()
-    producer.produce(
-        topic    = topic,
-        key      = children_id,
-        value    = json.dumps(envelope, ensure_ascii=False),
-        callback = _delivery_report,
-    )
-    producer.poll(0)
-    logger.info(
-        "[Kafka] gps-check result published | topic=%s childrenId=%s matched=%s distance=%s",
-        topic, children_id, matched, distance_meters,
-    )
-    return topic
 
 
 def publish_status_card_created(

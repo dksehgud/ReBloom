@@ -62,6 +62,22 @@ public class AuthServiceResolveServiceImpl implements AuthServiceResolveService 
     }
 
     @Override
+    public UUID resolveChildrenIdByDeviceSerial(String serialNumber) {
+        BaseResponse<UUID> response =
+            authServiceInternalClient.getChildrenIdByDeviceSerial(serialNumber);
+
+        UUID childrenId = response.getData();
+        if (childrenId == null) {
+            throw new CustomException(
+                "기기에 연결된 자녀를 찾을 수 없습니다.",
+                ErrorCode.NOT_FOUND
+            );
+        }
+
+        return childrenId;
+    }
+
+    @Override
     public Optional<CounselorReceiverInfo> resolveCounselorByChildrenId(UUID childrenId) {
         BaseResponse<CounselorReceiverResponseDto> response =
             authServiceInternalClient.getCounselorReceiver(childrenId);

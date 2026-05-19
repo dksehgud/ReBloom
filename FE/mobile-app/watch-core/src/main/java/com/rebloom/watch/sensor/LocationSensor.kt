@@ -13,6 +13,7 @@ import android.util.Log
 import androidx.core.content.ContextCompat
 import com.rebloom.watch.model.LocationData
 
+@Deprecated("GPS flow removed")
 class LocationSensor(
     private val context: Context
 ) {

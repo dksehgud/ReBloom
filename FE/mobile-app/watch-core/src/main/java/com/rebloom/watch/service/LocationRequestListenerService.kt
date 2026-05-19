@@ -8,6 +8,7 @@ import com.google.android.gms.wearable.WearableListenerService
 import com.rebloom.watch.model.LocationData
 import com.rebloom.watch.sensor.LocationSensor
 
+@Deprecated("GPS flow removed")
 class LocationRequestListenerService : WearableListenerService() {
 
     override fun onMessageReceived(messageEvent: MessageEvent) {
