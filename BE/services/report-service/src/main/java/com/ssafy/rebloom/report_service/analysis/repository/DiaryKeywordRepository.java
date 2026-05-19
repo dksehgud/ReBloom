@@ -33,4 +33,11 @@ public interface DiaryKeywordRepository extends JpaRepository<DiaryKeyword, Diar
         @Param("analysisId") UUID analysisId,
         @Param("userId") UUID userId
     );
+
+    @Modifying
+    @Query("DELETE FROM DiaryKeyword dk WHERE dk.id.analysisId IN :analysisIds AND dk.id.userId = :userId")
+    void deleteByAnalysisIdsAndUserId(
+        @Param("analysisIds") Collection<UUID> analysisIds,
+        @Param("userId") UUID userId
+    );
 }
