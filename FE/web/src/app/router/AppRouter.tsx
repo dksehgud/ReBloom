@@ -148,6 +148,17 @@ function useRoleRouteGuard(
             }
         }
 
+        if (!roleSession.refreshToken) {
+            clearSession(expectedRole)
+            if (activeRole === expectedRole) {
+                setActiveRole(null)
+                clearSelectedChild()
+            }
+            return () => {
+                isCanceled = true
+            }
+        }
+
         const allowRoleSession = () => {
             if (isCanceled) {
                 return
@@ -207,6 +218,7 @@ function useRoleRouteGuard(
         isMockMode,
         roleSession.accessToken,
         roleSession.currentUser,
+        roleSession.refreshToken,
         setActiveRole,
         setCurrentUser,
     ])
