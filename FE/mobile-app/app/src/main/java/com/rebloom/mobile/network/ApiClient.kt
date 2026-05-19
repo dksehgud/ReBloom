@@ -39,35 +39,41 @@ object ApiClient {
         }
 
         val tokenAuthenticator = Authenticator { _, response ->
-            // 재시도 중 또 401이면 중단
-            if (response.priorResponse != null) return@Authenticator null
+            if (response.priorResponse != null) {
+                Log.w("ApiClient", "Authenticator: prior response exists, giving up")
+                return@Authenticator null
+            }
 
             synchronized(refreshLock) {
-                // 다른 스레드가 이미 갱신했으면 새 토큰으로 재시도
                 val currentToken = runBlocking { TokenDataStore.getToken(context) }
                 val requestToken = response.request.header("Authorization")?.removePrefix("Bearer ")
                 if (currentToken != null && currentToken != requestToken) {
+                    Log.d("ApiClient", "Authenticator: token already refreshed by another thread, retrying")
                     return@synchronized response.request.newBuilder()
                         .header("Authorization", "Bearer $currentToken")
                         .build()
                 }
 
                 val refreshToken = runBlocking { TokenDataStore.getRefreshToken(context) }
-                    ?: return@synchronized null
+                if (refreshToken == null) {
+                    Log.e("ApiClient", "Authenticator: no refresh token found in DataStore, cannot refresh")
+                    return@synchronized null
+                }
 
+                Log.d("ApiClient", "Authenticator: attempting token reissue")
                 val result = runBlocking {
                     try {
                         plainService().reissue(refreshToken)
                     } catch (e: retrofit2.HttpException) {
                         if (e.code() == 401 || e.code() == 400) {
-                            Log.e("ApiClient", "Refresh token invalid, clearing tokens")
+                            Log.e("ApiClient", "Authenticator: refresh token rejected (${e.code()}), clearing tokens")
                             TokenDataStore.clearToken(context)
                         } else {
-                            Log.e("ApiClient", "Reissue server error: ${e.code()}")
+                            Log.e("ApiClient", "Authenticator: reissue server error ${e.code()}")
                         }
                         null
                     } catch (e: Exception) {
-                        Log.e("ApiClient", "Reissue network error: ${e.message}")
+                        Log.e("ApiClient", "Authenticator: reissue network error: ${e.message}")
                         null
                     }
                 }
@@ -76,9 +82,11 @@ object ApiClient {
                 val newRefreshToken = result?.data?.refreshToken
 
                 if (newAccessToken == null) {
+                    Log.e("ApiClient", "Authenticator: reissue returned no access token (code=${result?.code}, msg=${result?.message})")
                     return@synchronized null
                 }
 
+                Log.d("ApiClient", "Authenticator: token reissue success, retrying original request")
                 runBlocking {
                     TokenDataStore.saveToken(context, newAccessToken)
                     if (newRefreshToken != null) {
