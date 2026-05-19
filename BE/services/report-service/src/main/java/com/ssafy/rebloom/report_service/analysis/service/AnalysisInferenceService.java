@@ -40,10 +40,10 @@ public class AnalysisInferenceService {
 
     /*
      * RestClient.Builder
-     * - Spring이 제공하는 HTTP 클라이언트 생성기입니다.
-     * - 이 서비스에서는 외부 HTTP API를 두 군데 호출합니다.
-     *   1. RunPod: 일기/대화 우울 단계 추론
-     *   2. Recent Insight API: 최근 7일 추이 한 문장 요약
+     * - Spring???�공?�는 HTTP ?�라?�언???�성기입?�다.
+     * - ???�비?�에?�는 ?��? HTTP API�???군데 ?�출?�니??
+     *   1. RunPod: ?�기/?�???�울 ?�계 추론
+     *   2. Recent Insight API: 최근 7??추이 ??문장 ?�약
      */
     private final RestClient.Builder restClientBuilder;
 
@@ -59,10 +59,10 @@ public class AnalysisInferenceService {
 
     /*
      * @Value("${...}")
-     * - application.yaml 또는 .env.local 환경변수에서 값을 읽어옵니다.
-     * - 지금은 default 값을 넣지 않았습니다.
-     * - 따라서 .env.local에 값이 없으면 애플리케이션이 시작할 때 바로 실패합니다.
-     *   잘못된 endpoint로 조용히 요청하는 것보다 빨리 실패하는 편이 안전합니다.
+     * - application.yaml ?�는 .env.local ?�경변?�에??값을 ?�어?�니??
+     * - 지금�? default 값을 ?��? ?�았?�니??
+     * - ?�라??.env.local??값이 ?�으�??�플리�??�션???�작????바로 ?�패?�니??
+     *   ?�못??endpoint�?조용???�청?�는 것보??빨리 ?�패?�는 ?�이 ?�전?�니??
      */
     @Value("${RUNPOD_API_KEY}")
     private String runpodApiKey;
@@ -90,10 +90,8 @@ public class AnalysisInferenceService {
 
     @Async("analysisTaskExecutor")
     public void analyzeConversation(ConversationSessionCreateRequestDto request) {
-        /*
-         * 이 메서드는 IoT 기기에서 대화 세션이 끝난 뒤 호출됩니다.
-         *
-         * request 예시:
+         * ??메서?�는 IoT 기기?�서 ?�???�션???�난 ???�출?�니??
+         * request ?�시:
          * {
          *   "session_id": "...",
          *   "raspberrypi_id": "...",
@@ -104,12 +102,11 @@ public class AnalysisInferenceService {
          *     { "bot": "..." }
          *   ]
          * }
-         *
-         * 전체 흐름:
-         * 1. events를 RunPod가 원하는 text 형식으로 바꾼다.
-         * 2. RunPod에 text를 보내 prediction을 받는다.
-         * 3. raspberrypi_id로 기기 소유 아동 ID를 조회한다.
-         * 4. RunPod output을 conversation_analysis와 conversation_keywords에 저장한다.
+         * ?�체 ?�름:
+         * 1. events�?RunPod가 ?�하??text ?�식?�로 바꾼??
+         * 2. RunPod??text�?보내 prediction??받는??
+         * 3. raspberrypi_id�?기기 ?�유 ?�동 ID�?조회?�다.
+         * 4. RunPod output??conversation_analysis?� conversation_keywords???�?�한??
          */
         log.info(
             "conversation analysis requested. sessionId={}, raspberrypiId={}, startedAt={}, endedAt={}, eventCount={}",
@@ -120,11 +117,9 @@ public class AnalysisInferenceService {
             request.events().size()
         );
 
-        /*
          * RunPod receives only one "text" field. Conversation events are flattened in
          * chronological order, with child utterances marked as User and bot utterances
          * marked as Bot, matching the agreed model input contract:
-         *
          *   {
          *     "input": {
          *       "text": "User: ...\nBot: ..."
@@ -169,16 +164,15 @@ public class AnalysisInferenceService {
 
     @Async("analysisTaskExecutor")
     public void analyzeDiary(DiaryAnalysisInferenceRequestDto request) {
-        /*
-         * 이 메서드는 일기 분석 요청이 들어왔을 때 호출됩니다.
+         * ??메서?�는 ?�기 분석 ?�청???�어?�을 ???�출?�니??
          *
-         * 대화와 달리 일기 DTO에는 user_id가 이미 들어있습니다.
-         * 그래서 raspberrypi_id -> userId 변환 과정이 필요 없습니다.
+         * ?�?��? ?�리 ?�기 DTO?�는 user_id가 ?��? ?�어?�습?�다.
+         * 그래??raspberrypi_id -> userId 변??과정???�요 ?�습?�다.
          *
-         * 전체 흐름:
-         * 1. request.content()를 RunPod input.text로 보낸다.
-         * 2. RunPod output에서 embedding_text, prediction, keywords를 읽는다.
-         * 3. 요청에 포함된 emotion_icon과 RunPod output을 diary_analysis / diary_keywords에 저장한다.
+         * ?�체 ?�름:
+         * 1. request.content()�?RunPod input.text�?보낸??
+         * 2. RunPod output?�서 embedding_text, prediction, keywords�??�는??
+         * 3. ?�청???�함??emotion_icon�?RunPod output??diary_analysis / diary_keywords???�?�한??
          */
         log.info(
             "diary analysis requested. diaryId={}, userId={}, targetDate={}",
@@ -190,7 +184,6 @@ public class AnalysisInferenceService {
         /*
          * Diary analysis uses the same RunPod contract as conversation analysis.
          * The diary content is already a single text body, so it can be sent as-is.
-         */
         JsonNode output = requestRunpod(request.content());
         LocalDate targetDate = resolveTargetDate(output, request.targetDate());
         Double prediction = addPhqFeature(
@@ -226,20 +219,20 @@ public class AnalysisInferenceService {
     @Async("analysisTaskExecutor")
     public void generateRecentInsight(RecentInsightInferenceRequestDto request) {
         /*
-         * 이 메서드는 최근 우울 단계 추이를 한 문장으로 요약할 때 호출됩니다.
+         * ??메서?�는 최근 ?�울 ?�계 추이�???문장?�로 ?�약?????�출?�니??
          *
          * 주의:
-         * - 이 메서드는 RunPod를 호출하지 않습니다.
-         * - RunPod는 일기/대화 각각의 prediction을 만드는 모델 추론용입니다.
-         * - 최근 7일 요약은 별도의 RECENT_INSIGHT_API_URL API를 호출합니다.
+         * - ??메서?�는 RunPod�??�출?��? ?�습?�다.
+         * - RunPod???�기/?�??각각??prediction??만드??모델 추론?�입?�다.
+         * - 최근 7???�약?� 별도??RECENT_INSIGHT_API_URL API�??�출?�니??
          *
-         * 전체 흐름:
-         * 1. 요청 날짜 범위가 올바른지 확인한다.
-         * 2. 최근 최대 7일 동안 저장된 diary_analysis / conversation_analysis를 읽는다.
-         * 3. 대화는 하루에 여러 세션이 있을 수 있으므로 날짜별 가장 높은 단계만 고른다.
-         * 4. 일기 단계와 대화 단계 중에서도 날짜별 최대 단계를 계산한다.
-         * 5. 이 데이터를 text prompt로 만들어 Recent Insight API에 보낸다.
-         * 6. 지금 단계에서는 DB에 저장하지 않고 summary를 로그로만 확인한다.
+         * ?�체 ?�름:
+         * 1. ?�청 ?�짜 범위가 ?�바른�? ?�인?�다.
+         * 2. 최근 최�? 7???�안 ?�?�된 diary_analysis / conversation_analysis�??�는??
+         * 3. ?�?�는 ?�루???�러 ?�션???�을 ???�으므�??�짜�?가???��? ?�계�?고른??
+         * 4. ?�기 ?�계?� ?�???�계 중에?�도 ?�짜�?최�? ?�계�?계산?�다.
+         * 5. ???�이?��? text prompt�?만들??Recent Insight API??보낸??
+         * 6. 지�??�계?�서??DB???�?�하지 ?�고 summary�?로그로만 ?�인?�다.
          */
         validateDateRange(request);
         log.info(
@@ -303,7 +296,7 @@ public class AnalysisInferenceService {
         }
     }
 
-    private Double toPredictionScore(String prediction) {
+    Double toPredictionScore(String prediction) {
         if (!StringUtils.hasText(prediction)) {
             throw new CustomException("RunPod output missing required field: prediction", ErrorCode.INTERNAL_SERVER_ERROR);
         }
@@ -320,7 +313,7 @@ public class AnalysisInferenceService {
         };
     }
 
-    private Double addPhqFeature(
+    Double addPhqFeature(
         Double predictionScore,
         UUID childrenId,
         LocalDate targetDate,
@@ -339,7 +332,7 @@ public class AnalysisInferenceService {
         return predictionScore + features.phqFeature();
     }
 
-    private LocalDate resolveTargetDate(JsonNode output, LocalDate defaultDate) {
+    LocalDate resolveTargetDate(JsonNode output, LocalDate defaultDate) {
         String targetDate = readText(output, "target_date", null);
         if (!StringUtils.hasText(targetDate)) {
             return defaultDate;
@@ -357,16 +350,16 @@ public class AnalysisInferenceService {
 
         try {
             /*
-             * RunPod 요청 body는 반드시 아래 형태여야 합니다.
+             * RunPod ?�청 body??반드???�래 ?�태?�야 ?�니??
              *
              * {
              *   "input": {
-             *     "text": "분석할 텍스트"
+             *     "text": "분석???�스??
              *   }
              * }
              *
-             * response 전체에는 status, output 등이 들어옵니다.
-             * 이 서비스는 status가 COMPLETED인지 확인한 뒤 output만 반환합니다.
+             * response ?�체?�는 status, output ?�이 ?�어?�니??
+             * ???�비?�는 status가 COMPLETED?��? ?�인????output�?반환?�니??
              */
             RestClient runpodClient = restClientBuilder
                 .baseUrl(runpodBaseUrl)
@@ -450,19 +443,19 @@ public class AnalysisInferenceService {
 
         try {
             /*
-             * 최근 추이 API 요청 body는 RunPod와 다릅니다.
+             * 최근 추이 API ?�청 body??RunPod?� ?�릅?�다.
              *
              * request:
              * {
-             *   "text": "최근 7일 우울 단계 데이터와 지시문"
+             *   "text": "최근 7???�울 ?�계 ?�이?��? 지?�문"
              * }
              *
              * response:
              * {
-             *   "summary": "최근 우울 단계 추이를 설명하는 한 문장"
+             *   "summary": "최근 ?�울 ?�계 추이�??�명?�는 ??문장"
              * }
              *
-             * 그래서 이 메서드는 response.summary가 있는지 검사합니다.
+             * 그래????메서?�는 response.summary가 ?�는지 검?�합?�다.
              */
             JsonNode response = restClientBuilder
                 .build()
@@ -541,19 +534,19 @@ public class AnalysisInferenceService {
 
     private String buildConversationText(List<ConversationSessionCreateRequestDto.ConversationEventDto> events) {
         /*
-         * IoT에서 받은 events 배열을 RunPod 모델이 이해하는 한 덩어리 text로 바꿉니다.
+         * IoT?�서 받�? events 배열??RunPod 모델???�해?�는 ???�어�?text�?바꿉?�다.
          *
-         * 입력 events:
+         * ?�력 events:
          * [
-         *   { "child": "안녕" },
-         *   { "bot": "응, 안녕" }
+         *   { "child": "?�녕" },
+         *   { "bot": "?? ?�녕" }
          * ]
          *
-         * 변환 결과:
-         * User: 안녕
-         * Bot: 응, 안녕
+         * 변??결과:
+         * User: ?�녕
+         * Bot: ?? ?�녕
          *
-         * child는 User, bot은 Bot으로 표시합니다.
+         * child??User, bot?� Bot?�로 ?�시?�니??
          */
         List<String> lines = new ArrayList<>();
         for (ConversationSessionCreateRequestDto.ConversationEventDto event : events) {
@@ -586,15 +579,15 @@ public class AnalysisInferenceService {
 
     private List<DailyPredictionSummary> loadDailyPredictionSummaries(RecentInsightInferenceRequestDto request) {
         /*
-         * 최근 추이 요약에 필요한 데이터를 DB에서 읽습니다.
+         * 최근 추이 ?�약???�요???�이?��? DB?�서 ?�습?�다.
          *
-         * 사용 범위:
-         * - request.endDate 기준 최대 7일
-         * - request.startDate가 더 늦으면 startDate부터 endDate까지만 사용
+         * ?�용 범위:
+         * - request.endDate 기�? 최�? 7??
+         * - request.startDate가 ????���?startDate부??endDate까�?�??�용
          *
-         * 예:
-         * - startDate=2026-05-01, endDate=2026-05-10 -> 실제 사용: 2026-05-04 ~ 2026-05-10
-         * - startDate=2026-05-08, endDate=2026-05-10 -> 실제 사용: 2026-05-08 ~ 2026-05-10
+         * ??
+         * - startDate=2026-05-01, endDate=2026-05-10 -> ?�제 ?�용: 2026-05-04 ~ 2026-05-10
+         * - startDate=2026-05-08, endDate=2026-05-10 -> ?�제 ?�용: 2026-05-08 ~ 2026-05-10
          */
         Map<LocalDate, DailyPredictionSummary> summaries = new LinkedHashMap<>();
         LocalDate startDate = recentSevenDayStartDate(request);
@@ -625,12 +618,12 @@ public class AnalysisInferenceService {
         List<DailyPredictionSummary> summaries
     ) {
         /*
-         * Recent Insight API로 보낼 text를 만듭니다.
+         * Recent Insight API�?보낼 text�?만듭?�다.
          *
-         * API에는 JSON으로 { "text": prompt }가 전송됩니다.
-         * prompt 안에는 날짜별 우울 단계 데이터가 들어갑니다.
+         * API?�는 JSON?�로 { "text": prompt }가 ?�송?�니??
+         * prompt ?�에???�짜�??�울 ?�계 ?�이?��? ?�어갑니??
          *
-         * daily_max는 diary와 conversation_daily_max 중 더 심한 단계를 의미합니다.
+         * daily_max??diary?� conversation_daily_max �????�한 ?�계�??��??�니??
          */
         LocalDate startDate = recentSevenDayStartDate(request);
         StringBuilder prompt = new StringBuilder();
@@ -784,58 +777,6 @@ public class AnalysisInferenceService {
             return defaultValue;
         }
         return value.asText(defaultValue);
-    }
-
-    private enum DepressionStage {
-        /*
-         * RunPod prediction으로 올 수 있는 값입니다.
-         *
-         * rank는 심각도 비교용 숫자입니다.
-         * minimal  = 0
-         * mild     = 1
-         * moderate = 2
-         * severe   = 3
-         *
-         * 숫자가 클수록 더 높은 우울 단계입니다.
-         */
-        MINIMAL("minimal", 0),
-        MILD("mild", 1),
-        MODERATE("moderate", 2),
-        SEVERE("severe", 3);
-
-        private final String value;
-        private final int rank;
-
-        DepressionStage(String value, int rank) {
-            this.value = value;
-            this.rank = rank;
-        }
-
-        static boolean isValid(String value) {
-            return from(value) != null;
-        }
-
-        static DepressionStage from(String value) {
-            if (!StringUtils.hasText(value)) {
-                return null;
-            }
-            for (DepressionStage stage : values()) {
-                if (stage.value.equalsIgnoreCase(value.trim())) {
-                    return stage;
-                }
-            }
-            return null;
-        }
-
-        static DepressionStage max(DepressionStage left, DepressionStage right) {
-            if (left == null) {
-                return right;
-            }
-            if (right == null) {
-                return left;
-            }
-            return left.rank >= right.rank ? left : right;
-        }
     }
 
     private static class DailyPredictionSummary {
