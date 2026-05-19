@@ -86,9 +86,9 @@ async def chat_ws(websocket: WebSocket) -> None:
 
     device_id: str = ""
     session_id: str = ""
-    # 연결 단위로 대화 히스토리 유지 (최대 10턴 = 20개 메시지)
+    # 연결 단위로 대화 히스토리 유지 (최대 6턴 = 12개 메시지)
     conversation_history: list[dict] = []
-    MAX_HISTORY_TURNS = 10
+    MAX_HISTORY_TURNS = 6
 
     try:
         # 연결이 살아 있는 동안 계속 메시지를 받아 처리
