@@ -68,6 +68,7 @@ import {
 } from '../src/features/notification/api/parentNotificationApi'
 import {
   canChooseParentNotificationAction,
+  getParentNotificationReportId,
   mapNotificationDtoToItem,
 } from '../src/features/notification/hooks/useParentNotificationState'
 import {
@@ -519,6 +520,24 @@ describe('parent notification API functions', () => {
     expect(reportReply.childrenReportId).toBe('report-1')
     expect(reportReply.notificationType).toBe('PARENT_REPORT_REPLY')
     expect(reportReply.actions).toBeUndefined()
+  })
+
+  it('accepts alternate parent report id payload keys for observation deep links', () => {
+    expect(
+      getParentNotificationReportId({
+        children_report_id: 'snake-report',
+      }),
+    ).toBe('snake-report')
+    expect(
+      getParentNotificationReportId({
+        parentReportId: 'parent-report',
+      }),
+    ).toBe('parent-report')
+    expect(
+      getParentNotificationReportId({
+        reportId: 'plain-report',
+      }),
+    ).toBe('plain-report')
   })
 
   it('blocks changing an already selected parent anomaly alert action', () => {

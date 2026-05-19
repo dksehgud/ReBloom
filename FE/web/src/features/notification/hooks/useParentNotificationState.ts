@@ -315,6 +315,17 @@ function mapAnomalyActionStatusToActionKey(
   return undefined
 }
 
+function getParentNotificationReportId(
+  payload: ParentNotificationPayloadDto | null | undefined,
+) {
+  return (
+    payload?.childrenReportId ??
+    payload?.reportId ??
+    payload?.parentReportId ??
+    payload?.children_report_id
+  )
+}
+
 function readSelectedParentNotificationActions(): SelectedParentNotificationActions {
   if (typeof window === 'undefined') {
     return {}
@@ -401,7 +412,7 @@ function mapNotificationDtoToItem(
         ]
       : undefined,
     childrenId: payload?.childrenId,
-    childrenReportId: payload?.childrenReportId,
+    childrenReportId: getParentNotificationReportId(payload),
     createdAt: notification.createdAt,
     highlightLabel: getHighlightLabel(notification),
     icon: typeMeta.icon,
@@ -513,5 +524,6 @@ function formatRelativeTimeLabel(createdAt?: string | null) {
 export default useParentNotificationState
 export {
   canChooseParentNotificationAction,
+  getParentNotificationReportId,
   mapNotificationDtoToItem,
 }

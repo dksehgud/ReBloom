@@ -27,7 +27,18 @@ function ParentObservationsHeader({ childName }: { childName?: string }) {
 
 function getParentObservationOpenRequest(
   state: unknown,
+  search: string,
 ): ParentObservationOpenRequest | null {
+  const searchParams = new URLSearchParams(search)
+  const reportIdFromSearch = searchParams.get('openReportId')
+
+  if (reportIdFromSearch) {
+    return {
+      childrenId: searchParams.get('openChildrenId'),
+      reportId: reportIdFromSearch,
+    }
+  }
+
   if (!state || typeof state !== 'object') {
     return null
   }
@@ -55,8 +66,8 @@ function ParentObservationsScreen() {
   const { isLoading: isChildLoading, selectedChild } = useParentConnectedChild()
   const hasConnectedChild = Boolean(selectedChild?.id)
   const openRequest = useMemo(
-    () => getParentObservationOpenRequest(location.state),
-    [location.state],
+    () => getParentObservationOpenRequest(location.state, location.search),
+    [location.search, location.state],
   )
   const {
     currentYear,

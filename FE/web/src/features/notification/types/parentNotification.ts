@@ -1,6 +1,7 @@
 type ParentNotificationPayloadDto = {
   anomalyActionStatus?: 'NONE' | 'CONFIRMED' | 'REJECTED' | null
   childrenId?: string | null
+  children_report_id?: string | null
   childrenName?: string | null
   childrenReportId?: string | null
   content?: string | null
@@ -9,7 +10,9 @@ type ParentNotificationPayloadDto = {
   depressionScore?: number | null
   depressionScoreText?: string | null
   notificationId?: number | null
+  parentReportId?: string | null
   parentId?: string | null
+  reportId?: string | null
   title?: string | null
 }
 
