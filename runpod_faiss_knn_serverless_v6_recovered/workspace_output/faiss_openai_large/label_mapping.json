@@ -1,0 +1,14 @@
+{
+  "label_to_id": {
+    "mild": 0,
+    "moderate": 1,
+    "severe": 2,
+    "minimum": 3
+  },
+  "id_to_label": {
+    "0": "mild",
+    "1": "moderate",
+    "2": "severe",
+    "3": "minimum"
+  }
+}
