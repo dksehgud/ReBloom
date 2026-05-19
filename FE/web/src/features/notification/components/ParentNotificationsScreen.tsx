@@ -1,6 +1,10 @@
+import { useLocation, useNavigate } from 'react-router-dom'
+
 import MobilePageLayout from '../../../components/templates/MobilePageLayout/MobilePageLayout'
 import ParentBottomNavigation from '../../guardian/components/ParentBottomNavigation'
 import { useParentConnectedChild } from '../../guardian/hooks/useParentConnectedChild'
+import { getParentMockSearch } from '../../guardian/hooks/useParentMockMode'
+import type { ParentNotificationItem } from '../constants/parentNotifications'
 import ParentNotificationFeed from './ParentNotificationFeed'
 import useParentNotificationState from '../hooks/useParentNotificationState'
 
@@ -48,9 +52,30 @@ function ParentNotificationsHeader({
 }
 
 function ParentNotificationsScreen() {
+  const location = useLocation()
+  const navigate = useNavigate()
   const { selectedChild } = useParentConnectedChild()
   const { currentTime, notifications, markAsRead, chooseAction } =
     useParentNotificationState([], { requestMarkAllAsReadOnInitialLoad: true })
+  const mockSearch = getParentMockSearch(location.search)
+
+  const handleCardClick = (item: ParentNotificationItem) => {
+    markAsRead(item.id)
+
+    if (
+      item.notificationType !== 'PARENT_REPORT_REPLY' ||
+      !item.childrenReportId
+    ) {
+      return
+    }
+
+    navigate(`/parent/observations${mockSearch}`, {
+      state: {
+        openObservationChildrenId: item.childrenId ?? selectedChild?.id ?? null,
+        openObservationReportId: item.childrenReportId,
+      },
+    })
+  }
 
   return (
     <MobilePageLayout
@@ -67,7 +92,7 @@ function ParentNotificationsScreen() {
         <ParentNotificationFeed
           currentTime={currentTime}
           items={notifications}
-          onCardClick={markAsRead}
+          onCardClick={handleCardClick}
           onActionClick={chooseAction}
         />
       </section>

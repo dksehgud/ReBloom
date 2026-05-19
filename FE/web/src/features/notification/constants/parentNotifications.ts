@@ -12,6 +12,7 @@ export type ParentNotificationAction = {
 export type ParentNotificationItem = {
   id: string
   childrenId?: string | null
+  childrenReportId?: string | null
   createdAt?: string | null
   notificationType?: string
   tone: 'pink' | 'orange'

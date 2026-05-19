@@ -401,6 +401,7 @@ function mapNotificationDtoToItem(
         ]
       : undefined,
     childrenId: payload?.childrenId,
+    childrenReportId: payload?.childrenReportId,
     createdAt: notification.createdAt,
     highlightLabel: getHighlightLabel(notification),
     icon: typeMeta.icon,

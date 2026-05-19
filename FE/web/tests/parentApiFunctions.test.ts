@@ -501,6 +501,26 @@ describe('parent notification API functions', () => {
     expect(conversationAlert.actions).toBeUndefined()
   })
 
+  it('preserves parent report reply target ids for observation deep links', () => {
+    const reportReply = mapNotificationDtoToItem({
+      createdAt: '2026-05-17T10:00:00',
+      id: 3,
+      isRead: false,
+      notificationType: 'PARENT_REPORT_REPLY',
+      payload: {
+        childrenId: 'child-1',
+        childrenReportId: 'report-1',
+        content: 'A counselor comment arrived.',
+        title: 'Counselor comment',
+      },
+    })
+
+    expect(reportReply.childrenId).toBe('child-1')
+    expect(reportReply.childrenReportId).toBe('report-1')
+    expect(reportReply.notificationType).toBe('PARENT_REPORT_REPLY')
+    expect(reportReply.actions).toBeUndefined()
+  })
+
   it('blocks changing an already selected parent anomaly alert action', () => {
     const riskAlert = mapNotificationDtoToItem({
       createdAt: anomalyAlertCreatedAt,
