@@ -106,7 +106,7 @@ class ConversationManager:
     async def trigger_conversation(self, greeting: str | None = None) -> bool:
         """외부 API 요청으로 인사 후 대화를 시작한다."""
 
-        if self._conversation_lock.locked() or self._trigger_pending:
+        if not self.can_trigger_conversation():
             logger.info("이미 대화 중이라 외부 트리거를 거절합니다.")
             return False
 
@@ -115,6 +115,9 @@ class ConversationManager:
         self._trigger_pending = True
         asyncio.create_task(self._start_triggered_conversation(greeting))
         return True
+
+    def can_trigger_conversation(self) -> bool:
+        return not self._conversation_lock.locked() and not self._trigger_pending
 
     async def _run_openwakeword_loop(self) -> None:
         assert self.wake_word_detector is not None

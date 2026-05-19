@@ -171,7 +171,15 @@ MQTT_USERNAME=0000fe10-0000-1000-8000-00805f9b34fb
 MQTT_PASSWORD=0000fe10-0000-1000-8000-00805f9b34fb
 MQTT_CLIENT_ID=0000fe10-0000-1000-8000-00805f9b34fb
 MQTT_CONVERSATION_START_TOPIC=devices/0000fe10-0000-1000-8000-00805f9b34fb/conversation/start
+CONVERSATION_ATTEMPT_RESULT_URL=http://gateway-host:8080/notification/api/v1/internal/notifications/conversation-attempt-result
+SERIAL_NUMBER=AIOT-SERIAL-001
 ```
+
+`CONVERSATION_ATTEMPT_RESULT_URL`을 설정하면 MQTT 대화 시작 요청 처리 결과를 notification-service로 전달합니다.
+IR 센서가 사람을 감지하면 실제 인사 TTS를 시작하기 전에 `conversationStarted=true`를 보내고,
+감지 시간 초과 또는 이미 대화 중이라 시작할 수 없는 경우에는 `conversationStarted=false`를 보냅니다.
+gateway를 거치지 않고 notification-service를 직접 호출하는 환경에서는
+`http://notification-service:8085/api/v1/internal/notifications/conversation-attempt-result`처럼 직접 URL을 넣으면 됩니다.
 
 테스트 publish 예시:
 
