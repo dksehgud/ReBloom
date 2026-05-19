@@ -1,0 +1,21 @@
+# PyTorch는 CUDA 버전에 맞춰 먼저 별도로 설치하세요.
+# CUDA 12.8 예시:
+#   pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu128
+#
+# 그 다음:
+#   pip install -r requirements.txt
+#
+# torch를 여기에 넣지 않는 이유:
+#   pip install -r requirements.txt 실행 중 CUDA 빌드가 아닌 torch로 덮어써지는 일을 막기 위해서입니다.
+numpy==1.26.4
+pandas==2.2.2
+transformers>=4.51.0
+sentencepiece>=0.2.0
+protobuf>=4.25.0
+accelerate>=0.29.0
+tqdm>=4.66.0
+openai>=1.0.0
+sentence-transformers>=3.0.0
+scikit-learn>=1.4.0,<1.6.0
+faiss-cpu>=1.8.0
+runpod>=1.7.0
