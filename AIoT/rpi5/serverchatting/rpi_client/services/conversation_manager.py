@@ -203,6 +203,7 @@ class ConversationManager:
         try:
             print("\n[듣기] 알림음 후 말씀하세요.", flush=True)
             self._play_start_sound()
+            asyncio.create_task(self.websocket_client.ensure_connected())
             user_text = await self.stt.listen()
         except STTInputUnavailableError as exc:
             logger.warning("STT 입력 장치 대기 중: %s", exc)

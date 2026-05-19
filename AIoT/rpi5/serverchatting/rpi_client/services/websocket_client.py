@@ -120,9 +120,13 @@ class LLMWebSocketClient:
             self.websocket = None
             logger.info("WebSocket 연결 종료")
 
-    async def _ensure_connected(self) -> None:
+    async def ensure_connected(self) -> None:
+        """연결이 없으면 연결한다. 이미 연결된 경우 즉시 반환한다."""
         if not self._is_connected():
             await self.connect()
+
+    async def _ensure_connected(self) -> None:
+        await self.ensure_connected()
 
     def _is_connected(self) -> bool:
         if self.websocket is None:

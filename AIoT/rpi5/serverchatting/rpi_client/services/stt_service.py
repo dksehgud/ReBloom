@@ -1,4 +1,5 @@
 import asyncio
+import concurrent.futures
 import logging
 import re
 import subprocess
@@ -74,16 +75,19 @@ class LocalSTTService(BaseSTTService):
             if not self._record_with_fallback(wav_path, start_timeout):
                 return ""
 
-            self._voice_runtime.play_stt_sound(self._stt_sound_args)
-
-            transcript = self._voice_runtime.transcribe_whisper_cpp(
-                wav_path,
-                self.config.whisper_bin,
-                self.config.whisper_model,
-                self.config.language,
-                self.config.whisper_threads,
-                self.config.whisper_fast,
-            )
+            # 효과음 재생과 Whisper 전사를 병렬 실행해 지연을 줄인다
+            with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
+                future = executor.submit(
+                    self._voice_runtime.transcribe_whisper_cpp,
+                    wav_path,
+                    self.config.whisper_bin,
+                    self.config.whisper_model,
+                    self.config.language,
+                    self.config.whisper_threads,
+                    self.config.whisper_fast,
+                )
+                self._voice_runtime.play_stt_sound(self._stt_sound_args)
+                transcript = future.result()
             text = self._voice_runtime.clean_transcript(transcript)
             logger.info("로컬 STT 인식 결과: %s", text)
             return text

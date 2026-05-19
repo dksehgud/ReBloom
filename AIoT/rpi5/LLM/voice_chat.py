@@ -19,6 +19,7 @@ try:
         has_command,
         has_python_module,
         is_meaningful_transcript,
+        iter_sentences,
         list_edge_voices,
         load_default_env_files as _load_default_env_files,
         load_env_file,
@@ -48,6 +49,7 @@ except ModuleNotFoundError as exc:
         has_command,
         has_python_module,
         is_meaningful_transcript,
+        iter_sentences,
         list_edge_voices,
         load_default_env_files as _load_default_env_files,
         load_env_file,
@@ -70,6 +72,7 @@ try:
         DEFAULT_MODEL,
         SYSTEM_PROMPT,
         post_chat,
+        post_chat_stream,
         trim_messages,
     )
     from session_events import DEFAULT_SESSION_WINDOW_SECONDS, SessionEventSender
@@ -83,6 +86,7 @@ except ModuleNotFoundError as exc:
         DEFAULT_MODEL,
         SYSTEM_PROMPT,
         post_chat,
+        post_chat_stream,
         trim_messages,
     )
     from .session_events import DEFAULT_SESSION_WINDOW_SECONDS, SessionEventSender
@@ -296,13 +300,21 @@ def main():
             session_sender.append("user", user_text)
 
             print("[llm] 답변 생성 중...")
-            answer = clean_spoken_answer(post_chat(args.host, args.model, messages))
+            raw_parts = []
+            for sentence in iter_sentences(post_chat_stream(args.host, args.model, messages)):
+                raw_parts.append(sentence)
+                cleaned = clean_spoken_answer(sentence)
+                if cleaned:
+                    speak(cleaned, args)
+
+            if not raw_parts:
+                raise RuntimeError(f"Ollama가 빈 답변을 반환했습니다. model={args.model}")
+
+            answer = clean_spoken_answer(" ".join(raw_parts))
             print("Re:Bloom> [redacted]" if args.redact_console else f"Re:Bloom> {answer}")
             messages.append({"role": "assistant", "content": answer})
             session_sender.append("assistant", answer)
             messages = trim_messages(messages)
-
-            speak(answer, args)
             if not session_sender.flush_if_due():
                 print(
                     "[session] 대화 이벤트 전송 실패: "
