@@ -4,7 +4,7 @@ metadata:
   name: biometric-service
   namespace: rebloom
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: biometric-service

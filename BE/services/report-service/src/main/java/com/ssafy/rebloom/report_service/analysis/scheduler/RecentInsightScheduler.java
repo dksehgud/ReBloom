@@ -6,6 +6,7 @@ import com.ssafy.rebloom.report_service.analysis.dto.response.ActiveChildRespons
 import com.ssafy.rebloom.report_service.analysis.service.AnalysisInferenceService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import net.javacrumbs.shedlock.spring.annotation.SchedulerLock;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -24,6 +25,11 @@ public class RecentInsightScheduler {
     private final AnalysisInferenceService analysisInferenceService;
 
     @Scheduled(cron = "0 0 9 * * *", zone = "Asia/Seoul")
+    @SchedulerLock(
+        name = "report.generateWeeklyRecentInsights",
+        lockAtLeastFor = "PT1M",
+        lockAtMostFor = "PT30M"
+    )
     public void generateWeeklyRecentInsights() {
         LocalDate today = LocalDate.now(SEOUL_ZONE);
         LocalDate startDate = today.minusDays(7);
