@@ -216,7 +216,7 @@ public class AnalysisInferenceService {
         }
 
         return switch (prediction.trim().toLowerCase(Locale.ROOT)) {
-            case "minimal", "uncertain" -> 3.5;
+            case "minimal", "minimum", "uncertain" -> 0.0;
             case "mild" -> 10.5;
             case "moderate" -> 14.0;
             case "severe" -> 17.5;
@@ -465,7 +465,7 @@ public class AnalysisInferenceService {
         LocalDate startDate = recentSevenDayStartDate(request);
         StringBuilder prompt = new StringBuilder();
         prompt.append("Summarize the recent depression-score trend in exactly one Korean sentence.\n");
-        prompt.append("Higher scores mean stronger depression risk. RunPod label score mapping is minimal/uncertain=3.5, mild=10.5, moderate=14.0, severe=17.5, plus PHQ score divided by 100 when available.\n");
+        prompt.append("Higher scores mean stronger depression risk. RunPod label score mapping is minimal/minimum/uncertain=0.0, mild=10.5, moderate=14.0, severe=17.5, plus PHQ score divided by 100 when available.\n");
         prompt.append("Period: ")
             .append(startDate)
             .append(" ~ ")
