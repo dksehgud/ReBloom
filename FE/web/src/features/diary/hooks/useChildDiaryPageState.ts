@@ -570,7 +570,9 @@ function useChildDiaryPageState() {
         console.error('Failed to save native diary record', error)
         return
       }
-    } else if (currentUserId) {
+    }
+
+    if (currentUserId) {
       void requestDiaryAnalysis({
         diary_id: nextRecord.id,
         user_id: currentUserId,
