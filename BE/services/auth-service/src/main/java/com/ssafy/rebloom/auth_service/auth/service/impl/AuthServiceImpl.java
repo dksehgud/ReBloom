@@ -81,7 +81,7 @@ public class AuthServiceImpl implements AuthService {
             refreshTokenService.save(
                 userId,
                 refreshToken,
-                getRefreshTokenMaxAgeSeconds()
+                jwtUtil.getRefreshTokenExpireTimeMillis()
             );
 
             return TokenDto.from(accessToken, refreshToken);
@@ -140,7 +140,7 @@ public class AuthServiceImpl implements AuthService {
         refreshTokenService.save(
             userId,
             newRefreshToken,
-            getRefreshTokenMaxAgeSeconds()
+            jwtUtil.getRefreshTokenExpireTimeMillis()
         );
 
         return TokenDto.from(newAccessToken, newRefreshToken);
