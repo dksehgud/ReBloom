@@ -96,6 +96,7 @@ public class ChildrenReportService {
         validateReportChild(childrenReport, childrenId);
         authAccessClient.validateParentChildAccess(parentId, childrenReport.getChildrenId());
 
+        counselorCommentRepository.deleteByParentReportId(reportId);
         childrenReportRepository.delete(childrenReport);
     }
 

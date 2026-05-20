@@ -32,4 +32,6 @@ public interface CounselorCommentRepository extends JpaRepository<CounselorComme
         )
         """, nativeQuery = true)
     boolean existsByParentReportId(@Param("parentReportId") UUID parentReportId);
+
+    void deleteByParentReportId(UUID parentReportId);
 }
