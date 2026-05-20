@@ -9,6 +9,8 @@ apply from: file('../../common-service.gradle')
 dependencies {
 	implementation 'org.springframework.cloud:spring-cloud-starter-openfeign'
 	implementation 'org.springframework.kafka:spring-kafka'
+	implementation "net.javacrumbs.shedlock:shedlock-spring:7.6.0"
+	implementation "net.javacrumbs.shedlock:shedlock-provider-jdbc-template:7.6.0"
 	testImplementation 'org.springframework.kafka:spring-kafka-test'
 
 	// security module
