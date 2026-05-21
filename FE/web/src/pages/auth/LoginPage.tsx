@@ -4,6 +4,7 @@ import {FiEye, FiEyeOff} from 'react-icons/fi'
 
 import googleLogo from '../../assets/google-logo.svg'
 import kakaoLogo from '../../assets/kakao-logo.svg'
+import {resolveShellMode} from '../../shared/utils/shellMode'
 
 const SHOW_MOCK_ENTRY = false
 
@@ -38,6 +39,8 @@ function LoginPage({
                    }: LoginPageProps) {
     const isLoginEnabled = email.trim().length > 0 && password.trim().length > 0
     const [isPasswordVisible, setIsPasswordVisible] = useState(false)
+    const isWebViewMode =
+        typeof window !== 'undefined' && resolveShellMode(window.location.search) === 'webview'
 
     const handleLoginSubmit = (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault()
@@ -138,14 +141,16 @@ function LoginPage({
                     >
                         <img src={kakaoLogo} alt="" aria-hidden="true"/>
                     </button>
-                    <button
-                        type="button"
-                        className="social-icon-button social-icon-button--google"
-                        onClick={() => onSocialLoginClick('google')}
-                        aria-label="구글 로그인"
-                    >
-                        <img src={googleLogo} alt="" aria-hidden="true"/>
-                    </button>
+                    {!isWebViewMode ? (
+                        <button
+                            type="button"
+                            className="social-icon-button social-icon-button--google"
+                            onClick={() => onSocialLoginClick('google')}
+                            aria-label="구글 로그인"
+                        >
+                            <img src={googleLogo} alt="" aria-hidden="true"/>
+                        </button>
+                    ) : null}
                 </div>
             </div>
 
