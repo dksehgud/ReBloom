@@ -471,8 +471,6 @@ function SignUpPage({ onBackToLogin }: SignUpPageProps) {
       setPendingChildCoords(undefined)
       return
     }
-
-    setModal(null)
   }
 
   const getDetailsValidationMessage = () => {
@@ -559,9 +557,10 @@ function SignUpPage({ onBackToLogin }: SignUpPageProps) {
         setLongitude(coords.longitude)
         setAddressError(undefined)
       } catch (error) {
-        setAddressError(
-          error instanceof Error ? error.message : '주소의 위도/경도를 찾지 못했습니다.',
-        )
+        const message =
+          error instanceof Error ? error.message : '주소의 위도/경도를 찾지 못했습니다.'
+        setAddressError(message)
+        setSubmitError(message)
         setIsLoadingAddressSearch(false)
         return
       } finally {
@@ -764,6 +763,7 @@ function SignUpPage({ onBackToLogin }: SignUpPageProps) {
         parentEmail={parentEmail}
         parentProfile={parentProfile}
         role={role}
+        submitError={submitError}
       />
     </>
   )

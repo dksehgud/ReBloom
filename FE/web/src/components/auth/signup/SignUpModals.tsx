@@ -15,6 +15,7 @@ type SignUpModalsProps = {
   onComplete: () => void
   parentProfile?: ParentProfile | null
   parentEmail?: string
+  submitError?: string
   isConfirmingParent?: boolean
   onClose?: () => void
   onConfirmParent?: () => void
@@ -27,6 +28,7 @@ function SignUpModals({
   onComplete,
   parentProfile,
   parentEmail = '',
+  submitError,
   isConfirmingParent = false,
   onClose,
   onConfirmParent,
@@ -68,6 +70,7 @@ function SignUpModals({
             value={parentProfile?.email ?? parentEmail}
           />
         </div>
+        {submitError ? <p className="field-error auth-modal-error">{submitError}</p> : null}
       </AuthModal>
     )
   }
