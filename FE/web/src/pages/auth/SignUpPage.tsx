@@ -463,7 +463,29 @@ function SignUpPage({ onBackToLogin }: SignUpPageProps) {
   }
 
   const handleConfirmParent = async () => {
-    const isSuccess = await submitSignup(pendingChildCoords)
+    let coords = pendingChildCoords
+
+    if (!coords) {
+      try {
+        setIsSubmitting(true)
+        setSubmitError(undefined)
+        coords = await geocodeAddress(baseAddress)
+        setLatitude(coords.latitude)
+        setLongitude(coords.longitude)
+        setAddressError(undefined)
+      } catch (error) {
+        const message =
+          error instanceof Error ? error.message : '주소의 위도/경도를 찾지 못했습니다.'
+        setAddressError(message)
+        setSubmitError(message)
+        setIsSubmitting(false)
+        return
+      } finally {
+        setIsSubmitting(false)
+      }
+    }
+
+    const isSuccess = await submitSignup(coords)
 
     if (isSuccess) {
       setModal('complete')
@@ -544,29 +566,10 @@ function SignUpPage({ onBackToLogin }: SignUpPageProps) {
       return
     }
 
-    let coords =
+    const coords =
       latitude !== undefined && longitude !== undefined
         ? { latitude, longitude }
         : undefined
-
-    if (!coords) {
-      try {
-        setIsLoadingAddressSearch(true)
-        coords = await geocodeAddress(baseAddress)
-        setLatitude(coords.latitude)
-        setLongitude(coords.longitude)
-        setAddressError(undefined)
-      } catch (error) {
-        const message =
-          error instanceof Error ? error.message : '주소의 위도/경도를 찾지 못했습니다.'
-        setAddressError(message)
-        setSubmitError(message)
-        setIsLoadingAddressSearch(false)
-        return
-      } finally {
-        setIsLoadingAddressSearch(false)
-      }
-    }
 
     await openParentConfirmModal(coords)
   }
