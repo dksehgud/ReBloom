@@ -128,6 +128,9 @@ function SignUpStepDetails({
     return (
         <AuthShell
             bodyScrollable
+            description={
+                submitError ? <p className="field-error auth-step-error">{submitError}</p> : undefined
+            }
             footer={
                 <>
                     <button className="auth-button is-secondary" onClick={onPrevious} type="button">
