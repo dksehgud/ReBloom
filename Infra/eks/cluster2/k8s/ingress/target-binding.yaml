@@ -1,0 +1,13 @@
+apiVersion: elbv2.k8s.aws/v1beta1
+kind: TargetGroupBinding
+metadata:
+  name: rebloom2-gateway-binding
+  namespace: rebloom-2 
+spec:
+  # 기존 1번 클러스터에서 이미 사용 중인 'AWS ALB 대상 그룹(Target Group)의 ARN' 주소
+  targetGroupARN: arn:aws:acm:ap-northeast-2:248108944576:certificate/a9bcf2b2-5f13-405e-8dce-33682896a3cf
+  
+  # 위 AWS 대상 그룹으로 들어온 트래픽을 내 EKS 안의 어떤 서비스로 보낼지 결정
+  serviceRef:
+    name: gateway-service
+    port: 8080

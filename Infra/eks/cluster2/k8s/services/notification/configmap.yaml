@@ -1,0 +1,31 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: notification-config
+  namespace: rebloom
+data:
+  SERVER_PORT: "8085"
+  SPRING_PROFILES_ACTIVE: "prod"
+  DB_HOST: "k14b109.p.ssafy.io"
+  DB_PORT: "5432"
+  DB_NAME: "rebloom_notification"
+  DB_SSL_MODE: "disable"
+  REDIS_HOST: "k14b109.p.ssafy.io"
+  REDIS_PORT: "6379"
+  KAFKA_BOOTSTRAP_SERVERS: "k14b109.p.ssafy.io:19092,k14b109.p.ssafy.io:19093,k14b109.p.ssafy.io:19094"
+  KAFKA_TOPIC_ANOMALY_ANALYSED: "rebloom.anomaly.analysed.v1"
+  KAFKA_TOPIC_EVENT_DLT: "rebloom.event.dlt.v1"
+  KAFKA_TOPIC_PARENT_REPORT_CREATED: "rebloom.parent-report.created.v1"
+  KAFKA_TOPIC_PARENT_REPORT_COMMENT_CREATED: "rebloom.parent-report-comment.created.v1"
+  KAFKA_TOPIC_GPS_CHECK_REQUEST: "rebloom.gps-check.requested.v1"
+  KAFKA_TOPIC_GPS_CHECK_SAME: "rebloom.gps-check.same.v1"
+  KAFKA_TOPIC_GPS_CHECK_DIFFERENT: "rebloom.gps-check.different.v1"
+  AUTH_SERVICE_URL: "http://auth-service:8081"
+  MQTT_BROKER_URI: "tcp://jukang.duckdns.org:7000"
+  MQTT_CLIENT_ID_PREFIX: "notification-service"
+  MQTT_QOS: "1"
+  MQTT_CONVERSATION_START_TOPIC_TEMPLATE: "devices/%s/conversation/start"
+  FIREBASE_SERVICE_ACCOUNT_PATH: "classpath:firebase/firebase-service-account.json"
+  FCM_DRY_RUN: "false"
+  TZ: "Asia/Seoul"
+  JAVA_TOOL_OPTIONS: "-Duser.timezone=Asia/Seoul"

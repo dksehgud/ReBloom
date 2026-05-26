@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bio-ml-service
+  namespace: rebloom
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: bio-ml-service
+  template:
+    metadata:
+      labels:
+        app: bio-ml-service
+    spec:
+      containers:
+        - name: bio-ml-service
+          image: cramfull99/rebloom-bio-ml:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8002
+          envFrom:
+            - configMapRef:
+                name: bio-ml-config
+            - secretRef:
+                name: bio-ml-secret
+          volumeMounts:
+            - name: bio-ml-models
+              mountPath: /app/model
+      volumes:
+        - name: bio-ml-models
+          emptyDir: { }
