@@ -1,0 +1,38 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: rebloom-2
+  namespace: argocd
+  annotations:
+    argocd-image-updater.argoproj.io/image-list: auth=cramfull99/rebloom-auth,gateway=cramfull99/rebloom-gateway,intake=cramfull99/rebloom-intake,biometric=cramfull99/rebloom-biometric,report=cramfull99/rebloom-report,notification=cramfull99/rebloom-notification,bio-ml=cramfull99/rebloom-bio-ml
+    argocd-image-updater.argoproj.io/auth.update-strategy: newest-build
+    argocd-image-updater.argoproj.io/gateway.update-strategy: newest-build
+    argocd-image-updater.argoproj.io/intake.update-strategy: newest-build
+    argocd-image-updater.argoproj.io/biometric.update-strategy: newest-build
+    argocd-image-updater.argoproj.io/report.update-strategy: newest-build
+    argocd-image-updater.argoproj.io/notification.update-strategy: newest-build
+    argocd-image-updater.argoproj.io/bio-ml.update-strategy: newest-build
+spec:
+  project: default
+  source:
+    repoURL: https://lab.ssafy.com/s14-final/S14P31B109.git
+    targetRevision: develop
+    path: Infra/eks/cluster2/k8s
+    kustomize: { }
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: rebloom-2 
+  syncPolicy:
+    automated:
+      prune: true 
+      selfHeal: true
+---
+apiVersion: argocd-image-updater.argoproj.io/v1alpha1
+kind: ImageUpdater
+metadata:
+  name: rebloom-2-image-updater # 이름을 2번 클러스터용으로 매핑
+  namespace: argocd
+spec:
+  applicationRefs:
+    - namePattern: rebloom-2
+      useAnnotations: true

@@ -1,0 +1,26 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: biometric-config
+  namespace: rebloom
+data:
+  SERVER_PORT: "8083"
+  SPRING_PROFILES_ACTIVE: "local"
+  DB_HOST: "k14b109.p.ssafy.io"
+  DB_PORT: "5432"
+  DB_NAME: "rebloom_biometric"
+  DB_SSL_MODE: "disable"
+  REDIS_HOST: "k14b109.p.ssafy.io"
+  REDIS_PORT: "6379"
+  AUTH_SERVICE_URL: "http://auth-service:8081"
+  KAFKA_BOOTSTRAP_SERVERS: "k14b109.p.ssafy.io:19092,k14b109.p.ssafy.io:19093,k14b109.p.ssafy.io:19094"
+  KAFKA_TOPIC_BIOMETRIC_RECEIVED: "rebloom.biometric.received.v1"
+  KAFKA_TOPIC_SLEEP_RECEIVED: "rebloom.sleep.received.v1"
+  KAFKA_TOPIC_MODEL_TRAINING_REQUESTED: "rebloom.model.training.requested.v1"
+  KAFKA_TOPIC_ANOMALY_ANALYSED: "rebloom.anomaly.analysed.v1"
+  KAFKA_TOPIC_MODEL_RETRAINING_REQUESTED: "rebloom.model.retraining.requested.v1"
+  KAFKA_TOPIC_PHQ_COMPLETED: "rebloom.phq.completed.v1"
+  KAFKA_TOPIC_STATUS_CARD_REQUESTED: "rebloom.status-card.requested.v1"
+  KAFKA_TOPIC_EVENT_DLT: "rebloom.event.dlt.v1"
+  TZ: "Asia/Seoul"
+  JAVA_TOOL_OPTIONS: "-Duser.timezone=Asia/Seoul"
