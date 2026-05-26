@@ -1,5 +1,6 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
+namespace: rebloom-2
 
 # ArgoCD가 동시에 한 방에 배포해야 할 대상 목록입니다.
 resources:
