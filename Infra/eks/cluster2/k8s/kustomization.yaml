@@ -3,11 +3,11 @@ kind: Kustomization
 
 # ArgoCD가 동시에 한 방에 배포해야 할 대상 목록입니다.
 resources:
-  - k8s/ingress/target-binding.yaml
-  - k8s/services/auth
-  - k8s/services/bio-ml
-  - k8s/services/biometric
-  - k8s/services/gateway
-  - k8s/services/intake
-  - k8s/services/notification
-  - k8s/services/report
+  - ingress/target-binding.yaml
+  - services/auth
+  - services/bio-ml
+  - services/biometric
+  - services/gateway
+  - services/intake
+  - services/notification
+  - services/report
