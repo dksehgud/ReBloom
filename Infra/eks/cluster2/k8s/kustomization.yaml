@@ -3,11 +3,34 @@ kind: Kustomization
 
 # ArgoCD가 동시에 한 방에 배포해야 할 대상 목록입니다.
 resources:
+  # Ingress / TargetGroupBinding
   - ingress/target-binding.yaml
-  - services/auth
-  - services/bio-ml
-  - services/biometric
-  - services/gateway
-  - services/intake
-  - services/notification
-  - services/report
+
+  # 각 서비스 폴더 내부의 yaml 파일들
+  - services/auth/configmap.yaml
+  - services/auth/deployment.yaml
+  - services/auth/service.yaml
+
+  - services/bio-ml/configmap.yaml
+  - services/bio-ml/deployment.yaml
+  - services/bio-ml/service.yaml
+
+  - services/biometric/configmap.yaml
+  - services/biometric/deployment.yaml
+  - services/biometric/service.yaml
+
+  - services/gateway/configmap.yaml
+  - services/gateway/deployment.yaml
+  - services/gateway/service.yaml
+
+  - services/intake/configmap.yaml
+  - services/intake/deployment.yaml
+  - services/intake/service.yaml
+
+  - services/notification/configmap.yaml
+  - services/notification/deployment.yaml
+  - services/notification/service.yaml
+
+  - services/report/configmap.yaml
+  - services/report/deployment.yaml
+  - services/report/service.yaml
