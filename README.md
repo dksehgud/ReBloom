@@ -4,9 +4,9 @@
 
 ## 0. 사전 준비: 기기 연동 및 관계 연결 확인
 
-![부모-상담사 연결.gif](../docs/%EC%82%B0%EC%B6%9C%EB%AC%BC/%EB%B6%80%EB%AA%A8-%EC%83%81%EB%8B%B4%EC%82%AC%20%EC%97%B0%EA%B2%B0.gif)
-![회원가입.gif](../docs/%EC%82%B0%EC%B6%9C%EB%AC%BC/mobile/%ED%9A%8C%EC%9B%90%EA%B0%80%EC%9E%85.gif)
-![기기연동.gif](../docs/%EC%82%B0%EC%B6%9C%EB%AC%BC/mobile/%EA%B8%B0%EA%B8%B0%EC%97%B0%EB%8F%99.gif)
+![부모-상담사 연결.gif](docs/%EC%82%B0%EC%B6%9C%EB%AC%BC/%EB%B6%80%EB%AA%A8-%EC%83%81%EB%8B%B4%EC%82%AC%20%EC%97%B0%EA%B2%B0.gif)
+![회원가입.gif](docs/%EC%82%B0%EC%B6%9C%EB%AC%BC/mobile/%ED%9A%8C%EC%9B%90%EA%B0%80%EC%9E%85.gif)
+![기기연동.gif](docs/%EC%82%B0%EC%B6%9C%EB%AC%BC/mobile/%EA%B8%B0%EA%B8%B0%EC%97%B0%EB%8F%99.gif)
 
 ### 목표
 
@@ -40,8 +40,8 @@
 
 ## 1. 시나리오 1: 아이 일기 작성 및 분석 확인
 
-![아이 일기작성.gif](../docs/%EC%82%B0%EC%B6%9C%EB%AC%BC/mobile/%EC%95%84%EC%9D%B4%20%EC%9D%BC%EA%B8%B0%EC%9E%91%EC%84%B1.gif)
-![상담사_우울_지표_확인.gif](../docs/%EC%82%B0%EC%B6%9C%EB%AC%BC/%EC%83%81%EB%8B%B4%EC%82%AC_%EC%9A%B0%EC%9A%B8_%EC%A7%80%ED%91%9C_%ED%99%95%EC%9D%B8.gif)
+![아이 일기작성.gif](docs/%EC%82%B0%EC%B6%9C%EB%AC%BC/mobile/%EC%95%84%EC%9D%B4%20%EC%9D%BC%EA%B8%B0%EC%9E%91%EC%84%B1.gif)
+![상담사_우울_지표_확인.gif](docs/%EC%82%B0%EC%B6%9C%EB%AC%BC/%EC%83%81%EB%8B%B4%EC%82%AC_%EC%9A%B0%EC%9A%B8_%EC%A7%80%ED%91%9C_%ED%99%95%EC%9D%B8.gif)
 
 ### 목표
 
@@ -65,8 +65,8 @@
 
 ### 2-A. 보호자 앱: 상태 확인 및 관찰 기록 작성
 
-![부모관찰기록확인.gif](../docs/%EC%82%B0%EC%B6%9C%EB%AC%BC/%EB%B6%80%EB%AA%A8%EA%B4%80%EC%B0%B0%EA%B8%B0%EB%A1%9D%ED%99%95%EC%9D%B8.gif)
-![부모 관찰일기작성.gif](../docs/%EC%82%B0%EC%B6%9C%EB%AC%BC/%EB%B6%80%EB%AA%A8%20%EA%B4%80%EC%B0%B0%EC%9D%BC%EA%B8%B0%EC%9E%91%EC%84%B1.gif)
+![부모관찰기록확인.gif](docs/%EC%82%B0%EC%B6%9C%EB%AC%BC/%EB%B6%80%EB%AA%A8%EA%B4%80%EC%B0%B0%EA%B8%B0%EB%A1%9D%ED%99%95%EC%9D%B8.gif)
+![부모 관찰일기작성.gif](docs/%EC%82%B0%EC%B6%9C%EB%AC%BC/%EB%B6%80%EB%AA%A8%20%EA%B4%80%EC%B0%B0%EC%9D%BC%EA%B8%B0%EC%9E%91%EC%84%B1.gif)
 
 #### 진행 순서
 
@@ -80,9 +80,9 @@
 
 ## 3. 시나리오 3: 이상치 알림과 블루밍 대화
 
-![부모알림확인.gif](../docs/%EC%82%B0%EC%B6%9C%EB%AC%BC/%EB%B6%80%EB%AA%A8%EC%95%8C%EB%A6%BC%ED%99%95%EC%9D%B8.gif)
-![블루밍대화.gif](../docs/%EC%82%B0%EC%B6%9C%EB%AC%BC/%EB%B8%94%EB%A3%A8%EB%B0%8D%EB%8C%80%ED%99%94.gif)
-![상담사_생체_데이터_확인.gif](../docs/%EC%82%B0%EC%B6%9C%EB%AC%BC/%EC%83%81%EB%8B%B4%EC%82%AC_%EC%83%9D%EC%B2%B4_%EB%8D%B0%EC%9D%B4%ED%84%B0_%ED%99%95%EC%9D%B8.gif)
+![부모알림확인.gif](docs/%EC%82%B0%EC%B6%9C%EB%AC%BC/%EB%B6%80%EB%AA%A8%EC%95%8C%EB%A6%BC%ED%99%95%EC%9D%B8.gif)
+![블루밍대화.gif](docs/%EC%82%B0%EC%B6%9C%EB%AC%BC/%EB%B8%94%EB%A3%A8%EB%B0%8D%EB%8C%80%ED%99%94.gif)
+![상담사_생체_데이터_확인.gif](docs/%EC%82%B0%EC%B6%9C%EB%AC%BC/%EC%83%81%EB%8B%B4%EC%82%AC_%EC%83%9D%EC%B2%B4_%EB%8D%B0%EC%9D%B4%ED%84%B0_%ED%99%95%EC%9D%B8.gif)
 
 ### 목표
 
