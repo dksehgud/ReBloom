@@ -32,7 +32,7 @@ ReBloom은 자녀, 보호자, 상담사가 서로 다른 화면과 권한으로 
 | 영역 | 기술 |
 | --- | --- |
 | Backend | Java 21, Spring Boot 3, Spring Security, JJWT, JPA, OpenFeign |
-| Data / Event | PostgreSQL, TimescaleDB, Redis, Kafka, ShedLock |
+| Data / Event | PostgreSQL, Redis, Kafka, ShedLock |
 | AI / IoT | FastAPI, Python, MQTT, BLE, Raspberry Pi, Samsung Health SDK |
 | Frontend / Mobile | React, Vite, Android Kotlin, WebView, Room DB |
 | Infra | Docker, Nginx, GitLab CI/CD, AWS EKS, ALB Ingress, ArgoCD, CloudWatch |
