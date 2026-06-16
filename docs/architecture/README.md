@@ -1,6 +1,6 @@
 # ReBloom Architecture
 
-이 문서는 ReBloom의 시스템 흐름과 데이터 구조를 정리한 문서입니다.
+이 문서는 ReBloom의 시스템 구성과 데이터 구조를 정리한 문서입니다.
 
 ## System Flow
 
@@ -51,14 +51,14 @@ sequenceDiagram
 | `intake-service` | 감정 일기, 대화 데이터 등 입력 데이터 수집 |
 | `biometric-service` | 워치 기반 생체 데이터 저장 및 이상 징후 분석 |
 | `report-service` | 상태 카드, 감정 분석 결과, 보호자 리포트, 상담사 코멘트 관리 |
-| `notification-service` | 위험 신호 알림, FCM/SSE/MQTT 연동 흐름 관리 |
+| `notification-service` | 위험 신호 알림, FCM/SSE/MQTT 연동 관리 |
 | `AIoT_Server` | 스마트 스피커 대화 API, SSE 응답 스트리밍, MQTT publish 유틸리티 |
 | `bio-ml-service` | 생체 데이터 기반 분석 모델 서빙 |
 
 ## Data Flow 기준
 
-- 워치 생체 데이터는 5분 단위 수집 흐름을 기준으로 `biometric-service`에 전달됩니다.
-- 감정 일기와 대화 데이터는 분석 대상 이벤트로 분리되어 리포트 생성 흐름과 연결됩니다.
+- 워치 생체 데이터는 5분 단위 수집 주기에 따라 `biometric-service`에 전달됩니다.
+- 감정 일기와 대화 데이터는 분석 대상 이벤트로 분리되어 리포트 생성 파이프라인에 연결됩니다.
 - Kafka 이벤트에는 `correlationId`를 포함해 비동기 처리 구간에서도 로그 추적이 가능하도록 구성했습니다.
 - 스케줄러 기반 리포트 생성은 EKS 다중 Pod 환경에서 중복 실행될 수 있어 ShedLock으로 실행 기준을 맞췄습니다.
 - Redis는 인증 코드, Refresh Token처럼 만료 시간이 중요한 데이터에 사용하고, MySQL은 회원, 관계, 리포트 같은 기준 데이터에 사용했습니다.
