@@ -35,7 +35,7 @@ ReBloom은 자녀, 보호자, 상담사가 서로 다른 화면과 권한으로 
 | Data / Event | PostgreSQL, Redis, Kafka, ShedLock |
 | AI / IoT | FastAPI, Python, MQTT, Raspberry Pi, Samsung Health SDK |
 | Frontend / Mobile | React, Vite, Android Kotlin, WebView, Room DB |
-| Infra | Docker, Nginx, GitLab CI/CD, AWS EKS, ALB Ingress, ArgoCD, CloudWatch |
+| Infra | Docker, GitLab CI/CD, AWS EKS, ALB Ingress, ArgoCD, CloudWatch |
 
 ## 주요 기능
 
