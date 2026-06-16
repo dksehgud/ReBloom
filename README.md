@@ -99,18 +99,6 @@ ReBloom은 자녀, 보호자, 상담사가 서로 다른 화면과 권한으로 
 | Redis/PostgreSQL 상태 기준 혼동 | 만료성 데이터와 영속 데이터의 역할이 섞일 수 있음 | 인증 코드/토큰은 Redis, 회원/관계/리포트는 PostgreSQL로 기준 분리 |
 | 배포 후 상태 확인 부족 | 배포 성공 여부와 실제 서비스 동작 상태는 별개 | ArgoCD 상태와 CloudWatch 로그를 함께 확인하는 체계 구성 |
 
-## 검증 지표
-
-프로젝트 검증 시점 기준으로 확인한 운영/배포 지표입니다.
-
-- EKS Deployment 7개, Pod 7/7 Running
-- Pod restart 0회
-- ArgoCD Application Synced / Healthy
-- CloudWatch application log event 318,086건
-- ALB RequestCount 7,558건
-- 평균 TargetResponseTime 약 0.0411초
-- GitLab Pipeline 206건, 최근 20개 기준 성공률 95%
-
 ## Repository Structure
 
 ```text
