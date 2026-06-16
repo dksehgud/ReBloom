@@ -25,68 +25,14 @@ ReBloom은 자녀, 보호자, 상담사가 서로 다른 화면과 권한으로 
 
 자세한 구조와 DB ERD는 [docs/architecture](docs/architecture/README.md)에 정리했습니다.
 
-```mermaid
-flowchart LR
-    child["Child App<br/>Android WebView"]
-    parent["Parent App/Web"]
-    counselor["Counselor Dashboard"]
-    speaker["Smart Speaker<br/>Raspberry Pi"]
-    watch["Galaxy Watch"]
-
-    gateway["Gateway Service"]
-    auth["Auth Service"]
-    intake["Intake Service"]
-    biometric["Biometric Service"]
-    report["Report Service"]
-    notification["Notification Service"]
-    ai["AI / ML Service"]
-    aiotServer["AIoT Server<br/>FastAPI / SSE / MQTT"]
-
-    mysql[("MySQL")]
-    redis[("Redis")]
-    kafka[("Kafka")]
-    mqtt["MQTT Broker"]
-    cloudwatch["CloudWatch"]
-
-    watch --> child
-    child --> gateway
-    parent --> gateway
-    counselor --> gateway
-    speaker <--> mqtt
-    speaker <--> aiotServer
-    aiotServer <--> mqtt
-
-    gateway --> auth
-    gateway --> intake
-    gateway --> biometric
-    gateway --> report
-    gateway --> notification
-
-    auth --> mysql
-    auth --> redis
-    intake --> kafka
-    biometric --> kafka
-    kafka --> report
-    kafka --> notification
-    report --> ai
-    report --> kafka
-    report --> mysql
-    notification --> mqtt
-    notification --> parent
-    aiotServer --> ai
-
-    gateway --> cloudwatch
-    auth --> cloudwatch
-    report --> cloudwatch
-    notification --> cloudwatch
-```
+![ReBloom System Architecture](docs/architecture/rebloom-system-architecture.png)
 
 ## 기술 스택
 
 | 영역 | 기술 |
 | --- | --- |
 | Backend | Java 21, Spring Boot 3, Spring Security, JJWT, JPA, QueryDSL, OpenFeign |
-| Data / Event | MySQL, Redis, Kafka, ShedLock |
+| Data / Event | PostgreSQL, TimescaleDB, Redis, Kafka, ShedLock |
 | AI / IoT | FastAPI, Python, MQTT, BLE, Raspberry Pi, Samsung Health SDK |
 | Frontend / Mobile | React, Vite, Android Kotlin, WebView, Room DB |
 | Infra | Docker, Nginx, GitLab CI/CD, AWS EKS, ALB Ingress, ArgoCD, CloudWatch |
@@ -135,7 +81,7 @@ flowchart LR
 - 생체 데이터 분석, 리포트 생성, 알림 발송 과정을 Kafka 이벤트로 분리했습니다.
 - 이벤트에 `correlationId`를 포함하고 MDC에 주입해 비동기 처리 구간에서도 로그를 따라갈 수 있게 했습니다.
 - EKS 다중 Pod 환경에서 스케줄러가 중복 실행되지 않도록 ShedLock을 적용했습니다.
-- Redis와 MySQL을 역할에 따라 분리해 만료성 데이터와 기준 데이터를 다르게 관리했습니다.
+- Redis와 PostgreSQL을 역할에 따라 분리해 만료성 데이터와 기준 데이터를 다르게 관리했습니다.
 
 ### Infra
 
@@ -150,7 +96,7 @@ flowchart LR
 | --- | --- | --- |
 | 스케줄러 중복 실행 | EKS에서 여러 Pod가 동시에 `@Scheduled` 작업을 실행 | ShedLock을 적용해 하나의 인스턴스만 작업을 수행하도록 제어 |
 | 비동기 이벤트 추적 어려움 | Kafka consumer와 thread 전환 구간에서 요청 맥락이 끊김 | Kafka Envelope에 `correlationId`를 담고 MDC에 주입 |
-| Redis/MySQL 상태 기준 혼동 | 만료성 데이터와 영속 데이터의 역할이 섞일 수 있음 | 인증 코드/토큰은 Redis, 회원/관계/리포트는 MySQL로 기준 분리 |
+| Redis/PostgreSQL 상태 기준 혼동 | 만료성 데이터와 영속 데이터의 역할이 섞일 수 있음 | 인증 코드/토큰은 Redis, 회원/관계/리포트는 PostgreSQL로 기준 분리 |
 | 배포 후 상태 확인 부족 | 배포 성공 여부와 실제 서비스 동작 상태는 별개 | ArgoCD 상태와 CloudWatch 로그를 함께 확인하는 체계 구성 |
 
 ## 검증 지표
@@ -203,7 +149,7 @@ ReBloom
 
 ## 실행 참고
 
-각 서비스는 MySQL, Redis, Kafka, MQTT, AWS 리소스, 외부 AI 서버 등 환경 의존성이 있습니다. 로컬 실행 시에는 각 서비스의 `application.yaml`과 배포용 환경 변수를 기준으로 필요한 값을 별도로 구성해야 합니다.
+각 서비스는 PostgreSQL, Redis, Kafka, MQTT, AWS 리소스, 외부 AI 서버 등 환경 의존성이 있습니다. 로컬 실행 시에는 각 서비스의 `application.yaml`과 배포용 환경 변수를 기준으로 필요한 값을 별도로 구성해야 합니다.
 
 민감 정보는 저장소에 포함하지 않았으며, 실제 실행 환경에서는 secret/env 파일 또는 클라우드 secret 리소스를 통해 주입하는 것을 전제로 합니다.
 
