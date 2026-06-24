@@ -9,6 +9,7 @@ build-web:
     - echo "----- FE web build start -----"
     - cd FE/web
     - npm ci
+    - npm run test
     - npm run build
   artifacts:
     paths:

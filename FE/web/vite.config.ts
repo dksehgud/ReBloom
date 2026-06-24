@@ -6,8 +6,15 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
   const apiProxyTarget = env.VITE_DEV_API_PROXY_TARGET?.trim()
   const apiProxyOrigin = env.VITE_DEV_API_PROXY_ORIGIN?.trim()
+  const testApiBaseUrl = env.VITE_API_BASE_URL?.trim() || 'http://localhost:8080'
 
   return {
+    define:
+      mode === 'test'
+        ? {
+            'import.meta.env.VITE_API_BASE_URL': JSON.stringify(testApiBaseUrl),
+          }
+        : undefined,
     plugins: [react()],
     server: {
       host: '0.0.0.0',
