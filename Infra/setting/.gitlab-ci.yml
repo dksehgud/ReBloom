@@ -19,6 +19,7 @@ variables:
   GRADLE_USER_HOME: "$CI_PROJECT_DIR/.gradle"
 
 stages:
+  - test
   - build
   - build-and-push  # build와 docker-push를 하나로 통합
   - web-deploy
@@ -38,6 +39,21 @@ cache:
   paths:
     - .gradle/caches/
     - .gradle/wrapper/
+
+backend-tests:
+  image: eclipse-temurin:21-jdk-alpine
+  stage: test
+  tags:
+    - rebloom-dev
+  services: [ ]
+  script:
+    - echo "----- BE test start -----"
+    - cd BE
+    - chmod +x ./gradlew
+    - ./gradlew test --no-daemon
+  rules:
+    - changes:
+        - "BE/**/*"
 
 # ====================================================
 # 공통 템플릿 (Build & Push 통합)
@@ -63,7 +79,7 @@ cache:
     - chmod +x ./gradlew
     
     # 1. Spring Boot 빌드 수행 (jar 파일 생성)
-    - ./gradlew :services:${SERVICE_NAME}:bootJar -x test
+    - ./gradlew :services:${SERVICE_NAME}:bootJar --no-daemon
     - rm -f services/${SERVICE_NAME}/build/libs/*-plain.jar
     
     # 2. 빌드 결과 확인
