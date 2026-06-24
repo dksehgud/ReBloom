@@ -12,6 +12,15 @@ Thumbs.db
 # Logs
 *.log
 
+# Build outputs
+**/build/
+**/.gradle/
+**/dist/
+**/coverage/
+*.apk
+*.aab
+*.dex
+
 # Local agent/runtime state
 .omx/state/
 
@@ -33,16 +42,29 @@ AIoT/rpi5/LLM/rebloom-voice.env.example
 AIoT/rpi5/.agents/rules/code-rpi.md
 
 # Bio-ML Service
-bio-ml-service/research/data/
+AI/bio-ml-service/research/data/
+AI/bio-ml-service/app/model/
+runpod_faiss_knn_serverless_v6_recovered/workspace_output/
 **/__pycache__/
+*.py[cod]
 .ipynb_checkpoints/
+.venv/
+venv/
+
+# Locally trained edge/voice model outputs
+AIoT/rpi5/WakeOnWord/models/
+AIoT/rpi5/serverchatting/Wake_Model/
+
+# Benchmark outputs
+BE/scripts/benchmark/report-index-benchmark-output*.txt
+docs/portfolio-captures/report-index-benchmark/raw/report-index-benchmark-output*.txt
+docs/portfolio-captures/db-connection-pool/raw/db-connection-pool-benchmark-output*.txt
 
 AI/aiot-ai-service/MQTT/mosquitto/config/passwordfile
 AI/aiot-ai-service/MQTT/mosquitto/data/mosquitto.db
 AI/aiot-ai-service/MQTT/mosquitto/config/mosquitto.conf
 AI/aiot-ai-service/MQTT/mqtt_server_publish_only.md
 AI/aiot-ai-service/MQTT/mqtt_use_guide.md
-.gitignore
 AI/aiot-ai-service/MQTT/mqtt.md
 AIoT/rpi5/serverchatting/MQTT_BROKER_REQUIREMENTS.md
 AIoT/rpi5/.claude/settings.json
