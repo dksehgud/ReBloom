@@ -48,6 +48,10 @@ services:
       - services/auth-service/.env.local
     environment:
       DB_HOST: postgres
+      DB_POOL_MAX_SIZE: 8
+      DB_POOL_MIN_IDLE: 1
+      DB_POOL_CONNECTION_TIMEOUT_MS: 3000
+      DB_POOL_VALIDATION_TIMEOUT_MS: 1000
       REDIS_HOST: redis
       REDIS_PORT: 6379
       TZ: Asia/Seoul
@@ -92,6 +96,10 @@ services:
       - services/biometric-service/.env.local
     environment:
       DB_HOST: postgres
+      DB_POOL_MAX_SIZE: 8
+      DB_POOL_MIN_IDLE: 1
+      DB_POOL_CONNECTION_TIMEOUT_MS: 3000
+      DB_POOL_VALIDATION_TIMEOUT_MS: 1000
       TZ: Asia/Seoul
       JAVA_TOOL_OPTIONS: -Duser.timezone=Asia/Seoul
     depends_on:
@@ -112,6 +120,10 @@ services:
       - services/report-service/.env.local
     environment:
       DB_HOST: postgres
+      DB_POOL_MAX_SIZE: 8
+      DB_POOL_MIN_IDLE: 1
+      DB_POOL_CONNECTION_TIMEOUT_MS: 3000
+      DB_POOL_VALIDATION_TIMEOUT_MS: 1000
       TZ: Asia/Seoul
       JAVA_TOOL_OPTIONS: -Duser.timezone=Asia/Seoul
     depends_on:
@@ -132,6 +144,10 @@ services:
       - services/notification-service/.env.local
     environment:
       DB_HOST: postgres
+      DB_POOL_MAX_SIZE: 8
+      DB_POOL_MIN_IDLE: 1
+      DB_POOL_CONNECTION_TIMEOUT_MS: 3000
+      DB_POOL_VALIDATION_TIMEOUT_MS: 1000
       REDIS_HOST: redis
       REDIS_PORT: 6379
       TZ: Asia/Seoul

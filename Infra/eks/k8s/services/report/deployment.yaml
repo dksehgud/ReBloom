@@ -5,6 +5,12 @@ metadata:
   namespace: rebloom
 spec:
   replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  minReadySeconds: 10
   selector:
     matchLabels:
       app: report-service
@@ -19,6 +25,38 @@ spec:
           imagePullPolicy: Always
           ports:
             - containerPort: 8084
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8084
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8084
+            initialDelaySeconds: 60
+            periodSeconds: 20
+            timeoutSeconds: 3
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              cpu: 1000m
+              memory: 1Gi
+          env:
+            - name: DB_POOL_MAX_SIZE
+              value: "8"
+            - name: DB_POOL_MIN_IDLE
+              value: "1"
+            - name: DB_POOL_CONNECTION_TIMEOUT_MS
+              value: "3000"
+            - name: DB_POOL_VALIDATION_TIMEOUT_MS
+              value: "1000"
           envFrom:
             - configMapRef:
                 name: report-config
