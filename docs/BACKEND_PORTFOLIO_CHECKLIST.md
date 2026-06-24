@@ -25,6 +25,7 @@ Git 저장소 용량 정리는 서비스 성능 개선이 아니므로 메인 �
 - `docs/BACKEND_INDEX_BENCHMARK.md`
 - `docs/BACKEND_CONNECTION_POOL_BENCHMARK.md`
 - `docs/IMPROVEMENT_REPORT.md`
+- `docs/BACKEND_EXPERIENCE_DRAFT.md`
 - `docs/portfolio-captures/report-index-benchmark/`
 - `docs/portfolio-captures/db-connection-pool/`
 
@@ -43,4 +44,3 @@ EKS 환경에서 파드 수 증가와 rolling update 시 각 파드의 HikariCP 
 3. `test(backend): isolate context tests from external infrastructure`
 4. `docs(portfolio): add backend benchmark reports and captures`
 5. `chore(repo): remove generated artifacts from tracking`
-
