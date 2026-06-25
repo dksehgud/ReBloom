@@ -1,0 +1,8 @@
+--- pods during after scenario ---
+NAME                         READY   STATUS      RESTARTS   AGE     IP               NODE                                               NOMINATED NODE   READINESS GATES
+db-connection-after-b8ktz    1/1     Running     0          25s     192.168.24.236   ip-192-168-20-69.ap-northeast-2.compute.internal   <none>           <none>
+db-connection-after-f9t69    1/1     Running     0          25s     192.168.9.113    ip-192-168-20-69.ap-northeast-2.compute.internal   <none>           <none>
+db-connection-after-p9xd6    1/1     Running     0          25s     192.168.17.21    ip-192-168-20-69.ap-northeast-2.compute.internal   <none>           <none>
+db-connection-before-26s5x   0/1     Completed   0          2m48s   192.168.1.173    ip-192-168-20-69.ap-northeast-2.compute.internal   <none>           <none>
+db-connection-before-6ptpt   0/1     Completed   0          2m48s   192.168.2.202    ip-192-168-20-69.ap-northeast-2.compute.internal   <none>           <none>
+db-connection-before-82kfc   0/1     Completed   0          2m48s   192.168.20.239   ip-192-168-20-69.ap-northeast-2.compute.internal   <none>           <none>

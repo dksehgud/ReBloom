@@ -1,0 +1,11 @@
+ max_connections
+-----------------
+ 40
+(1 row)
+
+ total_sessions | rebloom_sessions | app_jdbc_sessions | rebloom_active | rebloom_idle
+----------------+------------------+-------------------+----------------+--------------
+             32 |               25 |                24 |              1 |           24
+(1 row)
+
+pod "pg-monitor-report-service-after" deleted from rebloom-proof namespace

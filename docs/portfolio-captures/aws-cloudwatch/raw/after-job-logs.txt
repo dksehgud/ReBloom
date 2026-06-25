@@ -1,0 +1,13 @@
+--- after job logs ---
+[pod/db-connection-after-b8ktz/psql-pool] scenario=after pod=db-connection-after-b8ktz pool_size=8 hold_seconds=120
+[pod/db-connection-after-b8ktz/psql-pool] attempted_connections=8
+[pod/db-connection-after-b8ktz/psql-pool] successful_connections=8
+[pod/db-connection-after-b8ktz/psql-pool] failed_connections=0
+[pod/db-connection-after-f9t69/psql-pool] scenario=after pod=db-connection-after-f9t69 pool_size=8 hold_seconds=120
+[pod/db-connection-after-f9t69/psql-pool] attempted_connections=8
+[pod/db-connection-after-f9t69/psql-pool] successful_connections=8
+[pod/db-connection-after-f9t69/psql-pool] failed_connections=0
+[pod/db-connection-after-p9xd6/psql-pool] scenario=after pod=db-connection-after-p9xd6 pool_size=8 hold_seconds=120
+[pod/db-connection-after-p9xd6/psql-pool] attempted_connections=8
+[pod/db-connection-after-p9xd6/psql-pool] successful_connections=8
+[pod/db-connection-after-p9xd6/psql-pool] failed_connections=0

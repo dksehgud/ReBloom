@@ -1,0 +1,5 @@
+--- report-service before deployment status ---
+NAME                                        READY   STATUS    RESTARTS      AGE   IP              NODE                                               NOMINATED NODE   READINESS GATES
+pod/report-service-proof-67f88f47d8-lhcz9   0/1     Running   2 (27s ago)   90s   192.168.9.113   ip-192-168-20-69.ap-northeast-2.compute.internal   <none>           <none>
+pod/report-service-proof-67f88f47d8-n7d6v   0/1     Running   2 (27s ago)   90s   192.168.1.173   ip-192-168-20-69.ap-northeast-2.compute.internal   <none>           <none>
+pod/report-service-proof-67f88f47d8-rzzvj   0/1     Running   2 (26s ago)   90s   192.168.2.202   ip-192-168-20-69.ap-northeast-2.compute.internal   <none>           <none>

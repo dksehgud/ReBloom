@@ -1,5 +1,29 @@
 # Backend Experience Draft
 
+## 최신 반영: 실제 AWS EKS/RDS 검증 결과
+
+백엔드 직무 자기소개서에서는 커넥션 풀 개선 경험을 Docker 시뮬레이션보다 실제 AWS 검증 결과 중심으로 쓰는 것이 더 설득력 있다.
+
+핵심 수치:
+
+| 항목 | 개선 전 | 개선 후 |
+| --- | ---: | ---: |
+| 환경 | EKS + RDS PostgreSQL | EKS + RDS PostgreSQL |
+| 서비스 | `report-service` | `report-service` |
+| 파드 수 | 3 | 3 |
+| 파드당 HikariCP max pool | 20 | 8 |
+| 이론상 최대 DB 연결 | 60 | 24 |
+| RDS `max_connections` | 40 | 40 |
+| Ready 파드 | 2 / 3 | 3 / 3 |
+| CrashLoopBackOff | 발생 | 0 |
+| DB 모니터링 쿼리 | 슬롯 부족으로 실패 | 성공 |
+| 실제 JDBC 세션 | 포화 상태 | 24 |
+| CloudWatch `DatabaseConnections` | 최대 31 | 24 |
+
+자기소개서용 문장:
+
+EKS 기반 MSA 환경에서 파드 수가 늘어날 때 각 파드의 HikariCP 커넥션 풀이 누적되어 DB 연결 슬롯을 고갈시킬 수 있다고 판단했습니다. 이를 검증하기 위해 `max_connections=40`으로 제한한 RDS PostgreSQL과 EKS 클러스터를 직접 구성하고, 실제 `report-service` 파드 3개를 배포했습니다. 개선 전에는 파드당 풀 크기 20으로 최대 60개의 DB 연결을 시도할 수 있었고, 배포 결과 일부 파드가 `remaining connection slots are reserved` 오류로 실패했습니다. CloudWatch `DatabaseConnections`는 실제 열린 연결 기준 최대 31개를 기록했고, DB 모니터링 쿼리도 슬롯 부족으로 실패했습니다. 이후 파드당 풀 크기를 8로 제한해 최대 연결 예산을 24개로 낮췄고, 동일한 3개 파드가 모두 Ready 상태로 올라오는 것을 확인했습니다. PostgreSQL `pg_stat_activity`에서도 실제 애플리케이션 JDBC 세션이 24개로 확인되어, 파드 증가 시 발생할 수 있는 DB 연결 고갈 위험을 운영 지표 기반으로 줄였습니다.
+
 ## 2번. 개발 환경 및 FE 테스트 게이트 정리
 
 이 항목은 백엔드 직무 자소서의 메인 경험으로 쓰기보다는, 프로젝트를 마무리하며 테스트와 협업 환경을 정리한 보조 경험으로 쓰는 것이 적절하다.

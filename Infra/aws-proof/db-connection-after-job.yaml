@@ -1,0 +1,65 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: db-connection-after
+  namespace: rebloom-proof
+spec:
+  completions: 3
+  parallelism: 3
+  backoffLimit: 0
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: psql-pool
+          image: postgres:16-alpine
+          env:
+            - name: POOL_SIZE
+              value: "8"
+            - name: HOLD_SECONDS
+              value: "120"
+            - name: DB_HOST
+              valueFrom: { secretKeyRef: { name: rebloom-db, key: DB_HOST } }
+            - name: DB_PORT
+              valueFrom: { secretKeyRef: { name: rebloom-db, key: DB_PORT } }
+            - name: DB_NAME
+              valueFrom: { secretKeyRef: { name: rebloom-db, key: DB_NAME } }
+            - name: DB_USERNAME
+              valueFrom: { secretKeyRef: { name: rebloom-db, key: DB_USERNAME } }
+            - name: PGPASSWORD
+              valueFrom: { secretKeyRef: { name: rebloom-db, key: DB_PASSWORD } }
+          command: ["sh", "-c"]
+          args:
+            - |
+              set -eu
+              workdir="/tmp/rebloom-db-connection-after"
+              mkdir -p "$workdir"
+              echo "scenario=after pod=$(hostname) pool_size=$POOL_SIZE hold_seconds=$HOLD_SECONDS"
+              i=1
+              pids=""
+              while [ "$i" -le "$POOL_SIZE" ]; do
+                (
+                  set +e
+                  psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USERNAME" -d "$DB_NAME" \
+                    -v ON_ERROR_STOP=1 -qAt \
+                    -c "SELECT pg_sleep($HOLD_SECONDS);" > "$workdir/out_$i.txt" 2>&1
+                  echo "$?" > "$workdir/code_$i.txt"
+                ) &
+                pids="$pids $!"
+                i=$((i + 1))
+              done
+              for pid in $pids; do
+                wait "$pid" || true
+              done
+              success=0
+              failed=0
+              for code in "$workdir"/code_*.txt; do
+                if [ "$(cat "$code")" = "0" ]; then
+                  success=$((success + 1))
+                else
+                  failed=$((failed + 1))
+                fi
+              done
+              echo "attempted_connections=$POOL_SIZE"
+              echo "successful_connections=$success"
+              echo "failed_connections=$failed"

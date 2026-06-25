@@ -1,0 +1,333 @@
+[pod/report-service-proof-59555c75dc-nx6jw/report-service]
+[pod/report-service-proof-59555c75dc-nx6jw/report-service]   .   ____          _            __ _ _
+[pod/report-service-proof-59555c75dc-nx6jw/report-service]  /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+[pod/report-service-proof-59555c75dc-nx6jw/report-service] ( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+[pod/report-service-proof-59555c75dc-nx6jw/report-service]  \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+[pod/report-service-proof-59555c75dc-nx6jw/report-service]   '  |____| .__|_| |_|_| |_\__, | / / / /
+[pod/report-service-proof-59555c75dc-nx6jw/report-service]  =========|_|==============|___/=/_/_/_/
+[pod/report-service-proof-59555c75dc-nx6jw/report-service]
+[pod/report-service-proof-59555c75dc-nx6jw/report-service]  :: Spring Boot ::               (v3.5.13)
+[pod/report-service-proof-59555c75dc-nx6jw/report-service]
+[pod/report-service-proof-59555c75dc-nx6jw/report-service] 2026-06-25T07:55:31.567Z  INFO 10 --- [report-service] [           main] c.s.r.r.ReportServiceApplication         : Starting ReportServiceApplication v0.0.1-SNAPSHOT using Java 21.0.11 with PID 10 (/app/libs/report-service-0.0.1-SNAPSHOT.jar started by root in /app)
+[pod/report-service-proof-59555c75dc-nx6jw/report-service] 2026-06-25T07:55:31.579Z  INFO 10 --- [report-service] [           main] c.s.r.r.ReportServiceApplication         : The following 1 profile is active: "prod"
+[pod/report-service-proof-59555c75dc-nx6jw/report-service] 2026-06-25T07:55:36.917Z  INFO 10 --- [report-service] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+[pod/report-service-proof-59555c75dc-nx6jw/report-service] 2026-06-25T07:55:37.203Z  INFO 10 --- [report-service] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 243 ms. Found 9 JPA repository interfaces.
+[pod/report-service-proof-59555c75dc-nx6jw/report-service] 2026-06-25T07:55:38.449Z  INFO 10 --- [report-service] [           main] o.s.cloud.context.scope.GenericScope     : BeanFactory id=7c0fde3e-c479-3ec6-af04-c34e324c0fd4
+[pod/report-service-proof-59555c75dc-nx6jw/report-service] 2026-06-25T07:55:40.496Z  INFO 10 --- [report-service] [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port 8084 (http)
+[pod/report-service-proof-59555c75dc-nx6jw/report-service] 2026-06-25T07:55:40.555Z  INFO 10 --- [report-service] [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+[pod/report-service-proof-59555c75dc-nx6jw/report-service] 2026-06-25T07:55:40.556Z  INFO 10 --- [report-service] [           main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/10.1.53]
+[pod/report-service-proof-59555c75dc-nx6jw/report-service] 2026-06-25T07:55:40.902Z  INFO 10 --- [report-service] [           main] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring embedded WebApplicationContext
+[pod/report-service-proof-59555c75dc-nx6jw/report-service] 2026-06-25T07:55:40.903Z  INFO 10 --- [report-service] [           main] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 9084 ms
+[pod/report-service-proof-59555c75dc-nx6jw/report-service] 2026-06-25T07:55:42.963Z  INFO 10 --- [report-service] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+[pod/report-service-proof-59555c75dc-nx6jw/report-service] 2026-06-25T07:55:45.292Z  WARN 10 --- [report-service] [           main] ConfigServletWebServerApplicationContext : Exception encountered during context initialization - cancelling refresh attempt: org.springframework.beans.factory.BeanCreationException: Error creating bean with name 'entityManagerFactory' defined in class path resource [org/springframework/boot/autoconfigure/orm/jpa/HibernateJpaConfiguration.class]: Failed to initialize dependency 'flywayInitializer' of LoadTimeWeaverAware bean 'entityManagerFactory': Error creating bean with name 'flywayInitializer' defined in class path resource [org/springframework/boot/autoconfigure/flyway/FlywayAutoConfiguration$FlywayConfiguration.class]: Unable to obtain connection from database: FATAL: remaining connection slots are reserved for roles with privileges of the "rds_reserved" role
+[pod/report-service-proof-59555c75dc-nx6jw/report-service] ----------------------------------------------------------------------------------------------------------------------------------------------
+[pod/report-service-proof-59555c75dc-nx6jw/report-service] SQL State  : 53300
+[pod/report-service-proof-59555c75dc-nx6jw/report-service] Error Code : 0
+[pod/report-service-proof-59555c75dc-nx6jw/report-service] Message    : FATAL: remaining connection slots are reserved for roles with privileges of the "rds_reserved" role
+[pod/report-service-proof-59555c75dc-nx6jw/report-service]
+[pod/report-service-proof-59555c75dc-nx6jw/report-service] 2026-06-25T07:55:45.299Z  INFO 10 --- [report-service] [           main] o.apache.catalina.core.StandardService   : Stopping service [Tomcat]
+[pod/report-service-proof-59555c75dc-nx6jw/report-service] 2026-06-25T07:55:45.338Z  INFO 10 --- [report-service] [           main] .s.b.a.l.ConditionEvaluationReportLogger :
+[pod/report-service-proof-59555c75dc-nx6jw/report-service]
+[pod/report-service-proof-59555c75dc-nx6jw/report-service] Error starting ApplicationContext. To display the condition evaluation report re-run your application with 'debug' enabled.
+[pod/report-service-proof-59555c75dc-nx6jw/report-service] 2026-06-25T07:55:45.410Z ERROR 10 --- [report-service] [           main] o.s.boot.SpringApplication               : Application run failed
+[pod/report-service-proof-59555c75dc-nx6jw/report-service]
+[pod/report-service-proof-59555c75dc-nx6jw/report-service] org.springframework.beans.factory.BeanCreationException: Error creating bean with name 'entityManagerFactory' defined in class path resource [org/springframework/boot/autoconfigure/orm/jpa/HibernateJpaConfiguration.class]: Failed to initialize dependency 'flywayInitializer' of LoadTimeWeaverAware bean 'entityManagerFactory': Error creating bean with name 'flywayInitializer' defined in class path resource [org/springframework/boot/autoconfigure/flyway/FlywayAutoConfiguration$FlywayConfiguration.class]: Unable to obtain connection from database: FATAL: remaining connection slots are reserved for roles with privileges of the "rds_reserved" role
+[pod/report-service-proof-59555c75dc-nx6jw/report-service] ----------------------------------------------------------------------------------------------------------------------------------------------
+[pod/report-service-proof-59555c75dc-nx6jw/report-service] SQL State  : 53300
+[pod/report-service-proof-59555c75dc-nx6jw/report-service] Error Code : 0
+[pod/report-service-proof-59555c75dc-nx6jw/report-service] Message    : FATAL: remaining connection slots are reserved for roles with privileges of the "rds_reserved" role
+[pod/report-service-proof-59555c75dc-nx6jw/report-service]
+[pod/report-service-proof-59555c75dc-nx6jw/report-service] 	at org.springframework.beans.factory.support.AbstractBeanFactory.doGetBean(AbstractBeanFactory.java:328) ~[spring-beans-6.2.17.jar!/:6.2.17]
+[pod/report-service-proof-59555c75dc-nx6jw/report-service] 	at org.springframework.beans.factory.support.AbstractBeanFactory.getBean(AbstractBeanFactory.java:207) ~[spring-beans-6.2.17.jar!/:6.2.17]
+[pod/report-service-proof-59555c75dc-nx6jw/report-service] 	at org.springframework.context.support.AbstractApplicationContext.finishBeanFactoryInitialization(AbstractApplicationContext.java:974) ~[spring-context-6.2.17.jar!/:6.2.17]
+[pod/report-service-proof-59555c75dc-nx6jw/report-service] 	at org.springframework.context.support.AbstractApplicationContext.refresh(AbstractApplicationContext.java:628) ~[spring-context-6.2.17.jar!/:6.2.17]
+[pod/report-service-proof-59555c75dc-nx6jw/report-service] 	at org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext.refresh(ServletWebServerApplicationContext.java:146) ~[spring-boot-3.5.13.jar!/:3.5.13]
+[pod/report-service-proof-59555c75dc-nx6jw/report-service] 	at org.springframework.boot.SpringApplication.refresh(SpringApplication.java:752) ~[spring-boot-3.5.13.jar!/:3.5.13]
+[pod/report-service-proof-59555c75dc-nx6jw/report-service] 	at org.springframework.boot.SpringApplication.refreshContext(SpringApplication.java:439) ~[spring-boot-3.5.13.jar!/:3.5.13]
+[pod/report-service-proof-59555c75dc-nx6jw/report-service] 	at org.springframework.boot.SpringApplication.run(SpringApplication.java:318) ~[spring-boot-3.5.13.jar!/:3.5.13]
+[pod/report-service-proof-59555c75dc-nx6jw/report-service] 	at org.springframework.boot.SpringApplication.run(SpringApplication.java:1361) ~[spring-boot-3.5.13.jar!/:3.5.13]
+[pod/report-service-proof-59555c75dc-nx6jw/report-service] 	at org.springframework.boot.SpringApplication.run(SpringApplication.java:1350) ~[spring-boot-3.5.13.jar!/:3.5.13]
+[pod/report-service-proof-59555c75dc-nx6jw/report-service] 	at com.ssafy.rebloom.report_service.ReportServiceApplication.main(ReportServiceApplication.java:18) ~[!/:0.0.1-SNAPSHOT]
+[pod/report-service-proof-59555c75dc-nx6jw/report-service] 	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(Unknown Source) ~[na:na]
+[pod/report-service-proof-59555c75dc-nx6jw/report-service] 	at java.base/java.lang.reflect.Method.invoke(Unknown Source) ~[na:na]
+[pod/report-service-proof-59555c75dc-nx6jw/report-service] 	at org.springframework.boot.loader.launch.Launcher.launch(Launcher.java:106) ~[report-service-0.0.1-SNAPSHOT.jar:0.0.1-SNAPSHOT]
+[pod/report-service-proof-59555c75dc-nx6jw/report-service] 	at org.springframework.boot.loader.launch.Launcher.launch(Launcher.java:64) ~[report-service-0.0.1-SNAPSHOT.jar:0.0.1-SNAPSHOT]
+[pod/report-service-proof-59555c75dc-nx6jw/report-service] 	at org.springframework.boot.loader.launch.JarLauncher.main(JarLauncher.java:40) ~[report-service-0.0.1-SNAPSHOT.jar:0.0.1-SNAPSHOT]
+[pod/report-service-proof-59555c75dc-nx6jw/report-service] Caused by: org.springframework.beans.factory.BeanCreationException: Error creating bean with name 'flywayInitializer' defined in class path resource [org/springframework/boot/autoconfigure/flyway/FlywayAutoConfiguration$FlywayConfiguration.class]: Unable to obtain connection from database: FATAL: remaining connection slots are reserved for roles with privileges of the "rds_reserved" role
+[pod/report-service-proof-59555c75dc-nx6jw/report-service] ----------------------------------------------------------------------------------------------------------------------------------------------
+[pod/report-service-proof-59555c75dc-nx6jw/report-service] SQL State  : 53300
+[pod/report-service-proof-59555c75dc-nx6jw/report-service] Error Code : 0
+[pod/report-service-proof-59555c75dc-nx6jw/report-service] Message    : FATAL: remaining connection slots are reserved for roles with privileges of the "rds_reserved" role
+[pod/report-service-proof-59555c75dc-nx6jw/report-service]
+[pod/report-service-proof-59555c75dc-nx6jw/report-service] 	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.initializeBean(AbstractAutowireCapableBeanFactory.java:1826) ~[spring-beans-6.2.17.jar!/:6.2.17]
+[pod/report-service-proof-59555c75dc-nx6jw/report-service] 	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.doCreateBean(AbstractAutowireCapableBeanFactory.java:607) ~[spring-beans-6.2.17.jar!/:6.2.17]
+[pod/report-service-proof-59555c75dc-nx6jw/report-service] 	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.createBean(AbstractAutowireCapableBeanFactory.java:529) ~[spring-beans-6.2.17.jar!/:6.2.17]
+[pod/report-service-proof-59555c75dc-nx6jw/report-service] 	at org.springframework.beans.factory.support.AbstractBeanFactory.lambda$doGetBean$0(AbstractBeanFactory.java:339) ~[spring-beans-6.2.17.jar!/:6.2.17]
+[pod/report-service-proof-59555c75dc-nx6jw/report-service] 	at org.springframework.beans.factory.support.DefaultSingletonBeanRegistry.getSingleton(DefaultSingletonBeanRegistry.java:373) ~[spring-beans-6.2.17.jar!/:6.2.17]
+[pod/report-service-proof-59555c75dc-nx6jw/report-service] 	at org.springframework.beans.factory.support.AbstractBeanFactory.doGetBean(AbstractBeanFactory.java:337) ~[spring-beans-6.2.17.jar!/:6.2.17]
+[pod/report-service-proof-59555c75dc-nx6jw/report-service] 	at org.springframework.beans.factory.support.AbstractBeanFactory.getBean(AbstractBeanFactory.java:202) ~[spring-beans-6.2.17.jar!/:6.2.17]
+[pod/report-service-proof-59555c75dc-nx6jw/report-service] 	at org.springframework.beans.factory.support.AbstractBeanFactory.doGetBean(AbstractBeanFactory.java:315) ~[spring-beans-6.2.17.jar!/:6.2.17]
+[pod/report-service-proof-59555c75dc-nx6jw/report-service] 	... 15 common frames omitted
+[pod/report-service-proof-59555c75dc-nx6jw/report-service] Caused by: org.flywaydb.core.internal.exception.FlywaySqlException: Unable to obtain connection from database: FATAL: remaining connection slots are reserved for roles with privileges of the "rds_reserved" role
+[pod/report-service-proof-59555c75dc-nx6jw/report-service] ----------------------------------------------------------------------------------------------------------------------------------------------
+[pod/report-service-proof-59555c75dc-nx6jw/report-service] SQL State  : 53300
+[pod/report-service-proof-59555c75dc-nx6jw/report-service] Error Code : 0
+[pod/report-service-proof-59555c75dc-nx6jw/report-service] Message    : FATAL: remaining connection slots are reserved for roles with privileges of the "rds_reserved" role
+[pod/report-service-proof-59555c75dc-nx6jw/report-service]
+[pod/report-service-proof-59555c75dc-nx6jw/report-service] 	at org.flywaydb.core.internal.jdbc.JdbcUtils.openConnection(JdbcUtils.java:71) ~[flyway-core-11.7.2.jar!/:na]
+[pod/report-service-proof-59555c75dc-nx6jw/report-service] 	at org.flywaydb.core.internal.jdbc.JdbcConnectionFactory.<init>(JdbcConnectionFactory.java:76) ~[flyway-core-11.7.2.jar!/:na]
+[pod/report-service-proof-59555c75dc-nx6jw/report-service] 	at org.flywaydb.core.FlywayExecutor.execute(FlywayExecutor.java:136) ~[flyway-core-11.7.2.jar!/:na]
+[pod/report-service-proof-59555c75dc-nx6jw/report-service] 	at org.flywaydb.core.Flyway.migrate(Flyway.java:188) ~[flyway-core-11.7.2.jar!/:na]
+[pod/report-service-proof-59555c75dc-nx6jw/report-service] 	at org.springframework.boot.autoconfigure.flyway.FlywayMigrationInitializer.afterPropertiesSet(FlywayMigrationInitializer.java:66) ~[spring-boot-autoconfigure-3.5.13.jar!/:3.5.13]
+[pod/report-service-proof-59555c75dc-nx6jw/report-service] 	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.invokeInitMethods(AbstractAutowireCapableBeanFactory.java:1873) ~[spring-beans-6.2.17.jar!/:6.2.17]
+[pod/report-service-proof-59555c75dc-nx6jw/report-service] 	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.initializeBean(AbstractAutowireCapableBeanFactory.java:1822) ~[spring-beans-6.2.17.jar!/:6.2.17]
+[pod/report-service-proof-59555c75dc-nx6jw/report-service] 	... 22 common frames omitted
+[pod/report-service-proof-59555c75dc-nx6jw/report-service] Caused by: org.postgresql.util.PSQLException: FATAL: remaining connection slots are reserved for roles with privileges of the "rds_reserved" role
+[pod/report-service-proof-59555c75dc-nx6jw/report-service] 	at org.postgresql.core.v3.QueryExecutorImpl.receiveErrorResponse(QueryExecutorImpl.java:2875) ~[postgresql-42.7.10.jar!/:42.7.10]
+[pod/report-service-proof-59555c75dc-nx6jw/report-service] 	at org.postgresql.core.v3.QueryExecutorImpl.readStartupMessages(QueryExecutorImpl.java:3000) ~[postgresql-42.7.10.jar!/:42.7.10]
+[pod/report-service-proof-59555c75dc-nx6jw/report-service] 	at org.postgresql.core.v3.QueryExecutorImpl.<init>(QueryExecutorImpl.java:235) ~[postgresql-42.7.10.jar!/:42.7.10]
+[pod/report-service-proof-59555c75dc-nx6jw/report-service] 	at org.postgresql.core.v3.ConnectionFactoryImpl.openConnectionImpl(ConnectionFactoryImpl.java:344) ~[postgresql-42.7.10.jar!/:42.7.10]
+[pod/report-service-proof-59555c75dc-nx6jw/report-service] 	at org.postgresql.core.ConnectionFactory.openConnection(ConnectionFactory.java:57) ~[postgresql-42.7.10.jar!/:42.7.10]
+[pod/report-service-proof-59555c75dc-nx6jw/report-service] 	at org.postgresql.jdbc.PgConnection.<init>(PgConnection.java:290) ~[postgresql-42.7.10.jar!/:42.7.10]
+[pod/report-service-proof-59555c75dc-nx6jw/report-service] 	at org.postgresql.Driver.makeConnection(Driver.java:448) ~[postgresql-42.7.10.jar!/:42.7.10]
+[pod/report-service-proof-59555c75dc-nx6jw/report-service] 	at org.postgresql.Driver.connect(Driver.java:298) ~[postgresql-42.7.10.jar!/:42.7.10]
+[pod/report-service-proof-59555c75dc-nx6jw/report-service] 	at com.zaxxer.hikari.util.DriverDataSource.getConnection(DriverDataSource.java:144) ~[HikariCP-6.3.3.jar!/:na]
+[pod/report-service-proof-59555c75dc-nx6jw/report-service] 	at com.zaxxer.hikari.pool.PoolBase.newConnection(PoolBase.java:370) ~[HikariCP-6.3.3.jar!/:na]
+[pod/report-service-proof-59555c75dc-nx6jw/report-service] 	at com.zaxxer.hikari.pool.PoolBase.newPoolEntry(PoolBase.java:207) ~[HikariCP-6.3.3.jar!/:na]
+[pod/report-service-proof-59555c75dc-nx6jw/report-service] 	at com.zaxxer.hikari.pool.HikariPool.createPoolEntry(HikariPool.java:488) ~[HikariCP-6.3.3.jar!/:na]
+[pod/report-service-proof-59555c75dc-nx6jw/report-service] 	at com.zaxxer.hikari.pool.HikariPool.checkFailFast(HikariPool.java:576) ~[HikariCP-6.3.3.jar!/:na]
+[pod/report-service-proof-59555c75dc-nx6jw/report-service] 	at com.zaxxer.hikari.pool.HikariPool.<init>(HikariPool.java:97) ~[HikariCP-6.3.3.jar!/:na]
+[pod/report-service-proof-59555c75dc-nx6jw/report-service] 	at com.zaxxer.hikari.HikariDataSource.getConnection(HikariDataSource.java:111) ~[HikariCP-6.3.3.jar!/:na]
+[pod/report-service-proof-59555c75dc-nx6jw/report-service] 	at org.flywaydb.core.internal.jdbc.JdbcUtils.openConnection(JdbcUtils.java:59) ~[flyway-core-11.7.2.jar!/:na]
+[pod/report-service-proof-59555c75dc-nx6jw/report-service] 	... 28 common frames omitted
+[pod/report-service-proof-59555c75dc-nx6jw/report-service]
+[pod/report-service-proof-85ff779fff-g6crx/report-service]
+[pod/report-service-proof-85ff779fff-g6crx/report-service]   .   ____          _            __ _ _
+[pod/report-service-proof-85ff779fff-g6crx/report-service]  /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+[pod/report-service-proof-85ff779fff-g6crx/report-service] ( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+[pod/report-service-proof-85ff779fff-g6crx/report-service]  \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+[pod/report-service-proof-85ff779fff-g6crx/report-service]   '  |____| .__|_| |_|_| |_\__, | / / / /
+[pod/report-service-proof-85ff779fff-g6crx/report-service]  =========|_|==============|___/=/_/_/_/
+[pod/report-service-proof-85ff779fff-g6crx/report-service]
+[pod/report-service-proof-85ff779fff-g6crx/report-service]  :: Spring Boot ::               (v3.5.13)
+[pod/report-service-proof-85ff779fff-g6crx/report-service]
+[pod/report-service-proof-85ff779fff-g6crx/report-service] 2026-06-25T07:56:31.061Z  INFO 10 --- [report-service] [           main] c.s.r.r.ReportServiceApplication         : Starting ReportServiceApplication v0.0.1-SNAPSHOT using Java 21.0.11 with PID 10 (/app/libs/report-service-0.0.1-SNAPSHOT.jar started by root in /app)
+[pod/report-service-proof-85ff779fff-g6crx/report-service] 2026-06-25T07:56:31.065Z  INFO 10 --- [report-service] [           main] c.s.r.r.ReportServiceApplication         : The following 1 profile is active: "prod"
+[pod/report-service-proof-85ff779fff-g6crx/report-service] 2026-06-25T07:56:35.664Z  INFO 10 --- [report-service] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+[pod/report-service-proof-85ff779fff-g6crx/report-service] 2026-06-25T07:56:35.956Z  INFO 10 --- [report-service] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 261 ms. Found 9 JPA repository interfaces.
+[pod/report-service-proof-85ff779fff-g6crx/report-service] 2026-06-25T07:56:36.962Z  INFO 10 --- [report-service] [           main] o.s.cloud.context.scope.GenericScope     : BeanFactory id=7c0fde3e-c479-3ec6-af04-c34e324c0fd4
+[pod/report-service-proof-85ff779fff-g6crx/report-service] 2026-06-25T07:56:38.899Z  INFO 10 --- [report-service] [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port 8084 (http)
+[pod/report-service-proof-85ff779fff-g6crx/report-service] 2026-06-25T07:56:38.954Z  INFO 10 --- [report-service] [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+[pod/report-service-proof-85ff779fff-g6crx/report-service] 2026-06-25T07:56:38.955Z  INFO 10 --- [report-service] [           main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/10.1.53]
+[pod/report-service-proof-85ff779fff-g6crx/report-service] 2026-06-25T07:56:39.291Z  INFO 10 --- [report-service] [           main] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring embedded WebApplicationContext
+[pod/report-service-proof-85ff779fff-g6crx/report-service] 2026-06-25T07:56:39.294Z  INFO 10 --- [report-service] [           main] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 8035 ms
+[pod/report-service-proof-85ff779fff-g6crx/report-service] 2026-06-25T07:56:41.367Z  INFO 10 --- [report-service] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+[pod/report-service-proof-85ff779fff-g6crx/report-service] 2026-06-25T07:56:43.756Z  WARN 10 --- [report-service] [           main] ConfigServletWebServerApplicationContext : Exception encountered during context initialization - cancelling refresh attempt: org.springframework.beans.factory.BeanCreationException: Error creating bean with name 'entityManagerFactory' defined in class path resource [org/springframework/boot/autoconfigure/orm/jpa/HibernateJpaConfiguration.class]: Failed to initialize dependency 'flywayInitializer' of LoadTimeWeaverAware bean 'entityManagerFactory': Error creating bean with name 'flywayInitializer' defined in class path resource [org/springframework/boot/autoconfigure/flyway/FlywayAutoConfiguration$FlywayConfiguration.class]: Unable to obtain connection from database: FATAL: remaining connection slots are reserved for roles with privileges of the "rds_reserved" role
+[pod/report-service-proof-85ff779fff-g6crx/report-service] ----------------------------------------------------------------------------------------------------------------------------------------------
+[pod/report-service-proof-85ff779fff-g6crx/report-service] SQL State  : 53300
+[pod/report-service-proof-85ff779fff-g6crx/report-service] Error Code : 0
+[pod/report-service-proof-85ff779fff-g6crx/report-service] Message    : FATAL: remaining connection slots are reserved for roles with privileges of the "rds_reserved" role
+[pod/report-service-proof-85ff779fff-g6crx/report-service]
+[pod/report-service-proof-85ff779fff-g6crx/report-service] 2026-06-25T07:56:43.763Z  INFO 10 --- [report-service] [           main] o.apache.catalina.core.StandardService   : Stopping service [Tomcat]
+[pod/report-service-proof-85ff779fff-g6crx/report-service] 2026-06-25T07:56:43.797Z  INFO 10 --- [report-service] [           main] .s.b.a.l.ConditionEvaluationReportLogger :
+[pod/report-service-proof-85ff779fff-g6crx/report-service]
+[pod/report-service-proof-85ff779fff-g6crx/report-service] Error starting ApplicationContext. To display the condition evaluation report re-run your application with 'debug' enabled.
+[pod/report-service-proof-85ff779fff-g6crx/report-service] 2026-06-25T07:56:43.843Z ERROR 10 --- [report-service] [           main] o.s.boot.SpringApplication               : Application run failed
+[pod/report-service-proof-85ff779fff-g6crx/report-service]
+[pod/report-service-proof-85ff779fff-g6crx/report-service] org.springframework.beans.factory.BeanCreationException: Error creating bean with name 'entityManagerFactory' defined in class path resource [org/springframework/boot/autoconfigure/orm/jpa/HibernateJpaConfiguration.class]: Failed to initialize dependency 'flywayInitializer' of LoadTimeWeaverAware bean 'entityManagerFactory': Error creating bean with name 'flywayInitializer' defined in class path resource [org/springframework/boot/autoconfigure/flyway/FlywayAutoConfiguration$FlywayConfiguration.class]: Unable to obtain connection from database: FATAL: remaining connection slots are reserved for roles with privileges of the "rds_reserved" role
+[pod/report-service-proof-85ff779fff-g6crx/report-service] ----------------------------------------------------------------------------------------------------------------------------------------------
+[pod/report-service-proof-85ff779fff-g6crx/report-service] SQL State  : 53300
+[pod/report-service-proof-85ff779fff-g6crx/report-service] Error Code : 0
+[pod/report-service-proof-85ff779fff-g6crx/report-service] Message    : FATAL: remaining connection slots are reserved for roles with privileges of the "rds_reserved" role
+[pod/report-service-proof-85ff779fff-g6crx/report-service]
+[pod/report-service-proof-85ff779fff-g6crx/report-service] 	at org.springframework.beans.factory.support.AbstractBeanFactory.doGetBean(AbstractBeanFactory.java:328) ~[spring-beans-6.2.17.jar!/:6.2.17]
+[pod/report-service-proof-85ff779fff-g6crx/report-service] 	at org.springframework.beans.factory.support.AbstractBeanFactory.getBean(AbstractBeanFactory.java:207) ~[spring-beans-6.2.17.jar!/:6.2.17]
+[pod/report-service-proof-85ff779fff-g6crx/report-service] 	at org.springframework.context.support.AbstractApplicationContext.finishBeanFactoryInitialization(AbstractApplicationContext.java:974) ~[spring-context-6.2.17.jar!/:6.2.17]
+[pod/report-service-proof-85ff779fff-g6crx/report-service] 	at org.springframework.context.support.AbstractApplicationContext.refresh(AbstractApplicationContext.java:628) ~[spring-context-6.2.17.jar!/:6.2.17]
+[pod/report-service-proof-85ff779fff-g6crx/report-service] 	at org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext.refresh(ServletWebServerApplicationContext.java:146) ~[spring-boot-3.5.13.jar!/:3.5.13]
+[pod/report-service-proof-85ff779fff-g6crx/report-service] 	at org.springframework.boot.SpringApplication.refresh(SpringApplication.java:752) ~[spring-boot-3.5.13.jar!/:3.5.13]
+[pod/report-service-proof-85ff779fff-g6crx/report-service] 	at org.springframework.boot.SpringApplication.refreshContext(SpringApplication.java:439) ~[spring-boot-3.5.13.jar!/:3.5.13]
+[pod/report-service-proof-85ff779fff-g6crx/report-service] 	at org.springframework.boot.SpringApplication.run(SpringApplication.java:318) ~[spring-boot-3.5.13.jar!/:3.5.13]
+[pod/report-service-proof-85ff779fff-g6crx/report-service] 	at org.springframework.boot.SpringApplication.run(SpringApplication.java:1361) ~[spring-boot-3.5.13.jar!/:3.5.13]
+[pod/report-service-proof-85ff779fff-g6crx/report-service] 	at org.springframework.boot.SpringApplication.run(SpringApplication.java:1350) ~[spring-boot-3.5.13.jar!/:3.5.13]
+[pod/report-service-proof-85ff779fff-g6crx/report-service] 	at com.ssafy.rebloom.report_service.ReportServiceApplication.main(ReportServiceApplication.java:18) ~[!/:0.0.1-SNAPSHOT]
+[pod/report-service-proof-85ff779fff-g6crx/report-service] 	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(Unknown Source) ~[na:na]
+[pod/report-service-proof-85ff779fff-g6crx/report-service] 	at java.base/java.lang.reflect.Method.invoke(Unknown Source) ~[na:na]
+[pod/report-service-proof-85ff779fff-g6crx/report-service] 	at org.springframework.boot.loader.launch.Launcher.launch(Launcher.java:106) ~[report-service-0.0.1-SNAPSHOT.jar:0.0.1-SNAPSHOT]
+[pod/report-service-proof-85ff779fff-g6crx/report-service] 	at org.springframework.boot.loader.launch.Launcher.launch(Launcher.java:64) ~[report-service-0.0.1-SNAPSHOT.jar:0.0.1-SNAPSHOT]
+[pod/report-service-proof-85ff779fff-g6crx/report-service] 	at org.springframework.boot.loader.launch.JarLauncher.main(JarLauncher.java:40) ~[report-service-0.0.1-SNAPSHOT.jar:0.0.1-SNAPSHOT]
+[pod/report-service-proof-85ff779fff-g6crx/report-service] Caused by: org.springframework.beans.factory.BeanCreationException: Error creating bean with name 'flywayInitializer' defined in class path resource [org/springframework/boot/autoconfigure/flyway/FlywayAutoConfiguration$FlywayConfiguration.class]: Unable to obtain connection from database: FATAL: remaining connection slots are reserved for roles with privileges of the "rds_reserved" role
+[pod/report-service-proof-85ff779fff-g6crx/report-service] ----------------------------------------------------------------------------------------------------------------------------------------------
+[pod/report-service-proof-85ff779fff-g6crx/report-service] SQL State  : 53300
+[pod/report-service-proof-85ff779fff-g6crx/report-service] Error Code : 0
+[pod/report-service-proof-85ff779fff-g6crx/report-service] Message    : FATAL: remaining connection slots are reserved for roles with privileges of the "rds_reserved" role
+[pod/report-service-proof-85ff779fff-g6crx/report-service]
+[pod/report-service-proof-85ff779fff-g6crx/report-service] 	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.initializeBean(AbstractAutowireCapableBeanFactory.java:1826) ~[spring-beans-6.2.17.jar!/:6.2.17]
+[pod/report-service-proof-85ff779fff-g6crx/report-service] 	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.doCreateBean(AbstractAutowireCapableBeanFactory.java:607) ~[spring-beans-6.2.17.jar!/:6.2.17]
+[pod/report-service-proof-85ff779fff-g6crx/report-service] 	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.createBean(AbstractAutowireCapableBeanFactory.java:529) ~[spring-beans-6.2.17.jar!/:6.2.17]
+[pod/report-service-proof-85ff779fff-g6crx/report-service] 	at org.springframework.beans.factory.support.AbstractBeanFactory.lambda$doGetBean$0(AbstractBeanFactory.java:339) ~[spring-beans-6.2.17.jar!/:6.2.17]
+[pod/report-service-proof-85ff779fff-g6crx/report-service] 	at org.springframework.beans.factory.support.DefaultSingletonBeanRegistry.getSingleton(DefaultSingletonBeanRegistry.java:373) ~[spring-beans-6.2.17.jar!/:6.2.17]
+[pod/report-service-proof-85ff779fff-g6crx/report-service] 	at org.springframework.beans.factory.support.AbstractBeanFactory.doGetBean(AbstractBeanFactory.java:337) ~[spring-beans-6.2.17.jar!/:6.2.17]
+[pod/report-service-proof-85ff779fff-g6crx/report-service] 	at org.springframework.beans.factory.support.AbstractBeanFactory.getBean(AbstractBeanFactory.java:202) ~[spring-beans-6.2.17.jar!/:6.2.17]
+[pod/report-service-proof-85ff779fff-g6crx/report-service] 	at org.springframework.beans.factory.support.AbstractBeanFactory.doGetBean(AbstractBeanFactory.java:315) ~[spring-beans-6.2.17.jar!/:6.2.17]
+[pod/report-service-proof-85ff779fff-g6crx/report-service] 	... 15 common frames omitted
+[pod/report-service-proof-85ff779fff-g6crx/report-service] Caused by: org.flywaydb.core.internal.exception.FlywaySqlException: Unable to obtain connection from database: FATAL: remaining connection slots are reserved for roles with privileges of the "rds_reserved" role
+[pod/report-service-proof-85ff779fff-g6crx/report-service] ----------------------------------------------------------------------------------------------------------------------------------------------
+[pod/report-service-proof-85ff779fff-g6crx/report-service] SQL State  : 53300
+[pod/report-service-proof-85ff779fff-g6crx/report-service] Error Code : 0
+[pod/report-service-proof-85ff779fff-g6crx/report-service] Message    : FATAL: remaining connection slots are reserved for roles with privileges of the "rds_reserved" role
+[pod/report-service-proof-85ff779fff-g6crx/report-service]
+[pod/report-service-proof-85ff779fff-g6crx/report-service] 	at org.flywaydb.core.internal.jdbc.JdbcUtils.openConnection(JdbcUtils.java:71) ~[flyway-core-11.7.2.jar!/:na]
+[pod/report-service-proof-85ff779fff-g6crx/report-service] 	at org.flywaydb.core.internal.jdbc.JdbcConnectionFactory.<init>(JdbcConnectionFactory.java:76) ~[flyway-core-11.7.2.jar!/:na]
+[pod/report-service-proof-85ff779fff-g6crx/report-service] 	at org.flywaydb.core.FlywayExecutor.execute(FlywayExecutor.java:136) ~[flyway-core-11.7.2.jar!/:na]
+[pod/report-service-proof-85ff779fff-g6crx/report-service] 	at org.flywaydb.core.Flyway.migrate(Flyway.java:188) ~[flyway-core-11.7.2.jar!/:na]
+[pod/report-service-proof-85ff779fff-g6crx/report-service] 	at org.springframework.boot.autoconfigure.flyway.FlywayMigrationInitializer.afterPropertiesSet(FlywayMigrationInitializer.java:66) ~[spring-boot-autoconfigure-3.5.13.jar!/:3.5.13]
+[pod/report-service-proof-85ff779fff-g6crx/report-service] 	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.invokeInitMethods(AbstractAutowireCapableBeanFactory.java:1873) ~[spring-beans-6.2.17.jar!/:6.2.17]
+[pod/report-service-proof-85ff779fff-g6crx/report-service] 	at org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory.initializeBean(AbstractAutowireCapableBeanFactory.java:1822) ~[spring-beans-6.2.17.jar!/:6.2.17]
+[pod/report-service-proof-85ff779fff-g6crx/report-service] 	... 22 common frames omitted
+[pod/report-service-proof-85ff779fff-g6crx/report-service] Caused by: org.postgresql.util.PSQLException: FATAL: remaining connection slots are reserved for roles with privileges of the "rds_reserved" role
+[pod/report-service-proof-85ff779fff-g6crx/report-service] 	at org.postgresql.core.v3.QueryExecutorImpl.receiveErrorResponse(QueryExecutorImpl.java:2875) ~[postgresql-42.7.10.jar!/:42.7.10]
+[pod/report-service-proof-85ff779fff-g6crx/report-service] 	at org.postgresql.core.v3.QueryExecutorImpl.readStartupMessages(QueryExecutorImpl.java:3000) ~[postgresql-42.7.10.jar!/:42.7.10]
+[pod/report-service-proof-85ff779fff-g6crx/report-service] 	at org.postgresql.core.v3.QueryExecutorImpl.<init>(QueryExecutorImpl.java:235) ~[postgresql-42.7.10.jar!/:42.7.10]
+[pod/report-service-proof-85ff779fff-g6crx/report-service] 	at org.postgresql.core.v3.ConnectionFactoryImpl.openConnectionImpl(ConnectionFactoryImpl.java:344) ~[postgresql-42.7.10.jar!/:42.7.10]
+[pod/report-service-proof-85ff779fff-g6crx/report-service] 	at org.postgresql.core.ConnectionFactory.openConnection(ConnectionFactory.java:57) ~[postgresql-42.7.10.jar!/:42.7.10]
+[pod/report-service-proof-85ff779fff-g6crx/report-service] 	at org.postgresql.jdbc.PgConnection.<init>(PgConnection.java:290) ~[postgresql-42.7.10.jar!/:42.7.10]
+[pod/report-service-proof-85ff779fff-g6crx/report-service] 	at org.postgresql.Driver.makeConnection(Driver.java:448) ~[postgresql-42.7.10.jar!/:42.7.10]
+[pod/report-service-proof-85ff779fff-g6crx/report-service] 	at org.postgresql.Driver.connect(Driver.java:298) ~[postgresql-42.7.10.jar!/:42.7.10]
+[pod/report-service-proof-85ff779fff-g6crx/report-service] 	at com.zaxxer.hikari.util.DriverDataSource.getConnection(DriverDataSource.java:144) ~[HikariCP-6.3.3.jar!/:na]
+[pod/report-service-proof-85ff779fff-g6crx/report-service] 	at com.zaxxer.hikari.pool.PoolBase.newConnection(PoolBase.java:370) ~[HikariCP-6.3.3.jar!/:na]
+[pod/report-service-proof-85ff779fff-g6crx/report-service] 	at com.zaxxer.hikari.pool.PoolBase.newPoolEntry(PoolBase.java:207) ~[HikariCP-6.3.3.jar!/:na]
+[pod/report-service-proof-85ff779fff-g6crx/report-service] 	at com.zaxxer.hikari.pool.HikariPool.createPoolEntry(HikariPool.java:488) ~[HikariCP-6.3.3.jar!/:na]
+[pod/report-service-proof-85ff779fff-g6crx/report-service] 	at com.zaxxer.hikari.pool.HikariPool.checkFailFast(HikariPool.java:576) ~[HikariCP-6.3.3.jar!/:na]
+[pod/report-service-proof-85ff779fff-g6crx/report-service] 	at com.zaxxer.hikari.pool.HikariPool.<init>(HikariPool.java:97) ~[HikariCP-6.3.3.jar!/:na]
+[pod/report-service-proof-85ff779fff-g6crx/report-service] 	at com.zaxxer.hikari.HikariDataSource.getConnection(HikariDataSource.java:111) ~[HikariCP-6.3.3.jar!/:na]
+[pod/report-service-proof-85ff779fff-g6crx/report-service] 	at org.flywaydb.core.internal.jdbc.JdbcUtils.openConnection(JdbcUtils.java:59) ~[flyway-core-11.7.2.jar!/:na]
+[pod/report-service-proof-85ff779fff-g6crx/report-service] 	... 28 common frames omitted
+[pod/report-service-proof-85ff779fff-g6crx/report-service]
+[pod/report-service-proof-59555c75dc-9n5fg/report-service]
+[pod/report-service-proof-59555c75dc-9n5fg/report-service]   .   ____          _            __ _ _
+[pod/report-service-proof-59555c75dc-9n5fg/report-service]  /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+[pod/report-service-proof-59555c75dc-9n5fg/report-service] ( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+[pod/report-service-proof-59555c75dc-9n5fg/report-service]  \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+[pod/report-service-proof-59555c75dc-9n5fg/report-service]   '  |____| .__|_| |_|_| |_\__, | / / / /
+[pod/report-service-proof-59555c75dc-9n5fg/report-service]  =========|_|==============|___/=/_/_/_/
+[pod/report-service-proof-59555c75dc-9n5fg/report-service]
+[pod/report-service-proof-59555c75dc-9n5fg/report-service]  :: Spring Boot ::               (v3.5.13)
+[pod/report-service-proof-59555c75dc-9n5fg/report-service]
+[pod/report-service-proof-59555c75dc-9n5fg/report-service] 2026-06-25T07:50:21.927Z  INFO 10 --- [report-service] [           main] c.s.r.r.ReportServiceApplication         : Starting ReportServiceApplication v0.0.1-SNAPSHOT using Java 21.0.11 with PID 10 (/app/libs/report-service-0.0.1-SNAPSHOT.jar started by root in /app)
+[pod/report-service-proof-59555c75dc-9n5fg/report-service] 2026-06-25T07:50:21.985Z  INFO 10 --- [report-service] [           main] c.s.r.r.ReportServiceApplication         : The following 1 profile is active: "prod"
+[pod/report-service-proof-59555c75dc-9n5fg/report-service] 2026-06-25T07:50:26.798Z  INFO 10 --- [report-service] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+[pod/report-service-proof-59555c75dc-9n5fg/report-service] 2026-06-25T07:50:27.039Z  INFO 10 --- [report-service] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 226 ms. Found 9 JPA repository interfaces.
+[pod/report-service-proof-59555c75dc-9n5fg/report-service] 2026-06-25T07:50:28.219Z  INFO 10 --- [report-service] [           main] o.s.cloud.context.scope.GenericScope     : BeanFactory id=7c0fde3e-c479-3ec6-af04-c34e324c0fd4
+[pod/report-service-proof-59555c75dc-9n5fg/report-service] 2026-06-25T07:50:30.311Z  INFO 10 --- [report-service] [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port 8084 (http)
+[pod/report-service-proof-59555c75dc-9n5fg/report-service] 2026-06-25T07:50:30.384Z  INFO 10 --- [report-service] [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+[pod/report-service-proof-59555c75dc-9n5fg/report-service] 2026-06-25T07:50:30.385Z  INFO 10 --- [report-service] [           main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/10.1.53]
+[pod/report-service-proof-59555c75dc-9n5fg/report-service] 2026-06-25T07:50:30.722Z  INFO 10 --- [report-service] [           main] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring embedded WebApplicationContext
+[pod/report-service-proof-59555c75dc-9n5fg/report-service] 2026-06-25T07:50:30.724Z  INFO 10 --- [report-service] [           main] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 8525 ms
+[pod/report-service-proof-59555c75dc-9n5fg/report-service] 2026-06-25T07:50:32.789Z  INFO 10 --- [report-service] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+[pod/report-service-proof-59555c75dc-9n5fg/report-service] 2026-06-25T07:50:34.391Z  INFO 10 --- [report-service] [           main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection org.postgresql.jdbc.PgConnection@7bdf94f2
+[pod/report-service-proof-59555c75dc-9n5fg/report-service] 2026-06-25T07:50:34.393Z  INFO 10 --- [report-service] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+[pod/report-service-proof-59555c75dc-9n5fg/report-service] 2026-06-25T07:50:34.484Z  INFO 10 --- [report-service] [           main] org.flywaydb.core.FlywayExecutor         : Database: jdbc:postgresql://rebloom-proof-db.cpii28osy0kk.ap-northeast-2.rds.amazonaws.com:5432/rebloom_proof?sslmode=require (PostgreSQL 16.14)
+[pod/report-service-proof-59555c75dc-9n5fg/report-service] 2026-06-25T07:50:34.785Z  INFO 10 --- [report-service] [           main] o.f.core.internal.command.DbValidate     : Successfully validated 9 migrations (execution time 00:00.190s)
+[pod/report-service-proof-59555c75dc-9n5fg/report-service] 2026-06-25T07:50:34.891Z  INFO 10 --- [report-service] [           main] o.f.core.internal.command.DbMigrate      : Current version of schema "public": 9
+[pod/report-service-proof-59555c75dc-9n5fg/report-service] 2026-06-25T07:50:34.898Z  INFO 10 --- [report-service] [           main] o.f.core.internal.command.DbMigrate      : Schema "public" is up to date. No migration necessary.
+[pod/report-service-proof-59555c75dc-9n5fg/report-service] 2026-06-25T07:50:35.323Z  INFO 10 --- [report-service] [           main] o.hibernate.jpa.internal.util.LogHelper  : HHH000204: Processing PersistenceUnitInfo [name: default]
+[pod/report-service-proof-59555c75dc-9n5fg/report-service] 2026-06-25T07:50:35.631Z  INFO 10 --- [report-service] [           main] org.hibernate.Version                    : HHH000412: Hibernate ORM core version 6.6.45.Final
+[pod/report-service-proof-59555c75dc-9n5fg/report-service] 2026-06-25T07:50:35.891Z  INFO 10 --- [report-service] [           main] o.h.c.internal.RegionFactoryInitiator    : HHH000026: Second-level cache disabled
+[pod/report-service-proof-59555c75dc-9n5fg/report-service] 2026-06-25T07:50:37.317Z  INFO 10 --- [report-service] [           main] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+[pod/report-service-proof-59555c75dc-9n5fg/report-service] 2026-06-25T07:50:37.614Z  INFO 10 --- [report-service] [           main] org.hibernate.orm.connections.pooling    : HHH10001005: Database info:
+[pod/report-service-proof-59555c75dc-9n5fg/report-service] 	Database JDBC URL [Connecting through datasource 'HikariDataSource (HikariPool-1)']
+[pod/report-service-proof-59555c75dc-9n5fg/report-service] 	Database driver: undefined/unknown
+[pod/report-service-proof-59555c75dc-9n5fg/report-service] 	Database version: 16.14
+[pod/report-service-proof-59555c75dc-9n5fg/report-service] 	Autocommit mode: undefined/unknown
+[pod/report-service-proof-59555c75dc-9n5fg/report-service] 	Isolation level: undefined/unknown
+[pod/report-service-proof-59555c75dc-9n5fg/report-service] 	Minimum pool size: undefined/unknown
+[pod/report-service-proof-59555c75dc-9n5fg/report-service] 	Maximum pool size: undefined/unknown
+[pod/report-service-proof-59555c75dc-9n5fg/report-service] 2026-06-25T07:50:41.931Z  INFO 10 --- [report-service] [           main] o.h.e.t.j.p.i.JtaPlatformInitiator       : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+[pod/report-service-proof-59555c75dc-9n5fg/report-service] 2026-06-25T07:50:41.937Z  INFO 10 --- [report-service] [           main] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+[pod/report-service-proof-59555c75dc-9n5fg/report-service] 2026-06-25T07:50:42.809Z  WARN 10 --- [report-service] [           main] JpaBaseConfiguration$JpaWebConfiguration : spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
+[pod/report-service-proof-59555c75dc-9n5fg/report-service] 2026-06-25T07:50:45.095Z  INFO 10 --- [report-service] [           main] o.s.d.j.r.query.QueryEnhancerFactory     : Hibernate is in classpath; If applicable, HQL parser will be used.
+[pod/report-service-proof-59555c75dc-9n5fg/report-service] 2026-06-25T07:50:47.405Z  WARN 10 --- [report-service] [           main] .s.s.UserDetailsServiceAutoConfiguration :
+[pod/report-service-proof-59555c75dc-9n5fg/report-service]
+[pod/report-service-proof-59555c75dc-9n5fg/report-service] Using generated security password: [redacted]
+[pod/report-service-proof-59555c75dc-9n5fg/report-service]
+[pod/report-service-proof-59555c75dc-9n5fg/report-service] This generated password is for development use only. Your security configuration must be updated before running your application in production.
+[pod/report-service-proof-59555c75dc-9n5fg/report-service]
+[pod/report-service-proof-59555c75dc-9n5fg/report-service] 2026-06-25T07:50:47.416Z  INFO 10 --- [report-service] [           main] r$InitializeUserDetailsManagerConfigurer : Global AuthenticationManager configured with UserDetailsService bean with name inMemoryUserDetailsManager
+[pod/report-service-proof-59555c75dc-9n5fg/report-service] 2026-06-25T07:50:48.803Z  INFO 10 --- [report-service] [           main] o.s.b.a.e.web.EndpointLinksResolver      : Exposing 1 endpoint beneath base path '/actuator'
+[pod/report-service-proof-59555c75dc-9n5fg/report-service] 2026-06-25T07:50:50.814Z  INFO 10 --- [report-service] [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port 8084 (http) with context path '/'
+[pod/report-service-proof-59555c75dc-9n5fg/report-service] 2026-06-25T07:50:50.907Z  INFO 10 --- [report-service] [           main] c.s.r.r.ReportServiceApplication         : Started ReportServiceApplication in 30.813 seconds (process running for 33.063)
+[pod/report-service-proof-59555c75dc-9n5fg/report-service] 2026-06-25T07:50:51.184Z  WARN 10 --- [report-service] [           main] o.s.core.events.SpringDocAppInitializer  : SpringDoc /v3/api-docs endpoint is enabled by default. To disable it in production, set the property 'springdoc.api-docs.enabled=false'
+[pod/report-service-proof-59555c75dc-9n5fg/report-service] 2026-06-25T07:50:51.186Z  WARN 10 --- [report-service] [           main] o.s.core.events.SpringDocAppInitializer  : SpringDoc /swagger-ui.html endpoint is enabled by default. To disable it in production, set the property 'springdoc.swagger-ui.enabled=false'
+[pod/report-service-proof-59555c75dc-9n5fg/report-service] 2026-06-25T07:50:59.314Z  INFO 10 --- [report-service] [nio-8084-exec-1] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
+[pod/report-service-proof-59555c75dc-9n5fg/report-service] 2026-06-25T07:50:59.314Z  INFO 10 --- [report-service] [nio-8084-exec-1] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+[pod/report-service-proof-59555c75dc-9n5fg/report-service] 2026-06-25T07:50:59.317Z  INFO 10 --- [report-service] [nio-8084-exec-1] o.s.web.servlet.DispatcherServlet        : Completed initialization in 3 ms
+[pod/report-service-proof-59555c75dc-c7brj/report-service]
+[pod/report-service-proof-59555c75dc-c7brj/report-service]   .   ____          _            __ _ _
+[pod/report-service-proof-59555c75dc-c7brj/report-service]  /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+[pod/report-service-proof-59555c75dc-c7brj/report-service] ( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+[pod/report-service-proof-59555c75dc-c7brj/report-service]  \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+[pod/report-service-proof-59555c75dc-c7brj/report-service]   '  |____| .__|_| |_|_| |_\__, | / / / /
+[pod/report-service-proof-59555c75dc-c7brj/report-service]  =========|_|==============|___/=/_/_/_/
+[pod/report-service-proof-59555c75dc-c7brj/report-service]
+[pod/report-service-proof-59555c75dc-c7brj/report-service]  :: Spring Boot ::               (v3.5.13)
+[pod/report-service-proof-59555c75dc-c7brj/report-service]
+[pod/report-service-proof-59555c75dc-c7brj/report-service] 2026-06-25T07:49:29.998Z  INFO 10 --- [report-service] [           main] c.s.r.r.ReportServiceApplication         : Starting ReportServiceApplication v0.0.1-SNAPSHOT using Java 21.0.11 with PID 10 (/app/libs/report-service-0.0.1-SNAPSHOT.jar started by root in /app)
+[pod/report-service-proof-59555c75dc-c7brj/report-service] 2026-06-25T07:49:30.030Z  INFO 10 --- [report-service] [           main] c.s.r.r.ReportServiceApplication         : The following 1 profile is active: "prod"
+[pod/report-service-proof-59555c75dc-c7brj/report-service] 2026-06-25T07:49:39.722Z  INFO 10 --- [report-service] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+[pod/report-service-proof-59555c75dc-c7brj/report-service] 2026-06-25T07:49:40.365Z  INFO 10 --- [report-service] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 573 ms. Found 9 JPA repository interfaces.
+[pod/report-service-proof-59555c75dc-c7brj/report-service] 2026-06-25T07:49:43.626Z  INFO 10 --- [report-service] [           main] o.s.cloud.context.scope.GenericScope     : BeanFactory id=7c0fde3e-c479-3ec6-af04-c34e324c0fd4
+[pod/report-service-proof-59555c75dc-c7brj/report-service] 2026-06-25T07:49:47.920Z  INFO 10 --- [report-service] [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port 8084 (http)
+[pod/report-service-proof-59555c75dc-c7brj/report-service] 2026-06-25T07:49:48.024Z  INFO 10 --- [report-service] [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+[pod/report-service-proof-59555c75dc-c7brj/report-service] 2026-06-25T07:49:48.028Z  INFO 10 --- [report-service] [           main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/10.1.53]
+[pod/report-service-proof-59555c75dc-c7brj/report-service] 2026-06-25T07:49:48.809Z  INFO 10 --- [report-service] [           main] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring embedded WebApplicationContext
+[pod/report-service-proof-59555c75dc-c7brj/report-service] 2026-06-25T07:49:48.813Z  INFO 10 --- [report-service] [           main] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 18488 ms
+[pod/report-service-proof-59555c75dc-c7brj/report-service] 2026-06-25T07:49:53.049Z  INFO 10 --- [report-service] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+[pod/report-service-proof-59555c75dc-c7brj/report-service] 2026-06-25T07:49:56.199Z  INFO 10 --- [report-service] [           main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection org.postgresql.jdbc.PgConnection@7bdf94f2
+[pod/report-service-proof-59555c75dc-c7brj/report-service] 2026-06-25T07:49:56.201Z  INFO 10 --- [report-service] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+[pod/report-service-proof-59555c75dc-c7brj/report-service] 2026-06-25T07:49:56.429Z  INFO 10 --- [report-service] [           main] org.flywaydb.core.FlywayExecutor         : Database: jdbc:postgresql://rebloom-proof-db.cpii28osy0kk.ap-northeast-2.rds.amazonaws.com:5432/rebloom_proof?sslmode=require (PostgreSQL 16.14)
+[pod/report-service-proof-59555c75dc-c7brj/report-service] 2026-06-25T07:49:56.758Z  INFO 10 --- [report-service] [           main] o.f.c.i.s.JdbcTableSchemaHistory         : Schema history table "public"."flyway_schema_history" does not exist yet
+[pod/report-service-proof-59555c75dc-c7brj/report-service] 2026-06-25T07:49:56.799Z  INFO 10 --- [report-service] [           main] o.f.core.internal.command.DbValidate     : Successfully validated 9 migrations (execution time 00:00.188s)
+[pod/report-service-proof-59555c75dc-c7brj/report-service] 2026-06-25T07:49:56.941Z  INFO 10 --- [report-service] [           main] o.f.c.i.s.JdbcTableSchemaHistory         : Creating Schema History table "public"."flyway_schema_history" ...
+[pod/report-service-proof-59555c75dc-c7brj/report-service] 2026-06-25T07:49:57.399Z  INFO 10 --- [report-service] [           main] o.f.core.internal.command.DbMigrate      : Current version of schema "public": << Empty Schema >>
+[pod/report-service-proof-59555c75dc-c7brj/report-service] 2026-06-25T07:49:57.559Z  INFO 10 --- [report-service] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "1 - init report schema"
+[pod/report-service-proof-59555c75dc-c7brj/report-service] 2026-06-25T07:49:57.920Z  INFO 10 --- [report-service] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "2 - add counselor comment flag"
+[pod/report-service-proof-59555c75dc-c7brj/report-service] 2026-06-25T07:49:57.998Z  INFO 10 --- [report-service] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "3 - drop conversation analysis emotion icon"
+[pod/report-service-proof-59555c75dc-c7brj/report-service] 2026-06-25T07:49:58.134Z  INFO 10 --- [report-service] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "4 - add status card"
+[pod/report-service-proof-59555c75dc-c7brj/report-service] 2026-06-25T07:49:58.314Z  INFO 10 --- [report-service] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "5 - change analysis prediction to double"
+[pod/report-service-proof-59555c75dc-c7brj/report-service] 2026-06-25T07:49:58.434Z  INFO 10 --- [report-service] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "6 - change analysis prediction to double"
+[pod/report-service-proof-59555c75dc-c7brj/report-service] 2026-06-25T07:49:58.514Z  INFO 10 --- [report-service] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "7 - normalize analysis prediction scores"
+[pod/report-service-proof-59555c75dc-c7brj/report-service] 2026-06-25T07:49:58.605Z  INFO 10 --- [report-service] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "8 - create shedlock table"
+[pod/report-service-proof-59555c75dc-c7brj/report-service] 2026-06-25T07:49:58.714Z  INFO 10 --- [report-service] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "9 - add report query indexes"
+[pod/report-service-proof-59555c75dc-c7brj/report-service] 2026-06-25T07:49:58.782Z  INFO 10 --- [report-service] [           main] o.f.core.internal.command.DbMigrate      : Successfully applied 9 migrations to schema "public", now at version v9 (execution time 00:00.523s)
+[pod/report-service-proof-59555c75dc-c7brj/report-service] 2026-06-25T07:49:59.584Z  INFO 10 --- [report-service] [           main] o.hibernate.jpa.internal.util.LogHelper  : HHH000204: Processing PersistenceUnitInfo [name: default]
+[pod/report-service-proof-59555c75dc-c7brj/report-service] 2026-06-25T07:49:59.833Z  INFO 10 --- [report-service] [           main] org.hibernate.Version                    : HHH000412: Hibernate ORM core version 6.6.45.Final
+[pod/report-service-proof-59555c75dc-c7brj/report-service] 2026-06-25T07:50:00.023Z  INFO 10 --- [report-service] [           main] o.h.c.internal.RegionFactoryInitiator    : HHH000026: Second-level cache disabled
+[pod/report-service-proof-59555c75dc-c7brj/report-service] 2026-06-25T07:50:01.550Z  INFO 10 --- [report-service] [           main] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+[pod/report-service-proof-59555c75dc-c7brj/report-service] 2026-06-25T07:50:01.897Z  INFO 10 --- [report-service] [           main] org.hibernate.orm.connections.pooling    : HHH10001005: Database info:
+[pod/report-service-proof-59555c75dc-c7brj/report-service] 	Database JDBC URL [Connecting through datasource 'HikariDataSource (HikariPool-1)']
+[pod/report-service-proof-59555c75dc-c7brj/report-service] 	Database driver: undefined/unknown
+[pod/report-service-proof-59555c75dc-c7brj/report-service] 	Database version: 16.14
+[pod/report-service-proof-59555c75dc-c7brj/report-service] 	Autocommit mode: undefined/unknown
+[pod/report-service-proof-59555c75dc-c7brj/report-service] 	Isolation level: undefined/unknown
+[pod/report-service-proof-59555c75dc-c7brj/report-service] 	Minimum pool size: undefined/unknown
+[pod/report-service-proof-59555c75dc-c7brj/report-service] 	Maximum pool size: undefined/unknown
+[pod/report-service-proof-59555c75dc-c7brj/report-service] 2026-06-25T07:50:06.208Z  INFO 10 --- [report-service] [           main] o.h.e.t.j.p.i.JtaPlatformInitiator       : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+[pod/report-service-proof-59555c75dc-c7brj/report-service] 2026-06-25T07:50:06.249Z  INFO 10 --- [report-service] [           main] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+[pod/report-service-proof-59555c75dc-c7brj/report-service] 2026-06-25T07:50:07.096Z  WARN 10 --- [report-service] [           main] JpaBaseConfiguration$JpaWebConfiguration : spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
+[pod/report-service-proof-59555c75dc-c7brj/report-service] 2026-06-25T07:50:09.699Z  INFO 10 --- [report-service] [           main] o.s.d.j.r.query.QueryEnhancerFactory     : Hibernate is in classpath; If applicable, HQL parser will be used.
+[pod/report-service-proof-59555c75dc-c7brj/report-service] 2026-06-25T07:50:12.148Z  WARN 10 --- [report-service] [           main] .s.s.UserDetailsServiceAutoConfiguration :
+[pod/report-service-proof-59555c75dc-c7brj/report-service]
+[pod/report-service-proof-59555c75dc-c7brj/report-service] Using generated security password: [redacted]
+[pod/report-service-proof-59555c75dc-c7brj/report-service]
+[pod/report-service-proof-59555c75dc-c7brj/report-service] This generated password is for development use only. Your security configuration must be updated before running your application in production.
+[pod/report-service-proof-59555c75dc-c7brj/report-service]
+[pod/report-service-proof-59555c75dc-c7brj/report-service] 2026-06-25T07:50:12.157Z  INFO 10 --- [report-service] [           main] r$InitializeUserDetailsManagerConfigurer : Global AuthenticationManager configured with UserDetailsService bean with name inMemoryUserDetailsManager
+[pod/report-service-proof-59555c75dc-c7brj/report-service] 2026-06-25T07:50:13.584Z  INFO 10 --- [report-service] [           main] o.s.b.a.e.web.EndpointLinksResolver      : Exposing 1 endpoint beneath base path '/actuator'
+[pod/report-service-proof-59555c75dc-c7brj/report-service] 2026-06-25T07:50:15.887Z  INFO 10 --- [report-service] [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port 8084 (http) with context path '/'
+[pod/report-service-proof-59555c75dc-c7brj/report-service] 2026-06-25T07:50:15.993Z  INFO 10 --- [report-service] [           main] c.s.r.r.ReportServiceApplication         : Started ReportServiceApplication in 49.369 seconds (process running for 51.474)
+[pod/report-service-proof-59555c75dc-c7brj/report-service] 2026-06-25T07:50:16.373Z  WARN 10 --- [report-service] [           main] o.s.core.events.SpringDocAppInitializer  : SpringDoc /v3/api-docs endpoint is enabled by default. To disable it in production, set the property 'springdoc.api-docs.enabled=false'
+[pod/report-service-proof-59555c75dc-c7brj/report-service] 2026-06-25T07:50:16.373Z  WARN 10 --- [report-service] [           main] o.s.core.events.SpringDocAppInitializer  : SpringDoc /swagger-ui.html endpoint is enabled by default. To disable it in production, set the property 'springdoc.swagger-ui.enabled=false'
+[pod/report-service-proof-59555c75dc-c7brj/report-service] 2026-06-25T07:50:16.402Z  INFO 10 --- [report-service] [nio-8084-exec-1] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
+[pod/report-service-proof-59555c75dc-c7brj/report-service] 2026-06-25T07:50:16.447Z  INFO 10 --- [report-service] [nio-8084-exec-1] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+[pod/report-service-proof-59555c75dc-c7brj/report-service] 2026-06-25T07:50:16.450Z  INFO 10 --- [report-service] [nio-8084-exec-1] o.s.web.servlet.DispatcherServlet        : Completed initialization in 3 ms

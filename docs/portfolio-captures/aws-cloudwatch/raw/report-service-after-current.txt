@@ -1,0 +1,174 @@
+[pod/report-service-proof-85ff779fff-4bjzz/report-service]
+[pod/report-service-proof-85ff779fff-4bjzz/report-service]   .   ____          _            __ _ _
+[pod/report-service-proof-85ff779fff-4bjzz/report-service]  /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+[pod/report-service-proof-85ff779fff-4bjzz/report-service] ( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+[pod/report-service-proof-85ff779fff-4bjzz/report-service]  \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+[pod/report-service-proof-85ff779fff-4bjzz/report-service]   '  |____| .__|_| |_|_| |_\__, | / / / /
+[pod/report-service-proof-85ff779fff-4bjzz/report-service]  =========|_|==============|___/=/_/_/_/
+[pod/report-service-proof-85ff779fff-4bjzz/report-service]
+[pod/report-service-proof-85ff779fff-4bjzz/report-service]  :: Spring Boot ::               (v3.5.13)
+[pod/report-service-proof-85ff779fff-4bjzz/report-service]
+[pod/report-service-proof-85ff779fff-4bjzz/report-service] 2026-06-25T07:59:04.061Z  INFO 10 --- [report-service] [           main] c.s.r.r.ReportServiceApplication         : Starting ReportServiceApplication v0.0.1-SNAPSHOT using Java 21.0.11 with PID 10 (/app/libs/report-service-0.0.1-SNAPSHOT.jar started by root in /app)
+[pod/report-service-proof-85ff779fff-4bjzz/report-service] 2026-06-25T07:59:04.067Z  INFO 10 --- [report-service] [           main] c.s.r.r.ReportServiceApplication         : The following 1 profile is active: "prod"
+[pod/report-service-proof-85ff779fff-4bjzz/report-service] 2026-06-25T07:59:12.031Z  INFO 10 --- [report-service] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+[pod/report-service-proof-85ff779fff-4bjzz/report-service] 2026-06-25T07:59:12.536Z  INFO 10 --- [report-service] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 435 ms. Found 9 JPA repository interfaces.
+[pod/report-service-proof-85ff779fff-4bjzz/report-service] 2026-06-25T07:59:14.306Z  INFO 10 --- [report-service] [           main] o.s.cloud.context.scope.GenericScope     : BeanFactory id=7c0fde3e-c479-3ec6-af04-c34e324c0fd4
+[pod/report-service-proof-85ff779fff-4bjzz/report-service] 2026-06-25T07:59:17.326Z  INFO 10 --- [report-service] [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port 8084 (http)
+[pod/report-service-proof-85ff779fff-4bjzz/report-service] 2026-06-25T07:59:17.394Z  INFO 10 --- [report-service] [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+[pod/report-service-proof-85ff779fff-4bjzz/report-service] 2026-06-25T07:59:17.395Z  INFO 10 --- [report-service] [           main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/10.1.53]
+[pod/report-service-proof-85ff779fff-4bjzz/report-service] 2026-06-25T07:59:18.001Z  INFO 10 --- [report-service] [           main] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring embedded WebApplicationContext
+[pod/report-service-proof-85ff779fff-4bjzz/report-service] 2026-06-25T07:59:18.003Z  INFO 10 --- [report-service] [           main] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 13655 ms
+[pod/report-service-proof-85ff779fff-4bjzz/report-service] 2026-06-25T07:59:21.206Z  INFO 10 --- [report-service] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+[pod/report-service-proof-85ff779fff-4bjzz/report-service] 2026-06-25T07:59:23.527Z  INFO 10 --- [report-service] [           main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection org.postgresql.jdbc.PgConnection@7bdf94f2
+[pod/report-service-proof-85ff779fff-4bjzz/report-service] 2026-06-25T07:59:23.530Z  INFO 10 --- [report-service] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+[pod/report-service-proof-85ff779fff-4bjzz/report-service] 2026-06-25T07:59:23.733Z  INFO 10 --- [report-service] [           main] org.flywaydb.core.FlywayExecutor         : Database: jdbc:postgresql://rebloom-proof-db.cpii28osy0kk.ap-northeast-2.rds.amazonaws.com:5432/rebloom_proof?sslmode=require (PostgreSQL 16.14)
+[pod/report-service-proof-85ff779fff-4bjzz/report-service] 2026-06-25T07:59:24.159Z  INFO 10 --- [report-service] [           main] o.f.core.internal.command.DbValidate     : Successfully validated 9 migrations (execution time 00:00.278s)
+[pod/report-service-proof-85ff779fff-4bjzz/report-service] 2026-06-25T07:59:24.286Z  INFO 10 --- [report-service] [           main] o.f.core.internal.command.DbMigrate      : Current version of schema "public": 9
+[pod/report-service-proof-85ff779fff-4bjzz/report-service] 2026-06-25T07:59:24.343Z  INFO 10 --- [report-service] [           main] o.f.core.internal.command.DbMigrate      : Schema "public" is up to date. No migration necessary.
+[pod/report-service-proof-85ff779fff-4bjzz/report-service] 2026-06-25T07:59:25.240Z  INFO 10 --- [report-service] [           main] o.hibernate.jpa.internal.util.LogHelper  : HHH000204: Processing PersistenceUnitInfo [name: default]
+[pod/report-service-proof-85ff779fff-4bjzz/report-service] 2026-06-25T07:59:25.725Z  INFO 10 --- [report-service] [           main] org.hibernate.Version                    : HHH000412: Hibernate ORM core version 6.6.45.Final
+[pod/report-service-proof-85ff779fff-4bjzz/report-service] 2026-06-25T07:59:25.976Z  INFO 10 --- [report-service] [           main] o.h.c.internal.RegionFactoryInitiator    : HHH000026: Second-level cache disabled
+[pod/report-service-proof-85ff779fff-4bjzz/report-service] 2026-06-25T07:59:27.985Z  INFO 10 --- [report-service] [           main] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+[pod/report-service-proof-85ff779fff-4bjzz/report-service] 2026-06-25T07:59:28.428Z  INFO 10 --- [report-service] [           main] org.hibernate.orm.connections.pooling    : HHH10001005: Database info:
+[pod/report-service-proof-85ff779fff-4bjzz/report-service] 	Database JDBC URL [Connecting through datasource 'HikariDataSource (HikariPool-1)']
+[pod/report-service-proof-85ff779fff-4bjzz/report-service] 	Database driver: undefined/unknown
+[pod/report-service-proof-85ff779fff-4bjzz/report-service] 	Database version: 16.14
+[pod/report-service-proof-85ff779fff-4bjzz/report-service] 	Autocommit mode: undefined/unknown
+[pod/report-service-proof-85ff779fff-4bjzz/report-service] 	Isolation level: undefined/unknown
+[pod/report-service-proof-85ff779fff-4bjzz/report-service] 	Minimum pool size: undefined/unknown
+[pod/report-service-proof-85ff779fff-4bjzz/report-service] 	Maximum pool size: undefined/unknown
+[pod/report-service-proof-85ff779fff-4bjzz/report-service] 2026-06-25T07:59:35.529Z  INFO 10 --- [report-service] [           main] o.h.e.t.j.p.i.JtaPlatformInitiator       : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+[pod/report-service-proof-85ff779fff-4bjzz/report-service] 2026-06-25T07:59:35.543Z  INFO 10 --- [report-service] [           main] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+[pod/report-service-proof-85ff779fff-4bjzz/report-service] 2026-06-25T07:59:37.120Z  WARN 10 --- [report-service] [           main] JpaBaseConfiguration$JpaWebConfiguration : spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
+[pod/report-service-proof-85ff779fff-4bjzz/report-service] 2026-06-25T07:59:41.235Z  INFO 10 --- [report-service] [           main] o.s.d.j.r.query.QueryEnhancerFactory     : Hibernate is in classpath; If applicable, HQL parser will be used.
+[pod/report-service-proof-85ff779fff-4bjzz/report-service] 2026-06-25T07:59:45.431Z  WARN 10 --- [report-service] [           main] .s.s.UserDetailsServiceAutoConfiguration :
+[pod/report-service-proof-85ff779fff-4bjzz/report-service]
+[pod/report-service-proof-85ff779fff-4bjzz/report-service] Using generated security password: [redacted]
+[pod/report-service-proof-85ff779fff-4bjzz/report-service]
+[pod/report-service-proof-85ff779fff-4bjzz/report-service] This generated password is for development use only. Your security configuration must be updated before running your application in production.
+[pod/report-service-proof-85ff779fff-4bjzz/report-service]
+[pod/report-service-proof-85ff779fff-4bjzz/report-service] 2026-06-25T07:59:45.463Z  INFO 10 --- [report-service] [           main] r$InitializeUserDetailsManagerConfigurer : Global AuthenticationManager configured with UserDetailsService bean with name inMemoryUserDetailsManager
+[pod/report-service-proof-85ff779fff-4bjzz/report-service] 2026-06-25T07:59:47.464Z  INFO 10 --- [report-service] [           main] o.s.b.a.e.web.EndpointLinksResolver      : Exposing 1 endpoint beneath base path '/actuator'
+[pod/report-service-proof-85ff779fff-4bjzz/report-service] 2026-06-25T07:59:50.892Z  INFO 10 --- [report-service] [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port 8084 (http) with context path '/'
+[pod/report-service-proof-85ff779fff-4bjzz/report-service] 2026-06-25T07:59:50.989Z  INFO 10 --- [report-service] [           main] c.s.r.r.ReportServiceApplication         : Started ReportServiceApplication in 50.499 seconds (process running for 54.139)
+[pod/report-service-proof-85ff779fff-4bjzz/report-service] 2026-06-25T07:59:51.245Z  WARN 10 --- [report-service] [           main] o.s.core.events.SpringDocAppInitializer  : SpringDoc /v3/api-docs endpoint is enabled by default. To disable it in production, set the property 'springdoc.api-docs.enabled=false'
+[pod/report-service-proof-85ff779fff-4bjzz/report-service] 2026-06-25T07:59:51.248Z  WARN 10 --- [report-service] [           main] o.s.core.events.SpringDocAppInitializer  : SpringDoc /swagger-ui.html endpoint is enabled by default. To disable it in production, set the property 'springdoc.swagger-ui.enabled=false'
+[pod/report-service-proof-85ff779fff-4bjzz/report-service] 2026-06-25T07:59:58.460Z  INFO 10 --- [report-service] [nio-8084-exec-1] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
+[pod/report-service-proof-85ff779fff-4bjzz/report-service] 2026-06-25T07:59:58.466Z  INFO 10 --- [report-service] [nio-8084-exec-1] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+[pod/report-service-proof-85ff779fff-4bjzz/report-service] 2026-06-25T07:59:58.471Z  INFO 10 --- [report-service] [nio-8084-exec-1] o.s.web.servlet.DispatcherServlet        : Completed initialization in 3 ms
+[pod/report-service-proof-85ff779fff-np6tq/report-service]
+[pod/report-service-proof-85ff779fff-np6tq/report-service]   .   ____          _            __ _ _
+[pod/report-service-proof-85ff779fff-np6tq/report-service]  /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+[pod/report-service-proof-85ff779fff-np6tq/report-service] ( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+[pod/report-service-proof-85ff779fff-np6tq/report-service]  \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+[pod/report-service-proof-85ff779fff-np6tq/report-service]   '  |____| .__|_| |_|_| |_\__, | / / / /
+[pod/report-service-proof-85ff779fff-np6tq/report-service]  =========|_|==============|___/=/_/_/_/
+[pod/report-service-proof-85ff779fff-np6tq/report-service]
+[pod/report-service-proof-85ff779fff-np6tq/report-service]  :: Spring Boot ::               (v3.5.13)
+[pod/report-service-proof-85ff779fff-np6tq/report-service]
+[pod/report-service-proof-85ff779fff-np6tq/report-service] 2026-06-25T07:59:04.056Z  INFO 10 --- [report-service] [           main] c.s.r.r.ReportServiceApplication         : Starting ReportServiceApplication v0.0.1-SNAPSHOT using Java 21.0.11 with PID 10 (/app/libs/report-service-0.0.1-SNAPSHOT.jar started by root in /app)
+[pod/report-service-proof-85ff779fff-np6tq/report-service] 2026-06-25T07:59:04.080Z  INFO 10 --- [report-service] [           main] c.s.r.r.ReportServiceApplication         : The following 1 profile is active: "prod"
+[pod/report-service-proof-85ff779fff-np6tq/report-service] 2026-06-25T07:59:12.179Z  INFO 10 --- [report-service] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+[pod/report-service-proof-85ff779fff-np6tq/report-service] 2026-06-25T07:59:12.555Z  INFO 10 --- [report-service] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 338 ms. Found 9 JPA repository interfaces.
+[pod/report-service-proof-85ff779fff-np6tq/report-service] 2026-06-25T07:59:14.505Z  INFO 10 --- [report-service] [           main] o.s.cloud.context.scope.GenericScope     : BeanFactory id=7c0fde3e-c479-3ec6-af04-c34e324c0fd4
+[pod/report-service-proof-85ff779fff-np6tq/report-service] 2026-06-25T07:59:17.843Z  INFO 10 --- [report-service] [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port 8084 (http)
+[pod/report-service-proof-85ff779fff-np6tq/report-service] 2026-06-25T07:59:17.921Z  INFO 10 --- [report-service] [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+[pod/report-service-proof-85ff779fff-np6tq/report-service] 2026-06-25T07:59:17.938Z  INFO 10 --- [report-service] [           main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/10.1.53]
+[pod/report-service-proof-85ff779fff-np6tq/report-service] 2026-06-25T07:59:18.530Z  INFO 10 --- [report-service] [           main] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring embedded WebApplicationContext
+[pod/report-service-proof-85ff779fff-np6tq/report-service] 2026-06-25T07:59:18.539Z  INFO 10 --- [report-service] [           main] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 14197 ms
+[pod/report-service-proof-85ff779fff-np6tq/report-service] 2026-06-25T07:59:21.711Z  INFO 10 --- [report-service] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+[pod/report-service-proof-85ff779fff-np6tq/report-service] 2026-06-25T07:59:24.018Z  INFO 10 --- [report-service] [           main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection org.postgresql.jdbc.PgConnection@7bdf94f2
+[pod/report-service-proof-85ff779fff-np6tq/report-service] 2026-06-25T07:59:24.038Z  INFO 10 --- [report-service] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+[pod/report-service-proof-85ff779fff-np6tq/report-service] 2026-06-25T07:59:24.222Z  INFO 10 --- [report-service] [           main] org.flywaydb.core.FlywayExecutor         : Database: jdbc:postgresql://rebloom-proof-db.cpii28osy0kk.ap-northeast-2.rds.amazonaws.com:5432/rebloom_proof?sslmode=require (PostgreSQL 16.14)
+[pod/report-service-proof-85ff779fff-np6tq/report-service] 2026-06-25T07:59:24.570Z  INFO 10 --- [report-service] [           main] o.f.core.internal.command.DbValidate     : Successfully validated 9 migrations (execution time 00:00.200s)
+[pod/report-service-proof-85ff779fff-np6tq/report-service] 2026-06-25T07:59:24.641Z  INFO 10 --- [report-service] [           main] o.f.core.internal.command.DbMigrate      : Current version of schema "public": 9
+[pod/report-service-proof-85ff779fff-np6tq/report-service] 2026-06-25T07:59:24.679Z  INFO 10 --- [report-service] [           main] o.f.core.internal.command.DbMigrate      : Schema "public" is up to date. No migration necessary.
+[pod/report-service-proof-85ff779fff-np6tq/report-service] 2026-06-25T07:59:25.413Z  INFO 10 --- [report-service] [           main] o.hibernate.jpa.internal.util.LogHelper  : HHH000204: Processing PersistenceUnitInfo [name: default]
+[pod/report-service-proof-85ff779fff-np6tq/report-service] 2026-06-25T07:59:25.884Z  INFO 10 --- [report-service] [           main] org.hibernate.Version                    : HHH000412: Hibernate ORM core version 6.6.45.Final
+[pod/report-service-proof-85ff779fff-np6tq/report-service] 2026-06-25T07:59:26.163Z  INFO 10 --- [report-service] [           main] o.h.c.internal.RegionFactoryInitiator    : HHH000026: Second-level cache disabled
+[pod/report-service-proof-85ff779fff-np6tq/report-service] 2026-06-25T07:59:27.906Z  INFO 10 --- [report-service] [           main] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+[pod/report-service-proof-85ff779fff-np6tq/report-service] 2026-06-25T07:59:28.326Z  INFO 10 --- [report-service] [           main] org.hibernate.orm.connections.pooling    : HHH10001005: Database info:
+[pod/report-service-proof-85ff779fff-np6tq/report-service] 	Database JDBC URL [Connecting through datasource 'HikariDataSource (HikariPool-1)']
+[pod/report-service-proof-85ff779fff-np6tq/report-service] 	Database driver: undefined/unknown
+[pod/report-service-proof-85ff779fff-np6tq/report-service] 	Database version: 16.14
+[pod/report-service-proof-85ff779fff-np6tq/report-service] 	Autocommit mode: undefined/unknown
+[pod/report-service-proof-85ff779fff-np6tq/report-service] 	Isolation level: undefined/unknown
+[pod/report-service-proof-85ff779fff-np6tq/report-service] 	Minimum pool size: undefined/unknown
+[pod/report-service-proof-85ff779fff-np6tq/report-service] 	Maximum pool size: undefined/unknown
+[pod/report-service-proof-85ff779fff-np6tq/report-service] 2026-06-25T07:59:34.532Z  INFO 10 --- [report-service] [           main] o.h.e.t.j.p.i.JtaPlatformInitiator       : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+[pod/report-service-proof-85ff779fff-np6tq/report-service] 2026-06-25T07:59:34.553Z  INFO 10 --- [report-service] [           main] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+[pod/report-service-proof-85ff779fff-np6tq/report-service] 2026-06-25T07:59:35.817Z  WARN 10 --- [report-service] [           main] JpaBaseConfiguration$JpaWebConfiguration : spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
+[pod/report-service-proof-85ff779fff-np6tq/report-service] 2026-06-25T07:59:39.712Z  INFO 10 --- [report-service] [           main] o.s.d.j.r.query.QueryEnhancerFactory     : Hibernate is in classpath; If applicable, HQL parser will be used.
+[pod/report-service-proof-85ff779fff-np6tq/report-service] 2026-06-25T07:59:43.862Z  WARN 10 --- [report-service] [           main] .s.s.UserDetailsServiceAutoConfiguration :
+[pod/report-service-proof-85ff779fff-np6tq/report-service]
+[pod/report-service-proof-85ff779fff-np6tq/report-service] Using generated security password: [redacted]
+[pod/report-service-proof-85ff779fff-np6tq/report-service]
+[pod/report-service-proof-85ff779fff-np6tq/report-service] This generated password is for development use only. Your security configuration must be updated before running your application in production.
+[pod/report-service-proof-85ff779fff-np6tq/report-service]
+[pod/report-service-proof-85ff779fff-np6tq/report-service] 2026-06-25T07:59:43.903Z  INFO 10 --- [report-service] [           main] r$InitializeUserDetailsManagerConfigurer : Global AuthenticationManager configured with UserDetailsService bean with name inMemoryUserDetailsManager
+[pod/report-service-proof-85ff779fff-np6tq/report-service] 2026-06-25T07:59:46.035Z  INFO 10 --- [report-service] [           main] o.s.b.a.e.web.EndpointLinksResolver      : Exposing 1 endpoint beneath base path '/actuator'
+[pod/report-service-proof-85ff779fff-np6tq/report-service] 2026-06-25T07:59:49.800Z  INFO 10 --- [report-service] [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port 8084 (http) with context path '/'
+[pod/report-service-proof-85ff779fff-np6tq/report-service] 2026-06-25T07:59:50.051Z  INFO 10 --- [report-service] [           main] c.s.r.r.ReportServiceApplication         : Started ReportServiceApplication in 49.644 seconds (process running for 53.224)
+[pod/report-service-proof-85ff779fff-np6tq/report-service] 2026-06-25T07:59:50.421Z  WARN 10 --- [report-service] [           main] o.s.core.events.SpringDocAppInitializer  : SpringDoc /v3/api-docs endpoint is enabled by default. To disable it in production, set the property 'springdoc.api-docs.enabled=false'
+[pod/report-service-proof-85ff779fff-np6tq/report-service] 2026-06-25T07:59:50.436Z  WARN 10 --- [report-service] [           main] o.s.core.events.SpringDocAppInitializer  : SpringDoc /swagger-ui.html endpoint is enabled by default. To disable it in production, set the property 'springdoc.swagger-ui.enabled=false'
+[pod/report-service-proof-85ff779fff-np6tq/report-service] 2026-06-25T07:59:58.331Z  INFO 10 --- [report-service] [nio-8084-exec-1] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
+[pod/report-service-proof-85ff779fff-np6tq/report-service] 2026-06-25T07:59:58.332Z  INFO 10 --- [report-service] [nio-8084-exec-1] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+[pod/report-service-proof-85ff779fff-np6tq/report-service] 2026-06-25T07:59:58.335Z  INFO 10 --- [report-service] [nio-8084-exec-1] o.s.web.servlet.DispatcherServlet        : Completed initialization in 3 ms
+[pod/report-service-proof-85ff779fff-tv75h/report-service]
+[pod/report-service-proof-85ff779fff-tv75h/report-service]   .   ____          _            __ _ _
+[pod/report-service-proof-85ff779fff-tv75h/report-service]  /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+[pod/report-service-proof-85ff779fff-tv75h/report-service] ( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+[pod/report-service-proof-85ff779fff-tv75h/report-service]  \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+[pod/report-service-proof-85ff779fff-tv75h/report-service]   '  |____| .__|_| |_|_| |_\__, | / / / /
+[pod/report-service-proof-85ff779fff-tv75h/report-service]  =========|_|==============|___/=/_/_/_/
+[pod/report-service-proof-85ff779fff-tv75h/report-service]
+[pod/report-service-proof-85ff779fff-tv75h/report-service]  :: Spring Boot ::               (v3.5.13)
+[pod/report-service-proof-85ff779fff-tv75h/report-service]
+[pod/report-service-proof-85ff779fff-tv75h/report-service] 2026-06-25T07:59:03.776Z  INFO 10 --- [report-service] [           main] c.s.r.r.ReportServiceApplication         : Starting ReportServiceApplication v0.0.1-SNAPSHOT using Java 21.0.11 with PID 10 (/app/libs/report-service-0.0.1-SNAPSHOT.jar started by root in /app)
+[pod/report-service-proof-85ff779fff-tv75h/report-service] 2026-06-25T07:59:03.795Z  INFO 10 --- [report-service] [           main] c.s.r.r.ReportServiceApplication         : The following 1 profile is active: "prod"
+[pod/report-service-proof-85ff779fff-tv75h/report-service] 2026-06-25T07:59:11.865Z  INFO 10 --- [report-service] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+[pod/report-service-proof-85ff779fff-tv75h/report-service] 2026-06-25T07:59:12.277Z  INFO 10 --- [report-service] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 371 ms. Found 9 JPA repository interfaces.
+[pod/report-service-proof-85ff779fff-tv75h/report-service] 2026-06-25T07:59:14.262Z  INFO 10 --- [report-service] [           main] o.s.cloud.context.scope.GenericScope     : BeanFactory id=7c0fde3e-c479-3ec6-af04-c34e324c0fd4
+[pod/report-service-proof-85ff779fff-tv75h/report-service] 2026-06-25T07:59:17.459Z  INFO 10 --- [report-service] [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port 8084 (http)
+[pod/report-service-proof-85ff779fff-tv75h/report-service] 2026-06-25T07:59:17.542Z  INFO 10 --- [report-service] [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+[pod/report-service-proof-85ff779fff-tv75h/report-service] 2026-06-25T07:59:17.548Z  INFO 10 --- [report-service] [           main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/10.1.53]
+[pod/report-service-proof-85ff779fff-tv75h/report-service] 2026-06-25T07:59:18.116Z  INFO 10 --- [report-service] [           main] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring embedded WebApplicationContext
+[pod/report-service-proof-85ff779fff-tv75h/report-service] 2026-06-25T07:59:18.135Z  INFO 10 --- [report-service] [           main] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 14029 ms
+[pod/report-service-proof-85ff779fff-tv75h/report-service] 2026-06-25T07:59:21.292Z  INFO 10 --- [report-service] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+[pod/report-service-proof-85ff779fff-tv75h/report-service] 2026-06-25T07:59:23.449Z  INFO 10 --- [report-service] [           main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection org.postgresql.jdbc.PgConnection@7bdf94f2
+[pod/report-service-proof-85ff779fff-tv75h/report-service] 2026-06-25T07:59:23.454Z  INFO 10 --- [report-service] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+[pod/report-service-proof-85ff779fff-tv75h/report-service] 2026-06-25T07:59:23.644Z  INFO 10 --- [report-service] [           main] org.flywaydb.core.FlywayExecutor         : Database: jdbc:postgresql://rebloom-proof-db.cpii28osy0kk.ap-northeast-2.rds.amazonaws.com:5432/rebloom_proof?sslmode=require (PostgreSQL 16.14)
+[pod/report-service-proof-85ff779fff-tv75h/report-service] 2026-06-25T07:59:24.072Z  INFO 10 --- [report-service] [           main] o.f.core.internal.command.DbValidate     : Successfully validated 9 migrations (execution time 00:00.230s)
+[pod/report-service-proof-85ff779fff-tv75h/report-service] 2026-06-25T07:59:24.184Z  INFO 10 --- [report-service] [           main] o.f.core.internal.command.DbMigrate      : Current version of schema "public": 9
+[pod/report-service-proof-85ff779fff-tv75h/report-service] 2026-06-25T07:59:24.250Z  INFO 10 --- [report-service] [           main] o.f.core.internal.command.DbMigrate      : Schema "public" is up to date. No migration necessary.
+[pod/report-service-proof-85ff779fff-tv75h/report-service] 2026-06-25T07:59:24.974Z  INFO 10 --- [report-service] [           main] o.hibernate.jpa.internal.util.LogHelper  : HHH000204: Processing PersistenceUnitInfo [name: default]
+[pod/report-service-proof-85ff779fff-tv75h/report-service] 2026-06-25T07:59:25.488Z  INFO 10 --- [report-service] [           main] org.hibernate.Version                    : HHH000412: Hibernate ORM core version 6.6.45.Final
+[pod/report-service-proof-85ff779fff-tv75h/report-service] 2026-06-25T07:59:25.754Z  INFO 10 --- [report-service] [           main] o.h.c.internal.RegionFactoryInitiator    : HHH000026: Second-level cache disabled
+[pod/report-service-proof-85ff779fff-tv75h/report-service] 2026-06-25T07:59:27.582Z  INFO 10 --- [report-service] [           main] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+[pod/report-service-proof-85ff779fff-tv75h/report-service] 2026-06-25T07:59:27.995Z  INFO 10 --- [report-service] [           main] org.hibernate.orm.connections.pooling    : HHH10001005: Database info:
+[pod/report-service-proof-85ff779fff-tv75h/report-service] 	Database JDBC URL [Connecting through datasource 'HikariDataSource (HikariPool-1)']
+[pod/report-service-proof-85ff779fff-tv75h/report-service] 	Database driver: undefined/unknown
+[pod/report-service-proof-85ff779fff-tv75h/report-service] 	Database version: 16.14
+[pod/report-service-proof-85ff779fff-tv75h/report-service] 	Autocommit mode: undefined/unknown
+[pod/report-service-proof-85ff779fff-tv75h/report-service] 	Isolation level: undefined/unknown
+[pod/report-service-proof-85ff779fff-tv75h/report-service] 	Minimum pool size: undefined/unknown
+[pod/report-service-proof-85ff779fff-tv75h/report-service] 	Maximum pool size: undefined/unknown
+[pod/report-service-proof-85ff779fff-tv75h/report-service] 2026-06-25T07:59:34.474Z  INFO 10 --- [report-service] [           main] o.h.e.t.j.p.i.JtaPlatformInitiator       : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+[pod/report-service-proof-85ff779fff-tv75h/report-service] 2026-06-25T07:59:34.485Z  INFO 10 --- [report-service] [           main] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+[pod/report-service-proof-85ff779fff-tv75h/report-service] 2026-06-25T07:59:35.804Z  WARN 10 --- [report-service] [           main] JpaBaseConfiguration$JpaWebConfiguration : spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
+[pod/report-service-proof-85ff779fff-tv75h/report-service] 2026-06-25T07:59:39.861Z  INFO 10 --- [report-service] [           main] o.s.d.j.r.query.QueryEnhancerFactory     : Hibernate is in classpath; If applicable, HQL parser will be used.
+[pod/report-service-proof-85ff779fff-tv75h/report-service] 2026-06-25T07:59:43.693Z  WARN 10 --- [report-service] [           main] .s.s.UserDetailsServiceAutoConfiguration :
+[pod/report-service-proof-85ff779fff-tv75h/report-service]
+[pod/report-service-proof-85ff779fff-tv75h/report-service] Using generated security password: [redacted]
+[pod/report-service-proof-85ff779fff-tv75h/report-service]
+[pod/report-service-proof-85ff779fff-tv75h/report-service] This generated password is for development use only. Your security configuration must be updated before running your application in production.
+[pod/report-service-proof-85ff779fff-tv75h/report-service]
+[pod/report-service-proof-85ff779fff-tv75h/report-service] 2026-06-25T07:59:43.745Z  INFO 10 --- [report-service] [           main] r$InitializeUserDetailsManagerConfigurer : Global AuthenticationManager configured with UserDetailsService bean with name inMemoryUserDetailsManager
+[pod/report-service-proof-85ff779fff-tv75h/report-service] 2026-06-25T07:59:45.759Z  INFO 10 --- [report-service] [           main] o.s.b.a.e.web.EndpointLinksResolver      : Exposing 1 endpoint beneath base path '/actuator'
+[pod/report-service-proof-85ff779fff-tv75h/report-service] 2026-06-25T07:59:49.355Z  INFO 10 --- [report-service] [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port 8084 (http) with context path '/'
+[pod/report-service-proof-85ff779fff-tv75h/report-service] 2026-06-25T07:59:49.450Z  INFO 10 --- [report-service] [           main] c.s.r.r.ReportServiceApplication         : Started ReportServiceApplication in 49.363 seconds (process running for 52.849)
+[pod/report-service-proof-85ff779fff-tv75h/report-service] 2026-06-25T07:59:49.774Z  WARN 10 --- [report-service] [           main] o.s.core.events.SpringDocAppInitializer  : SpringDoc /v3/api-docs endpoint is enabled by default. To disable it in production, set the property 'springdoc.api-docs.enabled=false'
+[pod/report-service-proof-85ff779fff-tv75h/report-service] 2026-06-25T07:59:49.775Z  WARN 10 --- [report-service] [           main] o.s.core.events.SpringDocAppInitializer  : SpringDoc /swagger-ui.html endpoint is enabled by default. To disable it in production, set the property 'springdoc.swagger-ui.enabled=false'
+[pod/report-service-proof-85ff779fff-tv75h/report-service] 2026-06-25T07:59:58.203Z  INFO 10 --- [report-service] [nio-8084-exec-1] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
+[pod/report-service-proof-85ff779fff-tv75h/report-service] 2026-06-25T07:59:58.203Z  INFO 10 --- [report-service] [nio-8084-exec-1] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+[pod/report-service-proof-85ff779fff-tv75h/report-service] 2026-06-25T07:59:58.205Z  INFO 10 --- [report-service] [nio-8084-exec-1] o.s.web.servlet.DispatcherServlet        : Completed initialization in 2 ms

@@ -1,0 +1,75 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: report-service-proof
+  namespace: rebloom-proof
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: report-service-proof
+  template:
+    metadata:
+      labels:
+        app: report-service-proof
+    spec:
+      containers:
+        - name: report-service
+          image: 038413769744.dkr.ecr.ap-northeast-2.amazonaws.com/rebloom-proof-report-service:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8084
+          env:
+            - name: SPRING_PROFILES_ACTIVE
+              value: prod
+            - name: SERVER_PORT
+              value: "8084"
+            - name: DB_HOST
+              valueFrom: { secretKeyRef: { name: rebloom-db, key: DB_HOST } }
+            - name: DB_PORT
+              valueFrom: { secretKeyRef: { name: rebloom-db, key: DB_PORT } }
+            - name: DB_NAME
+              valueFrom: { secretKeyRef: { name: rebloom-db, key: DB_NAME } }
+            - name: DB_USERNAME
+              valueFrom: { secretKeyRef: { name: rebloom-db, key: DB_USERNAME } }
+            - name: DB_PASSWORD
+              valueFrom: { secretKeyRef: { name: rebloom-db, key: DB_PASSWORD } }
+            - name: DB_SSL_MODE
+              value: require
+            - name: DB_POOL_MAX_SIZE
+              value: "8"
+            - name: DB_POOL_MIN_IDLE
+              value: "8"
+            - name: DB_POOL_CONNECTION_TIMEOUT_MS
+              value: "3000"
+            - name: DB_POOL_VALIDATION_TIMEOUT_MS
+              value: "1000"
+            - name: SPRING_KAFKA_LISTENER_AUTO_STARTUP
+              value: "false"
+            - name: KAFKA_BOOTSTRAP_SERVERS
+              value: localhost:9092
+            - name: RUNPOD_API_KEY
+              value: dummy
+            - name: RUNPOD_ENDPOINT_ID
+              value: dummy
+            - name: RUNPOD_BASE_URL
+              value: http://localhost
+            - name: RUNPOD_WAIT_MS
+              value: "1000"
+            - name: RECENT_INSIGHT_API_URL
+              value: http://localhost
+            - name: RECENT_INSIGHT_API_KEY
+              value: dummy
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8084
+            initialDelaySeconds: 40
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 250m
+              memory: 512Mi
+            limits:
+              cpu: 1000m
+              memory: 1Gi

@@ -1,0 +1,8 @@
+psql: error: connection to server at "rebloom-proof-db.cpii28osy0kk.ap-northeast-2.rds.amazonaws.com" (192.168.105.91), port 5432 failed: FATAL:  remaining connection slots are reserved for roles with privileges of the "rds_reserved" role
+pod "pg-monitor-report-service-before" deleted from rebloom-proof namespace
+kubectl : pod rebloom-proof/pg-monitor-report-service-before terminated (Error)
+At line:14 char:1
++ kubectl -n rebloom-proof run pg-monitor-report-service-before --image ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (pod rebloom-pro...minated (Error):String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError

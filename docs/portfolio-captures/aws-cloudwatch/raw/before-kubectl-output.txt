@@ -1,0 +1,5 @@
+--- pods during before scenario ---
+NAME                         READY   STATUS    RESTARTS   AGE   IP               NODE                                               NOMINATED NODE   READINESS GATES
+db-connection-before-26s5x   1/1     Running   0          25s   192.168.1.173    ip-192-168-20-69.ap-northeast-2.compute.internal   <none>           <none>
+db-connection-before-6ptpt   1/1     Running   0          25s   192.168.2.202    ip-192-168-20-69.ap-northeast-2.compute.internal   <none>           <none>
+db-connection-before-82kfc   1/1     Running   0          25s   192.168.20.239   ip-192-168-20-69.ap-northeast-2.compute.internal   <none>           <none>

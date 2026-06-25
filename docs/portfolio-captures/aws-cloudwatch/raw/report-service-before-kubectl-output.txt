@@ -1,0 +1,5 @@
+NAME                                    READY   STATUS             RESTARTS      AGE     IP               NODE                                               NOMINATED NODE   READINESS GATES
+report-service-proof-59555c75dc-9n5fg   1/1     Running            0             2m24s   192.168.20.239   ip-192-168-20-69.ap-northeast-2.compute.internal   <none>           <none>
+report-service-proof-59555c75dc-c7brj   1/1     Running            0             3m17s   192.168.24.236   ip-192-168-20-69.ap-northeast-2.compute.internal   <none>           <none>
+report-service-proof-59555c75dc-nx6jw   0/1     Running            3 (30s ago)   101s    192.168.17.21    ip-192-168-20-69.ap-northeast-2.compute.internal   <none>           <none>
+report-service-proof-67f88f47d8-lhcz9   0/1     CrashLoopBackOff   5 (61s ago)   6m33s   192.168.9.113    ip-192-168-20-69.ap-northeast-2.compute.internal   <none>           <none>

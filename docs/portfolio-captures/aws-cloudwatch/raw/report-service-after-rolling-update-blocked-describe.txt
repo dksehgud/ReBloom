@@ -1,0 +1,67 @@
+Name:                   report-service-proof
+Namespace:              rebloom-proof
+CreationTimestamp:      Thu, 25 Jun 2026 16:46:07 +0900
+Labels:                 <none>
+Annotations:            deployment.kubernetes.io/revision: 3
+Selector:               app=report-service-proof
+Replicas:               3 desired | 1 updated | 4 total | 2 available | 2 unavailable
+StrategyType:           RollingUpdate
+MinReadySeconds:        0
+RollingUpdateStrategy:  25% max unavailable, 25% max surge
+Pod Template:
+  Labels:  app=report-service-proof
+  Containers:
+   report-service:
+    Image:      038413769744.dkr.ecr.ap-northeast-2.amazonaws.com/rebloom-proof-report-service:latest
+    Port:       8084/TCP
+    Host Port:  0/TCP
+    Limits:
+      cpu:     1
+      memory:  1Gi
+    Requests:
+      cpu:      250m
+      memory:   512Mi
+    Readiness:  http-get http://:8084/actuator/health delay=40s timeout=1s period=10s #success=1 #failure=3
+    Environment:
+      SPRING_PROFILES_ACTIVE:              prod
+      SERVER_PORT:                         8084
+      DB_HOST:                             <set to the key 'DB_HOST' in secret 'rebloom-db'>      Optional: false
+      DB_PORT:                             <set to the key 'DB_PORT' in secret 'rebloom-db'>      Optional: false
+      DB_NAME:                             <set to the key 'DB_NAME' in secret 'rebloom-db'>      Optional: false
+      DB_USERNAME:                         <set to the key 'DB_USERNAME' in secret 'rebloom-db'>  Optional: false
+      DB_PASSWORD:                         <set to the key 'DB_PASSWORD' in secret 'rebloom-db'>  Optional: false
+      DB_SSL_MODE:                         require
+      DB_POOL_MAX_SIZE:                    8
+      DB_POOL_MIN_IDLE:                    8
+      DB_POOL_CONNECTION_TIMEOUT_MS:       3000
+      DB_POOL_VALIDATION_TIMEOUT_MS:       1000
+      SPRING_KAFKA_LISTENER_AUTO_STARTUP:  false
+      KAFKA_BOOTSTRAP_SERVERS:             localhost:9092
+      RUNPOD_API_KEY:                      dummy
+      RUNPOD_ENDPOINT_ID:                  dummy
+      RUNPOD_BASE_URL:                     http://localhost
+      RUNPOD_WAIT_MS:                      1000
+      RECENT_INSIGHT_API_URL:              http://localhost
+      RECENT_INSIGHT_API_KEY:              dummy
+    Mounts:                                <none>
+  Volumes:                                 <none>
+  Node-Selectors:                          <none>
+  Tolerations:                             <none>
+Conditions:
+  Type           Status  Reason
+  ----           ------  ------
+  Available      False   MinimumReplicasUnavailable
+  Progressing    True    ReplicaSetUpdated
+OldReplicaSets:  report-service-proof-67f88f47d8 (0/0 replicas created), report-service-proof-59555c75dc (3/3 replicas created)
+NewReplicaSet:   report-service-proof-85ff779fff (1/1 replicas created)
+Events:
+  Type    Reason             Age    From                   Message
+  ----    ------             ----   ----                   -------
+  Normal  ScalingReplicaSet  11m    deployment-controller  Scaled up replica set report-service-proof-67f88f47d8 from 0 to 3
+  Normal  ScalingReplicaSet  8m35s  deployment-controller  Scaled up replica set report-service-proof-59555c75dc from 0 to 1
+  Normal  ScalingReplicaSet  7m42s  deployment-controller  Scaled down replica set report-service-proof-67f88f47d8 from 3 to 2
+  Normal  ScalingReplicaSet  7m42s  deployment-controller  Scaled up replica set report-service-proof-59555c75dc from 1 to 2
+  Normal  ScalingReplicaSet  6m59s  deployment-controller  Scaled down replica set report-service-proof-67f88f47d8 from 2 to 1
+  Normal  ScalingReplicaSet  6m59s  deployment-controller  Scaled up replica set report-service-proof-59555c75dc from 2 to 3
+  Normal  ScalingReplicaSet  4m17s  deployment-controller  Scaled down replica set report-service-proof-67f88f47d8 from 1 to 0
+  Normal  ScalingReplicaSet  4m17s  deployment-controller  Scaled up replica set report-service-proof-85ff779fff from 0 to 1

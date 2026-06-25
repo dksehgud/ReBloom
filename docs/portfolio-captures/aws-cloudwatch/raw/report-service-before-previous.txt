@@ -1,0 +1,7 @@
+kubectl : Error from server (BadRequest): previous terminated container "report-service" in pod "report-service-proof-5
+9555c75dc-9n5fg" not found
+At line:2 char:471
++ ... nv:Path" }; kubectl -n rebloom-proof logs -l app=report-service-proof ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (Error from serv...n5fg" not found:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError

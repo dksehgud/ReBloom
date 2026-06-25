@@ -1,0 +1,19 @@
+--- before job logs ---
+[pod/db-connection-before-82kfc/psql-pool] scenario=before pod=db-connection-before-82kfc pool_size=20 hold_seconds=120
+[pod/db-connection-before-82kfc/psql-pool] attempted_connections=20
+[pod/db-connection-before-82kfc/psql-pool] successful_connections=5
+[pod/db-connection-before-82kfc/psql-pool] failed_connections=15
+[pod/db-connection-before-82kfc/psql-pool] sample_failure:
+[pod/db-connection-before-82kfc/psql-pool] psql: error: connection to server at "rebloom-proof-db.cpii28osy0kk.ap-northeast-2.rds.amazonaws.com" (192.168.105.91), port 5432 failed: FATAL:  remaining connection slots are reserved for roles with privileges of the "rds_reserved" role
+[pod/db-connection-before-26s5x/psql-pool] scenario=before pod=db-connection-before-26s5x pool_size=20 hold_seconds=120
+[pod/db-connection-before-26s5x/psql-pool] attempted_connections=20
+[pod/db-connection-before-26s5x/psql-pool] successful_connections=15
+[pod/db-connection-before-26s5x/psql-pool] failed_connections=5
+[pod/db-connection-before-26s5x/psql-pool] sample_failure:
+[pod/db-connection-before-26s5x/psql-pool]
+[pod/db-connection-before-6ptpt/psql-pool] scenario=before pod=db-connection-before-6ptpt pool_size=20 hold_seconds=120
+[pod/db-connection-before-6ptpt/psql-pool] attempted_connections=20
+[pod/db-connection-before-6ptpt/psql-pool] successful_connections=11
+[pod/db-connection-before-6ptpt/psql-pool] failed_connections=9
+[pod/db-connection-before-6ptpt/psql-pool] sample_failure:
+[pod/db-connection-before-6ptpt/psql-pool]
