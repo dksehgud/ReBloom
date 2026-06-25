@@ -36,6 +36,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @Slf4j
@@ -212,16 +213,42 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public ListResponseDto<CounselorParentRelationResponseDto> getCounselorParentRelations(UUID counselorId) {
-        List<CounselorParentRelationResponseDto> relations = parentCounselorRelationRepository
+        List<ParentCounselorRelation> parentCounselorRelations = parentCounselorRelationRepository
             .findAllByCounselorIdAndRelationStatusIn(
                 counselorId,
                 List.of(RelationStatus.ACTIVE, RelationStatus.PENDING)
-            )
+            );
+
+        if (parentCounselorRelations.isEmpty()) {
+            return ListResponseDto.from(List.of());
+        }
+
+        List<UUID> parentIds = parentCounselorRelations.stream()
+            .map(parentCounselorRelation -> parentCounselorRelation.getParent().getId())
+            .toList();
+
+        Map<UUID, ChildrenParentRelation> childRelationByParentId = childrenParentRelationRepository
+            .findAllByParentIdInAndRelationStatus(parentIds, RelationStatus.ACTIVE)
             .stream()
-            .map(parentCounselorRelation -> CounselorParentRelationResponseDto.from(
-                parentCounselorRelation,
-                getActiveChildRelationByParentId(parentCounselorRelation.getParent().getId())
-            ))
+            .collect(Collectors.toMap(
+                childrenParentRelation -> childrenParentRelation.getParent().getId(),
+                childrenParentRelation -> childrenParentRelation,
+                (existing, ignored) -> existing
+            ));
+
+        List<CounselorParentRelationResponseDto> relations = parentCounselorRelations.stream()
+            .map(parentCounselorRelation -> {
+                UUID parentId = parentCounselorRelation.getParent().getId();
+                ChildrenParentRelation childRelation = childRelationByParentId.get(parentId);
+                if (childRelation == null) {
+                    throw new CustomException(
+                        "遺紐⑥? ?곌껐???꾩씠瑜?李얠쓣 ???놁뒿?덈떎.",
+                        ErrorCode.NOT_FOUND
+                    );
+                }
+
+                return CounselorParentRelationResponseDto.from(parentCounselorRelation, childRelation);
+            })
             .toList();
 
         return ListResponseDto.from(relations);

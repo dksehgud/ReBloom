@@ -3,6 +3,8 @@ package com.ssafy.rebloom.auth_service.user.repository;
 import com.ssafy.rebloom.auth_service.user.domain.entity.ChildrenParentRelation;
 import com.ssafy.rebloom.auth_service.user.domain.enums.RelationStatus;
 
+import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -83,6 +85,19 @@ public interface ChildrenParentRelationRepository extends JpaRepository<Children
         """)
     Optional<ChildrenParentRelation> findFirstByParentIdAndRelationStatus(
         @Param("parentId") UUID parentId,
+        @Param("relationStatus") RelationStatus relationStatus
+    );
+
+    @Query("""
+        SELECT cpr
+        FROM ChildrenParentRelation cpr
+        JOIN FETCH cpr.parent
+        JOIN FETCH cpr.children
+        WHERE cpr.parent.id IN :parentIds
+          AND cpr.relationStatus = :relationStatus
+        """)
+    List<ChildrenParentRelation> findAllByParentIdInAndRelationStatus(
+        @Param("parentIds") Collection<UUID> parentIds,
         @Param("relationStatus") RelationStatus relationStatus
     );
 }
