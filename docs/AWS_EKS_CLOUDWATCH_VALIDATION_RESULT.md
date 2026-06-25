@@ -26,7 +26,6 @@
 ### Portfolio images
 
 - CloudWatch graph for actual `report-service` validation: `docs/portfolio-captures/aws-cloudwatch/02-report-service-cloudwatch-database-connections.png`
-- Earlier connection-job CloudWatch graph: `docs/portfolio-captures/aws-cloudwatch/01-cloudwatch-database-connections.png`
 
 ### Raw evidence
 
@@ -153,9 +152,9 @@ EKS 기반 MSA 환경에서는 단일 요청 성능뿐 아니라 파드 수와 D
 
 이후 파드당 HikariCP 최대 풀 크기를 8로 제한하고 동일한 3개 파드를 다시 배포했습니다. after 조건에서는 모든 파드가 Ready 상태가 되었고, PostgreSQL `pg_stat_activity`에서 실제 애플리케이션 JDBC 세션이 24개로 확인됐습니다. CloudWatch에서도 after 구간의 `DatabaseConnections`가 24개로 안정화되어, 파드 증가 시 누적되는 DB 연결 고갈 위험을 정량적으로 낮췄음을 확인했습니다.
 
-## Cleanup Required
+## Cleanup Completed
 
-검증 후 아래 리소스는 비용 방지를 위해 삭제해야 한다.
+검증 캡처 후 비용 방지를 위해 아래 리소스를 삭제했다. `2026-06-25` 기준 AWS 조회 결과 `rebloom-proof` 관련 EKS/RDS/ECR/SSM/CloudFormation/EC2/보안 그룹 리소스가 남아 있지 않음을 확인했다.
 
 - EKS cluster: `rebloom-proof`
 - Managed node group: `rebloom-proof-ng`

@@ -94,23 +94,23 @@ AWS에 검증용 ReBloom 환경을 만들고, EKS 파드 수와 DB 커넥션 풀
 
 ## Remaining Checklist
 
-- [ ] 사용자가 CloudWatch/콘솔 화면을 직접 확인할 수 있게 리소스를 잠시 유지
-- [ ] 확인 후 비용 방지를 위해 AWS 검증 리소스 삭제
-- [ ] 삭제 후 `rebloom-proof` 관련 EKS/RDS/EC2/ECR 리소스가 남지 않았는지 확인
-- [ ] 최종 문서/캡처 커밋 및 GitHub push
+- [x] 사용자가 CloudWatch/콘솔 화면을 직접 확인할 수 있게 리소스를 잠시 유지
+- [x] 확인 후 비용 방지를 위해 AWS 검증 리소스 삭제
+- [x] 삭제 후 `rebloom-proof` 관련 EKS/RDS/EC2/ECR 리소스가 남지 않았는지 확인
+- [x] 최종 문서/캡처 커밋 및 GitHub push
 
 ## Cleanup Checklist
 
-검증 캡처가 끝나면 아래 리소스를 삭제해야 한다.
+검증 캡처가 끝난 뒤 아래 리소스를 삭제했고, `2026-06-25`에 AWS 조회로 잔여 리소스가 없음을 확인했다.
 
-- [ ] `report-service-proof` deployment 삭제
-- [ ] `db-connection-before`, `db-connection-after` job 삭제
-- [ ] `rebloom-proof` namespace 삭제
-- [ ] EKS cluster `rebloom-proof` 삭제
-- [ ] RDS instance `rebloom-proof-db` 삭제
-- [ ] RDS subnet group `rebloom-proof-db-subnets` 삭제
-- [ ] RDS security group `rebloom-proof-rds-sg` 삭제
-- [ ] RDS parameter group `rebloom-proof-postgres16-maxconn40` 삭제
-- [ ] SSM parameters `/rebloom-proof/db/*` 삭제
-- [ ] ECR repository `rebloom-proof-report-service` 삭제
-- [ ] CloudFormation stacks 삭제 완료 확인
+- [x] `report-service-proof` deployment 삭제
+- [x] `db-connection-before`, `db-connection-after` job 삭제
+- [x] `rebloom-proof` namespace 삭제
+- [x] EKS cluster `rebloom-proof` 삭제
+- [x] RDS instance `rebloom-proof-db` 삭제
+- [x] RDS subnet group `rebloom-proof-db-subnets` 삭제
+- [x] RDS security group `rebloom-proof-rds-sg` 삭제
+- [x] RDS parameter group `rebloom-proof-postgres16-maxconn40` 삭제
+- [x] SSM parameters `/rebloom-proof/db/*` 삭제
+- [x] ECR repository `rebloom-proof-report-service` 삭제
+- [x] CloudFormation stacks 삭제 완료 확인
